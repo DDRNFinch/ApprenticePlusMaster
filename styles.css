@@ -251,3 +251,6 @@
 .walk-recorder-close{position:absolute;right:12px;top:calc(10px + env(safe-area-inset-top));z-index:6;width:42px;height:42px;border:0;border-radius:50%;background:rgba(15,35,40,.82);color:#fff;font-size:30px;line-height:1;display:grid;place-items:center}
 .walk-recorder-sheet{position:relative}.walk-exit-review{display:block;margin:14px auto 0;color:var(--muted)}
 @media(max-width:380px){.walkthrough-mini-tile{grid-template-columns:minmax(0,1fr) 82px;padding-left:14px}.walkthrough-video-button{width:78px;min-height:76px}.walkthrough-mini-copy h3{font-size:18px}}
+
+/* V1.0 header version badge */
+.brand-title-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.brand-title-row h1{margin:0}.top-version{display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;border-radius:999px;background:#eafff0;border:1px solid #a7e9bd;color:#128b40;font-size:11px;font-weight:900;line-height:1.2;white-space:nowrap}
