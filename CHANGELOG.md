@@ -1,3 +1,10 @@
+# v2.0.0-phase3i
+
+- Keeps the walkthrough recorder open while a video is being written to local storage.
+- Shows a clear “Saving video…” state after Use video is selected.
+- Refreshes the active K criterion, green tick, saved-video controls and walkthrough progress immediately after the save completes.
+- Prevents learners seeing the unchanged walkthrough page during the save operation.
+
 # v2.0.0 Phase 3h — In-app Walkthrough Camera
 
 - Added an in-app recorder using the phone camera and microphone.

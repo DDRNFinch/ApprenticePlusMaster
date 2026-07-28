@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='2.0.0-phase3h';
+const APP_VERSION='2.0.0-phase3i';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -388,7 +388,29 @@ async function openWalkthroughRecorder(n,code,text,a,fallbackInput){
  document.getElementById('walkRecorderCancel').onclick=close;
  document.getElementById('walkRecorderChoose').onclick=()=>{close();fallbackInput?.click()};
  document.getElementById('walkRecorderRetake').onclick=()=>{clearRecorded();showReady()};
- document.getElementById('walkRecorderUse').onclick=async()=>{if(!recordedBlob)return;const ext=recordedBlob.type.includes('mp4')?'mp4':'webm';const file=new File([recordedBlob],`${code}-walkthrough-${Date.now()}.${ext}`,{type:recordedBlob.type||`video/${ext}`});stopTracks();if(recordedUrl)URL.revokeObjectURL(recordedUrl);modal.remove();await saveWalkthroughVideo(n,code,file)};
+ document.getElementById('walkRecorderUse').onclick=async()=>{
+  if(!recordedBlob)return;
+  const useButton=document.getElementById('walkRecorderUse');
+  const retakeButton=document.getElementById('walkRecorderRetake');
+  const ext=recordedBlob.type.includes('mp4')?'mp4':'webm';
+  const file=new File([recordedBlob],`${code}-walkthrough-${Date.now()}.${ext}`,{type:recordedBlob.type||`video/${ext}`});
+  useButton.disabled=true;
+  retakeButton.disabled=true;
+  useButton.textContent='Saving video…';
+  live.textContent='Saving video…';
+  stopTracks();
+  try{
+   await saveWalkthroughVideo(n,code,file);
+   if(recordedUrl)URL.revokeObjectURL(recordedUrl);
+  }catch(error){
+   console.error(error);
+   useButton.disabled=false;
+   retakeButton.disabled=false;
+   useButton.textContent='Use video';
+   live.textContent='Save failed — try again';
+   toast('Video could not be saved. Please try again.');
+  }
+ };
  modal.onclick=e=>{if(e.target===modal&&recorder?.state!=='recording')close()};
 }
 function renderWalkthrough(){
