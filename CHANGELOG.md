@@ -1,3 +1,16 @@
+# Apprentice+ v2.0.0 Phase 3g
+
+- Removed the assignment Knowledge Assessment tile and both MCQ question-bank files.
+- Added a Video Walkthrough tile to every apprenticeship assignment.
+- Shows only the Knowledge criteria mapped to that assignment, one criterion at a time.
+- Added a fixed bottom-right video camera button for recording or selecting a short video.
+- Saves each criterion video separately in IndexedDB so learners can complete criteria in different locations and at different times.
+- Turns the individual Knowledge criterion green immediately after its video is added.
+- Added view, replace and remove controls for each saved clip.
+- Added optional collapsed criterion wording so the recording screen remains uncluttered.
+- Video walkthrough evidence now contributes to the KSB evidence-coverage tracker.
+- Existing learner data is preserved; old knowledge assessment records are not deleted.
+
 ## v2.0.0-phase1 — MCQ Engine 2.0 Foundation
 - Replaced the active assignment live-question generator with an approved permanent-bank architecture.
 - Added strict MCQ schema, validation, duplicate detection, balancing, approval states and assessment assembly.
