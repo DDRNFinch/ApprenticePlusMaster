@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='2.0.0-phase3e';
+const APP_VERSION='2.0.0-phase3f';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -770,7 +770,7 @@ function assignmentTheoryKsbs(a){
 function approvedAssignmentQuestionBank(a){
  if(!a||!window.MCQQuestionBank||!window.MCQEngine)return[];
  const allowed=new Set(assignmentTheoryKsbs(a).map(([code])=>code));
- return MCQQuestionBank.get(COURSE.id,a.n).filter(q=>q.status==='approved'&&allowed.has(q.ksb));
+ return MCQQuestionBank.get(COURSE.id,a.n).filter(q=>allowed.has(q.ksb));
 }
 function buildAssignmentKnowledgeQuestions(a){
  const ksbs=assignmentTheoryKsbs(a);
@@ -783,9 +783,9 @@ function startAssignmentKnowledge(a){
  let questions=[];
  try{questions=buildAssignmentKnowledgeQuestions(a)}catch(error){
   console.error('MCQ Engine:',error);
-  return toast(error.message||'The approved question bank is not ready for this assignment.');
+  return toast(error.message||'The question bank is not ready for this assignment.');
  }
- if(!questions.length)return toast('The approved question bank is not ready for this assignment.');
+ if(!questions.length)return toast('The question bank is not ready for this assignment.');
  state.knowledgeTest={assignment:a.n,questions,answers:{},index:0};state.view='knowledge-test';render();window.scrollTo(0,0);
 }
 function renderAssignmentKnowledgeTest(){
