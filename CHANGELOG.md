@@ -217,7 +217,7 @@ Added Targeted Revision engine backend helpers.
 - Corrected repeated-word validation to avoid apostrophe and word-suffix false positives.
 - Updated offline cache and application version.
 
-## V1.8
+## V1.9
 - Added Resources as a new bottom-navigation tab immediately left of Course.
 - Added Learner Notepad with named notes, searchable text, photographs, voice recordings and videos.
 - Notes and media save locally in IndexedDB and can be edited or deleted later.
