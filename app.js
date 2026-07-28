@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='2.0.0-phase3j';
+const APP_VERSION='2.0.0-phase3k';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -350,7 +350,8 @@ function walkthroughMetaKey(n){return `${COURSE.id}:walkthrough:${n}`}
 function walkthroughMeta(n){return state.data[walkthroughMetaKey(n)]||{}}
 function walkthroughKnowledge(a){return (a?.ksbs||[]).filter(([code])=>String(code).toUpperCase().startsWith('K'))}
 function walkthroughComplete(n,code){return !!walkthroughMeta(n)[code]?.blobKey}
-function walkthroughStatus(n){const a=assignment(n),items=walkthroughKnowledge(a);if(!items.length)return 'complete';const done=items.filter(([code])=>walkthroughComplete(n,code)).length;return done===items.length?'complete':done?'incomplete':'none'}
+function walkthroughSaved(n){return !!walkthroughMeta(n)._saved}
+function walkthroughStatus(n){const a=assignment(n),items=walkthroughKnowledge(a);if(!items.length)return 'complete';const done=items.filter(([code])=>walkthroughComplete(n,code)).length;return walkthroughSaved(n)&&done>0?'complete':done?'incomplete':'none'}
 function walkthroughCount(n){const items=walkthroughKnowledge(assignment(n));return {done:items.filter(([code])=>walkthroughComplete(n,code)).length,total:items.length}}
 async function saveWalkthroughVideo(n,code,video,{name,type}={}){
  if(!video||!String(type||video.type||'').startsWith('video/'))throw new Error('A valid video recording is required');
@@ -358,25 +359,27 @@ async function saveWalkthroughVideo(n,code,video,{name,type}={}){
  const blobKey=`walkthrough-video:${COURSE.id}:${n}:${code}:${uid()}`;
  const storedBlob=video instanceof Blob?video:new Blob([video],{type:type||video.type||'video/webm'});
  await putStore(blobKey,storedBlob);
- const verified=await getStore(blobKey);
- if(!(verified instanceof Blob)||verified.size!==storedBlob.size){
-  try{await deleteStore(blobKey)}catch(error){console.warn(error)}
-  throw new Error('The saved video could not be verified');
- }
  const meta=walkthroughMeta(n),old=meta[code];
  meta[code]={blobKey,name:name||video.name||`${code}-walkthrough.webm`,type:type||storedBlob.type||'video/webm',size:storedBlob.size,date:today(),createdAt:Date.now()};
+ meta._saved=false;
  state.data[walkthroughMetaKey(n)]=meta;
- try{await saveData()}catch(error){
-  delete meta[code];
-  state.data[walkthroughMetaKey(n)]=meta;
-  try{await deleteStore(blobKey)}catch(cleanupError){console.warn(cleanupError)}
-  throw error;
- }
+ await saveData();
  if(old?.blobKey){try{await deleteStore(old.blobKey)}catch(error){console.warn(error)}}
  invalidatePackStatus(n);
  renderWalkthrough();
- toast(`${code} walkthrough saved`);
+ showWalkthroughSavedMessage(code);
  return true;
+}
+function showWalkthroughSavedMessage(code){
+ const old=document.getElementById('walkSavedModal');if(old)old.remove();
+ app.insertAdjacentHTML('beforeend',`<div class="modal" id="walkSavedModal"><div class="modal-card save-confirm-card"><div class="save-confirm-icon">✓</div><h3>Video saved</h3><p>${esc(code)} has been added to this walkthrough.</p><button class="btn" id="closeWalkSaved">Continue</button></div></div>`);
+ const close=()=>document.getElementById('walkSavedModal')?.remove();
+ document.getElementById('closeWalkSaved').onclick=close;
+ setTimeout(close,1800);
+}
+async function saveWalkthroughOverall(n){
+ const count=walkthroughCount(n);if(!count.done)return toast('Add at least one K video before saving the walkthrough');
+ const meta=walkthroughMeta(n);meta._saved=true;meta._savedAt=Date.now();state.data[walkthroughMetaKey(n)]=meta;await saveData();invalidatePackStatus(n);renderWalkthrough();toast(`Walkthrough saved with ${count.done} K criteria evidenced`);
 }
 async function removeWalkthroughVideo(n,code){const meta=walkthroughMeta(n),item=meta[code];if(item?.blobKey){try{await deleteStore(item.blobKey)}catch(error){console.warn(error)}}delete meta[code];state.data[walkthroughMetaKey(n)]=meta;await saveData();invalidatePackStatus(n);toast(`${code} walkthrough removed`);renderWalkthrough()}
 function walkthroughPrompt(code,text,a){return learnerPromptTitle(a.n,code,text)||text}
@@ -398,7 +401,7 @@ async function openWalkthroughRecorder(n,code,text,a,fallbackInput){
  const clearRecorded=()=>{if(recordedUrl)URL.revokeObjectURL(recordedUrl);recordedUrl='';recordedBlob=null;playback.removeAttribute('src');playback.load()};
  const close=()=>{if(recorder?.state==='recording')recorder.stop();clearInterval(timer);stopTracks();clearRecorded();modal.remove()};
  const showReady=()=>{review.classList.add('hide');document.querySelector('.walk-recorder-controls').classList.remove('hide');preview.parentElement.classList.remove('reviewing');live.textContent='Ready';start.classList.remove('recording');};
- const begin=()=>{chunks=[];seconds=0;const mime=preferredWalkthroughMime();try{recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined)}catch(error){console.error(error);toast('Recording could not start');return}recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};recorder.onstop=()=>{clearInterval(timer);recordedBlob=new Blob(chunks,{type:recorder.mimeType||'video/webm'});recordedUrl=URL.createObjectURL(recordedBlob);playback.src=recordedUrl;review.classList.remove('hide');document.querySelector('.walk-recorder-controls').classList.add('hide');preview.parentElement.classList.add('reviewing');live.textContent='Recording complete'};recorder.start(1000);start.classList.add('recording');live.textContent='● 00:00';timer=setInterval(()=>{seconds++;live.textContent=`● ${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`},1000)};
+ const begin=()=>{chunks=[];seconds=0;const mime=preferredWalkthroughMime();try{recorder=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:850000,audioBitsPerSecond:64000}:{videoBitsPerSecond:850000,audioBitsPerSecond:64000})}catch(error){console.error(error);toast('Recording could not start');return}recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};recorder.onstop=()=>{clearInterval(timer);recordedBlob=new Blob(chunks,{type:recorder.mimeType||'video/webm'});recordedUrl=URL.createObjectURL(recordedBlob);playback.src=recordedUrl;review.classList.remove('hide');document.querySelector('.walk-recorder-controls').classList.add('hide');preview.parentElement.classList.add('reviewing');live.textContent='Recording complete'};recorder.start(1000);start.classList.add('recording');live.textContent='● 00:00';timer=setInterval(()=>{seconds++;live.textContent=`● ${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`},1000)};
  const stop=()=>{if(recorder?.state==='recording')recorder.stop()};
  start.onclick=()=>recorder?.state==='recording'?stop():begin();
  document.getElementById('walkRecorderCancel').onclick=close;
@@ -413,8 +416,8 @@ async function openWalkthroughRecorder(n,code,text,a,fallbackInput){
   const recordingName=`${code}-walkthrough-${Date.now()}.${ext}`;
   useButton.disabled=true;
   retakeButton.disabled=true;
-  useButton.textContent='Saving video…';
-  live.textContent='Saving video…';
+  useButton.textContent='Saving…';
+  live.textContent='Saving…';
   stopTracks();
   try{
    await saveWalkthroughVideo(n,code,recordedBlob,{name:recordingName,type:mime});
@@ -424,8 +427,8 @@ async function openWalkthroughRecorder(n,code,text,a,fallbackInput){
    useButton.disabled=false;
    retakeButton.disabled=false;
    useButton.textContent='Use video';
-   live.textContent='Save failed — try again';
-   toast('Video could not be saved. Please try again.');
+   live.textContent='Save failed — recording retained';
+   toast(error?.name==='QuotaExceededError'?'Phone storage is full. Remove an older video or choose a shorter clip.':'Video could not be saved. The recording is still available to retry.');
   }
  };
  modal.onclick=e=>{if(e.target===modal&&recorder?.state!=='recording')close()};
@@ -435,9 +438,10 @@ function renderWalkthrough(){
  const items=walkthroughKnowledge(a),active=items.find(([code])=>code===state.walkthroughCode)||items[0],progress=walkthroughCount(a.n);
  if(!items.length){app.innerHTML=shell(`<button class="back" id="walkBack">← Assignment ${a.n}</button><section class="card panel"><h2>Video Walkthrough</h2><p class="muted">No Knowledge criteria are mapped to this assignment.</p></section>`);document.getElementById('walkBack').onclick=()=>{state.view='assignment';render()};return}
  const [code,text]=active,done=walkthroughComplete(a.n,code),meta=walkthroughMeta(a.n)[code];
- app.innerHTML=shell(`<button class="back no-print" id="walkBack">← Assignment ${a.n}</button><section class="walkthrough-head"><div><div class="number">Video Walkthrough</div><h2>${esc(a.title)}</h2><p>${progress.done} of ${progress.total} Knowledge criteria complete</p></div><span class="status-pill ${progress.done===progress.total?'done':''}">${progress.done}/${progress.total}</span></section><div class="walkthrough-progress"><span style="width:${progress.total?(progress.done/progress.total)*100:0}%"></span></div><section class="walkthrough-layout"><nav class="walkthrough-criteria" aria-label="Knowledge criteria">${items.map(([k,t])=>`<button class="walkthrough-k ${k===code?'active':''} ${walkthroughComplete(a.n,k)?'complete':''}" data-walk-code="${esc(k)}"><span class="walkthrough-tick">${walkthroughComplete(a.n,k)?'✓':''}</span><span><strong>${esc(k)}</strong><small>${esc(learnerPromptTitle(a.n,k,t))}</small></span></button>`).join('')}</nav><article class="walkthrough-card ${done?'complete':''}"><div class="walkthrough-code">${esc(code)} ${done?'<span>✓ Complete</span>':''}</div><h3>${esc(walkthroughPrompt(code,text,a))}</h3><p class="walkthrough-guidance">Record a short video showing or explaining this criterion in your workplace.</p><details class="walkthrough-hint"><summary>Need a prompt?</summary><p>${esc(text)}</p></details>${done?`<div class="walkthrough-added"><strong>Video added</strong><span>${esc(meta?.date||'')} · ${meta?.size?Math.max(1,Math.round(meta.size/1024/1024))+' MB':'Saved locally'}</span><div class="btn-row"><button class="btn secondary" id="viewWalkVideo">View video</button><button class="btn secondary" id="replaceWalkVideo">Replace</button><button class="link-button danger" id="removeWalkVideo">Remove</button></div></div>`:''}<input class="sr-only" id="walkVideoInput" type="file" accept="video/*" capture="environment"><button class="walkthrough-camera" id="walkCamera" aria-label="${done?'Replace':'Record'} ${esc(code)} walkthrough">🎥</button></article></section>`);
+ app.innerHTML=shell(`<button class="back no-print" id="walkBack">← Assignment ${a.n}</button><section class="walkthrough-head"><div><div class="number">Video Walkthrough</div><h2>${esc(a.title)}</h2><p>${progress.done} of ${progress.total} Knowledge criteria complete</p></div><span class="status-pill ${progress.done===progress.total?'done':''}">${progress.done}/${progress.total}</span></section><div class="walkthrough-progress"><span style="width:${progress.total?(progress.done/progress.total)*100:0}%"></span></div><section class="walkthrough-layout"><nav class="walkthrough-criteria" aria-label="Knowledge criteria">${items.map(([k,t])=>`<button class="walkthrough-k ${k===code?'active':''} ${walkthroughComplete(a.n,k)?'complete':''}" data-walk-code="${esc(k)}"><span class="walkthrough-tick">${walkthroughComplete(a.n,k)?'✓':''}</span><span><strong>${esc(k)}</strong><small>${esc(learnerPromptTitle(a.n,k,t))}</small></span></button>`).join('')}</nav><article class="walkthrough-card ${done?'complete':''}"><div class="walkthrough-code">${esc(code)} ${done?'<span>✓ Complete</span>':''}</div><h3>${esc(walkthroughPrompt(code,text,a))}</h3><p class="walkthrough-guidance">Record a short video showing or explaining this criterion in your workplace.</p><details class="walkthrough-hint"><summary>Need a prompt?</summary><p>${esc(text)}</p></details>${done?`<div class="walkthrough-added"><strong>Video added</strong><span>${esc(meta?.date||'')} · ${meta?.size?Math.max(1,Math.round(meta.size/1024/1024))+' MB':'Saved locally'}</span><div class="btn-row"><button class="btn secondary" id="viewWalkVideo">View video</button><button class="btn secondary" id="replaceWalkVideo">Replace</button><button class="link-button danger" id="removeWalkVideo">Remove</button></div></div>`:''}<input class="sr-only" id="walkVideoInput" type="file" accept="video/*" capture="environment"><button class="walkthrough-camera" id="walkCamera" aria-label="${done?'Replace':'Record'} ${esc(code)} walkthrough">🎥</button></article></section><section class="card panel walkthrough-save-panel ${walkthroughSaved(a.n)?'complete':''}"><div><h3>${walkthroughSaved(a.n)?'Walkthrough saved':'Save walkthrough'}</h3><p class="muted">${walkthroughSaved(a.n)?`${progress.done} of ${progress.total} K criteria are included. You can still add or replace videos.`:'You do not need to record every K criterion. Save the videos currently completed when this walkthrough is ready.'}</p></div><button class="btn" id="saveWalkthroughOverall" ${progress.done?'':'disabled'}>${walkthroughSaved(a.n)?'Save updated walkthrough':'Save walkthrough'}</button></section>`);
  document.getElementById('walkBack').onclick=()=>{state.view='assignment';state.walkthroughCode=null;render()};
  document.querySelectorAll('[data-walk-code]').forEach(b=>b.onclick=()=>{state.walkthroughCode=b.dataset.walkCode;renderWalkthrough()});
+ document.getElementById('saveWalkthroughOverall').onclick=()=>saveWalkthroughOverall(a.n);
  const input=document.getElementById('walkVideoInput');document.getElementById('walkCamera').onclick=()=>openWalkthroughRecorder(a.n,code,text,a,input);input.onchange=e=>saveWalkthroughVideo(a.n,code,e.target.files?.[0]);
  const replace=document.getElementById('replaceWalkVideo');if(replace)replace.onclick=()=>openWalkthroughRecorder(a.n,code,text,a,input);
  const remove=document.getElementById('removeWalkVideo');if(remove)remove.onclick=()=>removeWalkthroughVideo(a.n,code);
