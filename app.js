@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='2.0.0-phase3g';
+const APP_VERSION='2.0.0-phase3h';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -364,6 +364,33 @@ async function saveWalkthroughVideo(n,code,file){
 }
 async function removeWalkthroughVideo(n,code){const meta=walkthroughMeta(n),item=meta[code];if(item?.blobKey){try{await deleteStore(item.blobKey)}catch(error){console.warn(error)}}delete meta[code];state.data[walkthroughMetaKey(n)]=meta;await saveData();invalidatePackStatus(n);toast(`${code} walkthrough removed`);renderWalkthrough()}
 function walkthroughPrompt(code,text,a){return learnerPromptTitle(a.n,code,text)||text}
+function preferredWalkthroughMime(){
+ const types=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'];
+ return types.find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||'';
+}
+async function openWalkthroughRecorder(n,code,text,a,fallbackInput){
+ if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){toast('In-app recording is not supported on this device');fallbackInput?.click();return}
+ let stream;
+ try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:true})}
+ catch(error){console.warn('Camera permission or access failed',error);toast('Camera access was unavailable. Choose a video instead.');fallbackInput?.click();return}
+ const prompt=walkthroughPrompt(code,text,a);
+ app.insertAdjacentHTML('beforeend',`<div class="walk-recorder-modal" id="walkRecorderModal"><div class="walk-recorder-sheet"><div class="walk-recorder-camera"><video id="walkRecorderPreview" autoplay muted playsinline></video><div class="walk-recorder-live" id="walkRecorderLive">Ready</div></div><div class="walk-recorder-prompt"><div class="walk-recorder-code">${esc(code)}</div><h3>${esc(prompt)}</h3><details><summary>Show prompts</summary><p>${esc(text)}</p></details><div class="walk-recorder-controls"><button class="btn secondary" id="walkRecorderCancel">Cancel</button><button class="walk-record-button" id="walkRecorderStart" aria-label="Start recording"><span></span></button><button class="btn secondary" id="walkRecorderChoose">Choose video</button></div><div class="walk-recorder-review hide" id="walkRecorderReview"><video id="walkRecorderPlayback" controls playsinline></video><div class="btn-row"><button class="btn secondary" id="walkRecorderRetake">Retake</button><button class="btn" id="walkRecorderUse">Use video</button></div></div></div></div></div>`);
+ const modal=document.getElementById('walkRecorderModal'),preview=document.getElementById('walkRecorderPreview'),live=document.getElementById('walkRecorderLive'),start=document.getElementById('walkRecorderStart'),review=document.getElementById('walkRecorderReview'),playback=document.getElementById('walkRecorderPlayback');
+ preview.srcObject=stream;
+ let recorder=null,chunks=[],recordedBlob=null,recordedUrl='',timer=null,seconds=0;
+ const stopTracks=()=>stream?.getTracks().forEach(t=>t.stop());
+ const clearRecorded=()=>{if(recordedUrl)URL.revokeObjectURL(recordedUrl);recordedUrl='';recordedBlob=null;playback.removeAttribute('src');playback.load()};
+ const close=()=>{if(recorder?.state==='recording')recorder.stop();clearInterval(timer);stopTracks();clearRecorded();modal.remove()};
+ const showReady=()=>{review.classList.add('hide');document.querySelector('.walk-recorder-controls').classList.remove('hide');preview.parentElement.classList.remove('reviewing');live.textContent='Ready';start.classList.remove('recording');};
+ const begin=()=>{chunks=[];seconds=0;const mime=preferredWalkthroughMime();try{recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined)}catch(error){console.error(error);toast('Recording could not start');return}recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};recorder.onstop=()=>{clearInterval(timer);recordedBlob=new Blob(chunks,{type:recorder.mimeType||'video/webm'});recordedUrl=URL.createObjectURL(recordedBlob);playback.src=recordedUrl;review.classList.remove('hide');document.querySelector('.walk-recorder-controls').classList.add('hide');preview.parentElement.classList.add('reviewing');live.textContent='Recording complete'};recorder.start(1000);start.classList.add('recording');live.textContent='● 00:00';timer=setInterval(()=>{seconds++;live.textContent=`● ${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`},1000)};
+ const stop=()=>{if(recorder?.state==='recording')recorder.stop()};
+ start.onclick=()=>recorder?.state==='recording'?stop():begin();
+ document.getElementById('walkRecorderCancel').onclick=close;
+ document.getElementById('walkRecorderChoose').onclick=()=>{close();fallbackInput?.click()};
+ document.getElementById('walkRecorderRetake').onclick=()=>{clearRecorded();showReady()};
+ document.getElementById('walkRecorderUse').onclick=async()=>{if(!recordedBlob)return;const ext=recordedBlob.type.includes('mp4')?'mp4':'webm';const file=new File([recordedBlob],`${code}-walkthrough-${Date.now()}.${ext}`,{type:recordedBlob.type||`video/${ext}`});stopTracks();if(recordedUrl)URL.revokeObjectURL(recordedUrl);modal.remove();await saveWalkthroughVideo(n,code,file)};
+ modal.onclick=e=>{if(e.target===modal&&recorder?.state!=='recording')close()};
+}
 function renderWalkthrough(){
  const a=assignment(state.assignment);if(!a){state.view='home';render();return}
  const items=walkthroughKnowledge(a),active=items.find(([code])=>code===state.walkthroughCode)||items[0],progress=walkthroughCount(a.n);
@@ -372,8 +399,8 @@ function renderWalkthrough(){
  app.innerHTML=shell(`<button class="back no-print" id="walkBack">← Assignment ${a.n}</button><section class="walkthrough-head"><div><div class="number">Video Walkthrough</div><h2>${esc(a.title)}</h2><p>${progress.done} of ${progress.total} Knowledge criteria complete</p></div><span class="status-pill ${progress.done===progress.total?'done':''}">${progress.done}/${progress.total}</span></section><div class="walkthrough-progress"><span style="width:${progress.total?(progress.done/progress.total)*100:0}%"></span></div><section class="walkthrough-layout"><nav class="walkthrough-criteria" aria-label="Knowledge criteria">${items.map(([k,t])=>`<button class="walkthrough-k ${k===code?'active':''} ${walkthroughComplete(a.n,k)?'complete':''}" data-walk-code="${esc(k)}"><span class="walkthrough-tick">${walkthroughComplete(a.n,k)?'✓':''}</span><span><strong>${esc(k)}</strong><small>${esc(learnerPromptTitle(a.n,k,t))}</small></span></button>`).join('')}</nav><article class="walkthrough-card ${done?'complete':''}"><div class="walkthrough-code">${esc(code)} ${done?'<span>✓ Complete</span>':''}</div><h3>${esc(walkthroughPrompt(code,text,a))}</h3><p class="walkthrough-guidance">Record a short video showing or explaining this criterion in your workplace.</p><details class="walkthrough-hint"><summary>Need a prompt?</summary><p>${esc(text)}</p></details>${done?`<div class="walkthrough-added"><strong>Video added</strong><span>${esc(meta?.date||'')} · ${meta?.size?Math.max(1,Math.round(meta.size/1024/1024))+' MB':'Saved locally'}</span><div class="btn-row"><button class="btn secondary" id="viewWalkVideo">View video</button><button class="btn secondary" id="replaceWalkVideo">Replace</button><button class="link-button danger" id="removeWalkVideo">Remove</button></div></div>`:''}<input class="sr-only" id="walkVideoInput" type="file" accept="video/*" capture="environment"><button class="walkthrough-camera" id="walkCamera" aria-label="${done?'Replace':'Record'} ${esc(code)} walkthrough">🎥</button></article></section>`);
  document.getElementById('walkBack').onclick=()=>{state.view='assignment';state.walkthroughCode=null;render()};
  document.querySelectorAll('[data-walk-code]').forEach(b=>b.onclick=()=>{state.walkthroughCode=b.dataset.walkCode;renderWalkthrough()});
- const input=document.getElementById('walkVideoInput');document.getElementById('walkCamera').onclick=()=>input.click();input.onchange=e=>saveWalkthroughVideo(a.n,code,e.target.files?.[0]);
- const replace=document.getElementById('replaceWalkVideo');if(replace)replace.onclick=()=>input.click();
+ const input=document.getElementById('walkVideoInput');document.getElementById('walkCamera').onclick=()=>openWalkthroughRecorder(a.n,code,text,a,input);input.onchange=e=>saveWalkthroughVideo(a.n,code,e.target.files?.[0]);
+ const replace=document.getElementById('replaceWalkVideo');if(replace)replace.onclick=()=>openWalkthroughRecorder(a.n,code,text,a,input);
  const remove=document.getElementById('removeWalkVideo');if(remove)remove.onclick=()=>removeWalkthroughVideo(a.n,code);
  const view=document.getElementById('viewWalkVideo');if(view)view.onclick=async()=>{const blob=await getStore(meta.blobKey);if(!blob)return toast('Video file could not be opened');const url=URL.createObjectURL(blob);app.insertAdjacentHTML('beforeend',`<div class="modal" id="walkVideoModal"><div class="modal-card video-modal"><video controls autoplay playsinline src="${url}"></video><button class="btn secondary" id="closeWalkVideo">Close</button></div></div>`);document.getElementById('closeWalkVideo').onclick=()=>{URL.revokeObjectURL(url);document.getElementById('walkVideoModal').remove()}};
 }

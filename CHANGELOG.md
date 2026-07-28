@@ -1,3 +1,11 @@
+# v2.0.0 Phase 3h — In-app Walkthrough Camera
+
+- Added an in-app recorder using the phone camera and microphone.
+- Camera preview remains visible above each K criterion prompt while recording.
+- Added recording timer, stop, playback, retake and use-video controls.
+- Retained existing-video selection as a fallback when camera access is unavailable.
+- Saved recordings continue to complete the selected K criterion individually.
+
 # Apprentice+ v2.0.0 Phase 3g
 
 - Removed the assignment Knowledge Assessment tile and both MCQ question-bank files.

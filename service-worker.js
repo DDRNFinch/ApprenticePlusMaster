@@ -1,4 +1,4 @@
-const CACHE='apprentice-plus-v2.0.0-phase3f-validation-removed';
+const CACHE='apprentice-plus-v2.0.0-phase3h-in-app-camera';
 const APP_SHELL=['./','./index.html','./styles.css','./app.js','./manifest.json','./pdf-generator.js','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
 
 self.addEventListener('install',event=>{
