@@ -10,7 +10,7 @@
  }
  function get(courseId,assignment){return banks[key(courseId,assignment)]||[]}
  function summary(){return Object.entries(banks).map(([bankKey,questions])=>({bankKey,total:questions.length,approved:questions.filter(q=>q.status==='approved').length}));}
- global.MCQQuestionBank=Object.freeze({version:'2.0.0-phase3e-approved-all-course-banks-pmo-k1-k31',register,get,summary});
+ global.MCQQuestionBank=Object.freeze({version:'2.0.0-phase3f-aj-challenging-all-ksbs',register,get,summary});
 })(window);
 
 
@@ -1591,6 +1591,115 @@ window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",1,[
     "type": "Behaviour",
     "status": "approved"
   }
+,
+  {
+    "ksb": "S1",
+    "concept": "S1 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A joiner is asked to use a portable router with a damaged cable because the job is urgent. What action demonstrates compliance with health and safety requirements?",
+    "options": [
+      "Use it through an RCD for this one cut",
+      "Tape the cable and keep it clear of the bench",
+      "Remove it from use, report it and obtain serviceable equipment",
+      "Ask a colleague to hold the cable away from the cutter"
+    ],
+    "correct": 2,
+    "explanation": "Damaged electrical equipment must be removed from use and reported; urgency does not justify bypassing safety requirements.",
+    "id": "architectural-joiner-challenging-a1-s1",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S2",
+    "concept": "S2 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Machining hardwood creates fine airborne dust despite effective extraction. What is the most appropriate additional control?",
+    "options": [
+      "Wear any disposable mask available",
+      "Use task-suitable, face-fit-tested RPE and confirm the LEV is operating correctly",
+      "Open the workshop doors and reduce the feed speed",
+      "Wear safety glasses instead of respiratory protection"
+    ],
+    "correct": 1,
+    "explanation": "RPE must be suitable and correctly fitted, while LEV should be checked because extraction is the primary source control.",
+    "id": "architectural-joiner-challenging-a1-s2",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K1",
+    "concept": "K1 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A joiner must cut material near an area where asbestos-containing board may be present. What is the correct decision?",
+    "options": [
+      "Proceed carefully without disturbing the board",
+      "Dampen the area and use a dust mask",
+      "Stop work and follow the asbestos management and reporting procedure",
+      "Cover the suspected board with plywood and continue"
+    ],
+    "correct": 2,
+    "explanation": "Suspected asbestos must not be disturbed. Work should stop until the register, assessment and authorised procedure confirm it is safe.",
+    "id": "architectural-joiner-challenging-a1-k1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K2",
+    "concept": "K2 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why is LEV generally more effective than relying only on RPE during repeated timber machining?",
+    "options": [
+      "LEV makes hearing protection unnecessary",
+      "LEV captures contaminant close to its source before it spreads through the breathing zone",
+      "LEV prevents all contact with rotating machinery",
+      "LEV removes the need for routine inspection"
+    ],
+    "correct": 1,
+    "explanation": "LEV controls dust at source; RPE is normally an additional control rather than the sole control for significant dust generation.",
+    "id": "architectural-joiner-challenging-a1-k2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K3",
+    "concept": "K3 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A toolbox talk identifies a new hazard that is absent from the current method statement. What should happen before work continues?",
+    "options": [
+      "Record it after the shift",
+      "Rely on the verbal toolbox talk alone",
+      "Review and amend the risk assessment and method statement, then brief those affected",
+      "Allow only experienced workers to continue"
+    ],
+    "correct": 2,
+    "explanation": "Safe systems must reflect the actual hazards and controls, and affected workers must understand the revised arrangements.",
+    "id": "architectural-joiner-challenging-a1-k3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B1",
+    "concept": "B1 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A colleague appears exhausted and repeatedly makes setup errors at a spindle moulder. What response best puts health, safety and wellbeing first?",
+    "options": [
+      "Complete the setup for them without discussion",
+      "Tell them to work more slowly",
+      "Stop the unsafe activity, raise the concern appropriately and help them access support",
+      "Ignore it unless an accident occurs"
+    ],
+    "correct": 2,
+    "explanation": "Wellbeing concerns that affect safe performance should be addressed promptly through supportive reporting and appropriate assistance.",
+    "id": "architectural-joiner-challenging-a1-b1",
+    "type": "Behaviour",
+    "status": "approved"
+  }
 ]);
 
 window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",2,[
@@ -1663,6 +1772,115 @@ window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",2,[
     "correct": 1,
     "explanation": "Reusing suitable offcuts reduces waste, cost and demand for new timber while maintaining the required quality.",
     "id": "architectural-joiner-approved-a2-b2",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S3",
+    "concept": "S3 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Offcuts include clean untreated timber, MDF and solvent-contaminated cloths. How should they be managed?",
+    "options": [
+      "Place all items in the timber recycling skip",
+      "Burn clean timber and bin the remainder",
+      "Segregate each waste stream and use authorised storage and disposal routes",
+      "Mix them together if the total volume is small"
+    ],
+    "correct": 2,
+    "explanation": "Different materials and hazardous wastes require separate, authorised reuse, recycling or disposal arrangements.",
+    "id": "architectural-joiner-challenging-a2-s3",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S4",
+    "concept": "S4 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A window specification conflicts with a current fire-safety requirement. What should the joiner do?",
+    "options": [
+      "Follow the drawing because it was issued first",
+      "Alter the detail using personal judgement",
+      "Stop and seek clarification through the approved technical route before manufacture",
+      "Manufacture it and record the conflict on delivery"
+    ],
+    "correct": 2,
+    "explanation": "Conflicts with regulations or standards must be resolved before manufacture, not improvised or deferred.",
+    "id": "architectural-joiner-challenging-a2-s4",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K4",
+    "concept": "K4 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which purchasing decision best supports sustainable forestry without compromising specification?",
+    "options": [
+      "Choose the cheapest imported timber",
+      "Use certified timber of the required grade and optimise cutting to reduce waste",
+      "Replace all solid timber with plastic",
+      "Order extra material to avoid a second delivery"
+    ],
+    "correct": 1,
+    "explanation": "Certified, correctly graded timber and efficient cutting reduce environmental impact while maintaining required performance.",
+    "id": "architectural-joiner-challenging-a2-k4",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K7",
+    "concept": "K7 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A manufactured door set is intended for a fire-resisting opening. Which source should govern its construction and installation?",
+    "options": [
+      "A similar door in another building",
+      "The relevant regulations, test evidence, manufacturer instructions and project specification",
+      "The workshop supervisor’s preferred detail",
+      "A general-purpose joinery textbook alone"
+    ],
+    "correct": 1,
+    "explanation": "Fire performance depends on the tested system and compliance with relevant regulations, standards and specified details.",
+    "id": "architectural-joiner-challenging-a2-k7",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K40",
+    "concept": "K40 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A self-employed joiner prices work without allowing for tax, insurance or business overheads. What is the main risk?",
+    "options": [
+      "The quotation will always be rejected",
+      "Turnover may appear healthy while the work is financially unsustainable and obligations are unmet",
+      "The customer automatically becomes the employer",
+      "VAT must be charged on every first job"
+    ],
+    "correct": 1,
+    "explanation": "Self-employment requires realistic costing and compliance with tax, insurance and business obligations.",
+    "id": "architectural-joiner-challenging-a2-k40",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A cutting list can be nested to save one board, but it requires reorganising the machining sequence. What behaviour best reflects environmental responsibility?",
+    "options": [
+      "Use the original layout to save planning time",
+      "Optimise the cutting plan where safe and practical, and segregate remaining waste",
+      "Order another board as contingency",
+      "Discard short reusable offcuts immediately"
+    ],
+    "correct": 1,
+    "explanation": "Resource-efficient planning reduces waste while maintaining safe and effective production.",
+    "id": "architectural-joiner-challenging-a2-b2",
     "type": "Behaviour",
     "status": "approved"
   }
@@ -1741,6 +1959,115 @@ window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",3,[
     "type": "Behaviour",
     "status": "approved"
   }
+,
+  {
+    "ksb": "S5",
+    "concept": "S5 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Before assembling large frames, what is the best way to prepare the work area?",
+    "options": [
+      "Stack components beside the emergency exit",
+      "Clear access routes, check supports and handling space, and position protection before starting",
+      "Begin assembly and move obstructions as required",
+      "Use the floor because it provides the largest surface"
+    ],
+    "correct": 1,
+    "explanation": "A planned, clear and protected work area reduces handling, trip and damage risks.",
+    "id": "architectural-joiner-challenging-a3-s5",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S6",
+    "concept": "S6 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A drawing dimension conflicts with the written specification. What should the joiner do before marking out?",
+    "options": [
+      "Use the larger dimension",
+      "Average the two values",
+      "Raise a technical query and work only from confirmed information",
+      "Follow whichever document was printed most recently"
+    ],
+    "correct": 2,
+    "explanation": "Conflicting information must be clarified through the controlled project process before manufacture.",
+    "id": "architectural-joiner-challenging-a3-s6",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K5",
+    "concept": "K5 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why can sealing an internal timber lining against a cold external wall create a defect?",
+    "options": [
+      "It always weakens the timber grain",
+      "It may restrict moisture movement and create concealed condensation if the wall build-up is not understood",
+      "It causes all fixings to corrode immediately",
+      "It increases the fire resistance beyond the design"
+    ],
+    "correct": 1,
+    "explanation": "Changes to insulation, air and moisture layers can shift condensation risk and damage the building fabric.",
+    "id": "architectural-joiner-challenging-a3-k5",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K6",
+    "concept": "K6 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is the main benefit of checking a digital model before producing setting-out details?",
+    "options": [
+      "It removes the need to verify dimensions on site",
+      "It can reveal interfaces, clashes and coordinated dimensions, subject to document control",
+      "It guarantees the model is contractually correct",
+      "It permits unapproved design changes"
+    ],
+    "correct": 1,
+    "explanation": "Digital models aid coordination, but information still requires status checks and verification.",
+    "id": "architectural-joiner-challenging-a3-k6",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K8",
+    "concept": "K8 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A drawing is marked “for information” rather than “for construction.” What does this mean for manufacture?",
+    "options": [
+      "It may be used if dimensions appear complete",
+      "It should not be used as authorised production information",
+      "Only timber dimensions may be taken from it",
+      "It becomes valid after verbal approval from a colleague"
+    ],
+    "correct": 1,
+    "explanation": "Document status controls whether information is approved for manufacture or installation.",
+    "id": "architectural-joiner-challenging-a3-k8",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B4",
+    "concept": "B4 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A new CNC process is being introduced, but the joiner has only used manual machinery. What is the best response?",
+    "options": [
+      "Attempt the process using existing knowledge",
+      "Avoid the task permanently",
+      "Seek training and supervised practice before operating independently",
+      "Ask a trained colleague to sign the work off afterwards"
+    ],
+    "correct": 2,
+    "explanation": "Learning and supervised development should precede independent use of unfamiliar processes or equipment.",
+    "id": "architectural-joiner-challenging-a3-b4",
+    "type": "Behaviour",
+    "status": "approved"
+  }
 ]);
 
 window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",4,[
@@ -1795,6 +2122,79 @@ window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",4,[
     "correct": 0,
     "explanation": "A cutting list confirms finished sizes, quantities and allowances so suitable stock can be selected efficiently.",
     "id": "architectural-joiner-approved-a4-k12",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S7",
+    "concept": "S7 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A cutting list requires twelve identical rails from stock containing several defects. What is the best estimating approach?",
+    "options": [
+      "Divide total rail length by board length only",
+      "Allow for saw kerfs, defects, machining allowance and usable yield before ordering",
+      "Order exactly the net finished length",
+      "Add a fixed 50% waste allowance to every job"
+    ],
+    "correct": 1,
+    "explanation": "Accurate estimation considers real material yield, defects, machining and cutting losses.",
+    "id": "architectural-joiner-challenging-a4-s7",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K9",
+    "concept": "K9 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why is quarter-sawn timber often selected for components where dimensional stability is important?",
+    "options": [
+      "It is always cheaper than flat-sawn timber",
+      "Its growth-ring orientation generally reduces width movement and cupping",
+      "It contains no natural defects",
+      "It requires no moisture conditioning"
+    ],
+    "correct": 1,
+    "explanation": "Quarter-sawn boards generally move less across their width and are less prone to cupping.",
+    "id": "architectural-joiner-challenging-a4-k9",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K10",
+    "concept": "K10 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A timber component has cuboidal cracking, darkened wood and remains brittle after drying. Which defect is most likely?",
+    "options": [
+      "Wet rot",
+      "Dry rot",
+      "Blue stain only",
+      "Resin bleed"
+    ],
+    "correct": 1,
+    "explanation": "Cuboidal cracking and brittle decay are characteristic indicators associated with dry rot, requiring investigation of moisture and spread.",
+    "id": "architectural-joiner-challenging-a4-k10",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K12",
+    "concept": "K12 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should a cutting list distinguish finished sizes from sawn sizes?",
+    "options": [
+      "To reduce the number of components",
+      "To ensure machining allowances are included before material is ordered and cut",
+      "To avoid identifying timber species",
+      "To eliminate the need for tolerances"
+    ],
+    "correct": 1,
+    "explanation": "Sawn stock must include sufficient allowance to achieve the specified finished dimensions after machining.",
+    "id": "architectural-joiner-challenging-a4-k12",
     "type": "Knowledge",
     "status": "approved"
   }
@@ -1855,6 +2255,115 @@ window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",5,[
     "type": "Knowledge",
     "status": "approved"
   }
+,
+  {
+    "ksb": "S9",
+    "concept": "S9 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A chisel is required for paring a shoulder close to a finished face. Which method is safest and most controlled?",
+    "options": [
+      "Strike it hard with a metal hammer",
+      "Use a sharp chisel with both hands behind the cutting edge and controlled pressure",
+      "Hold the work by hand and cut towards the body",
+      "Use a blunt chisel to reduce the chance of slipping"
+    ],
+    "correct": 1,
+    "explanation": "Sharp tools, secure work and hands kept behind the cutting edge provide controlled and safer paring.",
+    "id": "architectural-joiner-challenging-a5-s9",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S10",
+    "concept": "S10 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Before plunging a router into a workpiece, what setup is most important?",
+    "options": [
+      "Start the motor before fitting the cutter",
+      "Confirm the cutter is correctly secured, depth is set, work is clamped and guarding/extraction are effective",
+      "Hold the workpiece against the bench by hand",
+      "Increase speed after the cutter enters the timber"
+    ],
+    "correct": 1,
+    "explanation": "Correct cutter security, settings, workholding, guarding and extraction are essential before routing.",
+    "id": "architectural-joiner-challenging-a5-s10",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S11",
+    "concept": "S11 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A plane iron produces a polished edge but leaves repeated ridges. What maintenance action is most appropriate?",
+    "options": [
+      "Increase the depth of cut",
+      "Flatten and sharpen the cutting edge, then reset the cap iron and lateral adjustment",
+      "Oil the sole without removing the iron",
+      "Round over the corners of the blade heavily"
+    ],
+    "correct": 1,
+    "explanation": "Ridges commonly indicate an uneven or damaged edge or poor setup; sharpening and correct adjustment restore performance.",
+    "id": "architectural-joiner-challenging-a5-s11",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K14",
+    "concept": "K14 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should a marking gauge pin project only enough to score the timber?",
+    "options": [
+      "A long pin improves accuracy on all grain directions",
+      "Excess projection can follow grain, tear fibres and reduce control",
+      "A short pin prevents the fence contacting the face edge",
+      "Projection has no effect if the stock is hardwood"
+    ],
+    "correct": 1,
+    "explanation": "Minimal projection gives a controlled, accurate line and reduces grain-following and tearing.",
+    "id": "architectural-joiner-challenging-a5-k14",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K15",
+    "concept": "K15 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why is a consistent sharpening angle important on a bench chisel?",
+    "options": [
+      "It guarantees the chisel never becomes blunt",
+      "It balances edge strength with cutting performance for the intended work",
+      "It changes the timber moisture content",
+      "It removes the need to flatten the back"
+    ],
+    "correct": 1,
+    "explanation": "The bevel angle affects both edge durability and cutting ease; the back must also be suitably flat.",
+    "id": "architectural-joiner-challenging-a5-k15",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K17",
+    "concept": "K17 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A portable circular saw consistently burns the cut and wanders. Which combination is most likely?",
+    "options": [
+      "A sharp correct blade and slow feed",
+      "A blunt or unsuitable blade, poor setup or excessive feed pressure",
+      "Low timber moisture content only",
+      "An overlong extension lead with the saw unplugged"
+    ],
+    "correct": 1,
+    "explanation": "Blade condition/type, alignment and feed technique are primary causes of burning and wandering.",
+    "id": "architectural-joiner-challenging-a5-k17",
+    "type": "Knowledge",
+    "status": "approved"
+  }
 ]);
 
 window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",6,[
@@ -1891,6 +2400,61 @@ window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",6,[
     "correct": 0,
     "explanation": "An impact may affect accuracy. The laser must be checked before its readings are relied upon.",
     "id": "architectural-joiner-approved-a6-k29",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S12",
+    "concept": "S12 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A drilling jig will be used for fifty identical components. What feature most improves repeatable accuracy?",
+    "options": [
+      "A pencil centreline only",
+      "Positive location stops and a durable guide bush referenced from consistent faces",
+      "A larger drill than the finished hole",
+      "Clamping the jig in a different position each time"
+    ],
+    "correct": 1,
+    "explanation": "Stops and guide bushes locate each component consistently and control tool position over repeated use.",
+    "id": "architectural-joiner-challenging-a6-s12",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K16",
+    "concept": "K16 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should a jig be trialled on scrap before production?",
+    "options": [
+      "To wear in the cutter",
+      "To verify location, clearance, sequence and finished accuracy without risking production material",
+      "To avoid recording dimensions",
+      "To replace the need for inspection"
+    ],
+    "correct": 1,
+    "explanation": "A trial confirms the jig and process produce the required result safely before valuable components are machined.",
+    "id": "architectural-joiner-challenging-a6-k16",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K29",
+    "concept": "K29 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A laser level is knocked over during setup but appears undamaged. What should happen before relying on it?",
+    "options": [
+      "Continue because the beam still lights",
+      "Check its calibration against a known reference and remove it from use if accuracy is uncertain",
+      "Adjust the work to match the beam",
+      "Store it for one hour to reset automatically"
+    ],
+    "correct": 1,
+    "explanation": "Impact can affect calibration even without visible damage, so accuracy must be verified before use.",
+    "id": "architectural-joiner-challenging-a6-k29",
     "type": "Knowledge",
     "status": "approved"
   }
@@ -2005,6 +2569,151 @@ window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",7,[
     "type": "Behaviour",
     "status": "approved"
   }
+,
+  {
+    "ksb": "S8",
+    "concept": "S8 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A drawing issue is being explained to a customer unfamiliar with joinery terms. What is the best approach?",
+    "options": [
+      "Use technical abbreviations to show expertise",
+      "Explain the effect in plain language, using essential terms only and checking understanding",
+      "Avoid discussing the issue until manufacture is complete",
+      "Send the drawing without explanation"
+    ],
+    "correct": 1,
+    "explanation": "Communication should be adapted to the audience while remaining accurate and confirming understanding.",
+    "id": "architectural-joiner-challenging-a7-s8",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S13",
+    "concept": "S13 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A colleague says workload is affecting sleep and concentration. What should the joiner do?",
+    "options": [
+      "Diagnose the condition",
+      "Listen, encourage use of appropriate workplace or external support, and escalate immediate safety concerns",
+      "Promise the issue will remain secret in all circumstances",
+      "Tell them everyone experiences the same pressure"
+    ],
+    "correct": 1,
+    "explanation": "Supportive listening and signposting are appropriate; urgent safety concerns may require escalation.",
+    "id": "architectural-joiner-challenging-a7-s13",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K13",
+    "concept": "K13 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When is precise construction terminology most important?",
+    "options": [
+      "When discussing colour preferences with a customer",
+      "When communicating dimensions, tolerances and technical requirements to the production team",
+      "During an informal lunch break",
+      "When avoiding written records"
+    ],
+    "correct": 1,
+    "explanation": "Technical terms reduce ambiguity when communicating production requirements to competent colleagues.",
+    "id": "architectural-joiner-challenging-a7-k13",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K18",
+    "concept": "K18 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should the workshop team coordinate machining and assembly sequences?",
+    "options": [
+      "To ensure every worker performs the same task",
+      "To avoid bottlenecks, conflicting use of equipment and incomplete components reaching assembly",
+      "To remove individual responsibility",
+      "To eliminate the need for quality checks"
+    ],
+    "correct": 1,
+    "explanation": "Coordination supports safe flow, resource availability and completion of components in the required order.",
+    "id": "architectural-joiner-challenging-a7-k18",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K19",
+    "concept": "K19 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which action best supports equity rather than simply treating everyone identically?",
+    "options": [
+      "Give all workers exactly the same equipment regardless of need",
+      "Provide reasonable adjustments that enable individuals to participate safely and effectively",
+      "Exclude anyone who requires an adjustment from machinery work",
+      "Lower quality standards for selected workers"
+    ],
+    "correct": 1,
+    "explanation": "Equity addresses barriers through appropriate adjustments while maintaining legitimate standards.",
+    "id": "architectural-joiner-challenging-a7-k19",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K20",
+    "concept": "K20 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which sign most strongly indicates that a wellbeing concern may be affecting workshop safety?",
+    "options": [
+      "A worker prefers a different radio station",
+      "Persistent fatigue, reduced concentration and repeated unusual mistakes",
+      "A request for annual leave",
+      "A change of lunch choice"
+    ],
+    "correct": 1,
+    "explanation": "Changes in concentration and repeated errors can indicate a wellbeing issue with direct safety implications.",
+    "id": "architectural-joiner-challenging-a7-k20",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A team member is repeatedly excluded from technical discussions because English is not their first language. What is the best response?",
+    "options": [
+      "Accept it because meetings must be quick",
+      "Use inclusive communication, ensure they can contribute and challenge the exclusion appropriately",
+      "Give them only non-technical work",
+      "Ask them to obtain information afterwards"
+    ],
+    "correct": 1,
+    "explanation": "Inclusive practice removes communication barriers and ensures fair participation in relevant work decisions.",
+    "id": "architectural-joiner-challenging-a7-b3",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "B5",
+    "concept": "B5 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Assembly is falling behind because machined components are arriving out of sequence. What team-focused action is best?",
+    "options": [
+      "Concentrate only on personal output",
+      "Coordinate priorities with machining and assembly colleagues to recover the shared programme safely",
+      "Skip inspections to increase speed",
+      "Blame the previous shift in the job record"
+    ],
+    "correct": 1,
+    "explanation": "Team focus means coordinating across the wider production process rather than optimising one task in isolation.",
+    "id": "architectural-joiner-challenging-a7-b5",
+    "type": "Behaviour",
+    "status": "approved"
+  }
 ]);
 
 window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",8,[
@@ -2023,6 +2732,43 @@ window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",8,[
     "correct": 1,
     "explanation": "Using common datum faces prevents errors caused by measuring from uneven or differently sized surfaces.",
     "id": "architectural-joiner-approved-a8-k32",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S23",
+    "concept": "S23 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A setting rod shows accumulated dimensions for several components. How should the joiner reduce cumulative error?",
+    "options": [
+      "Mark each dimension from the previous mark",
+      "Reference critical dimensions from a common datum and verify the overall size",
+      "Use a thicker pencil line",
+      "Add machining allowance after assembly"
+    ],
+    "correct": 1,
+    "explanation": "Common datums prevent small marking errors from accumulating across multiple components.",
+    "id": "architectural-joiner-challenging-a8-s23",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K32",
+    "concept": "K32 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is the likely effect of marking mortices from different face edges on paired components?",
+    "options": [
+      "The joints will self-align during cramping",
+      "The components may be mirrored or offset, causing poor alignment and incorrect overall geometry",
+      "Only the surface finish will change",
+      "The timber will become less stable"
+    ],
+    "correct": 1,
+    "explanation": "Consistent face-side and face-edge references are essential for corresponding joints and accurate assembly.",
+    "id": "architectural-joiner-challenging-a8-k32",
     "type": "Knowledge",
     "status": "approved"
   }
@@ -2083,6 +2829,97 @@ window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",9,[
     "type": "Knowledge",
     "status": "approved"
   }
+,
+  {
+    "ksb": "S24",
+    "concept": "S24 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A mortice-and-tenon frame must resist racking. Which production choice is most important?",
+    "options": [
+      "Make the tenon as thin as possible",
+      "Produce accurately fitting shoulders and proportion the joint without excessively weakening either member",
+      "Leave gaps for extra adhesive",
+      "Cut the mortice across the full width of the stile"
+    ],
+    "correct": 1,
+    "explanation": "Sound proportions and tight shoulders transfer load and maintain frame geometry without unduly weakening members.",
+    "id": "architectural-joiner-challenging-a9-s24",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S25",
+    "concept": "S25 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When using biscuits to align a wide panel glue-up, what is the correct practice?",
+    "options": [
+      "Use biscuits to replace all edge preparation",
+      "Cut matching slots from consistent reference faces and apply the specified adhesive and clamping pressure",
+      "Make one slot deeper so the panel can move",
+      "Fit dry biscuits permanently without adhesive"
+    ],
+    "correct": 1,
+    "explanation": "Matching reference faces, correct adhesive and controlled cramping produce alignment and bond performance.",
+    "id": "architectural-joiner-challenging-a9-s25",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K11",
+    "concept": "K11 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why must preservative compatibility be checked before applying a decorative finish?",
+    "options": [
+      "Preservatives always prevent paint adhesion",
+      "Some treatments can affect adhesion, drying or appearance, so manufacturer guidance must be followed",
+      "Decorative finishes make preservatives unnecessary",
+      "Compatibility matters only outdoors"
+    ],
+    "correct": 1,
+    "explanation": "Chemical compatibility can affect the performance of subsequent fillers, sealants and finishes.",
+    "id": "architectural-joiner-challenging-a9-k11",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K33",
+    "concept": "K33 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why are dovetails effective in a drawer corner?",
+    "options": [
+      "They rely entirely on adhesive",
+      "Their interlocking shape resists withdrawal in the direction of the main load",
+      "They require no accurate marking",
+      "They allow unlimited timber movement"
+    ],
+    "correct": 1,
+    "explanation": "The geometry mechanically resists pulling apart, while accurate fitting and adhesive complete the joint.",
+    "id": "architectural-joiner-challenging-a9-k33",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K35",
+    "concept": "K35 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When are dowels preferable to biscuits for a small framed joint?",
+    "options": [
+      "When precise positional reinforcement is required within limited edge width",
+      "Whenever no drilling equipment is available",
+      "When the joint must remain completely unglued",
+      "Only when joining end grain to glass"
+    ],
+    "correct": 0,
+    "explanation": "Dowels can provide accurate alignment and reinforcement where biscuit dimensions or slotting are unsuitable.",
+    "id": "architectural-joiner-challenging-a9-k35",
+    "type": "Knowledge",
+    "status": "approved"
+  }
 ]);
 
 window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",10,[
@@ -2101,6 +2938,43 @@ window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",10,[
     "correct": 0,
     "explanation": "A dry assembly and equal diagonal check confirm the window is square and the joints fit before adhesive is applied.",
     "id": "architectural-joiner-approved-a10-k34",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S26",
+    "concept": "S26 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "During dry assembly of a casement, diagonal measurements differ. What should happen before gluing?",
+    "options": [
+      "Increase hinge clearance",
+      "Correct the component or joint accuracy until the frame is square and meets tolerance",
+      "Force it square with glazing beads after finishing",
+      "Plane the outside edges after glazing"
+    ],
+    "correct": 1,
+    "explanation": "Squareness should be corrected during dry assembly; later forcing or trimming can distort rebates and operation.",
+    "id": "architectural-joiner-challenging-a10-s26",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K34",
+    "concept": "K34 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why must glazing rebates have correct depth and edge cover?",
+    "options": [
+      "Only to reduce machining time",
+      "To accommodate the specified glazing system, drainage and sealant while retaining the unit safely",
+      "To make the sash heavier",
+      "To eliminate all need for beads"
+    ],
+    "correct": 1,
+    "explanation": "Rebate geometry is part of the tested and specified glazing arrangement, affecting retention, sealing and drainage.",
+    "id": "architectural-joiner-challenging-a10-k34",
     "type": "Knowledge",
     "status": "approved"
   }
@@ -2143,6 +3017,61 @@ window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",11,[
     "type": "Knowledge",
     "status": "approved"
   }
+,
+  {
+    "ksb": "S27",
+    "concept": "S27 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A door lining is assembled accurately but the opening is out of plumb. What is the correct manufacturing response?",
+    "options": [
+      "Manufacture the lining out of square to match the opening",
+      "Keep the product to confirmed specification and report the opening discrepancy for resolution",
+      "Reduce the head width without approval",
+      "Ignore the issue because installation will correct it"
+    ],
+    "correct": 1,
+    "explanation": "Manufacture should follow confirmed information; site discrepancies require controlled clarification rather than unapproved alteration.",
+    "id": "architectural-joiner-challenging-a11-s27",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K36",
+    "concept": "K36 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why are horns sometimes left on a manufactured door frame until installation?",
+    "options": [
+      "They permanently increase opening width",
+      "They protect and stabilise the frame during handling and installation before being trimmed as specified",
+      "They replace all installation fixings",
+      "They identify the hinge side only"
+    ],
+    "correct": 1,
+    "explanation": "Horns can protect joints and help maintain frame shape during transport and fitting.",
+    "id": "architectural-joiner-challenging-a11-k36",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K39",
+    "concept": "K39 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should hinge recesses be consistent in depth across a door set?",
+    "options": [
+      "To make the screws easier to paint",
+      "Unequal depths can twist hinge alignment, alter clearances and impair operation",
+      "To increase door mass",
+      "To eliminate the need for pilot holes"
+    ],
+    "correct": 1,
+    "explanation": "Consistent recesses position hinge leaves correctly and maintain alignment and clearances.",
+    "id": "architectural-joiner-challenging-a11-k39",
+    "type": "Knowledge",
+    "status": "approved"
+  }
 ]);
 
 window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",12,[
@@ -2179,6 +3108,79 @@ window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",12,[
     "correct": 1,
     "explanation": "Unsuitable moisture content or distorted components can cause twist, gaps and joint failure after manufacture.",
     "id": "architectural-joiner-approved-a12-k37",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S27",
+    "concept": "S27 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A straight-flight stair string has a knot crossing the narrowest section of a housing. What should the joiner do?",
+    "options": [
+      "Use it if the knot is filled",
+      "Assess against specification and grading requirements, then reject or reposition the component if strength is compromised",
+      "Increase the housing depth",
+      "Hide the knot against the wall"
+    ],
+    "correct": 1,
+    "explanation": "Critical stair components must meet material and structural requirements; defects cannot simply be concealed.",
+    "id": "architectural-joiner-challenging-a12-s27",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S28",
+    "concept": "S28 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When producing repeated spindles for a balustrade, how should consistency be controlled?",
+    "options": [
+      "Mark each spindle independently by eye",
+      "Use verified templates or jigs, controlled machine settings and sample checks throughout production",
+      "Finish all spindles before measuring any",
+      "Allow variation because sanding will correct it"
+    ],
+    "correct": 1,
+    "explanation": "Controlled references and periodic checks prevent drift across repeated components.",
+    "id": "architectural-joiner-challenging-a12-s28",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K36",
+    "concept": "K36 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why must tread and riser housings in stair strings be set out from a common pitch line?",
+    "options": [
+      "To reduce timber moisture movement",
+      "To maintain consistent rise, going and stair geometry across the flight",
+      "To make the strings interchangeable with doors",
+      "To avoid using a setting rod"
+    ],
+    "correct": 1,
+    "explanation": "The pitch line provides the common geometric reference needed for consistent stair dimensions.",
+    "id": "architectural-joiner-challenging-a12-k36",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K37",
+    "concept": "K37 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A moulding profile must match an existing sample. What is the best manufacturing approach?",
+    "options": [
+      "Select the nearest cutter and sand until it looks similar",
+      "Record the profile accurately, confirm dimensions and use suitable tooling or a controlled multi-stage process",
+      "Increase the timber thickness and leave it unfinished",
+      "Copy it freehand onto each component"
+    ],
+    "correct": 1,
+    "explanation": "Accurate capture and controlled tooling are required for repeatable matching profiles.",
+    "id": "architectural-joiner-challenging-a12-k37",
     "type": "Knowledge",
     "status": "approved"
   }
@@ -2221,6 +3223,79 @@ window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",13,[
     "type": "Knowledge",
     "status": "approved"
   }
+,
+  {
+    "ksb": "S28",
+    "concept": "S28 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A timber door is cramped square, but one stile bows after pressure is applied. What should be done?",
+    "options": [
+      "Add more pressure until it straightens",
+      "Release and diagnose component straightness, joint fit and cramping balance before proceeding",
+      "Plane the bow out after finishing",
+      "Fit heavier hinges to correct it"
+    ],
+    "correct": 1,
+    "explanation": "Excess or uneven pressure can distort assembly; the cause must be corrected before the adhesive cures.",
+    "id": "architectural-joiner-challenging-a13-s28",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S29",
+    "concept": "S29 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When fitting a mortice lock, how should weakening of the door stile be minimised?",
+    "options": [
+      "Cut the pocket larger than the case for adjustment",
+      "Mark accurately, use the specified lock and remove only the material required while maintaining edge distances",
+      "Drill through both faces with the largest available bit",
+      "Position the lock beside an existing major joint"
+    ],
+    "correct": 1,
+    "explanation": "Accurate minimal removal and correct positioning preserve the stile and door performance.",
+    "id": "architectural-joiner-challenging-a13-s29",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K37",
+    "concept": "K37 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should door components be conditioned to the intended service environment before final machining and assembly?",
+    "options": [
+      "To make timber permanently waterproof",
+      "To reduce dimensional change after manufacture that could affect clearances and joints",
+      "To increase adhesive open time indefinitely",
+      "To remove the need for sealing"
+    ],
+    "correct": 1,
+    "explanation": "Moisture equilibration reduces later movement that can cause binding, gaps or joint stress.",
+    "id": "architectural-joiner-challenging-a13-k37",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K30",
+    "concept": "K30 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why must intumescent seals and ironmongery match the fire-door evidence?",
+    "options": [
+      "Any seal of the same colour performs identically",
+      "Fire performance applies to the tested or assessed doorset configuration, including compatible components and positions",
+      "Only the door leaf affects fire resistance",
+      "Ironmongery may be changed after installation without review"
+    ],
+    "correct": 1,
+    "explanation": "A fire door is an assembly; unverified substitutions or positions can invalidate its demonstrated performance.",
+    "id": "architectural-joiner-challenging-a13-k30",
+    "type": "Knowledge",
+    "status": "approved"
+  }
 ]);
 
 window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",14,[
@@ -2260,6 +3335,61 @@ window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",14,[
     "type": "Knowledge",
     "status": "approved"
   }
+,
+  {
+    "ksb": "S28",
+    "concept": "S28 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A wall unit carcass is square before the back is fixed. What method best preserves squareness?",
+    "options": [
+      "Fix the back from one corner without rechecking",
+      "Confirm equal diagonals, hold the carcass securely and fix the back in a controlled sequence",
+      "Remove all cramps first",
+      "Fit doors before the back"
+    ],
+    "correct": 1,
+    "explanation": "The back stabilises the carcass, so squareness must be verified and maintained during fixing.",
+    "id": "architectural-joiner-challenging-a14-s28",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K37",
+    "concept": "K37 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should edging and lippings be selected with movement and finishing in mind?",
+    "options": [
+      "Their only purpose is to conceal fixings",
+      "Different materials and grain orientations can move or finish differently, affecting flatness and appearance",
+      "They always eliminate the need for sealing",
+      "Thicker lippings automatically improve fire performance"
+    ],
+    "correct": 1,
+    "explanation": "Compatibility of materials, moisture movement and finish affects the long-term quality of manufactured units.",
+    "id": "architectural-joiner-challenging-a14-k37",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K38",
+    "concept": "K38 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "After sanding, an oiled surface shows dark swirl marks. What is the most likely cause?",
+    "options": [
+      "The oil is too transparent",
+      "Previous coarse sanding scratches were not removed before moving through finer grades",
+      "The timber was planed with the grain",
+      "The final abrasive was too fine to leave any mark"
+    ],
+    "correct": 1,
+    "explanation": "Coarse scratches become more visible under finish; each abrasive stage must remove marks from the previous stage.",
+    "id": "architectural-joiner-challenging-a14-k38",
+    "type": "Knowledge",
+    "status": "approved"
+  }
 ]);
 
 window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",15,[
@@ -2278,6 +3408,43 @@ window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",15,[
     "correct": 0,
     "explanation": "Fixed machinery must have effective guarding, extraction and emergency controls before operation.",
     "id": "architectural-joiner-approved-a15-k31",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S30",
+    "concept": "S30 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Before operating a thicknesser after a blade change, what sequence is most appropriate?",
+    "options": [
+      "Start production immediately at minimum depth",
+      "Complete authorised setup and guard checks, test run safely, machine a sample and verify dimensions before production",
+      "Remove extraction to hear unusual noise",
+      "Feed two components together to test capacity"
+    ],
+    "correct": 1,
+    "explanation": "Post-maintenance checks, guarded test operation and sample verification are required before production use.",
+    "id": "architectural-joiner-challenging-a15-s30",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K31",
+    "concept": "K31 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why must the bridge guard on a surface planer be adjusted close to the workpiece?",
+    "options": [
+      "To increase cutter speed",
+      "To minimise exposed cutter block while allowing the stock to pass safely",
+      "To press the timber flat instead of using correct technique",
+      "To replace the need for push blocks"
+    ],
+    "correct": 1,
+    "explanation": "The guard should expose only the minimum cutter area required; other controls and safe techniques remain necessary.",
+    "id": "architectural-joiner-challenging-a15-k31",
     "type": "Knowledge",
     "status": "approved"
   }
