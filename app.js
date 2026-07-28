@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='2.0.0-phase3i';
+const APP_VERSION='2.0.0-phase3j';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -352,15 +352,31 @@ function walkthroughKnowledge(a){return (a?.ksbs||[]).filter(([code])=>String(co
 function walkthroughComplete(n,code){return !!walkthroughMeta(n)[code]?.blobKey}
 function walkthroughStatus(n){const a=assignment(n),items=walkthroughKnowledge(a);if(!items.length)return 'complete';const done=items.filter(([code])=>walkthroughComplete(n,code)).length;return done===items.length?'complete':done?'incomplete':'none'}
 function walkthroughCount(n){const items=walkthroughKnowledge(assignment(n));return {done:items.filter(([code])=>walkthroughComplete(n,code)).length,total:items.length}}
-async function saveWalkthroughVideo(n,code,file){
- if(!file||!String(file.type||'').startsWith('video/'))return toast('Choose or record a video file');
+async function saveWalkthroughVideo(n,code,video,{name,type}={}){
+ if(!video||!String(type||video.type||'').startsWith('video/'))throw new Error('A valid video recording is required');
+ if(!video.size)throw new Error('The recording is empty');
  const blobKey=`walkthrough-video:${COURSE.id}:${n}:${code}:${uid()}`;
- await putStore(blobKey,file);
+ const storedBlob=video instanceof Blob?video:new Blob([video],{type:type||video.type||'video/webm'});
+ await putStore(blobKey,storedBlob);
+ const verified=await getStore(blobKey);
+ if(!(verified instanceof Blob)||verified.size!==storedBlob.size){
+  try{await deleteStore(blobKey)}catch(error){console.warn(error)}
+  throw new Error('The saved video could not be verified');
+ }
  const meta=walkthroughMeta(n),old=meta[code];
- meta[code]={blobKey,name:file.name||`${code}-walkthrough.mp4`,type:file.type||'video/mp4',size:file.size||0,date:today(),createdAt:Date.now()};
- state.data[walkthroughMetaKey(n)]=meta;await saveData();
+ meta[code]={blobKey,name:name||video.name||`${code}-walkthrough.webm`,type:type||storedBlob.type||'video/webm',size:storedBlob.size,date:today(),createdAt:Date.now()};
+ state.data[walkthroughMetaKey(n)]=meta;
+ try{await saveData()}catch(error){
+  delete meta[code];
+  state.data[walkthroughMetaKey(n)]=meta;
+  try{await deleteStore(blobKey)}catch(cleanupError){console.warn(cleanupError)}
+  throw error;
+ }
  if(old?.blobKey){try{await deleteStore(old.blobKey)}catch(error){console.warn(error)}}
- invalidatePackStatus(n);toast(`${code} walkthrough added`);renderWalkthrough();
+ invalidatePackStatus(n);
+ renderWalkthrough();
+ toast(`${code} walkthrough saved`);
+ return true;
 }
 async function removeWalkthroughVideo(n,code){const meta=walkthroughMeta(n),item=meta[code];if(item?.blobKey){try{await deleteStore(item.blobKey)}catch(error){console.warn(error)}}delete meta[code];state.data[walkthroughMetaKey(n)]=meta;await saveData();invalidatePackStatus(n);toast(`${code} walkthrough removed`);renderWalkthrough()}
 function walkthroughPrompt(code,text,a){return learnerPromptTitle(a.n,code,text)||text}
@@ -392,15 +408,16 @@ async function openWalkthroughRecorder(n,code,text,a,fallbackInput){
   if(!recordedBlob)return;
   const useButton=document.getElementById('walkRecorderUse');
   const retakeButton=document.getElementById('walkRecorderRetake');
-  const ext=recordedBlob.type.includes('mp4')?'mp4':'webm';
-  const file=new File([recordedBlob],`${code}-walkthrough-${Date.now()}.${ext}`,{type:recordedBlob.type||`video/${ext}`});
+  const mime=recordedBlob.type||'video/webm';
+  const ext=mime.includes('mp4')?'mp4':'webm';
+  const recordingName=`${code}-walkthrough-${Date.now()}.${ext}`;
   useButton.disabled=true;
   retakeButton.disabled=true;
   useButton.textContent='Saving video…';
   live.textContent='Saving video…';
   stopTracks();
   try{
-   await saveWalkthroughVideo(n,code,file);
+   await saveWalkthroughVideo(n,code,recordedBlob,{name:recordingName,type:mime});
    if(recordedUrl)URL.revokeObjectURL(recordedUrl);
   }catch(error){
    console.error(error);
