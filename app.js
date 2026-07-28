@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3';
+const APP_VERSION='V1.4';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -407,7 +407,7 @@ async function saveWalkthroughVideo(n,code,video,{name,type}={}){
  invalidatePackStatus(n);
  state.view='walkthrough';state.assignment=n;state.walkthroughCode=null;
  saveNavigationSnapshot(navigationSnapshot(0));
- window.location.reload();
+ renderWalkthrough();
  return true;
 }
 function storedWalkthroughBlob(value,meta){
@@ -420,7 +420,7 @@ async function saveWalkthroughOverall(n){
  const count=walkthroughCount(n);if(!count.done)return toast('Add at least one KSB video before saving the walkthrough');
  const meta=walkthroughMeta(n);meta._saved=true;meta._savedAt=Date.now();state.data[walkthroughMetaKey(n)]=meta;await saveData();invalidatePackStatus(n);state.assignment=n;state.walkthroughCode=null;state.view='assignment';render();
 }
-async function removeWalkthroughVideo(n,code){const meta=walkthroughMeta(n),item=meta[code];if(item?.blobKey){try{await deleteStore(item.blobKey)}catch(error){console.warn(error)}}delete meta[code];meta._saved=false;state.data[walkthroughMetaKey(n)]=meta;await saveData();invalidatePackStatus(n);state.view='walkthrough';state.assignment=n;state.walkthroughCode=null;saveNavigationSnapshot(navigationSnapshot(0));window.location.reload()}
+async function removeWalkthroughVideo(n,code){const meta=walkthroughMeta(n),item=meta[code];if(item?.blobKey){try{await deleteStore(item.blobKey)}catch(error){console.warn(error)}}delete meta[code];meta._saved=false;state.data[walkthroughMetaKey(n)]=meta;await saveData();invalidatePackStatus(n);state.view='walkthrough';state.assignment=n;state.walkthroughCode=null;saveNavigationSnapshot(navigationSnapshot(0));renderWalkthrough()}
 function walkthroughPrompt(code,text,a){return learnerPromptTitle(a.n,code,text)||text}
 function preferredWalkthroughMime(){
  const types=['video/webm;codecs=vp8,opus','video/webm','video/mp4'];
@@ -472,7 +472,7 @@ function renderWalkthrough(){
  document.getElementById('saveWalkthroughOverall').onclick=()=>saveWalkthroughOverall(a.n);
  document.querySelectorAll('[data-record-walk]').forEach(button=>button.onclick=()=>{releaseThumbs();const code=button.dataset.recordWalk,item=items.find(([k])=>k===code),input=document.getElementById(`walkVideoInput-${code}`);openWalkthroughRecorder(a.n,code,item?.[1]||'',a,input)});
  items.forEach(([code])=>{const input=document.getElementById(`walkVideoInput-${code}`);input.onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{await saveWalkthroughVideo(a.n,code,file)}catch(error){console.error('Walkthrough video save failed',error)}}});
- document.querySelectorAll('[data-remove-walk]').forEach(button=>button.onclick=()=>{releaseThumbs();removeWalkthroughVideo(a.n,button.dataset.removeWalk)});
+ document.querySelectorAll('[data-remove-walk]').forEach(button=>button.onclick=async()=>{releaseThumbs();await removeWalkthroughVideo(a.n,button.dataset.removeWalk)});
  document.querySelectorAll('[data-view-walk]').forEach(button=>button.onclick=async()=>{const code=button.dataset.viewWalk,meta=walkthroughMeta(a.n)[code],stored=await getStore(meta?.blobKey),blob=storedWalkthroughBlob(stored,meta);if(!blob)return toast('Video file could not be opened');const url=URL.createObjectURL(blob);app.insertAdjacentHTML('beforeend',`<div class="modal" id="walkVideoModal"><div class="modal-card video-modal"><video controls autoplay playsinline src="${url}"></video><button class="btn secondary" id="closeWalkVideo">Close</button></div></div>`);document.getElementById('closeWalkVideo').onclick=()=>{URL.revokeObjectURL(url);document.getElementById('walkVideoModal').remove()}});
  document.querySelectorAll('[data-walk-thumb]').forEach(async video=>{const code=video.dataset.walkThumb,meta=walkthroughMeta(a.n)[code];try{const stored=await getStore(meta?.blobKey),blob=storedWalkthroughBlob(stored,meta);if(!blob)return;const url=URL.createObjectURL(blob);thumbnailUrls.push(url);video.src=url;video.currentTime=.1;video.addEventListener('loadeddata',()=>{try{video.currentTime=Math.min(.2,video.duration||.2)}catch{}},{once:true})}catch(error){console.warn('Thumbnail unavailable',error)}});
 }
