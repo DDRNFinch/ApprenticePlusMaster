@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.4';
+const APP_VERSION='V1.5';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -406,8 +406,8 @@ async function saveWalkthroughVideo(n,code,video,{name,type}={}){
  if(old?.blobKey){try{await deleteStore(old.blobKey)}catch(error){console.warn(error)}}
  invalidatePackStatus(n);
  state.view='walkthrough';state.assignment=n;state.walkthroughCode=null;
- saveNavigationSnapshot(navigationSnapshot(0));
- renderWalkthrough();
+ saveNavigationSnapshot(navigationSnapshot(window.scrollY||0));
+ window.location.reload();
  return true;
 }
 function storedWalkthroughBlob(value,meta){
@@ -420,7 +420,7 @@ async function saveWalkthroughOverall(n){
  const count=walkthroughCount(n);if(!count.done)return toast('Add at least one KSB video before saving the walkthrough');
  const meta=walkthroughMeta(n);meta._saved=true;meta._savedAt=Date.now();state.data[walkthroughMetaKey(n)]=meta;await saveData();invalidatePackStatus(n);state.assignment=n;state.walkthroughCode=null;state.view='assignment';render();
 }
-async function removeWalkthroughVideo(n,code){const meta=walkthroughMeta(n),item=meta[code];if(item?.blobKey){try{await deleteStore(item.blobKey)}catch(error){console.warn(error)}}delete meta[code];meta._saved=false;state.data[walkthroughMetaKey(n)]=meta;await saveData();invalidatePackStatus(n);state.view='walkthrough';state.assignment=n;state.walkthroughCode=null;saveNavigationSnapshot(navigationSnapshot(0));renderWalkthrough()}
+async function removeWalkthroughVideo(n,code){const meta=walkthroughMeta(n),item=meta[code];if(item?.blobKey){try{await deleteStore(item.blobKey)}catch(error){console.warn(error)}}delete meta[code];meta._saved=false;state.data[walkthroughMetaKey(n)]=meta;await saveData();invalidatePackStatus(n);state.view='walkthrough';state.assignment=n;state.walkthroughCode=null;saveNavigationSnapshot(navigationSnapshot(window.scrollY||0));window.location.reload()}
 function walkthroughPrompt(code,text,a){return learnerPromptTitle(a.n,code,text)||text}
 function preferredWalkthroughMime(){
  const types=['video/webm;codecs=vp8,opus','video/webm','video/mp4'];
@@ -456,7 +456,7 @@ async function openWalkthroughRecorder(n,code,text,a,fallbackInput){
   const videoToSave=recordedBlob;
   useButton.disabled=true;retakeButton.disabled=true;useButton.textContent='Saving…';live.textContent='Saving…';
   close();
-  state.view='walkthrough';state.assignment=n;renderWalkthrough();
+  state.view='walkthrough';state.assignment=n;state.walkthroughCode=null;
   try{await saveWalkthroughVideo(n,code,videoToSave,{name:recordingName,type:mime})}
   catch(error){console.error('Walkthrough video save failed',error)}
  };

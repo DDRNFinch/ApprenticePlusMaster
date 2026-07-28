@@ -1,3 +1,10 @@
+# V1.5
+
+- Save video now reloads the current Video Walkthrough page only after IndexedDB storage completes.
+- Remove now reloads the current Video Walkthrough page only after IndexedDB deletion and metadata saving complete.
+- Navigation state is saved before reload so the learner returns to the same assignment and walkthrough.
+- Removed the premature internal render that left the old tile markup visible.
+
 # V1.3
 
 - Video Walkthrough now reloads the current walkthrough page after a video is saved.

@@ -1,4 +1,4 @@
-const CACHE='apprentice-plus-v1-4';
+const CACHE='apprentice-plus-v1-5';
 const APP_SHELL=['./','./index.html','./styles.css','./app.js','./manifest.json','./pdf-generator.js','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
 
 self.addEventListener('install',event=>{
