@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.11';
+const APP_VERSION='V1.12';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -1009,49 +1009,29 @@ function renderNotepad(){
 function noteEditor(note){return `<section class="card panel note-editor"><div class="panel-body"><div class="field"><label>Note name</label><input class="input" id="noteTitle" maxlength="100" placeholder="Name this note" value="${esc(note.title)}"></div><div class="field"><label>Note</label><textarea class="input note-text" id="noteText" placeholder="Write your note here...">${esc(note.text)}</textarea></div><div class="note-capture-grid" aria-label="Add to note"><label class="capture-button" title="Take photo" aria-label="Take photo">${appIcon('camera')}<input class="hide" id="notePhotos" type="file" accept="image/*" capture="environment" multiple></label><label class="capture-button" title="Record video" aria-label="Record video">${appIcon('video')}<input class="hide" id="noteVideos" type="file" accept="video/*" capture="environment" multiple></label><button type="button" class="capture-button" id="noteVoiceRecord" title="Voice recording" aria-label="Voice recording">${appIcon('microphone')}</button><label class="capture-button" title="Choose from gallery" aria-label="Choose from gallery">${appIcon('gallery')}<input class="hide" id="noteGallery" type="file" accept="image/*,video/*" multiple></label></div>${(note.media||[]).length?`<div class="note-open-media">${(note.media||[]).map(m=>`<div class="note-open-media-item">${m.type==='image'?`<img data-note-media="${m.blobKey}" alt="${esc(m.name)}">`:m.type==='video'?`<video data-note-media="${m.blobKey}" controls playsinline></video>`:`<audio data-note-media="${m.blobKey}" controls></audio>`}<div class="note-media-row"><span>${noteMediaLabel(m.type)} · ${esc(m.name)}</span><button class="link-button danger" data-remove-note-media="${m.id}">Remove</button></div></div>`).join('')}</div>`:''}</div><div class="btn-row"><button class="btn" id="saveNote">Save note</button><button class="btn secondary" id="cancelNote">Cancel</button>${note.title?'<button class="btn secondary danger-note" id="deleteCurrentNote">Delete note</button>':''}</div></section>`}
 function noteSummaryIcons(note){const media=note.media||[],icons=[];if(media.some(m=>m.type==='image'))icons.push(appIcon('camera'));if(media.some(m=>m.type==='video'))icons.push(appIcon('video'));if(media.some(m=>m.type==='audio'))icons.push(appIcon('microphone'));if(String(note.text||'').trim())icons.push(appIcon('note'));return icons.join('')}
 function noteCard(note){return `<button class="note-card note-card-summary" data-edit-note="${note.id}"><div class="note-card-head"><div><h3>${esc(note.title||'Untitled note')}</h3><small>${noteDate(note.updatedAt||note.createdAt)}</small><div class="note-summary-icons" aria-label="Saved content">${noteSummaryIcons(note)}</div></div><span class="resource-arrow">›</span></div></button>`}
-function preferredAudioMime(){
- const types=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus'];
- return types.find(type=>window.MediaRecorder&&MediaRecorder.isTypeSupported?.(type))||'';
-}
 async function startNoteVoiceRecorder(note,titleInput,textInput){
- if(!window.isSecureContext){toast('Microphone recording requires the secure HTTPS version of Apprentice+');return}
- if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined'){toast('Voice recording is not supported on this device');return}
- let stream;
- try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}})}
- catch(error){console.error('Microphone permission error',error);toast(error?.name==='NotAllowedError'?'Microphone permission is blocked. Allow it in the Apprentice+ site permissions.':'The microphone could not be opened');return}
- const mime=preferredAudioMime();let recorder;
- try{recorder=new MediaRecorder(stream,mime?{mimeType:mime,audioBitsPerSecond:64000}:{audioBitsPerSecond:64000})}
- catch(error){console.error('MediaRecorder error',error);stream.getTracks().forEach(track=>track.stop());toast('Voice recording could not start');return}
- const chunks=[];let seconds=0,timer=null,finished=false;
- app.insertAdjacentHTML('beforeend',`<div class="modal" id="noteVoiceModal"><div class="modal-card note-voice-modal"><div class="number">Voice recording</div><h2 id="noteVoiceStatus">Recording…</h2><div class="note-voice-timer" id="noteVoiceTimer">00:00</div><p class="muted">Speak clearly. Press Stop when finished.</p><div class="btn-row"><button class="btn" id="stopNoteVoice">Stop and save</button><button class="btn secondary" id="cancelNoteVoice">Cancel</button></div></div></div>`);
- const modal=document.getElementById('noteVoiceModal'),status=document.getElementById('noteVoiceStatus'),timerEl=document.getElementById('noteVoiceTimer');
- const stopTracks=()=>stream.getTracks().forEach(track=>track.stop());
- const finish=cancelled=>{if(finished)return;finished=true;clearInterval(timer);try{if(recorder.state!=='inactive')recorder.stop()}catch{};if(cancelled){stopTracks();modal?.remove()}};
- document.getElementById('stopNoteVoice').onclick=()=>{status.textContent='Saving recording…';document.getElementById('stopNoteVoice').disabled=true;finish(false)};
- document.getElementById('cancelNoteVoice').onclick=()=>finish(true);
- recorder.ondataavailable=event=>{if(event.data?.size)chunks.push(event.data)};
- recorder.onerror=event=>{console.error('Voice recorder error',event.error||event);clearInterval(timer);stopTracks();modal?.remove();toast('Voice recording failed')};
+ if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined')return toast('Voice recording is not supported in this browser');
+ let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}catch{return toast('Microphone permission was not granted')}
+ const chunks=[],started=Date.now();let recorder;try{recorder=new MediaRecorder(stream)}catch{stream.getTracks().forEach(t=>t.stop());return toast('Unable to start the microphone')}
+ app.insertAdjacentHTML('beforeend',`<div class="modal" id="recordingModal"><div class="modal-card recording-modal"><h2>Voice recording</h2><div class="recording-pulse"></div><p class="muted">Record your note, then press Stop recording.</p><button class="btn danger" id="stopRecording">Stop recording</button><button class="btn secondary" id="cancelRecording">Cancel</button></div></div>`);
+ const modal=document.getElementById('recordingModal');let cancelled=false;
+ document.getElementById('cancelRecording').onclick=()=>{cancelled=true;recorder.stop()};
+ document.getElementById('stopRecording').onclick=()=>recorder.stop();
+ recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
  recorder.onstop=async()=>{
-  stopTracks();
-  if(!finished||!modal?.isConnected)return;
+  stream.getTracks().forEach(t=>t.stop());modal?.remove();if(cancelled)return;
   try{
-   const blob=new Blob(chunks,{type:recorder.mimeType||mime||'audio/webm'});
+   const blob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});
    if(!blob.size)throw new Error('Empty recording');
-   note.title=titleInput.value;
-   note.text=textInput.value;
+   note.title=titleInput.value;note.text=textInput.value;
    const blobKey=`notepad:${note.id}:audio:${uid()}`;
    await putStore(blobKey,blob);
-   note.media=[...(note.media||[]),{id:uid(),type:'audio',blobKey,name:`Voice recording ${new Date().toLocaleString('en-GB')}`,mime:blob.type,createdAt:Date.now()}];
-   note.updatedAt=Date.now();
-   state.data[NOTEPAD_KEY]=learnerNotes().map(n=>n.id===note.id?note:n);
-   await saveData();
-   modal.remove();
-   render();
-   toast('Voice recording saved');
-  }catch(error){console.error('Voice save error',error);modal?.remove();toast('Voice recording could not be saved')}
+   const seconds=Math.max(1,Math.round((Date.now()-started)/1000));
+   note.media=[...(note.media||[]),{id:uid(),type:'audio',blobKey,name:`Voice recording ${new Date().toLocaleString('en-GB')}`,mime:blob.type,duration:formatDuration(seconds),createdAt:Date.now()}];
+   note.updatedAt=Date.now();state.data[NOTEPAD_KEY]=learnerNotes().map(n=>n.id===note.id?note:n);await saveData();render();toast('Voice recording saved');
+  }catch(error){console.error('Voice save error',error);toast('Voice recording could not be saved')}
  };
- try{recorder.start(500);timer=setInterval(()=>{seconds++;timerEl.textContent=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`},1000)}
- catch(error){console.error(error);stopTracks();modal.remove();toast('Voice recording could not start')}
+ recorder.start();
 }
 function bindNoteEditor(note){
  const title=document.getElementById('noteTitle'),text=document.getElementById('noteText');

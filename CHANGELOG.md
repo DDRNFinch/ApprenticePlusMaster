@@ -1,4 +1,4 @@
-## V1.11
+## V1.12
 - Replaced the Toolbox audio file input with a true in-app microphone recorder.
 - Added permission handling, timer, stop/cancel controls, Android-compatible audio formats, IndexedDB storage and playback.
 - Preserves typed note name and text when a recording is added.
