@@ -1,3 +1,9 @@
+# V1.3
+
+- Video Walkthrough now reloads the current walkthrough page after a video is saved.
+- Removing a walkthrough video now reloads the current walkthrough page immediately.
+- Navigation state is saved before reloading so the learner remains on the same assignment walkthrough.
+
 # v2.0.0-phase3i
 
 - Keeps the walkthrough recorder open while a video is being written to local storage.
