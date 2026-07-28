@@ -6408,6 +6408,114 @@ window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",1,[
     "id": "pmo-challenging-a1-k4",
     "type": "Knowledge",
     "status": "approved"
+  },
+  {
+    "ksb": "K3",
+    "concept": "K3 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A product label requires ventilation and chemical-resistant gloves. Which action best meets the operative’s legal responsibility?",
+    "options": [
+      "Use ordinary gloves for a shorter period",
+      "Follow the COSHH controls and stop if the specified ventilation cannot be provided",
+      "Use the product outdoors without reading the assessment",
+      "Ask the customer to confirm the product is safe"
+    ],
+    "correct": 1,
+    "explanation": "COSHH controls must be followed; work should not proceed when required exposure controls are unavailable.",
+    "id": "pmo-set2-a1-k3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K4",
+    "concept": "K4 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A task has low likelihood of injury but could cause a fatal fall. How should this affect the risk assessment?",
+    "options": [
+      "The risk is low because likelihood is low",
+      "The severity must be considered, so strong controls may still be required",
+      "Only previous accident history matters",
+      "The task can proceed if completed quickly"
+    ],
+    "correct": 1,
+    "explanation": "Risk considers both likelihood and severity; potentially fatal consequences justify robust controls even when likelihood is low.",
+    "id": "pmo-set2-a1-k4",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S3",
+    "concept": "S3 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "An operative discovers possible asbestos-containing board while preparing a repair. What action demonstrates compliance?",
+    "options": [
+      "Dampen it and continue carefully",
+      "Stop work, prevent disturbance and follow the asbestos procedure",
+      "Remove a small sample with hand tools",
+      "Cover it with new board"
+    ],
+    "correct": 1,
+    "explanation": "Suspected asbestos must not be disturbed; work should stop and the approved management process followed.",
+    "id": "pmo-set2-a1-s3",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S4",
+    "concept": "S4 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A risk assessment requires exclusion barriers, but furniture prevents the specified layout. What should the operative do?",
+    "options": [
+      "Start and move barriers as people approach",
+      "Reorganise the area or obtain a reviewed safe method before starting",
+      "Replace barriers with verbal warnings",
+      "Reduce the task duration"
+    ],
+    "correct": 1,
+    "explanation": "The workplace must be organised so required controls are effective; changes need proper review, not informal omission.",
+    "id": "pmo-set2-a1-s4",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S6",
+    "concept": "S6 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "After ceiling drilling, what completes safe reinstatement of the work area?",
+    "options": [
+      "Remove only the power tool",
+      "Make the repair safe, remove dust and waste, restore access, remove controls only when hazards are gone and check the area",
+      "Leave barriers for the customer",
+      "Sweep visible debris into a corner"
+    ],
+    "correct": 1,
+    "explanation": "Safe practice includes preparation, controls, housekeeping and full reinstatement before reopening the area.",
+    "id": "pmo-set2-a1-s6",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A supervisor suggests skipping dust extraction for one quick cut. What response best demonstrates B2?",
+    "options": [
+      "Agree because exposure is brief",
+      "Insist on the required controls and stop until they are available",
+      "Use extraction only if the customer complains",
+      "Ask a colleague to make the cut"
+    ],
+    "correct": 1,
+    "explanation": "Prioritising health and safety means applying controls consistently, not trading them for speed.",
+    "id": "pmo-set2-a1-b2",
+    "type": "Behaviour",
+    "status": "approved"
   }
 ]);
 
@@ -6536,6 +6644,114 @@ window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",2,[
     "explanation": "Occupied premises require controlled access, suitable work-at-height equipment, protection of adjacent areas and consideration of vulnerable users.",
     "id": "pmo-challenging-a2-k6",
     "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K1",
+    "concept": "K1 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A school boiler is serviced every August, but a failed pump is replaced immediately in January. How should these tasks be classified?",
+    "options": [
+      "Both are reactive maintenance",
+      "August is PPM; January is reactive maintenance",
+      "August is reactive; January is PPM",
+      "Both are PPM because they involve equipment"
+    ],
+    "correct": 1,
+    "explanation": "Scheduled servicing intended to prevent failure is PPM; an unplanned response to a failure is reactive maintenance.",
+    "id": "pmo-set2-a2-k1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K2",
+    "concept": "K2 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Before drilling into a wall in a 1960s concrete-framed residential block, why must the operative confirm the wall construction and building information?",
+    "options": [
+      "To choose the quickest drill speed",
+      "To avoid damaging structural, fire-stopping or concealed service elements",
+      "To decide whether the tenant should remain home",
+      "To calculate the building insurance value"
+    ],
+    "correct": 1,
+    "explanation": "The wall may contain structural elements, compartmentation or concealed services whose damage could affect building safety.",
+    "id": "pmo-set2-a2-k2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K6",
+    "concept": "K6 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Maintenance is required in a busy corridor beside a glazed display. Which setup best protects users and adjacent property?",
+    "options": [
+      "Place tools against the display and work between passing users",
+      "Create a controlled work zone, protect the display and use suitable access equipment",
+      "Ask users to step over the tools",
+      "Work without barriers during quieter moments"
+    ],
+    "correct": 1,
+    "explanation": "A controlled, tidy area with suitable access and protection prevents injury and damage to adjacent surfaces.",
+    "id": "pmo-set2-a2-k6",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S1",
+    "concept": "S1 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A repair requires isolating water, removing a unit, repairing plaster and refitting the unit. Which plan is most effective?",
+    "options": [
+      "Repair plaster before isolating water",
+      "Confirm information and materials, isolate safely, remove carefully, repair in sequence, test and reinstate",
+      "Remove the unit first and decide the sequence later",
+      "Ask each trade to work independently without coordination"
+    ],
+    "correct": 1,
+    "explanation": "A logical sequence controls hazards, prevents rework and includes testing and reinstatement.",
+    "id": "pmo-set2-a2-s1",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S2",
+    "concept": "S2 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A replacement door closer visually matches the old one but has a lower fire-door rating. What should the operative select?",
+    "options": [
+      "The cheaper matching closer",
+      "A compatible component meeting the door specification and manufacturer requirements",
+      "Any closer with the same screw spacing",
+      "The old closer with added lubricant"
+    ],
+    "correct": 1,
+    "explanation": "Components must comply with the relevant specification and preserve the performance of the assembly.",
+    "id": "pmo-set2-a2-s2",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A completed repair passes an initial check, but the operative notices a minor defect before leaving. What demonstrates ownership?",
+    "options": [
+      "Leave because the main fault is fixed",
+      "Correct the defect, retest and update the record",
+      "Wait for the customer to report it",
+      "Remove the defect from the job notes"
+    ],
+    "correct": 1,
+    "explanation": "Taking responsibility includes identifying and correcting deficiencies before completion.",
+    "id": "pmo-set2-a2-b3",
+    "type": "Behaviour",
     "status": "approved"
   }
 ]);
@@ -6666,6 +6882,114 @@ window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",3,[
     "id": "pmo-challenging-a3-k30",
     "type": "Knowledge",
     "status": "approved"
+  },
+  {
+    "ksb": "K5",
+    "concept": "K5 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A repair to a fire-resisting door in a higher-risk building is outside the operative’s competence. What is the correct response?",
+    "options": [
+      "Make a temporary alteration and record it later",
+      "Escalate the work and preserve the door’s certified performance",
+      "Replace only the visible damaged part",
+      "Use any component that appears equivalent"
+    ],
+    "correct": 1,
+    "explanation": "Regulated safety-critical work must maintain compliance and be completed by competent persons using suitable certified components.",
+    "id": "pmo-set2-a3-k5",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K23",
+    "concept": "K23 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Manufacturer guidance conflicts with an old site note for installing a proprietary fire-stopping product. Which source should govern the work?",
+    "options": [
+      "The old note because it is already printed",
+      "Current approved technical information, specification and relevant certification",
+      "A colleague’s memory",
+      "A generic online video"
+    ],
+    "correct": 1,
+    "explanation": "Current authoritative product data, project specifications and certification should be used for safety-critical installation.",
+    "id": "pmo-set2-a3-k23",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K30",
+    "concept": "K30 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A vulnerable resident discloses that a carer is deliberately preventing essential repairs. What should the operative do?",
+    "options": [
+      "Confront the carer immediately",
+      "Follow the organisation’s safeguarding reporting procedure and record factual information securely",
+      "Ignore it because it is not a maintenance issue",
+      "Discuss it with other residents"
+    ],
+    "correct": 1,
+    "explanation": "Safeguarding concerns must be escalated through approved procedures while maintaining confidentiality and factual records.",
+    "id": "pmo-set2-a3-k30",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S5",
+    "concept": "S5 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A repair would reduce the width of a protected escape route below the approved requirement. What should the operative do?",
+    "options": [
+      "Complete it because the change is small",
+      "Stop and seek instruction so the work remains compliant",
+      "Record it only after completion",
+      "Use thinner decorative trim without approval"
+    ],
+    "correct": 1,
+    "explanation": "Work must comply with regulatory requirements; potentially non-compliant changes require escalation and authorised design guidance.",
+    "id": "pmo-set2-a3-s5",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S19",
+    "concept": "S19 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A proprietary damp-proofing system is proposed. How should the operative use technical information before work?",
+    "options": [
+      "Rely on the product name",
+      "Check current data sheets, substrate requirements, limitations and application instructions against the job",
+      "Use the same method as ordinary paint",
+      "Follow a social media demonstration"
+    ],
+    "correct": 1,
+    "explanation": "Technical literature must be used to confirm suitability, preparation, limitations and installation requirements.",
+    "id": "pmo-set2-a3-s19",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "B5",
+    "concept": "B5 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A colleague repeatedly excludes an apprentice with limited English from toolbox discussions. What should an inclusive operative do?",
+    "options": [
+      "Accept it to save time",
+      "Support accessible communication and challenge or report exclusion through the correct route",
+      "Give the apprentice only manual tasks",
+      "Discuss the issue with customers"
+    ],
+    "correct": 1,
+    "explanation": "Inclusive behaviour actively enables participation and addresses unfair exclusion appropriately.",
+    "id": "pmo-set2-a3-b5",
+    "type": "Behaviour",
+    "status": "approved"
   }
 ]);
 
@@ -6741,6 +7065,78 @@ window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",4,[
     "id": "pmo-challenging-a4-k8",
     "type": "Knowledge",
     "status": "approved"
+  },
+  {
+    "ksb": "K7",
+    "concept": "K7 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A multi-tool blade is rated for timber but the repair involves a concealed metal fixing. What is the safest decision?",
+    "options": [
+      "Increase speed to cut through both materials",
+      "Select a suitable blade and verify the tool’s guard and condition",
+      "Remove the guard for better visibility",
+      "Apply more force at low speed"
+    ],
+    "correct": 1,
+    "explanation": "Tools and accessories must be suitable for the material and used with safeguards correctly fitted.",
+    "id": "pmo-set2-a4-k7",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K8",
+    "concept": "K8 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "After isolating a circuit, the indicator on the local switch goes out. What must happen before touching conductors?",
+    "options": [
+      "Assume isolation is complete",
+      "Prove the tester, test for dead, then re-prove the tester",
+      "Remove the fuse and begin immediately",
+      "Ask another operative whether the circuit is live"
+    ],
+    "correct": 1,
+    "explanation": "Safe isolation requires an approved test-for-dead procedure using a proven voltage indicator.",
+    "id": "pmo-set2-a4-k8",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S7",
+    "concept": "S7 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A circular saw guard sticks during the pre-use check. What is the correct action?",
+    "options": [
+      "Manually lift it for each cut",
+      "Remove the saw from use and report or repair it through the approved process",
+      "Lubricate it while running",
+      "Use it only for shallow cuts"
+    ],
+    "correct": 1,
+    "explanation": "Defective safeguards make equipment unsafe; it must be removed from use until correctly repaired.",
+    "id": "pmo-set2-a4-s7",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S8",
+    "concept": "S8 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which sequence best demonstrates safe electrical isolation?",
+    "options": [
+      "Switch off locally, remove cover, test later",
+      "Identify supply, isolate, secure against reconnection, prove tester, test dead, re-prove tester",
+      "Turn off equipment and place a note nearby",
+      "Ask the occupier not to use the circuit"
+    ],
+    "correct": 1,
+    "explanation": "Safe isolation requires positive identification, secure isolation and proven testing for dead.",
+    "id": "pmo-set2-a4-s8",
+    "type": "Skill",
+    "status": "approved"
   }
 ]);
 
@@ -6815,6 +7211,78 @@ window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",5,[
     "explanation": "Emergency systems must be tested, failures recorded and corrective action initiated promptly to maintain safe escape arrangements.",
     "id": "pmo-challenging-a5-k9",
     "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K9",
+    "concept": "K9 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "An emergency exit sign remains illuminated but points toward a route now blocked by refurbishment. What is the key maintenance concern?",
+    "options": [
+      "The lamp is working, so no action is needed",
+      "The sign may dangerously misdirect occupants and must be reported and corrected",
+      "The sign only matters during night shifts",
+      "Cover the sign until refurbishment ends"
+    ],
+    "correct": 1,
+    "explanation": "Emergency signage must accurately identify a safe route; illuminated but incorrect signage can increase risk.",
+    "id": "pmo-set2-a5-k9",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K31",
+    "concept": "K31 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "An operative has watched training on fire-door inspection but has not been assessed as competent. What should CPD lead them to do?",
+    "options": [
+      "Carry out all inspections independently",
+      "Recognise their current limit, seek supervised experience or assessment, and escalate work meanwhile",
+      "Assume the certificate grants authority",
+      "Avoid any further learning"
+    ],
+    "correct": 1,
+    "explanation": "CPD improves knowledge but does not automatically confer competence or authority; limits must still be recognised.",
+    "id": "pmo-set2-a5-k31",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S9",
+    "concept": "S9 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "During an emergency-light test, one fitting illuminates but fails before the required duration. What should be recorded?",
+    "options": [
+      "Pass, because it initially illuminated",
+      "Fail, identify the location and defect, and report corrective action required",
+      "No result until the next annual test",
+      "Replace the test label only"
+    ],
+    "correct": 1,
+    "explanation": "Emergency systems must meet their specified test performance; failures require accurate recording and escalation.",
+    "id": "pmo-set2-a5-s9",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "B6",
+    "concept": "B6 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "An operative repeatedly encounters unfamiliar smart-building controls. What best demonstrates B6?",
+    "options": [
+      "Continue by trial and error",
+      "Seek relevant training, supervised practice and updated technical guidance",
+      "Refuse all future digital tasks",
+      "Rely on old instructions for conventional systems"
+    ],
+    "correct": 1,
+    "explanation": "Seeking structured learning develops competence safely and supports changing technology.",
+    "id": "pmo-set2-a5-b6",
+    "type": "Behaviour",
     "status": "approved"
   }
 ]);
@@ -6927,6 +7395,96 @@ window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",6,[
     "id": "pmo-challenging-a6-k12",
     "type": "Knowledge",
     "status": "approved"
+  },
+  {
+    "ksb": "K10",
+    "concept": "K10 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A leaking basin tap has local service valves, but one valve will not close fully. What should the operative do before dismantling the tap?",
+    "options": [
+      "Continue because the leak is small",
+      "Isolate at a reliable upstream point and safely relieve pressure",
+      "Tighten the tap while the supply remains live",
+      "Block the outlet with cloth"
+    ],
+    "correct": 1,
+    "explanation": "The supply must be reliably isolated and pressure relieved before components are removed.",
+    "id": "pmo-set2-a6-k10",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K11",
+    "concept": "K11 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Several ground-floor appliances discharge slowly after heavy rain, while upper-floor appliances drain normally. Which fault is most likely?",
+    "options": [
+      "A local tap washer fault",
+      "Restriction or surcharge in the below-ground drainage serving the building",
+      "Low mains water pressure",
+      "A defective roof vent tile"
+    ],
+    "correct": 1,
+    "explanation": "Multiple low-level drainage symptoms during rainfall suggest a downstream below-ground restriction or surcharge.",
+    "id": "pmo-set2-a6-k11",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K12",
+    "concept": "K12 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why is simply raising stored hot-water temperature not always a complete Legionella control?",
+    "options": [
+      "Temperature has no effect on bacteria",
+      "Control also depends on circulation, avoiding stagnation, monitoring and competent risk management",
+      "Only cold water systems present risk",
+      "Certification removes the need for checks"
+    ],
+    "correct": 1,
+    "explanation": "Water hygiene requires a managed system including temperature control, circulation, monitoring and prevention of stagnation.",
+    "id": "pmo-set2-a6-k12",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S10",
+    "concept": "S10 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "After replacing a fill valve, what should the operative do before closing the job?",
+    "options": [
+      "Restore water and leave immediately",
+      "Restore supply gradually, check operation, leaks and water level, then reinstate the area",
+      "Increase pressure to test faster",
+      "Seal the access panel before testing"
+    ],
+    "correct": 1,
+    "explanation": "Repairs must be functionally tested and checked for leakage before access is closed and the area reinstated.",
+    "id": "pmo-set2-a6-s10",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S11",
+    "concept": "S11 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A drain blockage is cleared, but the same chamber rapidly fills again. What is the best next action?",
+    "options": [
+      "Continue rodding indefinitely",
+      "Stop, record findings and escalate for further investigation of a downstream defect",
+      "Add chemical cleaner",
+      "Leave the cover open to release pressure"
+    ],
+    "correct": 1,
+    "explanation": "Rapid recurrence suggests a wider defect requiring competent investigation rather than repeated local clearance.",
+    "id": "pmo-set2-a6-s11",
+    "type": "Skill",
+    "status": "approved"
   }
 ]);
 
@@ -6983,6 +7541,78 @@ window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",7,[
     "explanation": "Environmental controls rely on accurate sensors and control signals. Incorrect feedback can cause unnecessary heating and energy use.",
     "id": "pmo-challenging-a7-k13",
     "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K13",
+    "concept": "K13 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A room overheats even though its sensor shows the set temperature has been reached. Which BEMS fault should be investigated first?",
+    "options": [
+      "The fire alarm battery",
+      "Whether the sensor, controller or actuator is incorrectly signalling the heating valve",
+      "The external drainage gradient",
+      "The emergency lighting duration"
+    ],
+    "correct": 1,
+    "explanation": "Environmental systems rely on sensors, controllers and actuators; a fault in this control chain can cause overheating.",
+    "id": "pmo-set2-a7-k13",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K25",
+    "concept": "K25 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "The same door closer fault recurs in several buildings. Which action best demonstrates continuous improvement?",
+    "options": [
+      "Repair each closer without recording the cause",
+      "Analyse failure patterns, review specification and installation, then update the maintenance process",
+      "Replace all doors regardless of condition",
+      "Reduce inspection frequency"
+    ],
+    "correct": 1,
+    "explanation": "Continuous improvement uses evidence from recurring faults to change specifications, methods or controls.",
+    "id": "pmo-set2-a7-k25",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S12",
+    "concept": "S12 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A ventilation unit is isolated and its filter replaced. What should happen before it is returned to service?",
+    "options": [
+      "Run it with the cover removed",
+      "Confirm components and guards are secure, restore supply and verify operation against the required settings",
+      "Increase fan speed above specification",
+      "Reset all controls to factory defaults"
+    ],
+    "correct": 1,
+    "explanation": "Environmental equipment must be safely reassembled and functionally tested against the intended settings.",
+    "id": "pmo-set2-a7-s12",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S21",
+    "concept": "S21 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "After repairing an automatic door closer, how should the operative inspect their work?",
+    "options": [
+      "Check appearance only",
+      "Test closing from relevant opening angles, confirm latching, clearances and specification, and rectify defects",
+      "Ask the customer whether it looks correct",
+      "Wait for the next complaint"
+    ],
+    "correct": 1,
+    "explanation": "Inspection must verify performance against the specification, not merely appearance.",
+    "id": "pmo-set2-a7-s21",
+    "type": "Skill",
     "status": "approved"
   }
 ]);
@@ -7077,6 +7707,114 @@ window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",8,[
     "id": "pmo-challenging-a8-k28",
     "type": "Knowledge",
     "status": "approved"
+  },
+  {
+    "ksb": "K14",
+    "concept": "K14 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A fire door closes but rebounds and remains slightly open. Why is adjusting only the latch potentially inadequate?",
+    "options": [
+      "The paint colour may be incorrect",
+      "The closer, hinges, seals, alignment and gaps all affect compliant performance",
+      "The door should always be wedged open",
+      "Only the glazing matters"
+    ],
+    "correct": 1,
+    "explanation": "A fire door is an assembly; closing action, alignment, gaps, seals and hardware collectively determine performance.",
+    "id": "pmo-set2-a8-k14",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K27",
+    "concept": "K27 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "How should an operative explain a failed thermostatic mixing valve to a resident?",
+    "options": [
+      "Use only specialist abbreviations",
+      "Explain the safety impact in plain language, then use technical terms in the formal report",
+      "Avoid explaining until the repair is complete",
+      "Give the resident the manufacturer’s full data sheet without discussion"
+    ],
+    "correct": 1,
+    "explanation": "Communication should suit the audience while technical terminology is retained where needed for accurate records.",
+    "id": "pmo-set2-a8-k27",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K28",
+    "concept": "K28 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A repair cannot be completed because a specialist part is unavailable. Which update best supports customer service?",
+    "options": [
+      "Say only that the job is incomplete",
+      "Explain what was found, any temporary safety action, the next step and expected communication arrangements",
+      "Advise the customer to search for the part",
+      "Close the job without notes"
+    ],
+    "correct": 1,
+    "explanation": "Customers need clear, accurate and timely information about findings, safety, next actions and follow-up.",
+    "id": "pmo-set2-a8-k28",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S13",
+    "concept": "S13 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A replacement hinge leaves a door binding at the head. Which action best demonstrates competent joinery repair?",
+    "options": [
+      "Plane the door immediately without checks",
+      "Check hinge position, recess depth, frame alignment and clearances before removing material",
+      "Fit a stronger closer",
+      "Increase the latch recess"
+    ],
+    "correct": 1,
+    "explanation": "Accurate diagnosis and adjustment should precede irreversible removal of material.",
+    "id": "pmo-set2-a8-s13",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S23",
+    "concept": "S23 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A technical fault must be handed over to an electrician while a resident is present. What is the best communication approach?",
+    "options": [
+      "Use the same technical detail for everyone",
+      "Give the electrician precise technical findings and explain the impact and next steps to the resident in plain language",
+      "Speak only to the resident",
+      "Avoid documenting the handover"
+    ],
+    "correct": 1,
+    "explanation": "Communication should be adapted to each audience while preserving accurate technical information.",
+    "id": "pmo-set2-a8-s23",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S24",
+    "concept": "S24 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A resident is unhappy that only a temporary repair can be completed. What should the operative say?",
+    "options": [
+      "Promise a permanent repair date without confirmation",
+      "Explain the temporary measure, its limitations, safety advice and the confirmed follow-up process",
+      "State that another team is responsible and leave",
+      "Avoid mentioning limitations"
+    ],
+    "correct": 1,
+    "explanation": "Good customer feedback is honest, clear and includes limitations, safety and next steps.",
+    "id": "pmo-set2-a8-s24",
+    "type": "Skill",
+    "status": "approved"
   }
 ]);
 
@@ -7170,6 +7908,96 @@ window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",9,[
     "id": "pmo-challenging-a9-k16",
     "type": "Knowledge",
     "status": "approved"
+  },
+  {
+    "ksb": "K15",
+    "concept": "K15 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A repaired plaster patch repeatedly develops a hairline crack along the joint. What preparation is most likely missing?",
+    "options": [
+      "Applying a thicker final coat only",
+      "Stabilising the background and reinforcing the joint where movement occurs",
+      "Using gloss paint before plastering",
+      "Increasing room temperature during mixing"
+    ],
+    "correct": 1,
+    "explanation": "Recurring joint cracks often require a sound background and reinforcement rather than simply adding more finish plaster.",
+    "id": "pmo-set2-a9-k15",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K16",
+    "concept": "K16 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "New paint blisters on a previously sound external wall shortly after rain. What is the most appropriate diagnosis before repainting?",
+    "options": [
+      "The roller pile was too short",
+      "Moisture is trapped behind a poorly prepared or incompatible coating",
+      "The colour is too dark",
+      "The paint tin was opened too slowly"
+    ],
+    "correct": 1,
+    "explanation": "Blistering commonly results from moisture, poor adhesion or incompatible coatings; the cause must be corrected first.",
+    "id": "pmo-set2-a9-k16",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K26",
+    "concept": "K26 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A waste carrier offers a low price but cannot provide registration details or transfer documentation. What should the operative do?",
+    "options": [
+      "Use them for non-hazardous waste only",
+      "Do not use them; verify an authorised carrier and maintain required waste records",
+      "Ask them to dispose of waste after dark",
+      "Record the waste as reused"
+    ],
+    "correct": 1,
+    "explanation": "Waste must be transferred only to authorised carriers with appropriate documentation and duty-of-care controls.",
+    "id": "pmo-set2-a9-k26",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S14",
+    "concept": "S14 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A plaster patch is proud of the surrounding wall. What is the correct quality response before decoration?",
+    "options": [
+      "Use thicker paint to hide it",
+      "Allow suitable drying, level and finish the patch to match the surrounding plane",
+      "Sand while the plaster is wet",
+      "Apply sealant around the edges"
+    ],
+    "correct": 1,
+    "explanation": "The repair must be cured and finished flush and smooth before decoration.",
+    "id": "pmo-set2-a9-s14",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S15",
+    "concept": "S15 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When applying sealant around a bath, which method gives the most reliable result?",
+    "options": [
+      "Apply over damp, contaminated sealant",
+      "Remove failed material, clean and dry surfaces, mask if needed, apply a continuous bead and tool it correctly",
+      "Fill gaps with paint first",
+      "Apply several thin beads on different days"
+    ],
+    "correct": 1,
+    "explanation": "Clean, dry preparation and a continuous correctly tooled bead are essential for durable sealing.",
+    "id": "pmo-set2-a9-s15",
+    "type": "Skill",
+    "status": "approved"
   }
 ]);
 
@@ -7245,6 +8073,78 @@ window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",10,
     "id": "pmo-challenging-a10-k18",
     "type": "Knowledge",
     "status": "approved"
+  },
+  {
+    "ksb": "K17",
+    "concept": "K17 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Replacement tiles are sound, but grout joints crack repeatedly beside a timber floor. Which underlying issue is most likely?",
+    "options": [
+      "The tiles are too clean",
+      "Movement in the background or inadequate movement accommodation",
+      "The grout colour is incorrect",
+      "The adhesive was mixed too slowly"
+    ],
+    "correct": 1,
+    "explanation": "Movement in flexible backgrounds must be controlled or accommodated; rigid finishes otherwise crack.",
+    "id": "pmo-set2-a10-k17",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K18",
+    "concept": "K18 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A vinyl floor repair shows every ridge in the subfloor after installation. Which principle was overlooked?",
+    "options": [
+      "Vinyl requires a rough background",
+      "Resilient flooring reflects substrate defects, so the base must be smooth and suitably prepared",
+      "The adhesive should be applied only to edges",
+      "The room should be colder during fitting"
+    ],
+    "correct": 1,
+    "explanation": "Thin resilient finishes telegraph imperfections, making substrate preparation critical.",
+    "id": "pmo-set2-a10-k18",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S16",
+    "concept": "S16 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A replacement tile must fit around a pipe. What should the operative do to minimise cracking and poor alignment?",
+    "options": [
+      "Cut the opening after fixing the tile",
+      "Set out accurately, mark the pipe position, use a suitable cutting method and maintain required clearance",
+      "Break the tile into two pieces",
+      "Increase the grout joint to hide errors"
+    ],
+    "correct": 1,
+    "explanation": "Accurate setting out and appropriate cutting produce a sound repair around obstacles.",
+    "id": "pmo-set2-a10-s16",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S17",
+    "concept": "S17 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A laminate board is replaced beside a doorway. What should be checked before final fitting?",
+    "options": [
+      "Only the board colour",
+      "Subfloor condition, expansion allowance, joint engagement and clearance around the frame",
+      "Whether adhesive covers the whole floor",
+      "That the board is tightly wedged to the wall"
+    ],
+    "correct": 1,
+    "explanation": "Floor repairs require a sound base, correct joints and movement allowance, especially around obstacles.",
+    "id": "pmo-set2-a10-s17",
+    "type": "Skill",
+    "status": "approved"
   }
 ]);
 
@@ -7319,6 +8219,78 @@ window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",11,
     "explanation": "Property maintenance operatives must recognise trade boundaries, make the situation safe and coordinate with the appropriate competent trade.",
     "id": "pmo-challenging-a11-k29",
     "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K19",
+    "concept": "K19 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Hard cement-rich mortar is proposed for repointing old soft brickwork. What is the main risk?",
+    "options": [
+      "The joints will dry too slowly",
+      "The mortar may trap moisture and cause the softer bricks to deteriorate",
+      "The wall ties will become longer",
+      "The bricks will become fireproof"
+    ],
+    "correct": 1,
+    "explanation": "Mortar should be compatible with masonry; overly hard, impermeable mortar can accelerate decay of soft bricks.",
+    "id": "pmo-set2-a11-k19",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K29",
+    "concept": "K29 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A damp patch may result from either failed pointing or a leaking concealed pipe. Why should trades coordinate before opening up the wall?",
+    "options": [
+      "To decide who receives the job first",
+      "To combine evidence, avoid unnecessary damage and assign work to the competent trade",
+      "Because PMOs cannot inspect damp",
+      "To guarantee the repair is cosmetic"
+    ],
+    "correct": 1,
+    "explanation": "Interdependent diagnosis helps avoid destructive work and ensures the correct competent trade undertakes the repair.",
+    "id": "pmo-set2-a11-k29",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S18",
+    "concept": "S18 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A damaged fence panel is leaning because the post has rotted below ground. What is the appropriate repair approach?",
+    "options": [
+      "Screw the panel more tightly to the rotten post",
+      "Make the area safe, assess the post and footing, then repair or replace the failed structural component",
+      "Paint the visible post",
+      "Support it permanently with loose bricks"
+    ],
+    "correct": 1,
+    "explanation": "The failed load-bearing component and its support must be addressed, not just the visible symptom.",
+    "id": "pmo-set2-a11-s18",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S25",
+    "concept": "S25 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "During a roof inspection, the operative identifies suspected structural movement beyond minor maintenance. What should they do?",
+    "options": [
+      "Attempt a temporary structural repair",
+      "Make the immediate area safe, record evidence and escalate to the appropriate competent person",
+      "Ignore it unless water is entering",
+      "Ask the customer to monitor it"
+    ],
+    "correct": 1,
+    "explanation": "Issues beyond competence or authority must be made safe and escalated with clear evidence.",
+    "id": "pmo-set2-a11-s25",
+    "type": "Skill",
     "status": "approved"
   }
 ]);
@@ -7413,6 +8385,42 @@ window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",12,
     "id": "pmo-challenging-a12-k25",
     "type": "Knowledge",
     "status": "approved"
+  },
+  {
+    "ksb": "K20",
+    "concept": "K20 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A temporary roof patch is needed after storm damage. What is the priority before choosing the repair material?",
+    "options": [
+      "Matching the roof colour exactly",
+      "Assessing roof type, access, weather exposure and whether the temporary repair can be secured without creating further hazards",
+      "Using the cheapest available sheet",
+      "Removing all undamaged coverings"
+    ],
+    "correct": 1,
+    "explanation": "Temporary repairs must suit the roof and conditions, remain secure and not create additional safety or water-ingress risks.",
+    "id": "pmo-set2-a12-k20",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B4",
+    "concept": "B4 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Another trade’s delayed work threatens the team deadline. What best demonstrates team focus?",
+    "options": [
+      "Complete their specialist work without competence",
+      "Share accurate progress, coordinate dependencies and help with suitable tasks within competence",
+      "Ignore the delay because it is not your task",
+      "Criticise the trade in front of the customer"
+    ],
+    "correct": 1,
+    "explanation": "Team focus requires coordination, constructive support and respect for competence boundaries.",
+    "id": "pmo-set2-a12-b4",
+    "type": "Behaviour",
+    "status": "approved"
   }
 ]);
 
@@ -7486,6 +8494,24 @@ window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",13,
     "correct": 1,
     "explanation": "Communication should be adapted to the audience while remaining accurate: plain language for customers and appropriate technical detail for specialists.",
     "id": "pmo-challenging-a13-k27",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K21",
+    "concept": "K21 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A steel railing post is loose because corrosion has expanded within its concrete socket. Why is surface painting alone ineffective?",
+    "options": [
+      "Paint makes steel weaker",
+      "It does not address section loss or the failed anchorage below the surface",
+      "Concrete cannot be repaired",
+      "All railings must be timber"
+    ],
+    "correct": 1,
+    "explanation": "The underlying corrosion and anchorage defect must be treated; coating only the visible surface will not restore stability.",
+    "id": "pmo-set2-a13-k21",
     "type": "Knowledge",
     "status": "approved"
   }
@@ -7581,6 +8607,60 @@ window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",14,
     "id": "pmo-challenging-a14-k26",
     "type": "Knowledge",
     "status": "approved"
+  },
+  {
+    "ksb": "K22",
+    "concept": "K22 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A paved path repeatedly sinks beside a repaired drain. What should be investigated before relaying the slabs again?",
+    "options": [
+      "The slab colour",
+      "Loss of support caused by leaking drainage, poor compaction or washout",
+      "The number of pedestrians",
+      "Whether the slabs were pressure washed"
+    ],
+    "correct": 1,
+    "explanation": "Recurring settlement indicates an underlying support or water-management defect that must be corrected first.",
+    "id": "pmo-set2-a14-k22",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S22",
+    "concept": "S22 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "How should empty sealant cartridges contaminated with hazardous residue be handled?",
+    "options": [
+      "Place them with clean recyclable plastics",
+      "Follow COSHH and site waste procedures, segregating them into the correct waste stream",
+      "Burn them to reduce volume",
+      "Wash residue into a drain"
+    ],
+    "correct": 1,
+    "explanation": "Contaminated waste must be segregated and disposed of through the approved route.",
+    "id": "pmo-set2-a14-s22",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "B1",
+    "concept": "B1 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Two compliant repair options are available: one uses reclaimed matching paving and the other uses new imported paving. What best demonstrates B1?",
+    "options": [
+      "Choose new material because it is unused",
+      "Consider suitability, durability and embodied impact, using reclaimed material where it meets requirements",
+      "Choose whichever arrives first",
+      "Use reclaimed material even if it is unsafe"
+    ],
+    "correct": 1,
+    "explanation": "Sustainable practice balances reuse and environmental impact with fitness for purpose and compliance.",
+    "id": "pmo-set2-a14-b1",
+    "type": "Behaviour",
+    "status": "approved"
   }
 ]);
 
@@ -7673,6 +8753,42 @@ window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",15,
     "explanation": "CPD develops knowledge but does not automatically grant competence or authority. Work limits remain until training, assessment and authorisation are complete.",
     "id": "pmo-challenging-a15-k31",
     "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K24",
+    "concept": "K24 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A maintenance report includes a tenant’s medical information that is irrelevant to the repair. What is the best data-protection response?",
+    "options": [
+      "Copy it into every job note",
+      "Record only necessary information and restrict access to authorised users",
+      "Send it to all contractors for awareness",
+      "Store it in a personal messaging app"
+    ],
+    "correct": 1,
+    "explanation": "Data minimisation and controlled access are core data-protection principles.",
+    "id": "pmo-set2-a15-k24",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S20",
+    "concept": "S20 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which job record best supports future maintenance?",
+    "options": [
+      "“Fixed leak”",
+      "Exact location, defect found, isolation used, parts fitted, tests completed, remaining concerns and date",
+      "A photo with no description",
+      "The customer’s first name only"
+    ],
+    "correct": 1,
+    "explanation": "Useful records are specific, traceable and document diagnosis, action, testing and outstanding issues.",
+    "id": "pmo-set2-a15-s20",
+    "type": "Skill",
     "status": "approved"
   }
 ]);
