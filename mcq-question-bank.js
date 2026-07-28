@@ -10,7 +10,7 @@
  }
  function get(courseId,assignment){return banks[key(courseId,assignment)]||[]}
  function summary(){return Object.entries(banks).map(([bankKey,questions])=>({bankKey,total:questions.length,approved:questions.filter(q=>q.status==='approved').length}));}
- global.MCQQuestionBank=Object.freeze({version:'2.0.0-site-carpentry-kb-challenging',register,get,summary});
+ global.MCQQuestionBank=Object.freeze({version:'2.0.1-site-carpentry-kb-challenging-set2',register,get,summary});
 })(window);
 
 
@@ -915,7 +915,79 @@ window.MCQQuestionBank.register('site-carpentry-v1-4',1,[
     "id": "site-carpentry-challenging-a1-b1",
     "type": "Behaviour",
     "status": "approved"
-  }
+  },
+{
+  "ksb": "K1",
+  "concept": "K1 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "While lifting floorboards, an operative finds damaged insulation that may contain asbestos. What is the correct response?",
+  "options": [
+    "Bag it as general waste and continue",
+    "Stop work, prevent disturbance and report it under the asbestos procedure",
+    "Wet it and remove it wearing a dust mask",
+    "Ask another trade to dispose of it without recording the find"
+  ],
+  "correct": 1,
+  "explanation": "Suspected asbestos must not be disturbed. Work should stop, the area should be controlled and the finding reported through the authorised procedure.",
+  "id": "site-carpentry-challenging-set2-a1-k1",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K2",
+  "concept": "K2 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A circular saw is producing heavy airborne dust despite the operative wearing an FFP3 mask. Which additional control should be prioritised?",
+  "options": [
+    "Open a nearby door only",
+    "Use suitable extraction or dust suppression at source",
+    "Change to safety glasses",
+    "Work faster to shorten exposure"
+  ],
+  "correct": 1,
+  "explanation": "RPE is the last line of defence. Effective LEV or dust suppression should control dust at source before relying on personal protection.",
+  "id": "site-carpentry-challenging-set2-a1-k2",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K3",
+  "concept": "K3 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A method statement requires a podium step, but only an unsecured stepladder is available. What should the carpenter do?",
+  "options": [
+    "Use the stepladder for a short task",
+    "Alter the method without telling anyone",
+    "Stop and obtain the specified access equipment or an authorised revised method",
+    "Ask a colleague to foot the ladder"
+  ],
+  "correct": 2,
+  "explanation": "Safe systems of work must be followed. A change requires suitable equipment or an authorised review of the method and risk controls.",
+  "id": "site-carpentry-challenging-set2-a1-k3",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "B1",
+  "concept": "B1 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A colleague removes a guard to finish a cut before break. What best demonstrates putting safety and wellbeing first?",
+  "options": [
+    "Ignore it because the colleague is experienced",
+    "Stop the unsafe activity and ensure the guard is reinstated before work resumes",
+    "Complete the cut for them",
+    "Report it only after the job is finished"
+  ],
+  "correct": 1,
+  "explanation": "Prioritising safety means intervening immediately when unsafe work could cause harm and ensuring the correct control is restored.",
+  "id": "site-carpentry-challenging-set2-a1-b1",
+  "type": "Behaviour",
+  "status": "approved"
+}
 ]);
 
 window.MCQQuestionBank.register('site-carpentry-v1-4',2,[
@@ -1062,7 +1134,79 @@ window.MCQQuestionBank.register('site-carpentry-v1-4',2,[
     "id": "site-carpentry-challenging-a2-b2",
     "type": "Behaviour",
     "status": "approved"
-  }
+  },
+{
+  "ksb": "K4",
+  "concept": "K4 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Which timber purchasing decision best supports sustainable forestry?",
+  "options": [
+    "Choose the cheapest imported timber regardless of source",
+    "Specify certified timber from a responsibly managed source",
+    "Use only hardwood because it lasts longer",
+    "Order extra stock to avoid future deliveries"
+  ],
+  "correct": 1,
+  "explanation": "Certified responsibly sourced timber provides traceability and supports sustainable forest management.",
+  "id": "site-carpentry-challenging-set2-a2-k4",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K7",
+  "concept": "K7 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A detail on site conflicts with the approved drawing and a relevant British Standard. What should the carpenter do?",
+  "options": [
+    "Follow the verbal instruction because it is quicker",
+    "Use whichever option requires less material",
+    "Pause the work and seek clarification through the approved technical process",
+    "Follow the older detail because it has been used before"
+  ],
+  "correct": 2,
+  "explanation": "Conflicting technical requirements should be resolved formally before work continues to avoid non-compliant installation.",
+  "id": "site-carpentry-challenging-set2-a2-k7",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K40",
+  "concept": "K40 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A self-employed carpenter quotes for work. Which responsibility normally remains theirs rather than an employer's?",
+  "options": [
+    "Deducting PAYE from their own wages",
+    "Maintaining business records and arranging their own tax submissions",
+    "Receiving statutory holiday pay from the client",
+    "Being enrolled automatically into the client's pension"
+  ],
+  "correct": 1,
+  "explanation": "Self-employed workers are generally responsible for business records, tax returns and their own tax arrangements.",
+  "id": "site-carpentry-challenging-set2-a2-k40",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "B2",
+  "concept": "B2 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Offcuts from a roof job include reusable lengths, clean untreated waste and contaminated timber. What is the most sustainable action?",
+  "options": [
+    "Place everything in one skip",
+    "Reuse suitable lengths and segregate the remainder into correct waste streams",
+    "Burn the untreated timber and bin the rest",
+    "Store all waste indefinitely"
+  ],
+  "correct": 1,
+  "explanation": "Resource efficiency means prioritising reuse and then segregating waste correctly for recycling or lawful disposal.",
+  "id": "site-carpentry-challenging-set2-a2-b2",
+  "type": "Behaviour",
+  "status": "approved"
+}
 ]);
 
 window.MCQQuestionBank.register('site-carpentry-v1-4',3,[
@@ -1209,7 +1353,79 @@ window.MCQQuestionBank.register('site-carpentry-v1-4',3,[
     "id": "site-carpentry-challenging-a3-b4",
     "type": "Behaviour",
     "status": "approved"
-  }
+  },
+{
+  "ksb": "K5",
+  "concept": "K5 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Why must a carpenter identify whether a wall is part of a timber-frame fire-resisting construction before forming an opening?",
+  "options": [
+    "The timber may be harder to cut",
+    "The work could interrupt structural, fire and moisture-control layers",
+    "The opening will always need planning permission",
+    "Timber-frame walls cannot contain services"
+  ],
+  "correct": 1,
+  "explanation": "Modern wall systems combine structural, fire, air and moisture functions. Alterations can compromise several safety-critical layers.",
+  "id": "site-carpentry-challenging-set2-a3-k5",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K6",
+  "concept": "K6 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "What is a key advantage of checking a coordinated digital model before setting out a partition?",
+  "options": [
+    "It guarantees the materials are already ordered",
+    "It can reveal clashes with services and other building elements",
+    "It removes the need to verify site dimensions",
+    "It replaces all written specifications"
+  ],
+  "correct": 1,
+  "explanation": "Digital models can expose coordination clashes, but dimensions and specifications still require verification.",
+  "id": "site-carpentry-challenging-set2-a3-k6",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K8",
+  "concept": "K8 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A drawing is marked 1:50, but one dimension appears inconsistent with the written specification. Which source should the carpenter rely on first?",
+  "options": [
+    "A scaled measurement taken from the drawing",
+    "The written figured dimension and an approved clarification",
+    "A similar detail from another project",
+    "An estimate based on the available timber"
+  ],
+  "correct": 1,
+  "explanation": "Figured dimensions and approved clarifications take priority over scaling drawings, especially where documents conflict.",
+  "id": "site-carpentry-challenging-set2-a3-k8",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "B4",
+  "concept": "B4 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A carpenter repeatedly struggles to interpret complex roof drawings. What best demonstrates seeking development?",
+  "options": [
+    "Avoid roof work whenever possible",
+    "Ask for targeted training and supervised practice",
+    "Copy another carpenter's dimensions without checking",
+    "Continue until a mistake is identified"
+  ],
+  "correct": 1,
+  "explanation": "Recognising a development need and seeking training or supervised practice supports safe, competent progression.",
+  "id": "site-carpentry-challenging-set2-a3-b4",
+  "type": "Behaviour",
+  "status": "approved"
+}
 ]);
 
 window.MCQQuestionBank.register('site-carpentry-v1-4',4,[
@@ -1320,7 +1536,61 @@ window.MCQQuestionBank.register('site-carpentry-v1-4',4,[
     "id": "site-carpentry-challenging-a4-k12",
     "type": "Knowledge",
     "status": "approved"
-  }
+  },
+{
+  "ksb": "K9",
+  "concept": "K9 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Which material is most suitable for a stable painted cabinet side where wide solid timber would be prone to movement?",
+  "options": [
+    "Unseasoned softwood boards",
+    "Moisture-resistant MDF where the environment and specification permit",
+    "Green oak",
+    "Untreated external plywood in every location"
+  ],
+  "correct": 1,
+  "explanation": "A suitable manufactured board can offer dimensional stability, provided its grade and intended environment match the specification.",
+  "id": "site-carpentry-challenging-set2-a4-k9",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K10",
+  "concept": "K10 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A skirting board shows crumbly brown timber with cuboidal cracking near a long-term leak. What is the most likely diagnosis?",
+  "options": [
+    "Dry rot caused only by dry air",
+    "Wet rot associated with sustained high moisture",
+    "Normal seasoning",
+    "Insect attack with no moisture involvement"
+  ],
+  "correct": 1,
+  "explanation": "Wet rot commonly develops where timber remains persistently damp and may produce soft, weakened or cracked timber.",
+  "id": "site-carpentry-challenging-set2-a4-k10",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K12",
+  "concept": "K12 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A cutting list totals 38.4 metres of timber. The stock length is 4.8 metres and 10% allowance is required. What is the minimum number of lengths?",
+  "options": [
+    "8",
+    "9",
+    "10",
+    "11"
+  ],
+  "correct": 1,
+  "explanation": "38.4 m plus 10% is 42.24 m. Dividing by 4.8 m gives 8.8, so nine full lengths are required.",
+  "id": "site-carpentry-challenging-set2-a4-k12",
+  "type": "Knowledge",
+  "status": "approved"
+}
 ]);
 
 window.MCQQuestionBank.register('site-carpentry-v1-4',5,[
@@ -1431,7 +1701,61 @@ window.MCQQuestionBank.register('site-carpentry-v1-4',5,[
     "id": "site-carpentry-challenging-a5-k17",
     "type": "Knowledge",
     "status": "approved"
-  }
+  },
+{
+  "ksb": "K14",
+  "concept": "K14 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Why should a mortise gauge be stored with its pins protected?",
+  "options": [
+    "To keep the timber dry",
+    "To prevent injury and damage to the marking points",
+    "To stop the stock shrinking",
+    "To maintain the blade angle"
+  ],
+  "correct": 1,
+  "explanation": "Protected pins reduce injury risk and prevent the fine marking points from being damaged.",
+  "id": "site-carpentry-challenging-set2-a5-k14",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K15",
+  "concept": "K15 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A chisel edge is sharp but has become rounded over behind the bevel. What is the best corrective action?",
+  "options": [
+    "Increase the honing angle each time",
+    "Re-establish the primary bevel before honing the cutting edge",
+    "Strike it harder during use",
+    "Cool it by dipping a red-hot edge in water"
+  ],
+  "correct": 1,
+  "explanation": "Regrinding the correct primary bevel removes excessive rounding; honing can then restore a durable cutting edge.",
+  "id": "site-carpentry-challenging-set2-a5-k15",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K17",
+  "concept": "K17 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Before changing a router cutter, what sequence is safest?",
+  "options": [
+    "Switch off, hold the spindle and change it immediately",
+    "Disconnect or isolate the power, allow complete stop, then use the correct tools",
+    "Leave the router plugged in but remove the battery indicator",
+    "Clamp the trigger off and change the cutter"
+  ],
+  "correct": 1,
+  "explanation": "The tool must be isolated from its energy source and fully stopped before cutter changes.",
+  "id": "site-carpentry-challenging-set2-a5-k17",
+  "type": "Knowledge",
+  "status": "approved"
+}
 ]);
 
 window.MCQQuestionBank.register('site-carpentry-v1-4',6,[
@@ -1506,7 +1830,43 @@ window.MCQQuestionBank.register('site-carpentry-v1-4',6,[
     "id": "site-carpentry-challenging-a6-k29",
     "type": "Knowledge",
     "status": "approved"
-  }
+  },
+{
+  "ksb": "K16",
+  "concept": "K16 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A drilling jig produces holes that gradually move out of position after repeated use. What is the most likely cause?",
+  "options": [
+    "The workpieces are too dry",
+    "The guide bush or locating face has worn",
+    "The drill speed is too low in every case",
+    "The jig is made from sheet material"
+  ],
+  "correct": 1,
+  "explanation": "Wear in guide bushes or locating surfaces causes repeatability to deteriorate and requires repair or replacement.",
+  "id": "site-carpentry-challenging-set2-a6-k16",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K29",
+  "concept": "K29 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A cross-line laser gives different readings after being moved. What should be checked before relying on it?",
+  "options": [
+    "The colour of the beam",
+    "Calibration, stable setup and reference datum",
+    "Whether it is the newest model",
+    "The room temperature only"
+  ],
+  "correct": 1,
+  "explanation": "A laser must be calibrated, securely positioned and related to a verified datum before measurements are trusted.",
+  "id": "site-carpentry-challenging-set2-a6-k29",
+  "type": "Knowledge",
+  "status": "approved"
+}
 ]);
 
 window.MCQQuestionBank.register('site-carpentry-v1-4',7,[
@@ -1725,7 +2085,115 @@ window.MCQQuestionBank.register('site-carpentry-v1-4',7,[
     "id": "site-carpentry-challenging-a7-b5",
     "type": "Behaviour",
     "status": "approved"
-  }
+  },
+{
+  "ksb": "K13",
+  "concept": "K13 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Which instruction is clearest during a coordinated lift of a pre-hung door set?",
+  "options": [
+    "Lift it carefully over there",
+    "On three, raise the hinge side first and move to the marked opening",
+    "Do what we normally do",
+    "Take it to the room when ready"
+  ],
+  "correct": 1,
+  "explanation": "Clear terminology, sequencing and location information reduce ambiguity during team tasks.",
+  "id": "site-carpentry-challenging-set2-a7-k13",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K18",
+  "concept": "K18 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Two trades need the same access route at the same time. What best reflects good team working?",
+  "options": [
+    "Block the route before the other trade arrives",
+    "Agree a safe sequence with the wider team and communicate changes",
+    "Continue independently until someone complains",
+    "Leave the decision to the apprentice"
+  ],
+  "correct": 1,
+  "explanation": "Good teamwork requires coordination, communication and consideration of the wider build programme.",
+  "id": "site-carpentry-challenging-set2-a7-k18",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K19",
+  "concept": "K19 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A worker is excluded from technical discussions because English is not their first language. What is the best response?",
+  "options": [
+    "Continue because technical meetings must be fast",
+    "Use clear communication and reasonable support so they can contribute",
+    "Ask them to sign the briefing without discussion",
+    "Allocate them only simple tasks"
+  ],
+  "correct": 1,
+  "explanation": "Inclusive practice removes avoidable barriers and enables workers to participate safely and fairly.",
+  "id": "site-carpentry-challenging-set2-a7-k19",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K20",
+  "concept": "K20 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A normally reliable colleague becomes withdrawn, makes unusual mistakes and says they are not sleeping. What is the most appropriate first action?",
+  "options": [
+    "Diagnose the cause yourself",
+    "Speak privately, listen, and signpost approved support while addressing immediate safety risks",
+    "Tell the whole team so they can watch them",
+    "Ignore it unless they ask for help"
+  ],
+  "correct": 1,
+  "explanation": "A supportive private conversation and appropriate signposting are suitable, while any immediate safety concern must also be managed.",
+  "id": "site-carpentry-challenging-set2-a7-k20",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "B3",
+  "concept": "B3 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A team member suggests adapting a briefing format for a colleague with dyslexia. What best demonstrates inclusive behaviour?",
+  "options": [
+    "Reject it because everyone should receive identical information",
+    "Use an accessible format that still communicates the same requirements",
+    "Remove the colleague from the task",
+    "Ask them to rely on another worker"
+  ],
+  "correct": 1,
+  "explanation": "Equality may require reasonable adjustments so everyone can access the same essential information.",
+  "id": "site-carpentry-challenging-set2-a7-b3",
+  "type": "Behaviour",
+  "status": "approved"
+},
+{
+  "ksb": "B5",
+  "concept": "B5 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "The carpentry team is ahead, but dryliners are delayed by stored materials in their area. What best supports the overall team goal?",
+  "options": [
+    "Leave the materials because carpentry is on programme",
+    "Coordinate their relocation safely to help the wider build sequence",
+    "Tell the dryliners to work around them",
+    "Move them without informing anyone"
+  ],
+  "correct": 1,
+  "explanation": "Team focus includes considering dependencies across trades and resolving obstacles through coordinated action.",
+  "id": "site-carpentry-challenging-set2-a7-b5",
+  "type": "Behaviour",
+  "status": "approved"
+}
 ]);
 
 window.MCQQuestionBank.register('site-carpentry-v1-4',8,[
@@ -1764,7 +2232,25 @@ window.MCQQuestionBank.register('site-carpentry-v1-4',8,[
     "id": "site-carpentry-challenging-a8-k22",
     "type": "Knowledge",
     "status": "approved"
-  }
+  },
+{
+  "ksb": "K22",
+  "concept": "K22 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A load-bearing stud wall requires a timber size shown in a structural schedule. Why must the carpenter avoid substituting a smaller section?",
+  "options": [
+    "Smaller timber is harder to nail",
+    "The wall's load capacity, stability and compliance may be reduced",
+    "The plasterboard will always crack immediately",
+    "The insulation will become non-compliant regardless of type"
+  ],
+  "correct": 1,
+  "explanation": "Structural timber sizes are selected to meet load and stability requirements and should not be reduced without authorised design approval.",
+  "id": "site-carpentry-challenging-set2-a8-k22",
+  "type": "Knowledge",
+  "status": "approved"
+}
 ]);
 
 window.MCQQuestionBank.register('site-carpentry-v1-4',9,[
@@ -1803,7 +2289,25 @@ window.MCQQuestionBank.register('site-carpentry-v1-4',9,[
     "id": "site-carpentry-challenging-a9-k27",
     "type": "Knowledge",
     "status": "approved"
-  }
+  },
+{
+  "ksb": "K27",
+  "concept": "K27 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Why are floor joist crowns normally oriented consistently during installation?",
+  "options": [
+    "To make joists easier to paint",
+    "To reduce irregular floor levels as the joists settle under load",
+    "To eliminate the need for strutting",
+    "To increase joist moisture content"
+  ],
+  "correct": 1,
+  "explanation": "Consistent crown orientation helps produce a more even floor and controls variation as the structure carries load.",
+  "id": "site-carpentry-challenging-set2-a9-k27",
+  "type": "Knowledge",
+  "status": "approved"
+}
 ]);
 
 window.MCQQuestionBank.register('site-carpentry-v1-4',10,[
@@ -1842,7 +2346,25 @@ window.MCQQuestionBank.register('site-carpentry-v1-4',10,[
     "id": "site-carpentry-challenging-a10-k28",
     "type": "Knowledge",
     "status": "approved"
-  }
+  },
+{
+  "ksb": "K28",
+  "concept": "K28 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "When forming a service encasement, why must access to valves or inspection points be maintained?",
+  "options": [
+    "To reduce the amount of timber used",
+    "To allow future inspection, isolation and maintenance",
+    "To improve acoustic insulation only",
+    "To avoid using fire-stopping materials"
+  ],
+  "correct": 1,
+  "explanation": "Required service points must remain accessible for safe inspection, isolation and maintenance.",
+  "id": "site-carpentry-challenging-set2-a10-k28",
+  "type": "Knowledge",
+  "status": "approved"
+}
 ]);
 
 window.MCQQuestionBank.register('site-carpentry-v1-4',11,[
@@ -1917,7 +2439,43 @@ window.MCQQuestionBank.register('site-carpentry-v1-4',11,[
     "id": "site-carpentry-challenging-a11-k28",
     "type": "Knowledge",
     "status": "approved"
-  }
+  },
+{
+  "ksb": "K11",
+  "concept": "K11 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Which product is most appropriate for filling a small cosmetic defect in joinery before a painted finish?",
+  "options": [
+    "Expanding foam",
+    "A compatible wood filler specified for the finish",
+    "Roofing mastic",
+    "Timber preservative"
+  ],
+  "correct": 1,
+  "explanation": "A compatible wood filler is designed to repair minor surface defects and accept the intended finish.",
+  "id": "site-carpentry-challenging-set2-a11-k11",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K28",
+  "concept": "K28 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A wall unit is fixed to a metal-stud partition. What is the most important consideration?",
+  "options": [
+    "Use the longest screws available",
+    "Fix into suitable structural support or specified proprietary anchors",
+    "Apply adhesive only",
+    "Position all fixings into plasterboard edges"
+  ],
+  "correct": 1,
+  "explanation": "The fixing method must transfer the load safely into suitable support, not rely on unsuitable lining material alone.",
+  "id": "site-carpentry-challenging-set2-a11-k28",
+  "type": "Knowledge",
+  "status": "approved"
+}
 ]);
 
 window.MCQQuestionBank.register('site-carpentry-v1-4',12,[
@@ -2028,7 +2586,61 @@ window.MCQQuestionBank.register('site-carpentry-v1-4',12,[
     "id": "site-carpentry-challenging-a12-k28",
     "type": "Knowledge",
     "status": "approved"
-  }
+  },
+{
+  "ksb": "K21",
+  "concept": "K21 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A handrail return requires two matching mitres. How should the carpenter minimise a visible gap?",
+  "options": [
+    "Cut both pieces to nominal angles without testing",
+    "Verify the actual angle, mark from a common reference and trial-fit before final fixing",
+    "Fill the joint before checking alignment",
+    "Cut one piece oversize and force it closed"
+  ],
+  "correct": 1,
+  "explanation": "Accurate angle verification, common-reference marking and trial fitting are essential for close-fitting mitres.",
+  "id": "site-carpentry-challenging-set2-a12-k21",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K27",
+  "concept": "K27 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Which check is most important before fixing a straight flight of stairs into its opening?",
+  "options": [
+    "That every tread is the same colour",
+    "That dimensions, pitch, support and landing levels match the approved design",
+    "That the strings have been varnished",
+    "That the handrail is already fitted"
+  ],
+  "correct": 1,
+  "explanation": "The staircase must fit the approved geometry and have adequate support before permanent fixing.",
+  "id": "site-carpentry-challenging-set2-a12-k27",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K28",
+  "concept": "K28 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "When fitting spindles to a straight flight, what determines compliant spacing?",
+  "options": [
+    "The width of the available offcuts",
+    "The approved design and applicable guarding requirements",
+    "The carpenter's preferred appearance",
+    "The distance that gives the fewest spindles"
+  ],
+  "correct": 1,
+  "explanation": "Spacing must follow the approved design and guarding requirements rather than convenience or appearance alone.",
+  "id": "site-carpentry-challenging-set2-a12-k28",
+  "type": "Knowledge",
+  "status": "approved"
+}
 ]);
 
 window.MCQQuestionBank.register('site-carpentry-v1-4',13,[
@@ -2067,7 +2679,25 @@ window.MCQQuestionBank.register('site-carpentry-v1-4',13,[
     "id": "site-carpentry-challenging-a13-k28",
     "type": "Knowledge",
     "status": "approved"
-  }
+  },
+{
+  "ksb": "K28",
+  "concept": "K28 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "An internal door binds at the head only after being hung. What should be checked before planing the door?",
+  "options": [
+    "Whether the handle is centred",
+    "Frame squareness, hinge positioning and consistent clearances",
+    "The paint colour",
+    "The floor covering in the next room"
+  ],
+  "correct": 1,
+  "explanation": "Binding may result from frame or hinge alignment. The cause should be checked before removing material from the door.",
+  "id": "site-carpentry-challenging-set2-a13-k28",
+  "type": "Knowledge",
+  "status": "approved"
+}
 ]);
 
 window.MCQQuestionBank.register('site-carpentry-v1-4',14,[
@@ -2142,7 +2772,43 @@ window.MCQQuestionBank.register('site-carpentry-v1-4',14,[
     "id": "site-carpentry-challenging-a14-k28",
     "type": "Knowledge",
     "status": "approved"
-  }
+  },
+{
+  "ksb": "K24",
+  "concept": "K24 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Why is scribing generally preferred to a mitre for an internal skirting corner?",
+  "options": [
+    "It requires no marking",
+    "It better accommodates small corner-angle changes and timber movement",
+    "It uses more adhesive",
+    "It avoids cutting a profile"
+  ],
+  "correct": 1,
+  "explanation": "A scribed joint follows the moulded profile and tends to remain visually closed despite minor angle errors or movement.",
+  "id": "site-carpentry-challenging-set2-a14-k24",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K28",
+  "concept": "K28 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A long skirting run needs a lengthwise joint. Which arrangement generally gives the least visible and most durable result?",
+  "options": [
+    "A square butt joint placed in an unsupported gap",
+    "A scarf or splayed splice positioned over secure backing",
+    "Two pieces overlapped without fixing",
+    "A joint directly beneath a doorway threshold"
+  ],
+  "correct": 1,
+  "explanation": "A supported scarf or splayed splice increases fixing area and makes the joint less conspicuous.",
+  "id": "site-carpentry-challenging-set2-a14-k28",
+  "type": "Knowledge",
+  "status": "approved"
+}
 ]);
 
 window.MCQQuestionBank.register('site-carpentry-v1-4',15,[
@@ -2217,7 +2883,43 @@ window.MCQQuestionBank.register('site-carpentry-v1-4',15,[
     "id": "site-carpentry-challenging-a15-k26",
     "type": "Knowledge",
     "status": "approved"
-  }
+  },
+{
+  "ksb": "K25",
+  "concept": "K25 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "During a traditional cut roof, why must birdsmouth cuts not be made deeper than the design permits?",
+  "options": [
+    "They make the rafter too heavy",
+    "They reduce the effective rafter section and may weaken it",
+    "They prevent ridge boards being painted",
+    "They increase ventilation"
+  ],
+  "correct": 1,
+  "explanation": "Excessive notching reduces the structural section of the rafter and can compromise its capacity.",
+  "id": "site-carpentry-challenging-set2-a15-k25",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K26",
+  "concept": "K26 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "What is the key distinction between warm and cold flat-roof insulation arrangements?",
+  "options": [
+    "Warm roofs always use metal decking",
+    "Warm-roof insulation is generally above the structural deck, while cold-roof insulation is below with a ventilated void where required",
+    "Cold roofs do not need moisture control",
+    "Warm roofs cannot use waterproof coverings"
+  ],
+  "correct": 1,
+  "explanation": "The insulation position and associated condensation-control strategy distinguish warm and cold roof constructions.",
+  "id": "site-carpentry-challenging-set2-a15-k26",
+  "type": "Knowledge",
+  "status": "approved"
+}
 ]);
 
 window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",1,[
