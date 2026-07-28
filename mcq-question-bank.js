@@ -10,7 +10,7 @@
  }
  function get(courseId,assignment){return banks[key(courseId,assignment)]||[]}
  function summary(){return Object.entries(banks).map(([bankKey,questions])=>({bankKey,total:questions.length,approved:questions.filter(q=>q.status==='approved').length}));}
- global.MCQQuestionBank=Object.freeze({version:'2.0.2-bricklayer-kb-challenging-set1',register,get,summary});
+ global.MCQQuestionBank=Object.freeze({version:'2.0.3-bricklayer-kb-challenging-set2',register,get,summary});
 })(window);
 
 
@@ -157,6 +157,79 @@ window.MCQQuestionBank.register('bricklayer-st0095-v1-2',1,[
     "correct": 2,
     "explanation": "Putting health, safety and wellbeing first means refusing unsafe shortcuts and ensuring controls are effective before work starts.",
     "id": "brick-challenging-set1-a1-b1-4",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K1",
+    "concept": "K1 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "During refurbishment, a bricklayer finds a damaged board labelled as potentially containing asbestos beside the planned work area. What is the correct response?",
+    "options": [
+      "Move it carefully to one side",
+      "Stop work, prevent disturbance and report it under the site asbestos procedure",
+      "Wet it and continue working nearby",
+      "Break it into smaller pieces for disposal"
+    ],
+    "correct": 1,
+    "explanation": "Suspected asbestos-containing material must not be disturbed. Work should stop and the site procedure followed.",
+    "id": "brick-challenging-set2-a1-k1-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K2",
+    "concept": "K2 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A worker has the correct RPE for cutting masonry but has not completed a face-fit test. Why should the task not begin?",
+    "options": [
+      "The mask colour may not match the site rules",
+      "The protection level cannot be relied upon without a suitable face fit",
+      "Face-fit testing is only needed for welding",
+      "RPE is unnecessary when cutting outdoors"
+    ],
+    "correct": 1,
+    "explanation": "Tight-fitting RPE must fit the individual wearer correctly; otherwise contaminated air can leak around the seal.",
+    "id": "brick-challenging-set2-a1-k2-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K3",
+    "concept": "K3 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A toolbox talk identifies a new vehicle route crossing the mortar-mixing area. What is the best next step?",
+    "options": [
+      "Continue using the area until an incident occurs",
+      "Update the task controls and relocate or segregate the mixing area before work continues",
+      "Ask drivers to sound their horns",
+      "Work faster whenever vehicles approach"
+    ],
+    "correct": 1,
+    "explanation": "Changed site conditions require the safe system of work and controls to be reviewed before continuing.",
+    "id": "brick-challenging-set2-a1-k3-3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B1",
+    "concept": "B1 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A colleague appears exhausted and is making repeated errors while working from a scaffold. What action best puts wellbeing and safety first?",
+    "options": [
+      "Ignore it because they are responsible for themselves",
+      "Speak to them and the supervisor, pause the task and arrange suitable support",
+      "Give them stronger coffee and continue",
+      "Complete their checks without telling anyone"
+    ],
+    "correct": 1,
+    "explanation": "Health, safety and wellbeing come before production, so concerns should be raised and the task paused if necessary.",
+    "id": "brick-challenging-set2-a1-b1-4",
     "type": "Behaviour",
     "status": "approved"
   }
@@ -308,6 +381,79 @@ window.MCQQuestionBank.register('bricklayer-st0095-v1-2',2,[
     "type": "Behaviour",
     "status": "approved"
   }
+,
+  {
+    "ksb": "K4",
+    "concept": "K4 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which action best prevents surface-water contamination when cleaning masonry tools?",
+    "options": [
+      "Wash cement residue into a road drain",
+      "Use a designated washout area that contains and manages contaminated water",
+      "Rinse tools beside a watercourse",
+      "Dilute the residue with extra water"
+    ],
+    "correct": 1,
+    "explanation": "Cementitious wash water is highly alkaline and must be contained and managed rather than entering surface-water drains.",
+    "id": "brick-challenging-set2-a2-k4-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K5",
+    "concept": "K5 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why can excessive uncontrolled ventilation reduce the energy performance of a completed building?",
+    "options": [
+      "It makes insulation stronger",
+      "It increases unintended heat loss and can undermine airtightness targets",
+      "It prevents all condensation",
+      "It increases the thermal mass of masonry"
+    ],
+    "correct": 1,
+    "explanation": "Uncontrolled air leakage increases heat loss and can compromise designed airtightness and energy performance.",
+    "id": "brick-challenging-set2-a2-k5-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K7",
+    "concept": "K7 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A warranty provider detail specifies a larger cavity than the drawing. What should happen before work starts?",
+    "options": [
+      "Use whichever dimension saves materials",
+      "Raise the conflict and obtain an approved clarification",
+      "Average the two dimensions",
+      "Follow the verbal instruction of the nearest operative"
+    ],
+    "correct": 1,
+    "explanation": "Conflicting requirements must be formally clarified before work proceeds.",
+    "id": "brick-challenging-set2-a2-k7-3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What best demonstrates environmental consideration when mortar is left at the end of a shift?",
+    "options": [
+      "Wash it into the drainage system",
+      "Use it on any nearby wall regardless of specification",
+      "Minimise surplus through accurate batching and dispose of unavoidable waste correctly",
+      "Leave it uncovered for the next day"
+    ],
+    "correct": 2,
+    "explanation": "Accurate batching reduces waste, and unavoidable residue must follow the correct disposal route.",
+    "id": "brick-challenging-set2-a2-b2-4",
+    "type": "Behaviour",
+    "status": "approved"
+  }
 ]);
 
 window.MCQQuestionBank.register('bricklayer-st0095-v1-2',3,[
@@ -417,6 +563,61 @@ window.MCQQuestionBank.register('bricklayer-st0095-v1-2',3,[
     "correct": 1,
     "explanation": "Digital coordination can reveal clashes early, allowing approved changes before they cause rework, delay or safety risks.",
     "id": "brick-challenging-set1-a3-k11-3",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K10",
+    "concept": "K10 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A section drawing shows a DPC 150 mm above finished external ground level. What should the bricklayer do if the site level would leave only 80 mm?",
+    "options": [
+      "Build to 80 mm because the ground is already formed",
+      "Raise the discrepancy before laying and obtain an approved solution",
+      "Add a thicker bed joint below the DPC",
+      "Ignore the section and follow the elevation"
+    ],
+    "correct": 1,
+    "explanation": "The discrepancy affects moisture protection and must be resolved before construction.",
+    "id": "brick-challenging-set2-a3-k10-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K9",
+    "concept": "K9 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is a key advantage of using prefabricated masonry components in rapid-build construction?",
+    "options": [
+      "They remove the need for setting out",
+      "They can improve consistency and reduce site installation time when correctly coordinated",
+      "They eliminate lifting risks",
+      "They allow specifications to be ignored"
+    ],
+    "correct": 1,
+    "explanation": "Prefabrication can improve consistency and speed, but still requires accurate coordination and safe installation.",
+    "id": "brick-challenging-set2-a3-k9-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K11",
+    "concept": "K11 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A BIM model and printed drawing show different lintel levels. Which source should be assumed correct?",
+    "options": [
+      "The newest-looking one",
+      "Neither until the discrepancy is checked through the project information-control process",
+      "The printed copy because paper is permanent",
+      "The digital model because software cannot be wrong"
+    ],
+    "correct": 1,
+    "explanation": "Conflicting controlled information must be checked and clarified rather than assumed.",
+    "id": "brick-challenging-set2-a3-k11-3",
     "type": "Knowledge",
     "status": "approved"
   }
@@ -532,6 +733,61 @@ window.MCQQuestionBank.register('bricklayer-st0095-v1-2',4,[
     "type": "Knowledge",
     "status": "approved"
   }
+,
+  {
+    "ksb": "K8",
+    "concept": "K8 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should high-suction bricks sometimes be controlled before laying in hot conditions?",
+    "options": [
+      "To increase their weight",
+      "To prevent them drawing water too quickly from the mortar and weakening bond development",
+      "To make them darker",
+      "To eliminate the need for curing"
+    ],
+    "correct": 1,
+    "explanation": "Excessive suction can remove water from mortar too rapidly, reducing workability and bond.",
+    "id": "brick-challenging-set2-a4-k8-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K6",
+    "concept": "K6 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is the main purpose of correctly installed cavity insulation retainers?",
+    "options": [
+      "To hold wall ties horizontally",
+      "To keep insulation securely positioned and maintain the designed cavity arrangement",
+      "To replace fire stopping",
+      "To support the outer leaf vertically"
+    ],
+    "correct": 1,
+    "explanation": "Retainers help keep insulation correctly located so the cavity performs as designed.",
+    "id": "brick-challenging-set2-a4-k6-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K12",
+    "concept": "K12 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A wall requires 840 blocks, including waste. Blocks are supplied in packs of 72. What is the minimum number of full packs required?",
+    "options": [
+      "10",
+      "11",
+      "12",
+      "13"
+    ],
+    "correct": 2,
+    "explanation": "840 divided by 72 is 11.67, so 12 full packs are required.",
+    "id": "brick-challenging-set2-a4-k12-3",
+    "type": "Knowledge",
+    "status": "approved"
+  }
 ]);
 
 window.MCQQuestionBank.register('bricklayer-st0095-v1-2',5,[
@@ -641,6 +897,61 @@ window.MCQQuestionBank.register('bricklayer-st0095-v1-2',5,[
     "correct": 1,
     "explanation": "Unsafe equipment must be taken out of service and reported rather than used under production pressure.",
     "id": "brick-challenging-set1-a5-b1-3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K13",
+    "concept": "K13 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A brick trowel has a loose handle. What is the safest action?",
+    "options": [
+      "Wrap tape around it and continue",
+      "Remove it from use until it is repaired or replaced",
+      "Use it only for pointing",
+      "Soak the handle in water"
+    ],
+    "correct": 1,
+    "explanation": "A loose handle can fail unexpectedly and the tool should not be used until safe.",
+    "id": "brick-challenging-set2-a5-k13-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K14",
+    "concept": "K14 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why must the maximum diameter and speed rating of a cutting disc match the power tool?",
+    "options": [
+      "To improve colour matching",
+      "To prevent overspeed, poor guarding and potential disc failure",
+      "To reduce the need for training",
+      "To make the tool quieter"
+    ],
+    "correct": 1,
+    "explanation": "An unsuitable disc can be oversped or inadequately guarded, creating a serious failure risk.",
+    "id": "brick-challenging-set2-a5-k14-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B1",
+    "concept": "B1 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A power lead has exposed inner insulation but the tool still works. What should the bricklayer do?",
+    "options": [
+      "Use it only in dry weather",
+      "Tape it temporarily and finish the job",
+      "Isolate and remove the tool from use, then report the defect",
+      "Ask a colleague to hold the cable clear"
+    ],
+    "correct": 2,
+    "explanation": "Damaged electrical equipment must be taken out of service and reported.",
+    "id": "brick-challenging-set2-a5-b1-3",
     "type": "Behaviour",
     "status": "approved"
   }
@@ -756,6 +1067,61 @@ window.MCQQuestionBank.register('bricklayer-st0095-v1-2',6,[
     "type": "Behaviour",
     "status": "approved"
   }
+,
+  {
+    "ksb": "K21",
+    "concept": "K21 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why is a gauge rod useful when setting out an opening in cavity walling?",
+    "options": [
+      "It calculates mortar strength",
+      "It controls course heights and helps align openings, lintels and features accurately",
+      "It measures cavity width automatically",
+      "It replaces a spirit level"
+    ],
+    "correct": 1,
+    "explanation": "A gauge rod provides consistent vertical course control and feature alignment.",
+    "id": "brick-challenging-set2-a6-k21-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K22",
+    "concept": "K22 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What defect can result if cavity insulation is pushed tightly against mortar droppings bridging the cavity?",
+    "options": [
+      "Improved thermal performance",
+      "A path for moisture to cross toward the inner leaf",
+      "Higher compressive strength",
+      "Reduced need for wall ties"
+    ],
+    "correct": 1,
+    "explanation": "Mortar bridges can transfer moisture across the cavity, especially where insulation is forced against them.",
+    "id": "brick-challenging-set2-a6-k22-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A wall tie has been omitted in a completed section that is still accessible. What action shows ownership?",
+    "options": [
+      "Cover it with insulation",
+      "Record and report it, then correct it using the approved method",
+      "Leave it because one tie makes no difference",
+      "Ask the next trade to decide"
+    ],
+    "correct": 1,
+    "explanation": "Ownership means acknowledging the defect and ensuring an approved correction before concealment.",
+    "id": "brick-challenging-set2-a6-b3-3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
 ]);
 
 window.MCQQuestionBank.register('bricklayer-st0095-v1-2',7,[
@@ -865,6 +1231,61 @@ window.MCQQuestionBank.register('bricklayer-st0095-v1-2',7,[
     "correct": 1,
     "explanation": "Inconsistent gauging changes the water-cement ratio and workability, leading to variable strength, curing and colour.",
     "id": "brick-challenging-set1-a7-k20-3",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K17",
+    "concept": "K17 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is a likely consequence of tooling joints after the mortar has become too hard?",
+    "options": [
+      "A denser brick face",
+      "Poor compaction and an uneven, weak joint finish",
+      "Increased wall-tie strength",
+      "Improved bond between courses"
+    ],
+    "correct": 1,
+    "explanation": "Late tooling can prevent proper compaction and leave an inconsistent finish.",
+    "id": "brick-challenging-set2-a7-k17-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K19",
+    "concept": "K19 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why is compressible filler used within a masonry movement joint?",
+    "options": [
+      "To bond both sides rigidly",
+      "To accommodate movement while supporting the sealant profile",
+      "To replace wall ties",
+      "To absorb rainwater permanently"
+    ],
+    "correct": 1,
+    "explanation": "The filler allows movement and helps form the correct sealed joint arrangement.",
+    "id": "brick-challenging-set2-a7-k19-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K20",
+    "concept": "K20 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should cement and sand be accurately gauged for each mortar batch?",
+    "options": [
+      "To ensure consistent proportions, performance and colour",
+      "To make every batch set instantly",
+      "To avoid using clean water",
+      "To eliminate the need for mixing"
+    ],
+    "correct": 0,
+    "explanation": "Consistent gauging produces more uniform workability, strength and appearance.",
+    "id": "brick-challenging-set2-a7-k20-3",
     "type": "Knowledge",
     "status": "approved"
   }
@@ -1016,6 +1437,79 @@ window.MCQQuestionBank.register('bricklayer-st0095-v1-2',8,[
     "type": "Knowledge",
     "status": "approved"
   }
+,
+  {
+    "ksb": "K15",
+    "concept": "K15 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which feature distinguishes Flemish bond from English bond?",
+    "options": [
+      "Every course contains only stretchers",
+      "Headers and stretchers alternate within each course",
+      "Headers are used only at corners",
+      "There are no vertical joints"
+    ],
+    "correct": 1,
+    "explanation": "Flemish bond alternates headers and stretchers in the same course.",
+    "id": "brick-challenging-set2-a8-k15-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K16",
+    "concept": "K16 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should the first course of a solid wall be checked carefully for line, level and square?",
+    "options": [
+      "Later courses can only compensate with thicker joints",
+      "Errors at the base are carried through and become harder to correct",
+      "It determines mortar colour",
+      "It prevents all efflorescence"
+    ],
+    "correct": 1,
+    "explanation": "Initial setting-out errors accumulate and affect the entire wall.",
+    "id": "brick-challenging-set2-a8-k16-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K18",
+    "concept": "K18 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When building an attached pier, why must its bond be coordinated with the wall?",
+    "options": [
+      "To create a decorative shadow only",
+      "To ensure the pier is properly integrated rather than acting as an unstable separate element",
+      "To reduce the number of bricks",
+      "To avoid using closures"
+    ],
+    "correct": 1,
+    "explanation": "Correct bonding integrates the pier with the wall and improves stability.",
+    "id": "brick-challenging-set2-a8-k18-3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K23",
+    "concept": "K23 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is the main setting-out risk when forming a brick-on-edge sill?",
+    "options": [
+      "Using bricks with equal colour",
+      "Failing to allow for joint widths and the required projection or fall",
+      "Checking the opening width",
+      "Using a gauge rod"
+    ],
+    "correct": 1,
+    "explanation": "The unit arrangement, joints, projection and fall must be set out together to avoid a poor fit or drainage defect.",
+    "id": "brick-challenging-set2-a8-k23-4",
+    "type": "Knowledge",
+    "status": "approved"
+  }
 ]);
 
 window.MCQQuestionBank.register('bricklayer-st0095-v1-2',9,[
@@ -1125,6 +1619,61 @@ window.MCQQuestionBank.register('bricklayer-st0095-v1-2',9,[
     "correct": 1,
     "explanation": "Ownership includes checking materials against the requirement and escalating incompatibility before completing a defective repair.",
     "id": "brick-challenging-set1-a9-b3-3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K24",
+    "concept": "K24 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A horizontal crack follows the bed joint beneath a long concrete lintel. Which issue should be investigated first?",
+    "options": [
+      "Whether the bricks were too clean",
+      "Differential movement or inadequate movement provision around the lintel",
+      "Whether the wall was pointed neatly",
+      "The colour of the DPC"
+    ],
+    "correct": 1,
+    "explanation": "Concrete and masonry can move differently, so movement detailing around the lintel should be checked.",
+    "id": "brick-challenging-set2-a9-k24-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K25",
+    "concept": "K25 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "How should facing bricks be stored before use during wet weather?",
+    "options": [
+      "Directly on muddy ground under a torn sheet",
+      "On a firm raised base, protected from saturation while allowing ventilation",
+      "Fully submerged to equalise suction",
+      "Uncovered beside the mixer"
+    ],
+    "correct": 1,
+    "explanation": "Raised, ventilated protection reduces contamination, saturation and frost damage.",
+    "id": "brick-challenging-set2-a9-k25-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A repaired area is structurally sound but the joint profile visibly differs from the existing work. What should the bricklayer do?",
+    "options": [
+      "Leave it because strength is all that matters",
+      "Inspect it against the specification and correct the finish before handover",
+      "Apply paint over the joints",
+      "Ask the customer to accept it verbally"
+    ],
+    "correct": 1,
+    "explanation": "Taking ownership includes checking both performance and specified finish before completion.",
+    "id": "brick-challenging-set2-a9-b3-3",
     "type": "Behaviour",
     "status": "approved"
   }
@@ -1276,6 +1825,79 @@ window.MCQQuestionBank.register('bricklayer-st0095-v1-2',10,[
     "type": "Behaviour",
     "status": "approved"
   }
+,
+  {
+    "ksb": "K26",
+    "concept": "K26 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which message is most suitable when warning another trade about uncured masonry?",
+    "options": [
+      "Keep off",
+      "The wall is weak",
+      "Do not load or fix to this wall until the stated curing period has passed; contact the bricklaying supervisor if access is needed",
+      "Everyone should know not to touch it"
+    ],
+    "correct": 2,
+    "explanation": "Clear communication identifies the restriction, duration and contact route without ambiguity.",
+    "id": "brick-challenging-set2-a10-k26-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K27",
+    "concept": "K27 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should the bricklaying team coordinate scaffold loading with the scaffold contractor?",
+    "options": [
+      "To reserve the best working lift",
+      "To ensure loads and material positions remain within the scaffold design and safe capacity",
+      "To reduce brick colour variation",
+      "To avoid completing inspections"
+    ],
+    "correct": 1,
+    "explanation": "Scaffold loading must stay within the designed capacity and arrangement.",
+    "id": "brick-challenging-set2-a10-k27-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B6",
+    "concept": "B6 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "The team finishes its area early while another gang is struggling with a shared deadline. What best demonstrates team focus?",
+    "options": [
+      "Leave immediately",
+      "Offer appropriate support through the supervisor without working beyond competence",
+      "Take over unfamiliar work without permission",
+      "Criticise the slower gang"
+    ],
+    "correct": 1,
+    "explanation": "Team focus includes supporting wider goals while respecting competence and supervision.",
+    "id": "brick-challenging-set2-a10-b6-3",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "B5",
+    "concept": "B5 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A bricklayer receives feedback that their raking cuts are inconsistent. What is the best response?",
+    "options": [
+      "Ignore it because the wall passed",
+      "Request coaching, practise controlled setting out and review the results",
+      "Avoid all future raking work",
+      "Blame the cutting tools"
+    ],
+    "correct": 1,
+    "explanation": "Development means acting on feedback and deliberately improving the identified skill.",
+    "id": "brick-challenging-set2-a10-b5-4",
+    "type": "Behaviour",
+    "status": "approved"
+  }
 ]);
 
 window.MCQQuestionBank.register('bricklayer-st0095-v1-2',11,[
@@ -1388,6 +2010,61 @@ window.MCQQuestionBank.register('bricklayer-st0095-v1-2',11,[
     "type": "Behaviour",
     "status": "approved"
   }
+,
+  {
+    "ksb": "K28",
+    "concept": "K28 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is the difference between equality and equity in the workplace?",
+    "options": [
+      "Equality gives identical support; equity provides appropriate support to remove disadvantage",
+      "They mean exactly the same thing",
+      "Equity applies only to pay",
+      "Equality allows discrimination when deadlines are tight"
+    ],
+    "correct": 0,
+    "explanation": "Equality concerns fair treatment, while equity recognises that different support may be needed to achieve fair participation.",
+    "id": "brick-challenging-set2-a11-k28-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K31",
+    "concept": "K31 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which source is most appropriate for immediate workplace wellbeing support?",
+    "options": [
+      "Unverified social media advice",
+      "The employer support route, trained mental-health first aider, GP or recognised support service",
+      "A customer on site",
+      "A materials supplier"
+    ],
+    "correct": 1,
+    "explanation": "Support should come from recognised workplace or professional routes.",
+    "id": "brick-challenging-set2-a11-k31-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B4",
+    "concept": "B4 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A colleague is repeatedly excluded from informal planning discussions. What action best supports inclusion?",
+    "options": [
+      "Continue because attendance is voluntary",
+      "Ensure relevant discussions and decisions are shared through accessible team channels",
+      "Tell them to ask afterwards",
+      "Only include senior workers"
+    ],
+    "correct": 1,
+    "explanation": "Inclusive practice ensures everyone affected has fair access to relevant information and participation.",
+    "id": "brick-challenging-set2-a11-b4-3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
 ]);
 
 window.MCQQuestionBank.register('bricklayer-st0095-v1-2',12,[
@@ -1497,6 +2174,61 @@ window.MCQQuestionBank.register('bricklayer-st0095-v1-2',12,[
     "correct": 1,
     "explanation": "Planned cutting reduces waste, enables offcut reuse and supports controlled management of dust and slurry.",
     "id": "brick-challenging-set1-a12-b2-3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K30",
+    "concept": "K30 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When setting out a raking wall, why should perp-joint positions be considered before cutting?",
+    "options": [
+      "To keep the bond and avoid weak or visually poor slivers",
+      "To increase mortar waste",
+      "To remove the need for a line",
+      "To make all cuts identical"
+    ],
+    "correct": 0,
+    "explanation": "Planning joint positions maintains bond and avoids unsuitable small cut units.",
+    "id": "brick-challenging-set2-a12-k30-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K29",
+    "concept": "K29 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is the safest method for making a controlled hand cut to a brick?",
+    "options": [
+      "Hold it in one hand and strike toward the body",
+      "Support it securely, mark the cut, wear eye protection and use the correct bolster and hammer technique",
+      "Use any damaged chisel available",
+      "Strike repeatedly without marking"
+    ],
+    "correct": 1,
+    "explanation": "Secure support, clear marking, PPE and correct tools improve control and reduce injury risk.",
+    "id": "brick-challenging-set2-a12-k29-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which approach best reduces waste when cutting blocks for a gable?",
+    "options": [
+      "Begin cutting before setting out",
+      "Prepare a cutting schedule and reuse suitable matching offcuts",
+      "Discard every offcut below half length",
+      "Cut all blocks longer and trim them repeatedly"
+    ],
+    "correct": 1,
+    "explanation": "A cutting schedule and planned reuse reduce unnecessary material use and waste.",
+    "id": "brick-challenging-set2-a12-b2-3",
     "type": "Behaviour",
     "status": "approved"
   }
