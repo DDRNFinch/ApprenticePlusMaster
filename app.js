@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.10';
+const APP_VERSION='V1.11';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -1006,13 +1006,57 @@ function renderNotepad(){
  if(editing)bindNoteEditor(editing);
  hydrateNoteMedia();
 }
-function noteEditor(note){return `<section class="card panel note-editor"><div class="panel-body"><div class="field"><label>Note name</label><input class="input" id="noteTitle" maxlength="100" placeholder="Name this note" value="${esc(note.title)}"></div><div class="field"><label>Note</label><textarea class="input note-text" id="noteText" placeholder="Write your note here...">${esc(note.text)}</textarea></div><div class="note-capture-grid" aria-label="Add to note"><label class="capture-button" title="Take photo" aria-label="Take photo">${appIcon('camera')}<input class="hide" id="notePhotos" type="file" accept="image/*" capture="environment" multiple></label><label class="capture-button" title="Record video" aria-label="Record video">${appIcon('video')}<input class="hide" id="noteVideos" type="file" accept="video/*" capture="environment" multiple></label><label class="capture-button" title="Voice recording" aria-label="Voice recording">${appIcon('microphone')}<input class="hide" id="noteAudio" type="file" accept="audio/*" capture></label><label class="capture-button" title="Choose from gallery" aria-label="Choose from gallery">${appIcon('gallery')}<input class="hide" id="noteGallery" type="file" accept="image/*,video/*" multiple></label></div>${(note.media||[]).length?`<div class="note-open-media">${(note.media||[]).map(m=>`<div class="note-open-media-item">${m.type==='image'?`<img data-note-media="${m.blobKey}" alt="${esc(m.name)}">`:m.type==='video'?`<video data-note-media="${m.blobKey}" controls playsinline></video>`:`<audio data-note-media="${m.blobKey}" controls></audio>`}<div class="note-media-row"><span>${noteMediaLabel(m.type)} · ${esc(m.name)}</span><button class="link-button danger" data-remove-note-media="${m.id}">Remove</button></div></div>`).join('')}</div>`:''}</div><div class="btn-row"><button class="btn" id="saveNote">Save note</button><button class="btn secondary" id="cancelNote">Cancel</button>${note.title?'<button class="btn secondary danger-note" id="deleteCurrentNote">Delete note</button>':''}</div></section>`}
+function noteEditor(note){return `<section class="card panel note-editor"><div class="panel-body"><div class="field"><label>Note name</label><input class="input" id="noteTitle" maxlength="100" placeholder="Name this note" value="${esc(note.title)}"></div><div class="field"><label>Note</label><textarea class="input note-text" id="noteText" placeholder="Write your note here...">${esc(note.text)}</textarea></div><div class="note-capture-grid" aria-label="Add to note"><label class="capture-button" title="Take photo" aria-label="Take photo">${appIcon('camera')}<input class="hide" id="notePhotos" type="file" accept="image/*" capture="environment" multiple></label><label class="capture-button" title="Record video" aria-label="Record video">${appIcon('video')}<input class="hide" id="noteVideos" type="file" accept="video/*" capture="environment" multiple></label><button type="button" class="capture-button" id="noteVoiceRecord" title="Voice recording" aria-label="Voice recording">${appIcon('microphone')}</button><label class="capture-button" title="Choose from gallery" aria-label="Choose from gallery">${appIcon('gallery')}<input class="hide" id="noteGallery" type="file" accept="image/*,video/*" multiple></label></div>${(note.media||[]).length?`<div class="note-open-media">${(note.media||[]).map(m=>`<div class="note-open-media-item">${m.type==='image'?`<img data-note-media="${m.blobKey}" alt="${esc(m.name)}">`:m.type==='video'?`<video data-note-media="${m.blobKey}" controls playsinline></video>`:`<audio data-note-media="${m.blobKey}" controls></audio>`}<div class="note-media-row"><span>${noteMediaLabel(m.type)} · ${esc(m.name)}</span><button class="link-button danger" data-remove-note-media="${m.id}">Remove</button></div></div>`).join('')}</div>`:''}</div><div class="btn-row"><button class="btn" id="saveNote">Save note</button><button class="btn secondary" id="cancelNote">Cancel</button>${note.title?'<button class="btn secondary danger-note" id="deleteCurrentNote">Delete note</button>':''}</div></section>`}
 function noteSummaryIcons(note){const media=note.media||[],icons=[];if(media.some(m=>m.type==='image'))icons.push(appIcon('camera'));if(media.some(m=>m.type==='video'))icons.push(appIcon('video'));if(media.some(m=>m.type==='audio'))icons.push(appIcon('microphone'));if(String(note.text||'').trim())icons.push(appIcon('note'));return icons.join('')}
 function noteCard(note){return `<button class="note-card note-card-summary" data-edit-note="${note.id}"><div class="note-card-head"><div><h3>${esc(note.title||'Untitled note')}</h3><small>${noteDate(note.updatedAt||note.createdAt)}</small><div class="note-summary-icons" aria-label="Saved content">${noteSummaryIcons(note)}</div></div><span class="resource-arrow">›</span></div></button>`}
+function preferredAudioMime(){
+ const types=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus'];
+ return types.find(type=>window.MediaRecorder&&MediaRecorder.isTypeSupported?.(type))||'';
+}
+async function startNoteVoiceRecorder(note,titleInput,textInput){
+ if(!window.isSecureContext){toast('Microphone recording requires the secure HTTPS version of Apprentice+');return}
+ if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined'){toast('Voice recording is not supported on this device');return}
+ let stream;
+ try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}})}
+ catch(error){console.error('Microphone permission error',error);toast(error?.name==='NotAllowedError'?'Microphone permission is blocked. Allow it in the Apprentice+ site permissions.':'The microphone could not be opened');return}
+ const mime=preferredAudioMime();let recorder;
+ try{recorder=new MediaRecorder(stream,mime?{mimeType:mime,audioBitsPerSecond:64000}:{audioBitsPerSecond:64000})}
+ catch(error){console.error('MediaRecorder error',error);stream.getTracks().forEach(track=>track.stop());toast('Voice recording could not start');return}
+ const chunks=[];let seconds=0,timer=null,finished=false;
+ app.insertAdjacentHTML('beforeend',`<div class="modal" id="noteVoiceModal"><div class="modal-card note-voice-modal"><div class="number">Voice recording</div><h2 id="noteVoiceStatus">Recording…</h2><div class="note-voice-timer" id="noteVoiceTimer">00:00</div><p class="muted">Speak clearly. Press Stop when finished.</p><div class="btn-row"><button class="btn" id="stopNoteVoice">Stop and save</button><button class="btn secondary" id="cancelNoteVoice">Cancel</button></div></div></div>`);
+ const modal=document.getElementById('noteVoiceModal'),status=document.getElementById('noteVoiceStatus'),timerEl=document.getElementById('noteVoiceTimer');
+ const stopTracks=()=>stream.getTracks().forEach(track=>track.stop());
+ const finish=cancelled=>{if(finished)return;finished=true;clearInterval(timer);try{if(recorder.state!=='inactive')recorder.stop()}catch{};if(cancelled){stopTracks();modal?.remove()}};
+ document.getElementById('stopNoteVoice').onclick=()=>{status.textContent='Saving recording…';document.getElementById('stopNoteVoice').disabled=true;finish(false)};
+ document.getElementById('cancelNoteVoice').onclick=()=>finish(true);
+ recorder.ondataavailable=event=>{if(event.data?.size)chunks.push(event.data)};
+ recorder.onerror=event=>{console.error('Voice recorder error',event.error||event);clearInterval(timer);stopTracks();modal?.remove();toast('Voice recording failed')};
+ recorder.onstop=async()=>{
+  stopTracks();
+  if(!finished||!modal?.isConnected)return;
+  try{
+   const blob=new Blob(chunks,{type:recorder.mimeType||mime||'audio/webm'});
+   if(!blob.size)throw new Error('Empty recording');
+   note.title=titleInput.value;
+   note.text=textInput.value;
+   const blobKey=`notepad:${note.id}:audio:${uid()}`;
+   await putStore(blobKey,blob);
+   note.media=[...(note.media||[]),{id:uid(),type:'audio',blobKey,name:`Voice recording ${new Date().toLocaleString('en-GB')}`,mime:blob.type,createdAt:Date.now()}];
+   note.updatedAt=Date.now();
+   state.data[NOTEPAD_KEY]=learnerNotes().map(n=>n.id===note.id?note:n);
+   await saveData();
+   modal.remove();
+   render();
+   toast('Voice recording saved');
+  }catch(error){console.error('Voice save error',error);modal?.remove();toast('Voice recording could not be saved')}
+ };
+ try{recorder.start(500);timer=setInterval(()=>{seconds++;timerEl.textContent=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`},1000)}
+ catch(error){console.error(error);stopTracks();modal.remove();toast('Voice recording could not start')}
+}
 function bindNoteEditor(note){
  const title=document.getElementById('noteTitle'),text=document.getElementById('noteText');
- const addFiles=async(input,type)=>{if(!input.files?.length)return;input.disabled=true;try{note.media=[...(note.media||[]),...await storeNoteFiles(input.files,type,note.id)];note.updatedAt=Date.now();state.data[NOTEPAD_KEY]=learnerNotes().map(n=>n.id===note.id?note:n);await saveData();render();toast(`${noteMediaLabel(type)} added`)}catch(error){console.error(error);toast('Media could not be saved')}finally{input.disabled=false}};
- document.getElementById('notePhotos').onchange=e=>addFiles(e.target,'image');document.getElementById('noteAudio').onchange=e=>addFiles(e.target,'audio');document.getElementById('noteVideos').onchange=e=>addFiles(e.target,'video');document.getElementById('noteGallery').onchange=async e=>{const files=Array.from(e.target.files||[]);if(!files.length)return;e.target.disabled=true;try{const images=files.filter(f=>f.type.startsWith('image/')),videos=files.filter(f=>f.type.startsWith('video/'));const added=[];if(images.length)added.push(...await storeNoteFiles(images,'image',note.id));if(videos.length)added.push(...await storeNoteFiles(videos,'video',note.id));note.media=[...(note.media||[]),...added];note.updatedAt=Date.now();state.data[NOTEPAD_KEY]=learnerNotes().map(n=>n.id===note.id?note:n);await saveData();render();toast('Gallery media added')}catch(error){console.error(error);toast('Gallery media could not be saved')}finally{e.target.disabled=false}};
+ const addFiles=async(input,type)=>{if(!input.files?.length)return;input.disabled=true;try{note.title=title.value;note.text=text.value;note.media=[...(note.media||[]),...await storeNoteFiles(input.files,type,note.id)];note.updatedAt=Date.now();state.data[NOTEPAD_KEY]=learnerNotes().map(n=>n.id===note.id?note:n);await saveData();render();toast(`${noteMediaLabel(type)} added`)}catch(error){console.error(error);toast('Media could not be saved')}finally{input.disabled=false}};
+ document.getElementById('notePhotos').onchange=e=>addFiles(e.target,'image');document.getElementById('noteVideos').onchange=e=>addFiles(e.target,'video');document.getElementById('noteVoiceRecord').onclick=()=>startNoteVoiceRecorder(note,title,text);document.getElementById('noteGallery').onchange=async e=>{const files=Array.from(e.target.files||[]);if(!files.length)return;e.target.disabled=true;try{note.title=title.value;note.text=text.value;const images=files.filter(f=>f.type.startsWith('image/')),videos=files.filter(f=>f.type.startsWith('video/'));const added=[];if(images.length)added.push(...await storeNoteFiles(images,'image',note.id));if(videos.length)added.push(...await storeNoteFiles(videos,'video',note.id));note.media=[...(note.media||[]),...added];note.updatedAt=Date.now();state.data[NOTEPAD_KEY]=learnerNotes().map(n=>n.id===note.id?note:n);await saveData();render();toast('Gallery media added')}catch(error){console.error(error);toast('Gallery media could not be saved')}finally{e.target.disabled=false}};
  document.querySelectorAll('[data-remove-note-media]').forEach(b=>b.onclick=async()=>{const item=(note.media||[]).find(m=>m.id===b.dataset.removeNoteMedia);if(item?.blobKey)await deleteStore(item.blobKey);note.media=(note.media||[]).filter(m=>m.id!==b.dataset.removeNoteMedia);note.updatedAt=Date.now();state.data[NOTEPAD_KEY]=learnerNotes().map(n=>n.id===note.id?note:n);await saveData();render();toast('Attachment removed')});
  document.getElementById('saveNote').onclick=async()=>{const t=title.value.trim(),body=text.value.trim();if(!t)return toast('Name the note before saving');if(!body&&!(note.media||[]).length)return toast('Add text or media to the note');note.title=t;note.text=body;note.updatedAt=Date.now();state.data[NOTEPAD_KEY]=learnerNotes().map(n=>n.id===note.id?note:n);await saveData();state.editingNoteId=null;render();toast('Note saved')};
  const deleteCurrent=document.getElementById('deleteCurrentNote');if(deleteCurrent)deleteCurrent.onclick=async()=>{if(!confirm(`Delete “${note.title||'Untitled note'}”?`))return;await deleteNoteMedia(note);state.data[NOTEPAD_KEY]=learnerNotes().filter(n=>n.id!==note.id);await saveData();state.editingNoteId=null;render();toast('Note deleted')};
