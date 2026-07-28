@@ -221,3 +221,9 @@ Added Targeted Revision engine backend helpers.
 - Added Resources as a new bottom-navigation tab immediately left of Course.
 - Added Learner Notepad with named notes, searchable text, photographs, voice recordings and videos.
 - Notes and media save locally in IndexedDB and can be edited or deleted later.
+
+
+## V1.10
+- Toolbox saved-note cards now show only the note name, date and content-type icons.
+- Full note text and media display only after opening the note.
+- Restored the Gallery icon and made Camera, Video, Voice and Gallery each occupy one quarter of the attachment row.
