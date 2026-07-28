@@ -1,3 +1,10 @@
+# V1.6
+
+- Save video now re-renders the current walkthrough immediately after IndexedDB and app-state storage complete.
+- Remove now re-renders the current walkthrough immediately after deletion completes.
+- Choose video now opens a normal video file picker without the camera capture attribute.
+- Added cache-busted app and stylesheet references and updated the service-worker cache.
+
 # V1.5
 
 - Save video now reloads the current Video Walkthrough page only after IndexedDB storage completes.
