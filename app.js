@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.0';
+const APP_VERSION='V1.1';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -370,7 +370,6 @@ async function saveWalkthroughVideo(n,code,video,{name,type}={}){
  if(old?.blobKey){try{await deleteStore(old.blobKey)}catch(error){console.warn(error)}}
  invalidatePackStatus(n);
  renderWalkthrough();
- showWalkthroughSavedMessage(code);
  return true;
 }
 function storedWalkthroughBlob(value,meta){
@@ -378,13 +377,6 @@ function storedWalkthroughBlob(value,meta){
  if(value?.kind==='walkthrough-video'&&value.buffer)return new Blob([value.buffer],{type:value.type||meta?.type||'video/webm'});
  if(value instanceof ArrayBuffer)return new Blob([value],{type:meta?.type||'video/webm'});
  return null;
-}
-function showWalkthroughSavedMessage(code){
- const old=document.getElementById('walkSavedModal');if(old)old.remove();
- app.insertAdjacentHTML('beforeend',`<div class="modal" id="walkSavedModal"><div class="modal-card save-confirm-card"><div class="save-confirm-icon">✓</div><h3>Video saved</h3><p>${esc(code)} has been added and marked complete.</p><button class="btn" id="closeWalkSaved">Continue</button></div></div>`);
- const close=()=>document.getElementById('walkSavedModal')?.remove();
- document.getElementById('closeWalkSaved').onclick=close;
- setTimeout(close,1800);
 }
 async function saveWalkthroughOverall(n){
  const count=walkthroughCount(n);if(!count.done)return toast('Add at least one KSB video before saving the walkthrough');
@@ -427,7 +419,6 @@ async function openWalkthroughRecorder(n,code,text,a,fallbackInput){
   useButton.disabled=true;retakeButton.disabled=true;useButton.textContent='Saving…';live.textContent='Saving…';
   close();
   state.view='walkthrough';state.assignment=n;renderWalkthrough();
-  toast(`Saving ${code} video…`);
   try{await saveWalkthroughVideo(n,code,videoToSave,{name:recordingName,type:mime})}
   catch(error){console.error(error);toast(error?.name==='QuotaExceededError'?'Video was not saved because phone storage is full.':'Video could not be saved. Please try a shorter clip.')}
  };
@@ -435,15 +426,17 @@ async function openWalkthroughRecorder(n,code,text,a,fallbackInput){
 }
 function renderWalkthrough(){
  const a=assignment(state.assignment);if(!a){state.view='home';render();return}
- const items=walkthroughKnowledge(a),progress=walkthroughCount(a.n);
+ const items=walkthroughKnowledge(a),progress=walkthroughCount(a.n),thumbnailUrls=[];
  if(!items.length){app.innerHTML=shell(`<button class="back" id="walkBack">← Assignment ${a.n}</button><section class="card panel"><h2>Video Walkthrough</h2><p class="muted">No Knowledge, Skill or Behaviour criteria are mapped to this assignment.</p></section>`);document.getElementById('walkBack').onclick=()=>{state.view='assignment';render()};return}
- app.innerHTML=shell(`<button class="back no-print" id="walkBack">← Assignment ${a.n}</button><section class="walkthrough-head"><div><div class="number">Video Walkthrough</div><h2>${esc(a.title)}</h2><p>${progress.done} of ${progress.total} KSB criteria recorded</p></div><span class="status-pill ${walkthroughSaved(a.n)?'done':''}">${progress.done}/${progress.total}</span></section><div class="walkthrough-progress"><span style="width:${progress.total?(progress.done/progress.total)*100:0}%"></span></div><section class="walkthrough-tile-list">${items.map(([code,text])=>{const done=walkthroughComplete(a.n,code),meta=walkthroughMeta(a.n)[code],title=learnerPromptTitle(a.n,code,text);return `<article class="walkthrough-mini-tile ${done?'complete':''}"><div class="walkthrough-mini-copy"><strong class="walkthrough-mini-code">${esc(code)}</strong><h3>${esc(title)}</h3><p>${esc(text)}</p>${done?`<div class="walkthrough-mini-saved">✓ Video saved${meta?.date?` · ${esc(meta.date)}`:''}</div><div class="walkthrough-mini-actions"><button class="link-button" data-view-walk="${esc(code)}">View</button><button class="link-button" data-remove-walk="${esc(code)}">Remove</button></div>`:''}</div><input class="sr-only" id="walkVideoInput-${esc(code)}" type="file" accept="video/*" capture="environment"><button class="walkthrough-video-button" data-record-walk="${esc(code)}" aria-label="${done?'Replace':'Record'} ${esc(code)} video">${walkthroughRecorderIcon()}<span>${done?'REPLACE':'ADD VIDEO'}</span></button></article>`}).join('')}</section><section class="card panel walkthrough-save-panel ${walkthroughSaved(a.n)?'complete':''}"><div><h3>${walkthroughSaved(a.n)?'Walkthrough saved':'Save walkthrough'}</h3><p class="muted">${walkthroughSaved(a.n)?`${progress.done} of ${progress.total} KSB criteria are included. Further videos remain optional.`:'Record only the relevant Knowledge, Skill or Behaviour criteria, then save the walkthrough. Every criterion does not need a video.'}</p></div><button class="btn" id="saveWalkthroughOverall" ${progress.done?'':'disabled'}>${walkthroughSaved(a.n)?'Save updated walkthrough':'Save walkthrough'}</button></section>`);
- document.getElementById('walkBack').onclick=()=>{state.view='assignment';state.walkthroughCode=null;render()};
+ app.innerHTML=shell(`<button class="back no-print" id="walkBack">← Assignment ${a.n}</button><section class="walkthrough-head"><div><div class="number">Video Walkthrough</div><h2>${esc(a.title)}</h2><p>${progress.done} of ${progress.total} KSB criteria recorded</p></div><span class="status-pill ${walkthroughSaved(a.n)?'done':''}">${progress.done}/${progress.total}</span></section><div class="walkthrough-progress"><span style="width:${progress.total?(progress.done/progress.total)*100:0}%"></span></div><section class="walkthrough-tile-list">${items.map(([code,text])=>{const done=walkthroughComplete(a.n,code),meta=walkthroughMeta(a.n)[code],title=learnerPromptTitle(a.n,code,text);return `<article class="walkthrough-mini-tile ${done?'complete':''}"><div class="walkthrough-mini-copy"><strong class="walkthrough-mini-code">${esc(code)}</strong><h3>${esc(title)}</h3><p>${esc(text)}</p>${done?`<div class="walkthrough-mini-saved">✓ Video saved${meta?.date?` · ${esc(meta.date)}`:''}</div><div class="walkthrough-mini-actions"><button class="link-button" data-view-walk="${esc(code)}">View</button><button class="link-button" data-remove-walk="${esc(code)}">Remove</button></div>`:''}</div><input class="sr-only" id="walkVideoInput-${esc(code)}" type="file" accept="video/*" capture="environment"><button class="walkthrough-video-button ${done?'has-thumbnail':''}" data-record-walk="${esc(code)}" aria-label="${done?'Replace':'Record'} ${esc(code)} video">${done?`<video class="walkthrough-video-thumbnail" data-walk-thumb="${esc(code)}" muted playsinline preload="metadata"></video><span class="walkthrough-thumbnail-label">REPLACE</span>`:`${walkthroughRecorderIcon()}<span>ADD VIDEO</span>`}</button></article>`}).join('')}</section><section class="card panel walkthrough-save-panel ${walkthroughSaved(a.n)?'complete':''}"><div><h3>${walkthroughSaved(a.n)?'Walkthrough saved':'Save walkthrough'}</h3><p class="muted">${walkthroughSaved(a.n)?`${progress.done} of ${progress.total} KSB criteria are included. Further videos remain optional.`:'Record only the relevant Knowledge, Skill or Behaviour criteria, then save the walkthrough. Every criterion does not need a video.'}</p></div><button class="btn" id="saveWalkthroughOverall" ${progress.done?'':'disabled'}>${walkthroughSaved(a.n)?'Save updated walkthrough':'Save walkthrough'}</button></section>`);
+ const releaseThumbs=()=>thumbnailUrls.splice(0).forEach(url=>URL.revokeObjectURL(url));
+ document.getElementById('walkBack').onclick=()=>{releaseThumbs();state.view='assignment';state.walkthroughCode=null;render()};
  document.getElementById('saveWalkthroughOverall').onclick=()=>saveWalkthroughOverall(a.n);
- document.querySelectorAll('[data-record-walk]').forEach(button=>button.onclick=()=>{const code=button.dataset.recordWalk,item=items.find(([k])=>k===code),input=document.getElementById(`walkVideoInput-${code}`);openWalkthroughRecorder(a.n,code,item?.[1]||'',a,input)});
+ document.querySelectorAll('[data-record-walk]').forEach(button=>button.onclick=()=>{releaseThumbs();const code=button.dataset.recordWalk,item=items.find(([k])=>k===code),input=document.getElementById(`walkVideoInput-${code}`);openWalkthroughRecorder(a.n,code,item?.[1]||'',a,input)});
  items.forEach(([code])=>{const input=document.getElementById(`walkVideoInput-${code}`);input.onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{await saveWalkthroughVideo(a.n,code,file)}catch(error){console.error(error);toast('Video could not be saved. Try a shorter clip.')}}});
- document.querySelectorAll('[data-remove-walk]').forEach(button=>button.onclick=()=>removeWalkthroughVideo(a.n,button.dataset.removeWalk));
+ document.querySelectorAll('[data-remove-walk]').forEach(button=>button.onclick=()=>{releaseThumbs();removeWalkthroughVideo(a.n,button.dataset.removeWalk)});
  document.querySelectorAll('[data-view-walk]').forEach(button=>button.onclick=async()=>{const code=button.dataset.viewWalk,meta=walkthroughMeta(a.n)[code],stored=await getStore(meta?.blobKey),blob=storedWalkthroughBlob(stored,meta);if(!blob)return toast('Video file could not be opened');const url=URL.createObjectURL(blob);app.insertAdjacentHTML('beforeend',`<div class="modal" id="walkVideoModal"><div class="modal-card video-modal"><video controls autoplay playsinline src="${url}"></video><button class="btn secondary" id="closeWalkVideo">Close</button></div></div>`);document.getElementById('closeWalkVideo').onclick=()=>{URL.revokeObjectURL(url);document.getElementById('walkVideoModal').remove()}});
+ document.querySelectorAll('[data-walk-thumb]').forEach(async video=>{const code=video.dataset.walkThumb,meta=walkthroughMeta(a.n)[code];try{const stored=await getStore(meta?.blobKey),blob=storedWalkthroughBlob(stored,meta);if(!blob)return;const url=URL.createObjectURL(blob);thumbnailUrls.push(url);video.src=url;video.currentTime=.1;video.addEventListener('loadeddata',()=>{try{video.currentTime=Math.min(.2,video.duration||.2)}catch{}},{once:true})}catch(error){console.warn('Thumbnail unavailable',error)}});
 }
 function assignmentRPL(n){return !!state.data[packStatusKey(n)]?.rpl}
 function evidenceSections(){return COURSE.nvqUnits?['practical','statement','discussion','witness']:['practical','statement','supporting']}
