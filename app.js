@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3.14';
+const APP_VERSION='V1.3.15';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -775,7 +775,7 @@ function renderAcademyLesson(){
 
 
 
-// v1.3.14 Bricklayer EPA professional-judgement question bank (K1-K30)
+// v1.3.15 Bricklayer EPA professional-judgement question bank (K1-K30)
 // Locked MCQ writing standard: realistic workplace judgement, four plausible trade-language answers,
 // no joke/"I do not care" distractors, no official-sounding giveaway, and an explanation for coaching.
 // Questions are deliberately stored as an approved, fixed bank. Nothing is generated at runtime.
@@ -1221,7 +1221,10 @@ function epaQuestionWritingIssues(q){
  const issues=[];
  const question=String(q?.question||'').trim(),options=Array.isArray(q?.options)?q.options.map(x=>String(x||'').trim()):[];
  if(!question)issues.push('question text is missing');
- if(!/(you|your|while|when|after|before|notice|find|asked|arrives|starts|finished|fitting|building|repairing|working)/i.test(question))issues.push('question should use a realistic workplace scenario');
+ // Scenario wording is reviewed as a coaching warning only. Do not rely on a small keyword list,
+ // because valid site scenarios can begin with a person, material, detail, drawing or item of plant.
+ const scenarioSignals=/(you|your|while|when|after|before|notice|find|asked|arrives|starts|finished|fitting|building|repairing|working|site|wall|brick|block|mortar|drawing|detail|joint|labourer|driver|client|foreman|supervisor|delivery|opening|course|scaffold|telehandler|work area)/i;
+ if(question&&!scenarioSignals.test(question))issues.push('review whether the question gives enough workplace context');
  if(options.length!==4||options.some(x=>!x))issues.push('exactly four complete answers are required');
  if(!Number.isInteger(q?.correct)||q.correct<0||q.correct>3)issues.push('one EPA best-practice answer must be selected');
  if(!String(q?.explanation||'').trim())issues.push('coaching explanation is missing');
@@ -1257,18 +1260,19 @@ function shuffle(items){const a=[...items];for(let i=a.length-1;i>0;i--){const j
 function approvedEpaKnowledgeBank(){return Array.isArray(EPA_KNOWLEDGE_PRACTICE_BANKS[COURSE.id])?EPA_KNOWLEDGE_PRACTICE_BANKS[COURSE.id]:[]}
 function epaKnowledgeBankStatus(){
  const required=allCourseKsbs(),requiredCodes=new Set(required.map(x=>x.code)),questions=approvedEpaKnowledgeBank();
- const valid=[],seen=new Set(),issues=[];
+ const valid=[],seen=new Set(),issues=[],warnings=[];
  questions.forEach((q,index)=>{
   const code=String(q?.code||'').trim().toUpperCase();
   if(!requiredCodes.has(code)){issues.push(`Question ${index+1} uses unknown KSB ${code||'(missing)'}`);return}
   if(seen.has(code)){issues.push(`More than one question is assigned to ${code}`);return}
   const writingIssues=epaQuestionWritingIssues(q);
-  if(writingIssues.length)writingIssues.forEach(issue=>issues.push(`${code}: ${issue}`));
-  // Writing checks are coaching warnings only. They must never silently remove an approved question from an EPA attempt.
+  if(writingIssues.length)writingIssues.forEach(issue=>warnings.push(`${code}: ${issue}`));
   seen.add(code);valid.push({...q,code,type:epaType(code),id:q.id||`${COURSE.id}-${code}-epa-practice`,writingStandard:EPA_MCQ_WRITING_STANDARD.id});
  });
  const missing=required.filter(x=>!seen.has(x.code));
- return {required,questions:valid,missing,issues,ready:missing.length===0&&issues.length===0&&valid.length===required.length};
+ // Practice unlocks as soon as a complete 20-question attempt can be generated.
+ // Missing future KSBs and writing-review notes do not block testing of the installed bank.
+ return {required,questions:valid,missing,issues,warnings,ready:valid.length>=20&&issues.length===0};
 }
 function chooseEpaQuestions(){
  return shuffle(epaKnowledgeBankStatus().questions).slice(0,20).map(q=>{
@@ -1323,7 +1327,7 @@ function renderEpaMockHome(){
  if(COURSE.nvqUnits){state.view='home';render();return}
  const status=epaKnowledgeBankStatus(),results=state.data[epaResultKey()]||[],best=results.length?Math.max(...results.map(r=>r.score)):null,last=results[0];
  const knowledgeAction=status.ready?'<button class="btn" id="startEpa">Start Knowledge Practice</button>':'<button class="btn" disabled>Questions being prepared</button>';
- app.innerHTML=shell(`<button class="back no-print" id="epaBack">← Academy</button><section class="epa-hero"><div class="number">${esc(COURSE.name)} · ${esc(COURSE.standard)}</div><h2>EPA Academy</h2><p>Prepare for the three stages of your end-point assessment through KSB practice, professional discussion and an in-house practical task.</p></section><section class="academy-grid epa-stage-grid"><article class="academy-card epa-academy-card"><div class="academy-icon">${appIcon('questions')}</div><div><div class="number">Stage 1</div><h3>Knowledge Practice</h3><p>Each attempt uses 20 questions randomly selected from the approved KSB bank, with the answer order mixed.</p></div><div class="library-summary"><strong>${status.questions.length}/${status.required.length}</strong><span>approved KSB questions</span></div>${knowledgeAction}${last?`<button class="btn secondary" id="reviewLatest">Review latest result</button>`:''}</article><article class="academy-card"><div class="academy-icon">${appIcon('microphone')}</div><div><div class="number">Stage 2</div><h3>Professional Discussion</h3><p>Ten randomly selected KSB questions, read aloud and answered by voice.</p></div><div class="library-summary"><strong>Next</strong><span>planned EPA stage</span></div><button class="btn secondary" disabled>Coming next</button></article><article class="academy-card"><div class="academy-icon">${appIcon('practical')}</div><div><div class="number">Stage 3</div><h3>EPA Practical Pack</h3><p>An in-house timed task with planning, material calculations and objective assessor measurements.</p></div><div class="library-summary"><strong>Later</strong><span>planned EPA stage</span></div><button class="btn secondary" disabled>Coming later</button></article></section><section class="epa-summary-grid"><article class="card panel"><strong>${status.required.length}</strong><span>KSBs to practise</span></article><article class="card panel"><strong>${best===null?'—':best+'%'}</strong><span>best Knowledge Practice result</span></article><article class="card panel"><strong>${best===null?'—':epaPracticeGrade(best)}</strong><span>best grade</span></article></section>${status.issues.length?`<section class="card panel"><h3>Question bank checks</h3><p class="muted">${status.issues.map(esc).join('<br>')}</p></section>`:''}`);
+ app.innerHTML=shell(`<button class="back no-print" id="epaBack">← Academy</button><section class="epa-hero"><div class="number">${esc(COURSE.name)} · ${esc(COURSE.standard)}</div><h2>EPA Academy</h2><p>Prepare for the three stages of your end-point assessment through KSB practice, professional discussion and an in-house practical task.</p></section><section class="academy-grid epa-stage-grid"><article class="academy-card epa-academy-card"><div class="academy-icon">${appIcon('questions')}</div><div><div class="number">Stage 1</div><h3>Knowledge Practice</h3><p>Each attempt uses 20 questions randomly selected from the approved KSB bank, with the answer order mixed.</p></div><div class="library-summary"><strong>${status.questions.length}/${status.required.length}</strong><span>approved KSB questions</span></div>${knowledgeAction}${last?`<button class="btn secondary" id="reviewLatest">Review latest result</button>`:''}</article><article class="academy-card"><div class="academy-icon">${appIcon('microphone')}</div><div><div class="number">Stage 2</div><h3>Professional Discussion</h3><p>Ten randomly selected KSB questions, read aloud and answered by voice.</p></div><div class="library-summary"><strong>Next</strong><span>planned EPA stage</span></div><button class="btn secondary" disabled>Coming next</button></article><article class="academy-card"><div class="academy-icon">${appIcon('practical')}</div><div><div class="number">Stage 3</div><h3>EPA Practical Pack</h3><p>An in-house timed task with planning, material calculations and objective assessor measurements.</p></div><div class="library-summary"><strong>Later</strong><span>planned EPA stage</span></div><button class="btn secondary" disabled>Coming later</button></article></section><section class="epa-summary-grid"><article class="card panel"><strong>${status.required.length}</strong><span>KSBs to practise</span></article><article class="card panel"><strong>${best===null?'—':best+'%'}</strong><span>best Knowledge Practice result</span></article><article class="card panel"><strong>${best===null?'—':epaPracticeGrade(best)}</strong><span>best grade</span></article></section>${status.issues.length||status.warnings.length||status.missing.length?`<section class="card panel"><h3>Question bank status</h3><p class="muted"><strong>Installed:</strong> ${status.questions.length}/${status.required.length}<br><strong>Available for practice:</strong> ${status.questions.length}<br><strong>Warnings:</strong> ${status.warnings.length}<br><strong>Missing:</strong> ${status.missing.length?status.missing.map(x=>esc(x.code)).join(', '):'None'}${status.issues.length?`<br><strong>Blocking issues:</strong><br>${status.issues.map(esc).join('<br>')}`:''}${status.warnings.length?`<br><strong>Writing review notes:</strong><br>${status.warnings.map(esc).join('<br>')}`:''}</p></section>`:''}`);
  document.getElementById('epaBack').onclick=()=>{state.view='academy';render()};
  const start=document.getElementById('startEpa');if(start)start.onclick=()=>{state.epaMock={questions:chooseEpaQuestions(),answers:{},index:0};state.view='epa-test';render();window.scrollTo(0,0)};
  const review=document.getElementById('reviewLatest');if(review)review.onclick=()=>{state.epaMock={result:last};state.view='epa-result';render();window.scrollTo(0,0)};
