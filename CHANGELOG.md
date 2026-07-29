@@ -1,3 +1,11 @@
+# V1.3.28 — Mobile Preparation Entry Buttons
+
+- Added a visible Add Item button to Tools and Equipment.
+- Added a visible Add Item button to Materials and Fixings.
+- Added a visible Add Item button to PPE and Safety Equipment.
+- Kept keyboard Enter support where mobile keyboards provide it.
+- Added duplicate and empty-entry validation across all three preparation lists.
+
 # V1.3.27 — EPA Practical History & Polish
 
 - Unlimited EPA practical retakes.
