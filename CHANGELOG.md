@@ -439,3 +439,14 @@ v1.37.2: Removed the KSB Evidence Coverage panel from standard assignment pages.
 - Dictated text triggers the same input and change events as typing, preserving existing auto-save behaviour.
 - Added clear messages for unsupported browsers and blocked microphone permission.
 - Newly opened pages and dynamically created forms receive the control automatically.
+
+## V1.38.0 — Learning Support Hub
+- Added a new Learning Support app to the Toolbox.
+- Added a non-diagnostic accessibility preference check with recommendations.
+- Added reading controls for text size, line spacing, readable font, reading ruler and page colour.
+- Added writing practice with voice-to-text, read aloud, word count, sentence count and reading time.
+- Added automatic assignment planning checklists based on saved evidence.
+- Added Focus Mode, hearing support preferences, visual alerts and optional vibration.
+- Added saved memory reminders and cue cards.
+- Added plain-English assignment explanations while preserving official KSB wording.
+- Added a central accessibility settings page with persistent device-level preferences.
