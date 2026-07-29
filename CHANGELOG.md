@@ -1,3 +1,13 @@
+# V1.3.25 — EPA Practical Assessor Marking
+
+- Added weighted assessor scorecard with six 1–5 marking areas.
+- Added safety and technical-accuracy minimum thresholds.
+- Added critical-fail override.
+- Added generated strengths and areas for improvement.
+- Added optional additional assessor comments.
+- Submitted marks are final and locked.
+- Ended practicals can be reopened for assessor marking.
+
 ## V1.3.23
 - Added the EPA Practical foundation for all four apprenticeship courses.
 - Added random course-specific practical task generation and a full task specification view.
