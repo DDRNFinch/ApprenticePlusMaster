@@ -1,3 +1,11 @@
+# v1.38.3 – Witness Testimony Resubmission Fix
+
+- Added **Edit and resubmit** to submitted witness testimonies.
+- Reopening a testimony now preserves all existing fields, evidence and signature.
+- The testimony becomes editable again and can be submitted as a new attempt.
+- Previous submitted attempts remain available in Saved attempts.
+- Updated the app version and offline cache.
+
 # v1.38.2 – Global Learning Support
 
 - Applied Learning Support preferences across the entire app, including Course, assignments, practical assessments, theory, walkthroughs, Toolbox, Academy, EPA, KSB views, documents, forms and pop-ups.

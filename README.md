@@ -61,3 +61,8 @@ The Toolbox now includes a Learning Support hub with reading, writing, focus, he
 
 ## v1.38.2
 Learning Support settings are global and apply to every part of Apprentice+, not only the Learning Support pages.
+
+
+## v1.38.3
+- Witness testimonies can now be reopened, edited and submitted again without clearing the existing testimony.
+- Each resubmission is saved as a new evidence attempt while earlier attempts remain in history.

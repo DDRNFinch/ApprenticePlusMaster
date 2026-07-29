@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.38.2';
+const APP_VERSION='V1.38.3';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -1691,7 +1691,7 @@ function additionalCommentsHeading(d,practical=false){if(practical)return"Practi
 function additionalCommentsPlaceholder(d,practical=false){if(practical)return'Record observations specific to this practical assessment, including good practice, progress since previous assessments or recommendations for future development.';if(d.type==='Employer statement')return"Record observations about the learner's workplace performance, including strengths, areas for development or recommendations for future progress.";return'Record workplace observations, examples of good performance or recommendations based on the work witnessed.'}
 function generatedFeedbackHTML(d,practical=false){return `<div class="field"><label>Assessment Summary</label><textarea class="generated-feedback-text" readonly placeholder="Complete the assessment scores to prepare the summary...">${esc(d.feedbackSummary||'')}</textarea></div><div class="field"><label>Areas for Development</label><textarea class="generated-feedback-text" readonly placeholder="Complete the assessment scores to prepare the summary...">${esc(d.feedbackDevelopment||'')}</textarea></div><div class="field"><label>${esc(additionalCommentsHeading(d,practical))}</label><textarea class="autosave" data-field="feedback" placeholder="${esc(additionalCommentsPlaceholder(d,practical))}">${esc(d.feedback||'')}</textarea></div><button type="button" class="btn secondary" id="generateFeedback">Update assessment comments</button>`}
 function signatureHTML(d,locked,requiredBy='Apprentice',allowSavedLearner=true){return `<div class="field"><label>${esc(requiredBy)} signature required</label>${d.signature?`<div class="saved-signature-wrap"><img class="sig-preview saved-signature-preview" src="${d.signature}" alt="Saved ${esc(requiredBy)} signature"><span class="saved-signature-label">Signature saved — hidden for privacy</span></div>`:locked?`<p class="muted">No ${esc(requiredBy.toLowerCase())} signature saved</p>`:`<canvas class="signature-pad" id="signaturePad"></canvas><div class="btn-row"><button type="button" class="btn secondary" id="clearSignature">Clear signature</button>${allowSavedLearner?'<button type="button" class="btn secondary" id="useProfileSignature">Use saved apprentice signature</button>':''}</div>`}<div class="date-line">Date: ${d.date||today()}</div></div>`}
-function lockedTop(version,section){return `<div class="locked-banner"><span>🔒 Submitted version ${version}</span><button class="btn secondary retake" id="retake">Create new version</button></div>`}
+function lockedTop(version,section){const label=section==='witness'?'Edit and resubmit':'Create new version';return `<div class="locked-banner"><span>🔒 Submitted version ${version}</span><button class="btn secondary retake" id="retake">${label}</button></div>`}
 
 function renderSection(){const a=assignment(state.assignment),s=state.section,sd=sectionData(a.n,s),d=sd.draft;const locked=d.submitted;let body='';
  if(s==='practical')body=practicalPage(a,d,locked,sd);
@@ -1758,7 +1758,7 @@ function bindSection(a,s,sd,d,locked){
  document.querySelectorAll('[data-download-file]').forEach(b=>b.onclick=()=>downloadStoredFile(d.files[+b.dataset.downloadFile]));
  document.querySelectorAll('[data-remove-file]').forEach(b=>b.onclick=async()=>{d.files.splice(+b.dataset.removeFile,1);await commit(a.n,s,sd);renderSection()});
  const sub=document.getElementById('submitSection');if(sub)sub.onclick=()=>submitSection(a,s,sd,d);
- const retake=document.getElementById('retake');if(retake)retake.onclick=async()=>{sd.draft=blankSection(s);await commit(a.n,s,sd);renderSection();toast('New blank version created')};
+ const retake=document.getElementById('retake');if(retake)retake.onclick=async()=>{if(s==='witness'){sd.draft=structuredClone(sd.draft);sd.draft.submitted=false;sd.draft.date=today();await commit(a.n,s,sd);renderSection();toast('Witness testimony reopened for editing')}else{sd.draft=blankSection(s);await commit(a.n,s,sd);renderSection();toast('New blank version created')}};
  document.querySelectorAll('[data-view-version]').forEach(b=>b.onclick=async()=>{sd.draft=structuredClone(sd.versions[+b.dataset.viewVersion]);await commit(a.n,s,sd);renderSection()});
 }
 async function commit(n,s,sd){state.data[key(n,s)]=sd;await saveData()}
