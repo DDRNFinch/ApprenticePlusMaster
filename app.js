@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3.18';
+const APP_VERSION='V1.3.19';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -775,7 +775,7 @@ function renderAcademyLesson(){
 
 
 
-// v1.3.18 EPA professional-judgement banks: Bricklayer and Site Carpentry
+// v1.3.19 EPA professional-judgement banks: Bricklayer, Site Carpentry and Architectural Joinery
 // Locked MCQ writing standard: realistic workplace judgement, four plausible trade-language answers,
 // no joke/"I do not care" distractors, no official-sounding giveaway, and an explanation for coaching.
 // Questions are deliberately stored as an approved, fixed bank. Nothing is generated at runtime.
@@ -2281,6 +2281,820 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
    explanation:"Team focus means coordinating with adjoining trades and considering the wider programme rather than only individual output.",
    keyTakeaway:"Coordinate actively with adjoining trades to achieve project-wide milestones.",
    id:"site-carp-epa-v1318-b5"
+  }
+ ],
+ "architectural-joiner-st0264-v1-4":[
+  {
+   code:"K1",
+   question:"You are preparing to cut timber in a workshop where fine wood dust accumulates quickly. Under PUWER and CoSHH regulations, what is the mandatory safety step regarding equipment and personal health protection?",
+   options:[
+    "Ensure the saw has valid safety inspections and combine localized dust extraction (LEV) with a fitted FFP3 respirator.",
+    "Open a far window and wear a standard paper dust mask while disabling the saw guard for speed.",
+    "Sweep up all fine timber dust with a dry yard broom once at the end of every shift.",
+    "Use cordless hand tools only, as respiratory protection is not required for natural softwoods."
+   ],
+   correct:0,
+   explanation:"PUWER requires safe, inspected machinery, while CoSHH mandates controlling hazardous wood dust at the point of creation using LEV paired with appropriate RPE (FFP3 mask).",
+   keyTakeaway:"Always combine inspected equipment with effective LEV and RPE to control timber dust exposure.",
+   id:"arch-epa-v1319-k1-1"
+  },
+  {
+   code:"K2",
+   question:"When operating a portable circular saw or router to process MDF sheet materials, how should local exhaust ventilation (LEV) and personal protective equipment (PPE) be configured?",
+   options:[
+    "Connect continuous extraction directly to the tool dust shroud and wear eye protection along with ear defenders.",
+    "Rely on safety glasses alone, as extraction systems are only required when machining solid oak.",
+    "Position an extraction hose nearby on the bench without physically connecting it to the tool shroud.",
+    "Wear heavy leather rigging gloves while feeding sheet material past an unguarded blade."
+   ],
+   correct:0,
+   explanation:"Directly connecting LEV removes toxic fine particulate at the source, while eye and hearing protection shield against projectile chips and high acoustic levels.",
+   keyTakeaway:"Directly attach extraction hoses to power tool shrouds and wear suitable PPE.",
+   id:"arch-epa-v1319-k2-2"
+  },
+  {
+   code:"K3",
+   question:"Before commencing high-risk machining or assembly work in a busy workshop, where do you find the precise safety sequence and control measures designed for that operation?",
+   options:[
+    "In the task-specific Method Statement and Risk Assessment (RAMS) reviewed during the safety induction or toolbox talk.",
+    "On the delivery advice note attached to the raw timber bundle.",
+    "In the general health and safety poster mounted inside the staff breakroom.",
+    "By asking a fellow apprentice how they performed the same task on a previous job."
+   ],
+   correct:0,
+   explanation:"RAMS documents and safety briefings set out the legally binding, safe systems of work and control measures required for workshop tasks.",
+   keyTakeaway:"Always review task RAMS and attend safety briefings prior to starting complex work.",
+   id:"arch-epa-v1319-k3-3"
+  },
+  {
+   code:"K4",
+   question:"When ordering timber stock for a sustainable build project, which international certification guarantees the raw material originated from responsibly managed forests?",
+   options:[
+    "FSC (Forest Stewardship Council) or PEFC certification.",
+    "CE / UKCA structural grading stamps only.",
+    "ISO 9001 quality assurance approval stamps.",
+    "Local saw mill weight delivery dockets."
+   ],
+   correct:0,
+   explanation:"FSC and PEFC chain-of-custody schemes verify that timber products originate from sustainably managed, environmentally sound forests.",
+   keyTakeaway:"Look for FSC or PEFC certification to verify sustainable timber sourcing.",
+   id:"arch-epa-v1319-k4-4"
+  },
+  {
+   code:"K5",
+   question:"Why is an airtightness membrane installed on the warm interior side of insulation in a modern timber-frame wall assembly?",
+   options:[
+    "To stop warm, moist room air from migrating into the timber frame cavity and creating interstitial condensation.",
+    "To provide a rigid backing layer for attaching heavy decorative timber cladding.",
+    "To facilitate external rainwater drainage down into the concrete foundation slab.",
+    "To increase the structural load-bearing capacity of interior plasterboard linings."
+   ],
+   correct:0,
+   explanation:"Vapour control layers placed on the warm interior side prevent moist indoor air from penetrating cold outer insulation zones where it would condense and rot structural timber.",
+   keyTakeaway:"Vapour control layers prevent internal moisture from condensing inside structural wall cavities.",
+   id:"arch-epa-v1319-k5-5"
+  },
+  {
+   code:"K6",
+   question:"In a 3D digital design environment (such as BIM or CAD), how do digital models support an architectural joiner prior to manufacturing bespoke staircase components?",
+   options:[
+    "By identifying spatial geometry clashes and component layout errors before cutting physical timber.",
+    "By automatically setting the fence depth on workshop planer and thicknessing machinery.",
+    "By eliminating the need to use mechanical jointing fixings or adhesives during assembly.",
+    "By calculating the exact moisture percentage contained inside incoming raw timber lots."
+   ],
+   correct:0,
+   explanation:"3D CAD/BIM digital models allow joiners and designers to spot geometrical clashes, headroom clearances, and assembly misalignments before physical production starts.",
+   keyTakeaway:"Digital 3D models highlight layout errors and spatial clashes before timber is cut.",
+   id:"arch-epa-v1319-k6-6"
+  },
+  {
+   code:"K7",
+   question:"Which mandatory regulatory framework dictates timber door fire ratings, staircase pitch angles, and structural safety parameters across England?",
+   options:[
+    "The Building Regulations (such as Approved Documents B, K, and M).",
+    "The Highways Act regulatory standard manual.",
+    "The Construction (Design and Management) client appointment register.",
+    "The Consumer Rights Act standard commercial template."
+   ],
+   correct:0,
+   explanation:"Building Regulations set mandatory minimum standards for fire safety (Part B), stair safety and guarding (Part K), and accessibility (Part M).",
+   keyTakeaway:"Joinery installations must strictly satisfy the relevant Approved Building Regulations.",
+   id:"arch-epa-v1319-k7-7"
+  },
+  {
+   code:"K8",
+   question:"On an architectural joinery elevation drawing, what does a dashed hidden line running across a cabinet door opening indicate?",
+   options:[
+    "The direction of swing and hinge pivot locations for the door leaf.",
+    "The position where timber must be split and spliced together.",
+    "An area where surface sanding and clear finishing are prohibited.",
+    "The location of internal moisture barrier membranes."
+   ],
+   correct:0,
+   explanation:"On elevation drawings, dashed or triangular lines pointing toward a frame edge indicate hinge placement and door swing direction.",
+   keyTakeaway:"Dashed swing lines on elevation drawings denote hinge positions and leaf opening directions.",
+   id:"arch-epa-v1319-k8-8"
+  },
+  {
+   code:"K9",
+   question:"Why is manufactured Birch Plywood preferred over standard chipboard for constructing rigid workshop jigs and curved joinery formers?",
+   options:[
+    "Its cross-laminated veneer construction offers superior dimensional stability, strong screw retention, and high shear resistance.",
+    "It is significantly cheaper and softer than low-density fibreboard products.",
+    "It can be scored with a utility knife and snapped cleanly by hand without power saws.",
+    "It absorbs water without expanding, swelling, or delaminating over prolonged outdoor exposure."
+   ],
+   correct:0,
+   explanation:"Plywood's cross-laminated wood veneers offer multi-directional strength, high structural rigidity, excellent screw holding, and resistance to warping.",
+   keyTakeaway:"Plywood provides exceptional structural stability and fix holding due to cross-laminated veneers.",
+   id:"arch-epa-v1319-k9-9"
+  },
+  {
+   code:"K10",
+   question:"What maximum timber moisture content range is recommended for indoor furniture and architectural joinery before processing to prevent warping?",
+   options:[
+    "8% to 12% moisture content.",
+    "22% to 28% moisture content.",
+    "35% to 40% moisture content.",
+    "0% to 2% moisture content."
+   ],
+   correct:0,
+   explanation:"Internal timber joinery should be conditioned to 8–12% moisture content to match heated internal environments and prevent severe shrinkage or timber movement.",
+   keyTakeaway:"Internal joinery timber must be kiln-dried to 8–12% moisture content before processing.",
+   id:"arch-epa-v1319-k10-10"
+  },
+  {
+   code:"K11",
+   question:"Which chemical formulation is recommended for filling pin holes and slight joint gaps in internal hardwood joinery prior to clear lacquering?",
+   options:[
+    "A color-matched solvent or acrylic timber filler blended with fine sanding dust from the same wood species.",
+    "Standard exterior masonry gap sealant.",
+    "Unmixed expandable polyurethane gap foam.",
+    "Hydrated lime mortar mixed with PVA adhesive."
+   ],
+   correct:0,
+   explanation:"Mixing fine sanding dust from the project's hardwood with a compatible binder creates an exact grain-matched filler that accepts clear finishes smoothly.",
+   keyTakeaway:"Blend project sanding dust with clear binders to create seamless, grain-matched wood fillers.",
+   id:"arch-epa-v1319-k11-11"
+  },
+  {
+   code:"K12",
+   question:"You are producing a cutting list for ten identical timber window frames. What essential allowance must be added to the raw timber stick lengths before machining?",
+   options:[
+    "An allowance for cross-cutting square ends, tenon horns, and machine planing timber margins (typically 50mm extra per piece).",
+    "Subtract 100mm per component to account for timber thermal expansion.",
+    "No allowance is required; order exact finished component sizes.",
+    "Multiply total cubic meters by four to cover glue line compression."
+   ],
+   correct:0,
+   explanation:"Cutting lists must incorporate machining allowances (over-length stock for horns, breakout, squaring, and cross-cutting trim).",
+   keyTakeaway:"Always include machining allowances and horn lengths on raw material cutting lists.",
+   id:"arch-epa-v1319-k12-12"
+  },
+  {
+   code:"K13",
+   question:"When discussing staircase manufacturing with a workshop manager, what trade term defines the total horizontal distance covered by a flight of stairs from first to last riser?",
+   options:[
+    "The total going.",
+    "The total rise.",
+    "The margin line.",
+    "The pitch line height."
+   ],
+   correct:0,
+   explanation:"The 'total going' is the complete horizontal measurement from the face of the first riser to the face of the top riser.",
+   keyTakeaway:"Total going measures the horizontal span; total rise measures total vertical elevation.",
+   id:"arch-epa-v1319-k13-13"
+  },
+  {
+   code:"K14",
+   question:"Which marking hand tool features two parallel spur pins adjusted by a thumbscrew to lay out double lines for mortise and tenon joints simultaneously?",
+   options:[
+    "Mortise gauge.",
+    "Marking gauge.",
+    "Sliding bevel.",
+    "Try square."
+   ],
+   correct:0,
+   explanation:"A mortise gauge features two pins (one fixed, one adjustable) to score both sides of a mortise or tenon in a single pass.",
+   keyTakeaway:"Mortise gauges score twin parallel lines for precise mortise and tenon layouts.",
+   id:"arch-epa-v1319-k14-14"
+  },
+  {
+   code:"K15",
+   question:"When re-sharpening a bevel-edged chisel on a sharpening stone, what critical step ensures a true cutting edge after honing the 30-degree secondary micro-bevel?",
+   options:[
+    "Laying the flat back of the chisel completely flush on the fine stone to stroke away the remaining wire burr.",
+    "Grinding the back face at a 45-degree angle to create a double wedge.",
+    "Cooling the steel tip rapidly in cold oil without wiping away stone slurry.",
+    "Filing the flat back in circular patterns using a coarse cabinet rasp."
+   ],
+   correct:0,
+   explanation:"Removing the wire burr flat from the polished back face is essential to achieve a razor-sharp, mirror-smooth cutting edge.",
+   keyTakeaway:"Keep the back of the chisel perfectly flat on fine stones to lap away wire burrs.",
+   id:"arch-epa-v1319-k15-15"
+  },
+  {
+   code:"K16",
+   question:"Why are dedicated wooden routing jigs built with toggle clamps and guide fence stops when manufacturing multiple identical curved door heads?",
+   options:[
+    "They ensure precise component repeatability, secure workpiece stability, and eliminate hand positioning near cutters.",
+    "They reduce the electrical power consumed by overhead router motors.",
+    "They allow joiners to use unsharpened router bits safely.",
+    "They eliminate the need to apply finish sanding to routed timber curves."
+   ],
+   correct:0,
+   explanation:"Routing jigs lock stock in place, guarantee identical dimensions across large batch runs, and keep hands safely away from high-speed cutters.",
+   keyTakeaway:"Jigs guarantee identical repeatability while improving operator workholding safety.",
+   id:"arch-epa-v1319-k16-16"
+  },
+  {
+   code:"K17",
+   question:"When setting up a biscuit jointer or plunge router to cut slot recesses in timber panels, what safety check must be performed before plugging into power?",
+   options:[
+    "Verify cutter sharpness, ensure the plunge spring returns smoothly, check fence depth locks, and confirm correct fence angle adjustment.",
+    "Remove all lower blade guards to allow chips to clear freely.",
+    "Lubricate the cutting carbide tips with mineral engine oil.",
+    "Lock the plunge trigger in the 'ON' position before connecting to power."
+   ],
+   correct:0,
+   explanation:"Always inspect cutter integrity, guard return springs, depth stops, and locking handles before connecting machinery to power.",
+   keyTakeaway:"Inspect guards, depth stops, and blade integrity prior to connecting tools to power.",
+   id:"arch-epa-v1319-k17-17"
+  },
+  {
+   code:"K18",
+   question:"How does clear communication between an architectural joiner and the finishing team improve productivity when producing batch cabinetry?",
+   options:[
+    "It ensures components are sanded to the correct grit level, labeled logically, and kept free of glue squeeze-out before stain application.",
+    "It allows finish sprayers to change drawer runner specifications without notice.",
+    "It eliminates the need for quality inspection checks prior to delivery.",
+    "It ensures timber joinery is shipped wet with un-cured adhesive."
+   ],
+   correct:0,
+   explanation:"Clear inter-departmental communication ensures machining tolerances, surface prep (sanding grit), and assembly sequences suit the final finish process.",
+   keyTakeaway:"Collaborate across teams to align surface preparations with final finishing requirements.",
+   id:"arch-epa-v1319-k18-18"
+  },
+  {
+   code:"K19",
+   question:"How do principles of equity and inclusion benefit a joinery workshop production environment?",
+   options:[
+    "By establishing a culture where every worker feels respected, supported, and empowered to contribute ideas and report safety concerns.",
+    "By ensuring heavy timber handling is restricted exclusively to younger workers.",
+    "By limiting high-precision machinery access to senior staff members only.",
+    "By removing standardized trade assessment criteria for new apprentices."
+   ],
+   correct:0,
+   explanation:"Inclusive environments promote mutual respect, fair opportunities, diverse perspectives, and strong team communication.",
+   keyTakeaway:"Inclusion creates a fair, supportive environment that drives safety and quality.",
+   id:"arch-epa-v1319-k19-19"
+  },
+  {
+   code:"K20",
+   question:"If a workshop team member exhibits signs of acute physical fatigue or emotional burnout while operating machinery, what is the appropriate immediate action?",
+   options:[
+    "Encourage them to take a break, offer supportive listening, and signpost them to designated Mental Health First Aiders or EAP resources.",
+    "Tell them to operate high-speed machinery faster to maintain production quotas.",
+    "Assign them to operate an unguarded spindle moulder to re-focus their attention.",
+    "Ignore their condition as mental health considerations do not apply in manufacturing environments."
+   ],
+   correct:0,
+   explanation:"Recognizing signs of distress, offering immediate support, and signposting to trained welfare resources protects worker wellbeing and workshop safety.",
+   keyTakeaway:"Address signs of fatigue or distress immediately and direct staff to professional support resources.",
+   id:"arch-epa-v1319-k20-20"
+  },
+  {
+   code:"K29",
+   question:"Before using a self-levelling cross-line laser to set out height datums for fitted cabinetry across a room, how do you verify its accuracy?",
+   options:[
+    "Project a beam line onto a wall, mark it, rotate the laser unit 180 degrees at the same distance, and verify the line aligns with the mark.",
+    "Clean the front glass lens using solvent thinners while the laser is running.",
+    "Set the unit on a sloping surface without unlocking the self-levelling pendulum.",
+    "Increase room lighting to maximum brightness to sharpen the laser line beam."
+   ],
+   correct:0,
+   explanation:"Checking laser calibration involves projecting a level mark, rotating the instrument 180 degrees, and checking that the beam hits the same mark.",
+   keyTakeaway:"Verify laser levels regularly using 180-degree benchmark checks.",
+   id:"arch-epa-v1319-k29-21"
+  },
+  {
+   code:"K30",
+   question:"What is a mandatory requirement when assembling an FD30 rated timber fire door frame assembly?",
+   options:[
+    "Installing approved intumescent seals into frame grooves and using fire-rated hinges installed with specified screw lengths.",
+    "Fitting lightweight hollow core panels using standard plastic hinges.",
+    "Leaving a 15mm open air gap around the door perimeter without seals.",
+    "Securing door linings with standard expanding foam without mechanical frame anchors."
+   ],
+   correct:0,
+   explanation:"Certified fire door assemblies require tested intumescent strip combinations, solid timber frame densities, and certified fire-rated ironmongery.",
+   keyTakeaway:"Fire doors require certified intumescent seals, solid frames, and tested hardware.",
+   id:"arch-epa-v1319-k30-22"
+  },
+  {
+   code:"K31",
+   question:"When setting up a workshop surface planer (joiner), where should the bridge guard be positioned relative to the timber stock?",
+   options:[
+    "Adjusted down close to the table surface leaving only enough clearance for the timber to slide under, or set close to the fence during edge planing.",
+    "Raised 100mm above the timber cutter block so the knives are clearly visible.",
+    "Removed completely from the machine table during short production runs.",
+    "Swung back behind the machine frame out of the way of the operator."
+   ],
+   correct:0,
+   explanation:"Bridge guards must cover the exposed cutter block as much as possible, positioned directly over the cutter block close to the timber or fence.",
+   keyTakeaway:"Bridge guards must shield the cutter block, leaving minimum operational clearance.",
+   id:"arch-epa-v1319-k31-23"
+  },
+  {
+   code:"K32",
+   question:"What is the primary purpose of creating a full-size 1:1 scale setting-out rod before manufacturing complex architectural joinery?",
+   options:[
+    "To establish exact full-size lengths, joint details, section profiles, and hardware locations to prevent cumulative layout errors.",
+    "To serve as a disposable packing board when shipping finished joinery products.",
+    "To calculate the total electrical consumption of workshop machinery.",
+    "To display final paint color options to the client on site."
+   ],
+   correct:0,
+   explanation:"Setting-out rods show 1:1 true dimensions, timber sections, and joint geometry, providing an accurate reference that eliminates measuring mistakes.",
+   keyTakeaway:"Setting-out rods establish exact 1:1 dimensions and joint alignments before cutting.",
+   id:"arch-epa-v1319-k32-24"
+  },
+  {
+   code:"K33",
+   question:"Which traditional joinery joint provides high resistance to tensile pull-out forces, making it ideal for connecting drawer sides to drawer fronts?",
+   options:[
+    "Dovetail joint.",
+    "Half-lap corner joint.",
+    "Square butt joint.",
+    "Biscuit joint."
+   ],
+   correct:0,
+   explanation:"Dovetail joints interlock pins and tails, creating high mechanical strength against forward tensile pulling forces.",
+   keyTakeaway:"Dovetail joints provide mechanical interlock against pulling forces.",
+   id:"arch-epa-v1319-k33-25"
+  },
+  {
+   code:"K34",
+   question:"When manufacturing a traditional stormproof timber casement window frame, what design feature prevents driving rain from penetrating the frame joints?",
+   options:[
+    "Machining drip grooves, weatherseal rebates, and stepped drained sills into the timber sections.",
+    "Applying clear interior PVA glue over outer frame faces.",
+    "Assembling all perimeter frame components using simple un-rebated butt joints.",
+    "Omitting lower sill slope angles so glass sits flat against timber."
+   ],
+   correct:0,
+   explanation:"Weatherproof timber windows rely on sloped sills, capillary drip grooves, gasket rebates, and rebate offsets to shed water outwards.",
+   keyTakeaway:"Weatherproof timber windows require sloped sills, drip channels, and compression seals.",
+   id:"arch-epa-v1319-k34-26"
+  },
+  {
+   code:"K35",
+   question:"When aligning and joining wide hardwood timber panels to form a tabletop, why are compressed beechwood biscuits used with PVA glue?",
+   options:[
+    "They align panel surface faces flush and expand when absorbing moisture from glue to form a strong mechanical bond.",
+    "They eliminate the need to apply sash clamps during glue curing time.",
+    "They allow panels to slide freely back and forth across joints after assembly.",
+    "They make timber edges completely fireproof along seam lines."
+   ],
+   correct:0,
+   explanation:"Compressed wood biscuits register faces flush and swell inside cut slots upon absorbing water-based glue, locking the joint firmly.",
+   keyTakeaway:"Biscuits align joint faces precisely and expand in water-based glue for a tight lock.",
+   id:"arch-epa-v1319-k35-27"
+  },
+  {
+   code:"K36",
+   question:"In timber staircase assembly, what component fits underneath the front edge of a tread to support the front nosing into the riser?",
+   options:[
+    "Glue blocks (glue blocks fitted into internal tread-to-riser corners).",
+    "Bargeboards.",
+    "Architrave mouldings.",
+    "Wall cover fillets."
+   ],
+   correct:0,
+   explanation:"Triangular timber glue blocks are glued and screwed into the internal angles between treads and risers to eliminate squeaks and reinforce joints.",
+   keyTakeaway:"Tread-to-riser glue blocks stiffen stair assemblies and prevent squeaking.",
+   id:"arch-epa-v1319-k36-28"
+  },
+  {
+   code:"K37",
+   question:"When assembling a solid timber raised-and-fielded door panel inside a framed stiles-and-rails structure, how should the center panel be fitted?",
+   options:[
+    "Fitted loosely into frame grooves with expansion gaps and left unglued to allow for seasonal timber movement.",
+    "Glued continuously around all four edges with epoxy resin to lock it solid.",
+    "Nailed rigidly through the front face of stiles using heavy wire nails.",
+    "Screwed tightly to rails from behind without allowance for clearance gaps."
+   ],
+   correct:0,
+   explanation:"Floating solid wood panels must be left unglued within frame grooves so they can expand and contract across the grain without splitting.",
+   keyTakeaway:"Solid door panels must float within frame grooves to allow natural movement.",
+   id:"arch-epa-v1319-k37-29"
+  },
+  {
+   code:"K38",
+   question:"Before applying a polyurethane clear varnish to manufactured oak door linings, how should timber faces be prepared?",
+   options:[
+    "Sanded progressively along the grain with fine abrasives, dusted clean, and checked for glue squeeze-out or defects.",
+    "Washed down with heavy soap and water leaving the surface saturated.",
+    "Scuffed across the grain using coarse 40-grit steel rasp files.",
+    "Coated with oil-based engine grease to seal wood pores."
+   ],
+   correct:0,
+   explanation:"Quality timber finishing requires systematic sanding along the grain direction, removing excess glue, and thoroughly dusting timber faces.",
+   keyTakeaway:"Sand timber along the grain and remove all surface dust and excess glue before sealing.",
+   id:"arch-epa-v1319-k38-30"
+  },
+  {
+   code:"K39",
+   question:"When installing mortise locks into solid timber door stiles, what tool combination ensures an accurate mortise box cavity without splitting stile faces?",
+   options:[
+    "A dedicated chain or auger mortiser (or drill jig) followed by sharp hand chisels to square corners.",
+    "A handheld circular saw plunged repeatedly into stile edges.",
+    "A coarse rasp and claw hammer driven through stile faces.",
+    "An un-guided spade bit driven through the door face panels."
+   ],
+   correct:0,
+   explanation:"Mortising jigs or auger bits bore out internal core waste cleanly, allowing sharp chisels to square sides without stress cracking timber grain.",
+   keyTakeaway:"Bore out core waste cleanly before chiselling mortise pocket walls square.",
+   id:"arch-epa-v1319-k39-31"
+  },
+  {
+   code:"K40",
+   question:"What is a basic tax obligation for a self-employed architectural joiner running an independent workshop in the UK?",
+   options:[
+    "Registering for Self Assessment with HMRC, maintaining accurate income/expense records, and filing annual tax returns.",
+    "Filing weekly PAYE returns through an external main contractor.",
+    "Paying no income tax provided machinery tool purchases exceed material costs.",
+    "Submitting corporate accounts to Companies House every fortnight."
+   ],
+   correct:0,
+   explanation:"Self-employed sole traders must register with HMRC for Self Assessment, track business revenue/expenses, and submit yearly tax returns.",
+   keyTakeaway:"Self-employed joiners must keep business records and file Self Assessment tax returns.",
+   id:"arch-epa-v1319-k40-32"
+  },
+  {
+   code:"S1",
+   question:"You notice that a workshop spindle moulder guard has been removed and left off by a previous operator. How do you demonstrate compliance with safety regulations?",
+   options:[
+    "Re-install and adjust all guards and pressure pads correctly, testing safety stops before turning on the machine.",
+    "Operate the machine carefully without guards as long as wood feed speeds are kept slow.",
+    "Place a paper sign on the machine saying 'Take Care' and proceed with cutting timber.",
+    "Ignore the missing guard because another worker removed it."
+   ],
+   correct:0,
+   explanation:"Complying with PUWER regulations requires ensuring all guards, fences, and safety holding devices are correctly fitted before operating power machinery.",
+   keyTakeaway:"Never operate machinery without verifying all safety guards are correctly fitted.",
+   id:"arch-epa-v1319-s1-33"
+  },
+  {
+   code:"S2",
+   question:"You are preparing to cut multiple hardwood components on a band saw. How do you correctly apply safety control equipment?",
+   options:[
+    "Lower the adjustable blade guard to leave only the required cutting depth exposed, attach dust extraction, and use push sticks.",
+    "Raise the blade guard fully up to improve line-of-sight visibility.",
+    "Guide short timber blocks past the blade using your fingers directly behind the cut.",
+    "Disconnect dust extraction hoses to reduce noise levels in the workshop."
+   ],
+   correct:0,
+   explanation:"Safety controls on bandsaws require lowering blade guards close to workpieces, running extraction, and employing push sticks for narrow cuts.",
+   keyTakeaway:"Set blade guards close to stock and use push sticks on bandsaw operations.",
+   id:"arch-epa-v1319-s2-34"
+  },
+  {
+   code:"S3",
+   question:"At the conclusion of a joinery production run, you have clean timber cutoffs, laminate offcuts, and empty solvent glue tins. How should these be processed?",
+   options:[
+    "Segregate solid untreated wood, synthetic laminates, and hazardous chemical tins into designated disposal/recycling bins.",
+    "Throw all wood, laminate, and chemical containers into one general waste skip.",
+    "Burn synthetic laminate offcuts in an open outdoor shop barrel.",
+    "Pour leftover liquid solvent adhesives down workshop sink drains."
+   ],
+   correct:0,
+   explanation:"Environmental management requires sorting site waste by classification so clean wood can be recycled and hazardous waste processed safely.",
+   keyTakeaway:"Segregate waste materials into clean timber, synthetic, and hazardous waste streams.",
+   id:"arch-epa-v1319-s3-35"
+  },
+  {
+   code:"S4",
+   question:"When building a bespoke timber staircase, Building Regulations stipulate maximum pitch angles (42 degrees) and maximum open riser gaps (under 100mm). How do you ensure compliance?",
+   options:[
+    "Calculate rise and going dimensions to maintain a pitch under 42 degrees, and fit riser lips or partial risers to keep gaps below 100mm.",
+    "Construct open riser gaps at 150mm to save timber material.",
+    "Increase stair pitch to 50 degrees to save horizontal floor space.",
+    "Ignore pitch regulations as long as handrails are fitted to both sides."
+   ],
+   correct:0,
+   explanation:"Staircase construction must comply with Approved Document K: maximum 42-degree pitch for domestic stairs and maximum 100mm sphere test gaps between open treads.",
+   keyTakeaway:"Ensure stair designs satisfy pitch limits and child-safety gap regulations.",
+   id:"arch-epa-v1319-s4-36"
+  },
+  {
+   code:"S5",
+   question:"Before setting up a portable router table inside a joinery assembly bay, how do you prepare and maintain a safe working area?",
+   options:[
+    "Clear floor trip hazards, secure trailing power leads overhead, ensure adequate lighting, and keep offcut waste clear of foot zones.",
+    "Position the router table in a dark corner surrounded by loose timber offcuts.",
+    "Block main workshop emergency exit doors with long timber material racks.",
+    "Run extension leads through wet floor areas near water sinks."
+   ],
+   correct:0,
+   explanation:"Safe working areas require clear access routes, managed power cables, clean floor spaces, and effective lighting around machinery.",
+   keyTakeaway:"Keep machinery setup zones well-lit, clean, uncluttered, and hazard-free.",
+   id:"arch-epa-v1319-s5-37"
+  },
+  {
+   code:"S6",
+   question:"You are interpreting an architectural window detail sheet and note a drawing scale contradiction between the written dimension (1200mm) and scaled measurement (1100mm). What action should you take?",
+   options:[
+    "Halt machining, refer to written specifications over scaled dimensions, and confirm true dimensions with the designer before cutting.",
+    "Scale the drawing using a ruler and ignore the written dimension.",
+    "Split the difference and machine the frame to 1150mm.",
+    "Machine the unit to whatever timber size is currently available."
+   ],
+   correct:0,
+   explanation:"In technical drawing interpretation, written dimensions always take precedence over scaled measurements. Discrepancies must be clarified prior to cutting.",
+   keyTakeaway:"Never scale directly off detail drawings when written dimensions are provided; clarify discrepancies first.",
+   id:"arch-epa-v1319-s6-38"
+  },
+  {
+   code:"S7",
+   question:"You are tasked with producing six panelled hardwood doors. How do you produce an efficient timber cutting list?",
+   options:[
+    "Break down all components into finished sizes, add machining allowances for length/width, and group identical sections to minimize offcut waste.",
+    "Order random timber lengths without checking door specification sizes.",
+    "Guess total timber requirements based on looking at a completed door sample.",
+    "Order stiles and rails without adding machining or tenon horn length allowances."
+   ],
+   correct:0,
+   explanation:"Efficient cutting lists calculate exact finished component dimensions plus machining allowances, organizing profiles to optimize yield.",
+   keyTakeaway:"Group identical component sections and include machining allowances on cutting lists.",
+   id:"arch-epa-v1319-s7-39"
+  },
+  {
+   code:"S8",
+   question:"You need to explain a complex door frame manufacturing issue to your workshop manager. How do you communicate using correct joinery terminology?",
+   options:[
+    "“The rebate depth on the hinge stile is undersized by 3mm, preventing the door leaf from sitting flush against the stop.”",
+    "“The long wooden side stick isn't deep enough so the big door thing doesn't shut right.”",
+    "“The vertical upright board is crooked and the frame margin looks bad.”",
+    "“We need more wood lengths because the front doorway timber piece is wrong.”"
+   ],
+   correct:0,
+   explanation:"Professional joinery communication uses precise terms (rebate depth, hinge stile, door leaf, frame stop) to describe technical defects clearly.",
+   keyTakeaway:"Use exact trade terms to convey technical information clearly.",
+   id:"arch-epa-v1319-s8-40"
+  },
+  {
+   code:"S9",
+   question:"How should sharp hand chisels, wooden hand planes, and saws be safely stored on a joinery workbench during active use?",
+   options:[
+    "Laid flat in designated tool wells or wooden racks with cutting edges pointing away from edge perimeters.",
+    "Piled on top of one another near the front bench edge.",
+    "Stored loose inside trouser side pockets with blades exposed.",
+    "Balanced on top of stepladders near workspace walkways."
+   ],
+   correct:0,
+   explanation:"Storing hand tools neatly in bench wells or edge-guarded racks prevents accidental contact injuries and shields fine cutting edges from dulling.",
+   keyTakeaway:"Store sharp hand tools securely in tool wells or edge guards on the bench.",
+   id:"arch-epa-v1319-s9-41"
+  },
+  {
+   code:"S10",
+   question:"When using a portable circular saw to cut hardwood sheet materials, what operation ensures safe control and prevents kickback?",
+   options:[
+    "Support the sheet fully on rigid workbench supports, adjust blade depth 3-5mm past material thickness, and maintain steady forward pressure with both hands.",
+    "Hold the sheet material up with one hand while operating the saw with the other.",
+    "Remove the lower spring guard to prevent timber dust clogging.",
+    "Plunge the saw backward toward your body along the cut line."
+   ],
+   correct:0,
+   explanation:"Proper sheet cutting requires solid material support, setting blade depth slightly past material thickness, and keeping both hands on tool handles.",
+   keyTakeaway:"Support work fully, set correct blade depth, and maintain two-handed tool control.",
+   id:"arch-epa-v1319-s10-42"
+  },
+  {
+   code:"S11",
+   question:"While using a wooden smoothing plane, the blade begins tearing grain and producing thick uneven shavings. How do you maintain and re-set the tool?",
+   options:[
+    "Remove the iron, hone the edge on fine sharpening stones, reset the cap iron close to the cutting edge, and adjust the mouth depth fine.",
+    "Strike the wooden plane sole with a steel claw hammer to force the blade out.",
+    "Grind the plane iron dry on a bench grinder until metal turns deep blue.",
+    "File the cutting edge round using a rough steel file."
+   ],
+   correct:0,
+   explanation:"Proper hand plane maintenance involves honing a razor edge, setting the chipbreaker (cap iron) close to the edge (approx. 1mm), and setting fine blade projection.",
+   keyTakeaway:"Hone plane irons finely and set chipbreakers close to the edge to prevent grain tearout.",
+   id:"arch-epa-v1319-s11-43"
+  },
+  {
+   code:"S12",
+   question:"You need to rout fifty identical archway frame curves. How do you produce a jig to carry out this operation safely and accurately?",
+   options:[
+    "Construct a sturdy plywood template jig with toggle clamps, guide collar tracks, and smooth reference edges.",
+    "Mark each curve individually with a pencil and cut freehand using a jigsaw.",
+    "Hold short curved blocks against a bare shaper cutter with your fingers.",
+    "Eye up the routing line without guide collars or holding fences."
+   ],
+   correct:0,
+   explanation:"Production jigs made from stable plywood with clear guide faces and toggle clamps allow fast, repeatable, safe routing.",
+   keyTakeaway:"Build stable template jigs with toggle clamps for safe, accurate curved work.",
+   id:"arch-epa-v1319-s12-44"
+  },
+  {
+   code:"S13",
+   question:"A colleague appears distressed and mentions struggle with personal isolation and financial worries. How do you identify well-being support for them?",
+   options:[
+    "Listen empathetically, keep details confidential, and signpost them to industry EAP services or site Mental Health First Aiders.",
+    "Advise them to work weekend shifts continuously to clear their debts.",
+    "Tell them that feeling stressed is standard so they should ignore it.",
+    "Broadcast their personal situation to the entire workshop team."
+   ],
+   correct:0,
+   explanation:"Supporting colleague well-being involves offering non-judgmental support and connecting them to trained, confidential assistance programs.",
+   keyTakeaway:"Listen non-judgmentally and signpost colleagues to confidential support services.",
+   id:"arch-epa-v1319-s13-45"
+  },
+  {
+   code:"S23",
+   question:"You are setting out a timber rod for a door lining and frame assembly. How do you transfer section dimensions onto the rod accurately?",
+   options:[
+    "Draw full-size 1:1 cross-sections directly onto a clean, flat timber rod showing door thickness, rebate depths, frame dimensions, and clearance gaps.",
+    "Sketch a quick rough 1:10 scale outline on a scrap timber offcut.",
+    "Measure timber profiles using a flexible soft tape measure and write numbers down without marking lines.",
+    "Set out vertical height lines only, leaving horizontal width details off the rod."
+   ],
+   correct:0,
+   explanation:"Setting-out rods require true 1:1 scale drawings of horizontal and vertical sections detailing exact profiles, joint intersections, and clearances.",
+   keyTakeaway:"Produce clear 1:1 scale setting-out rods depicting exact component profiles and clearance gaps.",
+   id:"arch-epa-v1319-s23-46"
+  },
+  {
+   code:"S24",
+   question:"You are manufacturing a traditional hardwood corner cabinet frame requiring high joint strength. How do you cut and fit a bridle joint accurately?",
+   options:[
+    "Mark shoulder lines square, saw the open mortise slot and matching tenon tongue neatly, and pare faces to a snug push-fit.",
+    "Cut shoulders at 45 degrees and pin them together using thin panel pins.",
+    "Overlap square un-cut ends and join with PVA glue and staples.",
+    "Chisel out an oversized loose slot and fill gaps with wood filler."
+   ],
+   correct:0,
+   explanation:"Bridle joints require precise layout marking, accurate sawing along kerf lines, and light paring to achieve a firm hand-push mechanical fit.",
+   keyTakeaway:"Saw and pare bridle joint components to achieve a snug, accurate mechanical fit.",
+   id:"arch-epa-v1319-s24-47"
+  },
+  {
+   code:"S25",
+   question:"When joining two thick hardwood frames using dowel connections, what technique ensures dowels do not hydro-lock or split the joint upon assembly?",
+   options:[
+    "Using fluted dowel pegs with chamfered ends and applying glue evenly into bored holes.",
+    "Using smooth, square steel rods driven in without glue.",
+    "Filling dowel holes completely with dry expansion foam before inserting pins.",
+    "Drilling dowel holes 10mm shallower than dowel pin lengths."
+   ],
+   correct:0,
+   explanation:"Fluted dowels feature longitudinal grooves that allow air and excess liquid glue to escape, preventing hydraulic splitting when pressed.",
+   keyTakeaway:"Use fluted dowels to allow excess glue relief during joint assembly.",
+   id:"arch-epa-v1319-s25-48"
+  },
+  {
+   code:"S26",
+   question:"You are assembling a right-angled timber casement window frame. How do you ensure the assembled frame is square before glue sets?",
+   options:[
+    "Measure diagonal dimensions from corner to corner until equal, and check internal corners with a large try square.",
+    "Check one corner using a small sliding bevel set to 45 degrees.",
+    "Eyeball the outer stiles against a workshop wall line.",
+    "Clamp one side tightly while leaving the opposing side loose."
+   ],
+   correct:0,
+   explanation:"Equal diagonal cross-measurements confirm that a rectangular joinery frame is perfectly square.",
+   keyTakeaway:"Verify frame squareness by confirming equal corner-to-corner diagonal measurements.",
+   id:"arch-epa-v1319-s26-49"
+  },
+  {
+   code:"S27",
+   question:"When manufacturing a straight timber staircase in the workshop, how are treads and risers secured into stringer housing slots?",
+   options:[
+    "Spread glue in housing grooves, drive treads and risers home, and knock tight wooden wedges behind them glued into place.",
+    "Nail treads loosely through stringer outer faces without wedges or adhesive.",
+    "Support treads on loose metal shelf brackets screwed to stringer faces.",
+    "Fill housing slots with expansion foam and push treads into place."
+   ],
+   correct:0,
+   explanation:"Stair treads and risers are housed into stringer grooves and locked rigid using glued hardwood wedges driven tightly behind them.",
+   keyTakeaway:"Lock housed stair treads and risers tightly using glued timber wedges.",
+   id:"arch-epa-v1319-s27-50"
+  },
+  {
+   code:"S28",
+   question:"You are assembling a paneled timber door with decorative mouldings. How do you prepare moulding mitres at frame intersections?",
+   options:[
+    "Bisect corner angles accurately, cut 45-degree mitres using a fine-toothed mitre saw, and pare joints for tight light-tight seams.",
+    "Butt decorative mouldings square against each other without mitring.",
+    "Cut mitres at 30 degrees and fill corner gaps with plaster filler.",
+    "Overlap moulding ends and nail them down flat."
+   ],
+   correct:0,
+   explanation:"Precise decorative moulding work requires bisecting corner angles accurately (45 degrees for right angles) to form seamless, light-tight joints.",
+   keyTakeaway:"Cut moulding mitres accurately to form tight, seamless profile intersections.",
+   id:"arch-epa-v1319-s28-51"
+  },
+  {
+   code:"S29",
+   question:"You are recessing and fitting butt hinges into a solid hardwood door leaf edge. How do you ensure the door hangs correctly without binding?",
+   options:[
+    "Chisel hinge gains to exact leaf depth, keep screw pilot holes centered, and ensure hinge pins sit parallel to the door edge line.",
+    "Chisel gains twice as deep as hinge leaf thickness so hardware buries below wood faces.",
+    "Drive screws in at steep angles without drilling pilot holes.",
+    "Mount hinges onto un-recessed door edge faces using drywall screws."
+   ],
+   correct:0,
+   explanation:"Hinge gains must match leaf thickness precisely, with screws centered, to align hinge pins true and prevent door binding against frames.",
+   keyTakeaway:"Recess hinges flush and center pilot holes to ensure smooth, unhindered swing action.",
+   id:"arch-epa-v1319-s29-52"
+  },
+  {
+   code:"S30",
+   question:"Before turning on a fixed workshop planer/thicknesser machine to process a batch of timber, what pre-use inspection checks must be carried out?",
+   options:[
+    "Verify cutter block guard function, inspect blade condition, check table height locks, test emergency stop controls, and confirm dust extraction operation.",
+    "Wipe down cutter blades with engine lubricant while the machine is running.",
+    "Remove top safety guards to view cutter block spinning speed.",
+    "Turn on power before checking if loose tools are lying on machine tables."
+   ],
+   correct:0,
+   explanation:"Pre-use checks on fixed woodworking machinery require inspecting guards, blade sharpness, safety stops, worktable clamps, and dust extraction systems.",
+   keyTakeaway:"Perform systematic safety checks on guards, blades, and emergency stops before powering fixed machinery.",
+   id:"arch-epa-v1319-s30-53"
+  },
+  {
+   code:"B1",
+   question:"You notice that the safety guard on a fixed crosscut saw in the workshop is cracked and sticking open. How do you demonstrate putting safety first?",
+   options:[
+    "Isolate/lockout the machine immediately, place a warning tag on it, and report the fault to the supervisor before anyone uses it.",
+    "Continue using the saw carefully, making sure to keep your hands away from the blade.",
+    "Tape the cracked guard in the open position so it doesn't jam during your cuts.",
+    "Mention the issue to a colleague at the end of the shift."
+   ],
+   correct:0,
+   explanation:"Putting health and safety first requires taking immediate action to isolate unsafe machinery and report hazards before injuries occur.",
+   keyTakeaway:"Isolate damaged machinery immediately and report safety defects.",
+   id:"arch-epa-v1319-b1-54"
+  },
+  {
+   code:"B2",
+   question:"When cutting components for timber window frames, how do you demonstrate environmental consideration in your daily work?",
+   options:[
+    "Plan cutting layouts using setting-out rods to maximize timber yield and utilize suitable offcuts for smaller frame parts before cutting fresh stock.",
+    "Throw all timber pieces under one metre long directly into the landfill skip to keep the bench clean.",
+    "Always cut short components from new full-length timber boards for convenience.",
+    "Burn treated timber offcuts in the workshop stove to provide space heating."
+   ],
+   correct:0,
+   explanation:"Environmental consideration involves planning cuts efficiently to optimize timber yield and re-using offcuts to minimize raw material waste.",
+   keyTakeaway:"Optimize material yield and re-use offcuts to reduce timber waste.",
+   id:"arch-epa-v1319-b2-55"
+  },
+  {
+   code:"B3",
+   question:"A new trainee joiner from an underrepresented group joins your workshop team. How do you contribute to an inclusive culture?",
+   options:[
+    "Welcome them, share trade knowledge willingly, treat them with equal respect, and challenge non-inclusive behavior in the workshop.",
+    "Assign them all shop cleaning tasks so they prove their dedication before learning machining skills.",
+    "Leave them to work things out entirely on their own so they adapt faster.",
+    "Avoid talking to them to prevent any misunderstandings."
+   ],
+   correct:0,
+   explanation:"Contributing to an inclusive culture means actively welcoming new colleagues, offering equitable support, and upholding a respectful workplace.",
+   keyTakeaway:"Support all team members equally and foster a fair, welcoming environment.",
+   id:"arch-epa-v1319-b3-56"
+  },
+  {
+   code:"B4",
+   question:"A new computer-controlled 5-axis CNC timber router is installed in your workshop. How do you show initiative in seeking learning and development opportunities?",
+   options:[
+    "Ask the lead machinist if you can observe setups, request user manual access, and express interest in attending official operator training.",
+    "Ignore the machine because traditional hand-crafting techniques are superior.",
+    "Attempt to operate the machine immediately without reading safety manuals or receiving instruction.",
+    "Complain that automated machinery will reduce traditional joinery hours."
+   ],
+   correct:0,
+   explanation:"Demonstrating a growth mindset involves actively seeking opportunities to learn new technologies, machinery, and modern methods of construction.",
+   keyTakeaway:"Proactively seek opportunities to learn modern technologies and machinery techniques.",
+   id:"arch-epa-v1319-b4-57"
+  },
+  {
+   code:"B5",
+   question:"Your joinery workshop team is facing a tight deadline to complete a commercial door package. How do you demonstrate a strong team focus?",
+   options:[
+    "Coordinate your machining schedule with the assembly bench team, assist colleagues once your tasks are finished, and keep workflow moving smoothly.",
+    "Finish your assigned doors and leave immediately without checking if team members need support.",
+    "Work at a slow pace regardless of team targets as long as your personal work quality is fine.",
+    "Refuse to assist with sanding or packing duties because you specialize in cutting only."
+   ],
+   correct:0,
+   explanation:"A team focus means working collaboratively across manufacturing stages to achieve shared production targets and support team members.",
+   keyTakeaway:"Collaborate across production stages to support team goals and meet deadlines.",
+   id:"arch-epa-v1319-b5-58"
   }
  ]
 };
