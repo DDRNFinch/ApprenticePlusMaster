@@ -431,3 +431,11 @@ Added Targeted Revision engine backend helpers.
 v1.37.1: PDF header evidence block moved left and wrapped within printable margins.
 
 v1.37.2: Removed the KSB Evidence Coverage panel from standard assignment pages. KSB tracking and the dedicated KSB Matrix remain unchanged.
+
+## V1.37.9 — App-wide voice to text
+- Added a compact Apprentice+ microphone button to every editable text input and text area.
+- Voice transcription is inserted at the current cursor position without removing existing text.
+- The microphone glows green while listening and can be tapped again to stop.
+- Dictated text triggers the same input and change events as typing, preserving existing auto-save behaviour.
+- Added clear messages for unsupported browsers and blocked microphone permission.
+- Newly opened pages and dynamically created forms receive the control automatically.

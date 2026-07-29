@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.37.8';
+const APP_VERSION='V1.37.9';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -604,7 +604,101 @@ async function saveProfile(){await putStore('profile',state.profile)}
 
 function shell(content){const active=state.view==='resources'||state.view==='notepad'||state.view==='tools'||state.view==='measuremate'||state.view==='materialmate'||state.view==='drawingmate'||state.view==='projectmate'?'resources':state.view==='academy'||state.view==='library'?'academy':'course';return `<main class="shell"><header class="topbar"><div class="brand"><div class="logo"><img src="logo-apprentice-plus.png" alt="Apprentice+ logo"></div><div><div class="brand-title-row"><h1>Apprentice+</h1></div><p class="subtitle">Your evidence, organised</p></div>${state.branding?.logo?`<div class="college-header-brand"><img src="${state.branding.logo}" alt="${esc(state.branding.name||'College')} logo"><span>${esc(state.branding.name||'')}</span></div>`:''}</div>${state.profile?`<span class="pill">${esc(state.profile.fullName.split(' ')[0]||'Learner')}</span>`:''}</header>${content}<div class="app-version-bottom no-print">${APP_VERSION}</div><nav class="bottom-nav no-print" aria-label="Main navigation"><button class="bottom-nav-item ${active==='resources'?'active':''}" data-nav="resources" aria-label="Toolbox"><span>${appIcon('toolbox','nav-icon')}</span><strong>Toolbox</strong></button><button class="bottom-nav-item ${active==='course'?'active':''}" data-nav="course" aria-label="Course"><span>${appIcon('course','nav-icon')}</span><strong>Course</strong></button><button class="bottom-nav-item ${active==='academy'?'active':''}" data-nav="academy" aria-label="Academy"><span>${appIcon('academy','nav-icon')}</span><strong>Academy</strong></button></nav></main>`}
 function courseHeader(){const p=courseProgressStats(),red=p.red??0;return `<section class="course-card"><div class="course-summary"><div class="course-copy"><div class="course-title-row"><h2>${COURSE.name}</h2><span class="target-status ${p.tone}">${p.label}</span></div><div class="meta"><span class="pill">${COURSE.standard}</span><span class="pill">Version ${COURSE.version}</span><span class="pill">Level ${COURSE.level}</span><span class="pill green">${courseAssignments().length} evidence packs</span></div></div><button class="progress-rings" id="courseProgressBtn" aria-label="Open course progress details" style="--green:${p.green*3.6}deg;--yellow:${p.yellow*3.6}deg;--red:${red*3.6}deg"><span class="ring ring-green"></span><span class="ring ring-yellow"></span><span class="ring ring-red"></span><strong>${p.green}%</strong></button></div></section>`}
-function render(){recordNavigation();if(state.view==='resources')renderResources();else if(state.view==='notepad')renderNotepad();else if(state.view==='tools')renderTools();else if(state.view==='measuremate')renderMeasureMate();else if(state.view==='materialmate')renderMaterialMate();else if(state.view==='drawingmate')renderDrawingMate();else if(state.view==='projectmate')renderProjectMate();else if(state.view==='home')renderHome();else if(state.view==='assignment')renderAssignment();else if(state.view==='academy')renderAcademy();else if(state.view==='library')renderKnowledgeLibrary();else if(state.view==='lesson')renderAcademyLesson();else if(state.view==='epa')renderEpaMockHome();else if(state.view==='epa-test')renderEpaMockTest();else if(state.view==='epa-result')renderEpaMockResult();else if(state.view==='knowledge-test')renderAssignmentKnowledgeTest();else if(state.view==='knowledge-result')renderAssignmentKnowledgeResult();else if(state.view==='walkthrough')renderWalkthrough();else renderSection()}
+function render(){recordNavigation();if(state.view==='resources')renderResources();else if(state.view==='notepad')renderNotepad();else if(state.view==='tools')renderTools();else if(state.view==='measuremate')renderMeasureMate();else if(state.view==='materialmate')renderMaterialMate();else if(state.view==='drawingmate')renderDrawingMate();else if(state.view==='projectmate')renderProjectMate();else if(state.view==='home')renderHome();else if(state.view==='assignment')renderAssignment();else if(state.view==='academy')renderAcademy();else if(state.view==='library')renderKnowledgeLibrary();else if(state.view==='lesson')renderAcademyLesson();else if(state.view==='epa')renderEpaMockHome();else if(state.view==='epa-test')renderEpaMockTest();else if(state.view==='epa-result')renderEpaMockResult();else if(state.view==='knowledge-test')renderAssignmentKnowledgeTest();else if(state.view==='knowledge-result')renderAssignmentKnowledgeResult();else if(state.view==='walkthrough')renderWalkthrough();else renderSection();enhanceVoiceToText(app)}
+
+let activeSpeechRecognition=null;
+let activeSpeechButton=null;
+function speechRecognitionConstructor(){return window.SpeechRecognition||window.webkitSpeechRecognition||null}
+function voiceTextEligible(el){
+ if(!el||el.dataset.voiceTextReady==='1'||el.disabled||el.readOnly)return false;
+ if(el.matches('textarea'))return true;
+ if(!el.matches('input'))return false;
+ const type=(el.getAttribute('type')||'text').toLowerCase();
+ return ['text','search','email','url','tel'].includes(type);
+}
+function spokenInsertion(base,start,end,spoken){
+ const before=base.slice(0,start),after=base.slice(end),clean=String(spoken||'').trim();
+ if(!clean)return base;
+ const leftGap=before&&!/\s$/.test(before)?' ':'';
+ const rightGap=after&&!/^\s|^[.,!?;:]/.test(after)?' ':'';
+ return before+leftGap+clean+rightGap+after;
+}
+function stopVoiceToText(){
+ if(activeSpeechRecognition){try{activeSpeechRecognition.stop()}catch{}}
+}
+function beginVoiceToText(target,button){
+ const Recognition=speechRecognitionConstructor();
+ if(!Recognition){toast('Voice to text is not supported on this browser');return}
+ if(activeSpeechRecognition){
+  const same=activeSpeechButton===button;
+  stopVoiceToText();
+  if(same)return;
+ }
+ const recognition=new Recognition();
+ const base=target.value||'';
+ const start=Number.isInteger(target.selectionStart)?target.selectionStart:base.length;
+ const end=Number.isInteger(target.selectionEnd)?target.selectionEnd:start;
+ let finalWords='';
+ recognition.lang='en-GB';
+ recognition.continuous=true;
+ recognition.interimResults=true;
+ activeSpeechRecognition=recognition;
+ activeSpeechButton=button;
+ button.classList.add('listening');
+ button.setAttribute('aria-pressed','true');
+ button.title='Stop voice to text';
+ target.focus();
+ recognition.onresult=event=>{
+  let interim='';
+  for(let i=event.resultIndex;i<event.results.length;i++){
+   const words=event.results[i][0]?.transcript||'';
+   if(event.results[i].isFinal)finalWords+=(finalWords?' ':'')+words.trim();else interim+=(interim?' ':'')+words.trim();
+  }
+  const combined=[finalWords,interim].filter(Boolean).join(' ');
+  target.value=spokenInsertion(base,start,end,combined);
+  const cursor=Math.min(target.value.length,start+combined.length+1);
+  try{target.setSelectionRange(cursor,cursor)}catch{}
+  target.dispatchEvent(new Event('input',{bubbles:true}));
+ };
+ recognition.onerror=event=>{
+  if(event.error==='not-allowed'||event.error==='service-not-allowed')toast('Microphone permission is needed for voice to text');
+  else if(event.error!=='no-speech'&&event.error!=='aborted')toast('Voice to text could not start');
+ };
+ recognition.onend=()=>{
+  if(activeSpeechRecognition!==recognition)return;
+  button.classList.remove('listening');
+  button.setAttribute('aria-pressed','false');
+  button.title='Voice to text';
+  activeSpeechRecognition=null;
+  activeSpeechButton=null;
+  target.dispatchEvent(new Event('change',{bubbles:true}));
+ };
+ try{recognition.start();toast('Listening… speak now')}catch{recognition.onend();toast('Voice to text could not start')}
+}
+function enhanceVoiceToText(root=document){
+ root.querySelectorAll('textarea,input').forEach(target=>{
+  if(!voiceTextEligible(target))return;
+  target.dataset.voiceTextReady='1';
+  const wrap=document.createElement('div');
+  wrap.className='voice-text-field';
+  target.parentNode.insertBefore(wrap,target);
+  wrap.appendChild(target);
+  const button=document.createElement('button');
+  button.type='button';
+  button.className='voice-text-button no-print';
+  button.innerHTML=appIcon('microphone','voice-text-icon');
+  button.title='Voice to text';
+  button.setAttribute('aria-label','Start voice to text');
+  button.setAttribute('aria-pressed','false');
+  button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();beginVoiceToText(target,button)});
+  wrap.appendChild(button);
+ });
+}
+const voiceTextObserver=new MutationObserver(records=>{
+ records.forEach(record=>record.addedNodes.forEach(node=>{if(node.nodeType===1)enhanceVoiceToText(node.matches?.('textarea,input')?node.parentElement:node)}));
+});
+voiceTextObserver.observe(app,{childList:true,subtree:true});
+
 
 function isAcademyKnowledge(code){return COURSE.nvqUnits||String(code).toUpperCase().startsWith('K')}
 function courseRevisionTopics(){

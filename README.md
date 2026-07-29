@@ -51,3 +51,6 @@ The primary-unit criterion details and criterion-specific evidence prompts can b
 
 ## v1.34
 Admin Mode now includes locally stored college branding and reusable learner QR setup sheets.
+
+### V1.37.9
+Every editable text field now includes app-wide voice-to-text dictation using an Apprentice+ microphone control. Dictation inserts at the cursor and continues to use each field's existing save or auto-save behaviour.
