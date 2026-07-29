@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3.15';
+const APP_VERSION='V1.3.17';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -775,7 +775,7 @@ function renderAcademyLesson(){
 
 
 
-// v1.3.15 Bricklayer EPA professional-judgement question bank (K1-K30)
+// v1.3.17 Bricklayer EPA professional-judgement question bank (K1-K31, S1-S16, S18, S20, S22)
 // Locked MCQ writing standard: realistic workplace judgement, four plausible trade-language answers,
 // no joke/"I do not care" distractors, no official-sounding giveaway, and an explanation for coaching.
 // Questions are deliberately stored as an approved, fixed bank. Nothing is generated at runtime.
@@ -1214,8 +1214,288 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
    explanation:'A small agreed adjustment to the starting height can improve the bond and remove weak slivers while keeping the intended rake. Accepting tiny cuts may leave fragile pieces. Changing the bond alters the appearance and strength, while stronger mortar does not make poor-shaped cuts sound.',
    keyTakeaway:'Set out the rake and the bond together so the wall finishes without weak sliver cuts.',
    id:'brick-epa-v139-k30'
+  },
+  {
+   code:'K31',
+   question:'A normally reliable bricklayer has become withdrawn, is making unusual mistakes and says they are barely sleeping. What is the best way to respond?',
+   options:[
+    'Have a quiet word, listen without judging and point them towards suitable support',
+    'Reduce their workload for the day and see whether they seem better tomorrow',
+    'Tell the supervisor straight away so the problem is formally recorded',
+    'Keep them on straightforward tasks and let close workmates watch out for them'
+   ],
+   correct:0,
+   explanation:'A private, supportive conversation gives the person a chance to explain what is happening and helps them reach suitable support. Reducing work may help briefly but does not address the underlying issue. Escalating immediately can be necessary where there is an urgent safety concern, but otherwise it may discourage them from opening up. Quietly monitoring them is caring, yet it still leaves the person without direct support.',
+   keyTakeaway:'Notice changes, speak privately and help the person reach the right support.',
+   id:'brick-epa-v1316-k31'
+  },
+  {
+   code:'S1',
+   question:'You are ready to start a small return wall, but the scaffold inspection tag shows yesterday’s date and a guardrail has been moved for a delivery. What is the best action?',
+   options:[
+    'Refit the guardrail, check it feels secure and then start the low-level work',
+    'Use the scaffold only for loading until the next formal inspection is completed',
+    'Stop and get the scaffold checked before using it for the brickwork',
+    'Work from the inside edge and keep materials away from the missing guardrail'
+   ],
+   correct:2,
+   explanation:'The altered scaffold should be checked by the right person before it is used. Replacing the rail yourself does not confirm the whole scaffold remains safe. Restricting its use or working away from the edge still means using a scaffold whose condition has changed since inspection.',
+   keyTakeaway:'When access equipment has been altered, get it checked before carrying on.',
+   id:'brick-epa-v1316-s1'
+  },
+  {
+   code:'S2',
+   question:'You need to rake out several mortar joints with a grinder in a partly enclosed area. The extraction is working, but fine dust is still hanging in the air. What is the best adjustment?',
+   options:[
+    'Use the extraction with suitable face-fit-tested RPE and improve the airflow',
+    'Keep the extraction running and take a short break after every few joints',
+    'Change to safety goggles and work closer to the joint so the cut is quicker',
+    'Move the extraction nozzle slightly back so it catches a wider spread of dust'
+   ],
+   correct:0,
+   explanation:'Using effective extraction, suitable RPE and better ventilation tackles the remaining dust through more than one control. Breaks reduce individual time in the area but do not improve the air. Goggles protect the eyes rather than the lungs, and moving the nozzle away usually captures less dust at source.',
+   keyTakeaway:'Match PPE and dust controls to the actual exposure, not just the tool being used.',
+   id:'brick-epa-v1316-s2'
+  },
+  {
+   code:'S3',
+   question:'At the end of a repair job, you have sound reclaimed bricks, broken clean brick, mortar rubble and plastic wrapping. Space in the skip area is tight. What is the best way to clear it?',
+   options:[
+    'Stack the reusable bricks and separate the remaining materials into the correct waste streams',
+    'Keep the full bricks and put the broken brick, mortar and wrapping into one mixed skip',
+    'Leave all masonry together for crushing and put the wrapping in the general waste',
+    'Use the broken brick as temporary hardstanding and clear everything else together'
+   ],
+   correct:0,
+   explanation:'Keeping sound bricks for reuse and separating the waste preserves value and avoids contaminating recyclable material. Mixing clean masonry with plastic reduces recovery options. Sending reusable units for crushing wastes a usable resource, while using rubble as temporary hardstanding may create housekeeping and removal problems unless it has been agreed.',
+   keyTakeaway:'Reuse first, then keep waste streams clean enough to recycle properly.',
+   id:'brick-epa-v1316-s3'
+  },
+  {
+   code:'S4',
+   question:'A drawing shows wall ties at the usual spacing, but the site detail beside a movement joint requires extra ties. The gang normally follows the drawing. What is the best approach?',
+   options:[
+    'Use the usual spacing and add one extra tie at the top of the joint',
+    'Follow the specific joint detail and confirm any conflict before building past it',
+    'Split the difference between the usual spacing and the joint detail',
+    'Match the ties on the previous plot because it has already passed inspection'
+   ],
+   correct:1,
+   explanation:'The specific detail governs the work at that location, and any conflict should be resolved before it is covered. Adding a token extra tie or averaging the spacing is not a designed solution. Copying another plot may repeat a different detail or an unnoticed error.',
+   keyTakeaway:'Use the detail that applies to the exact location and resolve clashes before covering the work.',
+   id:'brick-epa-v1316-s4'
+  },
+  {
+   code:'S5',
+   question:'The latest drawing changes an opening by 50 mm, but the printed copy on the plot still shows the old size. The lintel delivery matches the new schedule. What should you do?',
+   options:[
+    'Set out from the new schedule because the lintel confirms the change',
+    'Keep the old opening until a revised paper drawing reaches the plot',
+    'Check the current drawing revision and confirm the opening before setting out',
+    'Mark both sizes and let the supervisor choose when they next visit the plot'
+   ],
+   correct:2,
+   explanation:'Checking the current revision and confirming the dimension prevents the wall being built from mixed information. The lintel schedule supports the change but does not replace the drawing check. Waiting for paper may delay work unnecessarily, while marking both sizes leaves the key decision unresolved.',
+   keyTakeaway:'Before setting out, make sure every dimension comes from the latest confirmed information.',
+   id:'brick-epa-v1316-s5'
+  },
+  {
+   code:'S6',
+   question:'You are ordering materials for a short cavity wall with one window. Your first calculation gives exactly the number of bricks, blocks and ties shown by the dimensions. What is the best next step?',
+   options:[
+    'Order the exact quantities and use offcuts from nearby plots for any shortage',
+    'Add the same percentage to every item so the order has a simple allowance',
+    'Allow separately for cuts, breakage, returns and the actual tie arrangement',
+    'Round each quantity up to the nearest full pack and keep all surplus on the plot'
+   ],
+   correct:2,
+   explanation:'Different materials need different allowances based on how they will be used. A single blanket percentage can over-order some items and leave others short. Exact quantities ignore normal losses, while rounding everything to full packs may create unnecessary surplus and congestion.',
+   keyTakeaway:'Estimate each resource from the design, pack sizes and realistic job-specific waste.',
+   id:'brick-epa-v1316-s6'
+  },
+  {
+   code:'S7',
+   question:'During the morning, another trade starts storing pipe bundles beside your mortar spot and narrows the route to the scaffold. What is the best response?',
+   options:[
+    'Shift your mortar spot closer to the wall so the route remains usable',
+    'Agree a clear storage area with the other trade and restore the access route',
+    'Leave a narrow pedestrian gap and ask the labourer to guide deliveries through',
+    'Move the pipe bundles to the nearest open area while the other trade is away'
+   ],
+   correct:1,
+   explanation:'Speaking to the other trade and restoring an agreed route deals with the shared-workspace problem without creating a new one. Moving the mortar spot may crowd the workface. A narrow guided route is still poor access, while moving another trade’s materials without agreement can damage them or create conflict.',
+   keyTakeaway:'Maintain the work area by coordinating changes, not by passing the obstruction elsewhere.',
+   id:'brick-epa-v1316-s7'
+  },
+  {
+   code:'S8',
+   question:'You are trimming a small number of bricks by hand for a repair. The bolster is sound, but the club hammer has a slightly loose head. What is the best choice?',
+   options:[
+    'Use lighter blows and check the head again after each brick',
+    'Swap to a sound hammer before making the cuts',
+    'Hold the hammer lower down the handle so the head moves less',
+    'Use the brick hammer instead and make several smaller cuts'
+   ],
+   correct:1,
+   explanation:'A loose hammer head can worsen or detach during use, so a sound tool is the right choice. Lighter blows and a lower grip do not remove the defect. A brick hammer may suit some trimming, but changing the method only to avoid replacing an unsafe tool is not the best judgement.',
+   keyTakeaway:'Select a tool that suits the task and is in safe condition before you start.',
+   id:'brick-epa-v1316-s8'
+  },
+  {
+   code:'S9',
+   question:'After washing down at the end of the shift, your levels and trowels are clean but still damp, and the lock-up is cold. What is the best way to leave them?',
+   options:[
+    'Dry them, protect the metal surfaces and store them where they will not be damaged',
+    'Put them straight into the toolbox so they are secure before the site closes',
+    'Leave the toolbox lid open overnight so the moisture can escape naturally',
+    'Wrap the metal parts in a dry cloth and stack the tools beside the mortar mixer'
+   ],
+   correct:0,
+   explanation:'Drying, protecting and storing the tools properly prevents rust, damaged edges and inaccurate equipment. Locking damp tools away traps moisture. Leaving the box open reduces security, while cloth can hold damp against the metal and the mixer area is not controlled storage.',
+   keyTakeaway:'Clean tools are not finished until they are dry, protected and stored safely.',
+   id:'brick-epa-v1316-s9'
   }
- ]
+,
+  {
+   code:"S10",
+   question:"You are setting out the first course of a blockwork inner skin for a cavity wall. The detailed drawings call for a clear internal room length of 4,000mm between block faces. How should you establish the corner block positions before laying the rest of the course?",
+   options:[
+    "Dry lay the first course without mortar to check the bond and measure the overall length, adjusting joint thickness slightly if needed to keep cuts to a minimum.",
+    "Set the two end blocks in mortar using exact tape measurements, then immediately lay the full course through to line to keep up production speed.",
+    "Lay the corner blocks using a string line set to 4,005mm to leave an extra gap for plastering later.",
+    "Lay one corner block in mortar, line out the course, and chop the final block to fit whatever gap remains at the far corner."
+   ],
+   correct:0,
+   explanation:"Dry laying the initial course allows you to verify brick or block bond, check overall measurements, and ensure opening sizes and tolerances match the drawings before applying mortar. Setting blocks directly in mortar without dry-checking risks improper bond or uneven cuts.",
+   keyTakeaway:"Always dry lay and check gauge and bond on setting-out courses before laying in mortar.",
+   id:"brick-epa-v1317-s10"
+  },
+  {
+   code:"S11",
+   question:"You are constructing a cavity wall section that includes a 900mm window opening. You are placing the cavity tray over the opening. How should the cavity tray be positioned and finished to ensure proper moisture management?",
+   options:[
+    "Slope the tray downwards towards the outer leaf, ensuring it steps over the lintel with turned-up end dams and weep holes installed directly above.",
+    "Keep the tray completely level across the cavity and seal both ends flat against the cavity insulation without weep holes.",
+    "Angle the tray backwards towards the inner blockwork leaf so water drains down into the internal cavity insulation.",
+    "Tuck the tray behind the lintel without end dams, relying on standard mortar joints to absorb any water ingress."
+   ],
+   correct:0,
+   explanation:"Cavity trays must shed water to the outer leaf, feature end dams to prevent water spilling off the edges into the cavity, and use weep holes to drain water outside. Angling backwards or leaving ends open directs water inside the building fabric.",
+   keyTakeaway:"Cavity trays must shed outwards with end dams and weep holes for reliable water discharge.",
+   id:"brick-epa-v1317-s11"
+  },
+  {
+   code:"S12",
+   question:"You are completing the external brickwork joints on a house build where the specification calls for a weather struck and cut joint finish. How should this joint be profiled to meet trade quality standards?",
+   options:[
+    "Strike the horizontal joint so the top edge is recessed slightly into the wall and the bottom edge is flush with the lower brick, then cut the bottom edge crisp with a trowel.",
+    "Recess the bottom edge of the horizontal joint into the wall while keeping the top edge flush, creating an upward slope.",
+    "Press a curved jointer iron deeply into the mortar joint to create a smooth, concave half-round profile.",
+    "Rake out the mortar to a depth of 10mm leaving a square, flat recessed channel with sharp interior corners."
+   ],
+   correct:0,
+   explanation:"A weather struck and cut joint slopes inward at the top edge so water sheds off the face of the upper brick down to the lower brick, with a clean cut line along the bottom edge. Inverting the slope catches water, while rounded or raked joints are different profile types.",
+   keyTakeaway:"Weather struck joints slope inward at the top to shed rainwater away from the mortar line.",
+   id:"brick-epa-v1317-s12"
+  },
+  {
+   code:"S13",
+   question:"You are building a 225mm one-brick-thick solid garden wall in English bond and capping it with a brick-on-edge coping. How should the capping course be constructed to prevent water penetration and finish cleanly?",
+   options:[
+    "Lay a continuous damp proof course under the brick-on-edge, bedding bricks on a rich mortar with neat, solid perpends, overhangs, and creasing tiles if specified.",
+    "Lay the brick-on-edge directly onto dry brickwork without DPC to allow the capping mortar to key strongly into the wall below.",
+    "Set the capping bricks horizontally on their flat face using standard mortar, leaving perpends open to allow ventilation.",
+    "Pour a thin liquid grout over flat bricks laid on top of the wall to seal the top course quickly."
+   ],
+   correct:0,
+   explanation:"Brick-on-edge cappings require a sound bedding mortar, full perpends, and a DPC beneath, or engineering bricks and tile creasing where specified, to stop water driving down through the top of a solid wall. Omitting the water barrier or leaving perpends open leads to frost damage and water ingress.",
+   keyTakeaway:"Solid wall cappings require proper water barriers and fully filled joints to resist weathering.",
+   id:"brick-epa-v1317-s13"
+  },
+  {
+   code:"S14",
+   question:"You are mixing a 1:1:6 cement, lime and sand mortar mix by hand on a mixing board for external facing brickwork. What is the correct method to ensure an even mix throughout?",
+   options:[
+    "Measure dry ingredients accurately using gauge boxes or buckets, heap and turn the dry materials together at least twice until uniform in colour, then add water gradually while turning.",
+    "Add all the water onto the board first, shovel in the sand, and mix in cement and lime at the end to prevent dust.",
+    "Shovel loose heaps of sand, cement and lime straight onto the board and splash water on top without dry mixing to save time.",
+    "Mix cement and water into a liquid slurry first, then throw sand on top and stir until thick."
+   ],
+   correct:0,
+   explanation:"Hand mixing requires batching with consistent containers and thoroughly mixing dry ingredients to a uniform colour before adding water. Adding water first or guessing shovel counts leads to weak, patchy or inconsistent mortar.",
+   keyTakeaway:"Always dry-blend batched mortar ingredients thoroughly before adding water.",
+   id:"brick-epa-v1317-s14"
+  },
+  {
+   code:"S15",
+   question:"You need to cut several facing bricks to form queen closers for a corner detail. Which tool and technique will produce the cleanest cut to accurate tolerances?",
+   options:[
+    "Mark the cut line around all four faces with a pencil and square, score along the line using a bolster chisel and club hammer, then split with a sharp, firm strike.",
+    "Mark the top face only and hit the brick hard with the blade of a brick hammer without scoring.",
+    "Use a hand saw designed for lightweight thermal blocks to slowly saw through the facing brick.",
+    "Grip the brick in a vice and snap it over a sharp timber edge by hitting the overhang with a mallet."
+   ],
+   correct:0,
+   explanation:"Scoring around all four sides of a brick with a bolster chisel creates a stress line that helps produce a clean, accurate split when struck firmly. Hitting without scoring or snapping over timber is more likely to cause jagged, unusable fractures.",
+   keyTakeaway:"Score all sides of a brick with a bolster chisel before striking for a clean split.",
+   id:"brick-epa-v1317-s15"
+  },
+  {
+   code:"S16",
+   question:"You are replacing three spalling bricks in an existing facing brick wall. How should you remove the damaged bricks without loosening or damaging the surrounding sound brickwork?",
+   options:[
+    "Stitch-drill small holes into the mortar joints around the damaged bricks, chisel out the joints carefully with a narrow plugging chisel, then ease the damaged bricks out.",
+    "Hit the centre of the damaged bricks forcefully with a sledgehammer until they shatter out of the wall.",
+    "Lever a large crowbar into the bed joint above the damaged bricks and pry upwards until the course lifts.",
+    "Use a wide bolster chisel straight into the brick face to break it apart while leaving mortar joints intact."
+   ],
+   correct:0,
+   explanation:"Drilling out and chiselling the mortar joints frees the damaged brick from the surrounding masonry, allowing it to be removed without transferring heavy impact forces that could crack surrounding bricks. Heavy hammering or prying risks damaging adjacent units.",
+   keyTakeaway:"Isolate damaged bricks by removing surrounding mortar joints before extraction.",
+   id:"brick-epa-v1317-s16"
+  },
+  {
+   code:"S18",
+   question:"You are reporting progress and material requirements to the site manager for an upcoming gable end build. Which statement uses correct construction terminology?",
+   options:[
+    "“We have finished setting out the inner leaf blockwork to damp level and will need two packs of engineering bricks for the DPC course tomorrow.”",
+    "“We’ve done the bottom row of concrete blocks inside and need some dark hard bricks for the waterproof layer tomorrow.”",
+    "“The inside wall is up to the floor line, so send up some heavy grey bricks to stop the damp getting through.”",
+    "“We finished the lower part of the wall and just need some proper bricks for the ground line before we crack on.”"
+   ],
+   correct:0,
+   explanation:"Professional site communication relies on precise trade terminology such as inner leaf blockwork, damp level, engineering bricks and DPC course. Informal descriptions can cause confusion or lead to the wrong materials being ordered.",
+   keyTakeaway:"Use precise trade terms when ordering materials or reporting site progress.",
+   id:"brick-epa-v1317-s18"
+  },
+  {
+   code:"S20",
+   question:"You are working as part of a four-person bricklaying team raising a high cavity wall section. The hod carrier is struggling to keep both bricks and mortar topped up for all masons. How should the team adapt?",
+   options:[
+    "Pause laying briefly to help stock up boards and split tasks effectively so the line rises evenly without overburdening one person.",
+    "Carry on laying at maximum speed so the site manager can see the bricklayers are not slowing down.",
+    "Tell the hod carrier to work faster and skip cleaning mortar boards between batches.",
+    "Stop work completely and wait in the canteen until additional labourers arrive on site."
+   ],
+   correct:0,
+   explanation:"Good teamwork involves supporting colleagues and adapting the workflow to maintain safety, quality and momentum across the build team. Ignoring the bottleneck can lead to poor mortar quality, safety risks or team friction.",
+   keyTakeaway:"Collaborate and support team members to maintain workflow, safety and build quality.",
+   id:"brick-epa-v1317-s20"
+  },
+  {
+   code:"S22",
+   question:"You are building a brick gable end wall that requires a raking cut along the roof pitch line. How should you establish and execute the raking cuts accurately?",
+   options:[
+    "Set up a string line along the exact roof pitch angle, mark each brick individually across its face, and cut precisely using a masonry saw or bolster.",
+    "Lay full bricks past the pitch line, then chop off the overhanging corners with a brick hammer after the mortar hardens.",
+    "Estimate the angle by eye and cut several bricks at once on a bench before laying the course.",
+    "Step the bricks back in full headers along the gable without cutting to let the roofers cover the gaps."
+   ],
+   correct:0,
+   explanation:"Raking cuts require marking the pitch line accurately with a line or bevel and cutting units individually to fit tightly against the raking angle within tolerance. Cutting hardened bricks in place or guessing angles results in uneven joints and weak edges.",
+   keyTakeaway:"Mark raking cuts directly from a precise pitch line to maintain accurate tolerances.",
+   id:"brick-epa-v1317-s22"
+  } ]
 };
 function epaQuestionWritingIssues(q){
  const issues=[];

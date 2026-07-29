@@ -1,3 +1,17 @@
+# V1.3.17 — Bricklayer EPA MCQ S10–S16, S18, S20 and S22
+
+- Added the 10 supplied Gemini EPA questions to the Bricklayer Academy EPA bank.
+- The cumulative bank now includes K1–K31, S1–S16, S18, S20 and S22.
+- Preserved random 20-question selection, answer randomisation, explanations and key takeaways.
+- Updated app and service-worker cache references to V1.3.17.
+
+# V1.3.17 — Bricklayer EPA MCQ K31 and S1–S9
+
+- Added 10 professional-judgement EPA questions: K31 and S1–S9.
+- Bricklayer EPA bank now contains 40 cumulative questions: K1–K31 and S1–S9.
+- Preserved random 20-question attempts, shuffled answer order, immediate coaching, takeaways and existing grade thresholds.
+- Updated app and cache-busting references to V1.3.17.
+
 # V1.3.15 — EPA practice unlock and validator fix
 
 - EPA Knowledge Practice now unlocks when at least 20 valid questions are installed.
