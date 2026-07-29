@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.38.8';
+const APP_VERSION='V1.38.9';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -775,11 +775,48 @@ function renderAcademyLesson(){
 
 
 
-// v1.38.8 approved EPA Knowledge Practice framework (KSB courses only)
+// v1.38.9 approved EPA Knowledge Practice framework (KSB courses only)
+// Locked MCQ writing standard: realistic workplace judgement, four plausible trade-language answers,
+// no joke/"I do not care" distractors, no official-sounding giveaway, and an explanation for coaching.
 // Questions are deliberately stored as an approved, fixed bank. Nothing is generated at runtime.
+const EPA_MCQ_WRITING_STANDARD=Object.freeze({
+ id:'apprentice-plus-professional-judgement-v1',
+ title:'Professional judgement MCQ standard',
+ rules:Object.freeze([
+  'Use a realistic workplace scenario rather than a definition-only question.',
+  'Write four answers that a competent tradesperson could genuinely consider.',
+  'Do not use joke, careless, reckless or “I do not care” distractors.',
+  'Make the EPA best-practice answer sound like natural trade language.',
+  'Keep answer length and tone balanced so wording does not reveal the answer.',
+  'Use realistic alternatives: a common shortcut, a logical partial answer or a reasonable decision that misses one key point.',
+  'Test professional judgement without trick wording.',
+  'Include an explanation and a short key takeaway for coaching after an incorrect answer.'
+ ])
+});
 const EPA_KNOWLEDGE_PRACTICE_BANKS={
  'bricklayer-st0095-v1-2':[]
 };
+function epaQuestionWritingIssues(q){
+ const issues=[];
+ const question=String(q?.question||'').trim(),options=Array.isArray(q?.options)?q.options.map(x=>String(x||'').trim()):[];
+ if(!question)issues.push('question text is missing');
+ if(!/(you|your|while|when|after|before|notice|find|asked|arrives|starts|finished|fitting|building|repairing|working)/i.test(question))issues.push('question should use a realistic workplace scenario');
+ if(options.length!==4||options.some(x=>!x))issues.push('exactly four complete answers are required');
+ if(!Number.isInteger(q?.correct)||q.correct<0||q.correct>3)issues.push('one EPA best-practice answer must be selected');
+ if(!String(q?.explanation||'').trim())issues.push('coaching explanation is missing');
+ if(!String(q?.keyTakeaway||'').trim())issues.push('key takeaway is missing');
+ if(options.length===4){
+  const official=/(in accordance with|comply with|compliance with|appropriate control measures|following site procedures|industry standards|relevant regulations)/i;
+  if(official.test(options[q.correct]||'')&&!options.some((x,i)=>i!==q.correct&&official.test(x)))issues.push('correct answer contains official-sounding giveaway wording');
+  const careless=/(leave it|ignore it|not my job|someone else|carry on anyway|nobody will notice|doesn.?t matter|do it later|hope for the best)/i;
+  options.forEach((x,i)=>{if(i!==q.correct&&careless.test(x))issues.push(`answer ${String.fromCharCode(65+i)} sounds careless rather than plausible`)});
+  const lengths=options.map(x=>x.split(/\s+/).filter(Boolean).length),correctLength=lengths[q.correct]||0,otherAvg=lengths.filter((_,i)=>i!==q.correct).reduce((a,b)=>a+b,0)/3;
+  if(otherAvg&&correctLength>otherAvg*1.65)issues.push('correct answer is noticeably longer than the alternatives');
+  const unique=new Set(options.map(x=>x.toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim()));
+  if(unique.size<4)issues.push('answers must be meaningfully different');
+ }
+ return issues;
+}
 function epaResultKey(){return `${COURSE.id}:epaKnowledgePracticeResults:v2`}
 function epaType(code){const c=String(code||'').toUpperCase();return c.startsWith('K')?'Knowledge':c.startsWith('S')?'Skill':'Behaviour'}
 function allCourseKsbs(){
@@ -804,8 +841,9 @@ function epaKnowledgeBankStatus(){
   const code=String(q?.code||'').trim().toUpperCase();
   if(!requiredCodes.has(code)){issues.push(`Question ${index+1} uses unknown KSB ${code||'(missing)'}`);return}
   if(seen.has(code)){issues.push(`More than one question is assigned to ${code}`);return}
-  if(!q.question||!Array.isArray(q.options)||q.options.length!==4||!Number.isInteger(q.correct)||q.correct<0||q.correct>3||!q.explanation){issues.push(`${code} is incomplete`);return}
-  seen.add(code);valid.push({...q,code,type:epaType(code),id:q.id||`${COURSE.id}-${code}-epa-practice`});
+  const writingIssues=epaQuestionWritingIssues(q);
+  if(writingIssues.length){writingIssues.forEach(issue=>issues.push(`${code}: ${issue}`));return}
+  seen.add(code);valid.push({...q,code,type:epaType(code),id:q.id||`${COURSE.id}-${code}-epa-practice`,writingStandard:EPA_MCQ_WRITING_STANDARD.id});
  });
  const missing=required.filter(x=>!seen.has(x.code));
  return {required,questions:valid,missing,issues,ready:missing.length===0&&issues.length===0&&valid.length===required.length};
@@ -869,8 +907,9 @@ function renderEpaMockHome(){
  const review=document.getElementById('reviewLatest');if(review)review.onclick=()=>{state.epaMock={result:last};state.view='epa-result';render();window.scrollTo(0,0)};
 }
 function renderEpaMockTest(){
- const mock=state.epaMock;if(!mock?.questions?.length){state.view='epa';render();return}const i=mock.index||0,q=mock.questions[i],picked=mock.answers[i],answered=Object.keys(mock.answers).length;
- app.innerHTML=shell(`<button class="back no-print" id="quitEpa">← Exit practice</button><section class="epa-test-head"><div><div class="number">Question ${i+1} of ${mock.questions.length}</div><h2>EPA Knowledge Practice</h2></div><span class="status-pill">${answered}/${mock.questions.length} answered</span></section><div class="epa-progress"><span style="width:${((i+1)/mock.questions.length)*100}%"></span></div><section class="card panel epa-question"><small>${esc(q.code)} · ${esc(q.type)}</small><h3>${esc(q.question)}</h3><div class="epa-options">${q.options.map((o,n)=>`<label class="epa-option ${picked===n?'selected':''}"><input type="radio" name="epaAnswer" value="${n}" ${picked===n?'checked':''}><span><b>${String.fromCharCode(65+n)}</b>${esc(o)}</span></label>`).join('')}</div></section><div class="epa-controls"><button class="btn secondary" id="epaPrev" ${i===0?'disabled':''}>Previous</button>${i===mock.questions.length-1?'<button class="btn" id="epaSubmit">Finish practice</button>':'<button class="btn" id="epaNext">Next</button>'}</div>`);
+ const mock=state.epaMock;if(!mock?.questions?.length){state.view='epa';render();return}const i=mock.index||0,q=mock.questions[i],picked=mock.answers[i],answered=Object.keys(mock.answers).length,answeredCurrent=picked!==undefined,isWrong=answeredCurrent&&picked!==q.correct;
+ const feedback=isWrong?`<section class="epa-feedback-panel" role="alert"><div class="epa-feedback-title"><span>Not quite</span><strong>Best answer: ${String.fromCharCode(65+q.correct)}</strong></div><p>${esc(q.explanation)}</p><div class="epa-takeaway"><strong>Remember</strong><span>${esc(q.keyTakeaway)}</span></div></section>`:'';
+ app.innerHTML=shell(`<button class="back no-print" id="quitEpa">← Exit practice</button><section class="epa-test-head"><div><div class="number">Question ${i+1} of ${mock.questions.length}</div><h2>EPA Knowledge Practice</h2></div><span class="status-pill">${answered}/${mock.questions.length} answered</span></section><div class="epa-progress"><span style="width:${((i+1)/mock.questions.length)*100}%"></span></div><section class="card panel epa-question"><small>${esc(q.code)} · ${esc(q.type)}</small><h3>${esc(q.question)}</h3><div class="epa-options">${q.options.map((o,n)=>`<label class="epa-option ${picked===n?'selected':''} ${answeredCurrent&&n===q.correct?'best-answer':''} ${answeredCurrent&&picked===n&&isWrong?'wrong-answer':''}"><input type="radio" name="epaAnswer" value="${n}" ${picked===n?'checked':''} ${answeredCurrent?'disabled':''}><span><b>${String.fromCharCode(65+n)}</b>${esc(o)}</span></label>`).join('')}</div></section>${feedback}<div class="epa-controls"><button class="btn secondary" id="epaPrev" ${i===0?'disabled':''}>Previous</button>${i===mock.questions.length-1?'<button class="btn" id="epaSubmit">Finish practice</button>':'<button class="btn" id="epaNext">Next</button>'}</div>`);
  document.getElementById('quitEpa').onclick=()=>{if(confirm('Exit this practice? Your current answers will be discarded.')){state.epaMock=null;state.view='epa';render()}};
  document.querySelectorAll('input[name="epaAnswer"]').forEach(r=>r.onchange=()=>{mock.answers[i]=Number(r.value);renderEpaMockTest()});
  document.getElementById('epaPrev').onclick=()=>{mock.index=Math.max(0,i-1);renderEpaMockTest();window.scrollTo(0,0)};

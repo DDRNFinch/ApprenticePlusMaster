@@ -91,3 +91,7 @@ Evidence camera inputs now display a landscape reminder and validate the finishe
 
 ### V1.38.7 EPA Academy
 The previous generated EPA multiple-choice mock has been replaced by a fixed, approved Knowledge Practice bank. Each KSB course expects one validated question per unique KSB. Bricklayer questions will be added to `EPA_KNOWLEDGE_PRACTICE_BANKS` in `app.js`. Professional Discussion and EPA Practical Pack stages are present as placeholders.
+
+
+### V1.38.9 Professional-Judgement MCQ Standard
+EPA question banks are now checked against the locked Apprentice+ writing standard: realistic workplace scenarios, four plausible answers, natural trade language, no careless distractors, no giveaway wording, and a stored explanation plus key takeaway. Incorrect answers display an immediate coaching panel during the test.

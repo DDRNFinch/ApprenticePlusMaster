@@ -1,3 +1,12 @@
+## V1.38.9 — Locked Professional-Judgement MCQ Standard
+
+- Added a locked Apprentice+ EPA MCQ writing standard for all approved question banks.
+- Questions must use realistic workplace scenarios and four plausible trade-language answers.
+- Added checks for careless distractors, official-sounding giveaway wording, duplicated answers and an overlong correct answer.
+- Each approved question now requires a coaching explanation and key takeaway.
+- Incorrect EPA answers now open an immediate explanation panel during the practice attempt.
+- The learner’s first answer is locked before they continue, preserving the validity of the result.
+
 ## V1.38.8 — EPA Knowledge Practice 20-Question Attempts
 
 - EPA Knowledge Practice now selects 20 questions per attempt from the full approved KSB bank.
