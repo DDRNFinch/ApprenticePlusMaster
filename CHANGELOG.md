@@ -1,3 +1,12 @@
+# v1.35 — Professional PDF Redesign
+
+- Replaced lime-green PDF pages with clean white layouts.
+- Added the Apprentice+ logo to PDF page headers.
+- Added stronger hierarchy: large course title, compact standard/level details and medium evidence title.
+- Redesigned the portfolio cover with light-green, logo-inspired accents and subtle layered 3D styling.
+- Kept college branding and logo support.
+- Replaced solid coloured footers with a restrained light-green divider and clean page numbering.
+
 # v1.34 — Admin Mode College Branding
 
 - Renamed Developer Mode to Admin Mode.

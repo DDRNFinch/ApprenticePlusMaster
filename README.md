@@ -1,3 +1,7 @@
+## v1.35
+
+Professional PDF redesign with white pages, Apprentice+ logo headers, clearer course and evidence hierarchy, and a light-green 3D-inspired portfolio cover.
+
 # Apprentice+ — Trowel Occupations Course Pack
 
 Course:

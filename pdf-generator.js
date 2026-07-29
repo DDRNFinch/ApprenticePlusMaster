@@ -3,7 +3,7 @@
 /* Apprentice+ offline PDF generator. Evidence stays in the browser; no data is uploaded. */
 async function generateEvidencePackPDF({course, assignment, profile, sections, branding}) {
   if(course && course.nvqUnits) return generateNVQEvidencePackPDF({course, assignment, profile, sections});
-  const W=1240,H=1754,M=88,TEAL='#073539',GREEN='#48E023',INK='#1A1A1A',MUTED='#5f6f70',PALE='#f2f7f5',WHITE='#ffffff';
+  const W=1240,H=1754,M=88,TEAL='#073539',GREEN='#22C55E',LIGHT_GREEN='#DDF4E6',SOFT_GREEN='#B9E8CA',INK='#172426',MUTED='#627274',PALE='#F5F8F7',WHITE='#ffffff';
   const pages=[];
   const percentageScore=d=>{const max=assignment.ksbs.length*5;if(!max)return 0;const achieved=assignment.ksbs.reduce((sum,[code])=>sum+(+d?.scores?.[code]||0),0);return Math.round((achieved/max)*100)};
   const buildSkillCriteria=summary=>{const text=String(summary||'').replace(/[.]+$/,'').trim(),lower=text.toLowerCase(),action=text.charAt(0).toLowerCase()+text.slice(1);let out=[`Selected the correct tools, equipment and materials needed to ${action}.`,`Used an appropriate sequence and working method to ${action}.`,'Completed the work accurately and in line with the drawing, specification or required tolerance.','Checked the finished work, corrected defects and left it to the required quality standard.'];if(/health|safety|ppe|rpe|lev|safe working/.test(lower))out=['Identified the main hazards and selected the correct PPE, RPE and control measures.','Followed the safe system of work and used tools, equipment and controls correctly.','Applied the relevant safety requirements consistently throughout the activity.','Maintained good housekeeping, protected others and left the work area safe.'];else if(/communicat|team|wellbeing|inclusion|equity|diversity/.test(lower))out=['Identified who needed information, support or involvement before starting the activity.','Used clear, appropriate communication and worked constructively with others.','Shared accurate information using suitable trade terminology and checked understanding.','Responded professionally, supported the team and reflected on how communication could improve.'];else if(/interpret|drawing|specification|digital design/.test(lower))out=['Selected the correct drawing, specification or digital information for the task.','Extracted the relevant dimensions, symbols, notes and construction requirements.','Transferred the information accurately into the practical work or setting-out process.','Cross-checked the completed work against the source information and corrected discrepancies.'];else if(/estimate|select.*material|resource|cutting list|size timber/.test(lower))out=['Identified the materials, quantities and specification required for the task.','Used an appropriate estimating, measuring or selection method.','Calculated or selected resources accurately with suitable allowances for waste and cutting.','Checked the result against the task requirements and justified the final selection.'];else if(/tool|equipment|maintain|sharpen/.test(lower))out=['Selected tools and equipment that were suitable, serviceable and safe for the task.','Set up and used each tool correctly, following manufacturer and workplace guidance.','Controlled the tools accurately to achieve the required dimensions and finish.','Checked, cleaned, maintained and stored the tools correctly after use.'];else if(/set out|measure|level|laser|mark out/.test(lower))out=['Selected suitable measuring, marking and setting-out equipment.','Established accurate datum points, lines, levels, centres or profiles in the correct sequence.','Checked all dimensions, angles, levels and tolerances throughout the work.','Verified the completed setting out against the drawing or specification before work continued.'];else if(/construct|build|install|fit|form|produce|apply|mix|repair|cut|splice|scribe/.test(lower))out=['Selected and prepared the correct tools, equipment, materials and work area for this skill.',`Used the correct practical sequence and trade technique to ${action}.`,'Maintained the required measurements, alignment, tolerances and component positioning.','Checked workmanship, finish and compliance with the specification, correcting defects where needed.'];else if(/environment|sustainab|recycl|waste/.test(lower))out=['Identified the environmental controls and resource requirements before starting.','Used materials efficiently and followed the correct reuse, recycling and disposal procedures.','Segregated resources correctly and prevented contamination or avoidable waste.','Left the area compliant, tidy and with environmental impacts minimised.'];return out};
@@ -13,16 +13,24 @@ async function generateEvidencePackPDF({course, assignment, profile, sections, b
   const resultText=d=>{const pct=percentageScore(d);return `${pct}% — ${gradeForPercentage(pct)}`};
   const practicalResultText=d=>{const pct=practicalPercentageScore(d);return `${pct}% — ${gradeForPercentage(pct)}`};
   const clean=v=>String(v??'').replace(/[\u2010-\u2015]/g,'-').replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"');
-  const PDF_COLOURS={cover:'#22C55E',practical:'#2E7D32',statement:'#1565C0',witness:'#F9A825',video:'#6A1B9A',discussion:'#00897B',photo:'#EF6C00',knowledge:'#3949AB',documents:'#546E7A',specification:'#C62828'};
+  const PDF_COLOURS={cover:TEAL,practical:'#2E7D32',statement:'#1565C0',witness:'#B7791F',video:'#6A1B9A',discussion:'#00897B',photo:'#C65D00',knowledge:'#3949AB',documents:'#546E7A',specification:'#A82A2A'};
   const pdfSectionFor=title=>{const t=String(title||'').toLowerCase();if(/practical assessment|assessor observation/.test(t))return ['Practical Assessment',PDF_COLOURS.practical];if(/learner statement/.test(t))return ['Learner Statement',PDF_COLOURS.statement];if(/witness|employer|supporting evidence - statement/.test(t))return ['Witness Testimony',PDF_COLOURS.witness];if(/video|walkthrough/.test(t))return ['Video Walkthrough',PDF_COLOURS.video];if(/professional discussion/.test(t))return ['Professional Discussion',PDF_COLOURS.discussion];if(/photo|image/.test(t))return ['Photo Evidence',PDF_COLOURS.photo];if(/knowledge|theory|question/.test(t))return ['Knowledge Questions',PDF_COLOURS.knowledge];if(/document|certificate|supporting evidence/.test(t))return ['Documents',PDF_COLOURS.documents];return ['Evidence Portfolio',PDF_COLOURS.cover]};
+  const apprenticeLogo=await loadImage('logo-apprentice-plus.png');
+  const collegeLogo=branding?.logo?await loadImage(branding.logo):null;
+  const drawLogo=(x,img,px,py,maxW,maxH)=>{if(!img)return;const sc=Math.min(maxW/img.width,maxH/img.height);x.drawImage(img,px,py,img.width*sc,img.height*sc)};
   const newPage=(title,version,status='Submitted - Locked')=>{
     const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');const [sectionName,sectionColour]=pdfSectionFor(title);x._sectionColour=sectionColour;x._sectionName=sectionName;
-    x.fillStyle=WHITE;x.fillRect(0,0,W,H);x.fillStyle=sectionColour;x.fillRect(0,0,W,16);x.fillRect(0,0,18,H);
-    x.fillStyle=sectionColour;x.fillRect(M,54,W-2*M,150);x.fillStyle=WHITE;x.font='700 24px Arial';x.fillText('APPRENTICE+ EVIDENCE PORTFOLIO',M+30,92);
-    x.font='700 38px Arial';fitText(x,clean(title),M+30,148,W-2*M-60,38);
-    x.font='600 21px Arial';x.fillText(`${String(version).startsWith('Attempt')?version:`Version ${version}`}  |  ${status}`,M+30,184);
-    const tabW=Math.min(300,Math.max(170,sectionName.length*13+34));x.fillStyle=sectionColour;x.fillRect(W-M-tabW,214,tabW,38);x.fillStyle=WHITE;x.font='700 16px Arial';x.textAlign='center';x.fillText(sectionName,W-M-tabW/2,239);x.textAlign='left';
-    pages.push({canvas:c,ctx:x,colour:sectionColour,sectionName});return {c,x,y:272};
+    x.fillStyle=WHITE;x.fillRect(0,0,W,H);
+    x.fillStyle=LIGHT_GREEN;x.fillRect(0,0,W,18);
+    x.fillStyle=SOFT_GREEN;x.fillRect(M,226,W-2*M,5);
+    drawLogo(x,apprenticeLogo,M,48,185,82);
+    if(collegeLogo)drawLogo(x,collegeLogo,W-M-255,48,255,82);
+    x.fillStyle=MUTED;x.font='700 16px Arial';x.fillText(`${clean(course.standard||'')}  •  Level ${clean(course.level||'-')}`,M,155);
+    x.fillStyle=TEAL;x.font='700 44px Arial';fitText(x,clean(course.name||'Apprenticeship Course'),M,202,W-2*M,44);
+    x.fillStyle=INK;x.font='700 27px Arial';fitText(x,clean(title),M,274,W-2*M-270,27);
+    const metaText=`${String(version).startsWith('Attempt')?version:`Version ${version}`}  •  ${status}`;x.fillStyle=MUTED;x.font='600 16px Arial';x.fillText(metaText,M,309);
+    const tabW=Math.min(250,Math.max(150,sectionName.length*11+28));x.fillStyle=LIGHT_GREEN;x.fillRect(W-M-tabW,247,tabW,52);x.strokeStyle=SOFT_GREEN;x.lineWidth=2;x.strokeRect(W-M-tabW,247,tabW,52);x.fillStyle=TEAL;x.font='700 15px Arial';x.textAlign='center';x.fillText(sectionName,W-M-tabW/2,280);x.textAlign='left';
+    pages.push({canvas:c,ctx:x,colour:sectionColour,sectionName});return {c,x,y:354};
   };
   function fitText(x,text,px,py,max,fontSize){let s=fontSize;x.font=`700 ${s}px Arial`;while(x.measureText(text).width>max&&s>16){s--;x.font=`700 ${s}px Arial`}x.fillText(text,px,py)}
   function line(x,y,w= W-2*M){x.fillStyle=x._sectionColour||GREEN;x.fillRect(M,y,w,4)}
@@ -33,7 +41,7 @@ async function generateEvidencePackPDF({course, assignment, profile, sections, b
   function meta(p,version,date,type){const {x}=p;let y=p.y;x.fillStyle=PALE;x.fillRect(M,y,W-2*M,132);label(x,'Learner',M+24,y+31);value(x,profile.fullName,M+24,y+62,21,true);label(x,'Date submitted',M+560,y+31);value(x,date||'-',M+560,y+62,21,true);label(x,'Evidence type',M+24,y+96);value(x,type,M+190,y+96,19,true);label(x,'Status',M+560,y+96);value(x,'Submitted - Locked',M+650,y+96,19,true);p.y=y+168;return p}
   function signature(x,data,y,title='Signature') {label(x,title,M,y);x.strokeStyle='#b8c4c1';x.lineWidth=2;x.strokeRect(M,y+18,420,122);if(data){try{x.drawImage(data._img||data,M+12,y+28,396,98)}catch{}}return y+162}
   async function loadImage(src){if(!src)return null;return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src})}
-  function footerAll(){const numbered=pages.filter(p=>!p.isCover),total=numbered.length;let pageNo=0;pages.forEach(p=>{if(p.isCover)return;pageNo++;const x=p.ctx;x.fillStyle=p.colour||TEAL;x.fillRect(0,H-62,W,62);x.fillStyle=WHITE;x.font='600 17px Arial';x.fillText(`${branding?.name?branding.name+'  |  ':''}Apprentice+ | Your Course, Your Way`,M,H-25);x.textAlign='right';x.fillText(`Page ${pageNo} of ${total}`,W-M,H-25);x.textAlign='left'})}
+  function footerAll(){const numbered=pages.filter(p=>!p.isCover),total=numbered.length;let pageNo=0;pages.forEach(p=>{if(p.isCover)return;pageNo++;const x=p.ctx;x.fillStyle=LIGHT_GREEN;x.fillRect(M,H-72,W-2*M,3);x.fillStyle=MUTED;x.font='600 15px Arial';x.fillText(`${branding?.name?branding.name+'  •  ':''}Apprentice+ | Your Course, Your Way`,M,H-34);x.textAlign='right';x.fillText(`Page ${pageNo} of ${total}`,W-M,H-34);x.textAlign='left'})}
 
   const evidenceCatalogue=[];
   const evidenceMatrix={};(assignment.ksbs||[]).forEach(([code])=>evidenceMatrix[code]=[]);
@@ -86,15 +94,25 @@ async function generateEvidencePackPDF({course, assignment, profile, sections, b
     }
   }
 
-  const collegeLogo=branding?.logo?await loadImage(branding.logo):null;
-
   // Front cover (unnumbered)
   {
-    const p=newPage('Apprenticeship Evidence Portfolio','Portfolio','Issued portfolio');pages[pages.length-1].isCover=true;const x=p.x;
-    x.fillStyle=PDF_COLOURS.cover;x.fillRect(0,0,W,H);if(collegeLogo){const maxW=360,maxH=120,sc=Math.min(maxW/collegeLogo.width,maxH/collegeLogo.height);x.drawImage(collegeLogo,W-M-collegeLogo.width*sc,70,collegeLogo.width*sc,collegeLogo.height*sc)}x.fillStyle=WHITE;x.font='700 34px Arial';x.fillText('APPRENTICE+',M,150);x.font='700 58px Arial';fitText(x,'APPRENTICESHIP EVIDENCE PORTFOLIO',M,280,W-2*M,58);
-    x.fillStyle='rgba(255,255,255,.16)';x.fillRect(M,370,W-2*M,720);let y=445;
-    [['Learner',profile.fullName],['Course',course.name],['Standard',course.standard],['Level',course.level],['Assignment',`${assignment.n}: ${assignment.title}`],['Employer',profile.employer],['Training provider',branding?.name||profile.trainingProvider||profile.provider||'-'],['Assessor',profile.mentor],['Portfolio date',new Date().toLocaleDateString('en-GB')],['Evidence items',String(evidenceCatalogue.length)]].forEach(([a,b])=>{x.fillStyle=WHITE;x.font='700 18px Arial';x.fillText(clean(a).toUpperCase(),M+45,y);x.font='700 27px Arial';fitText(x,clean(b||'-'),M+325,y,W-2*M-390,27);y+=62});
-    x.font='600 20px Arial';x.fillText('Your Course, Your Way',M,H-110);
+    const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.fillStyle=WHITE;x.fillRect(0,0,W,H);
+    // layered, logo-inspired cover shapes with soft 3D depth
+    x.fillStyle='rgba(7,53,57,.10)';x.beginPath();x.arc(W+70,330,390,0,Math.PI*2);x.fill();
+    x.fillStyle=LIGHT_GREEN;x.beginPath();x.arc(W+25,270,340,0,Math.PI*2);x.fill();
+    x.fillStyle='rgba(185,232,202,.50)';x.fillRect(M+14,382,W-2*M,770);
+    x.fillStyle='rgba(7,53,57,.10)';x.fillRect(M+26,394,W-2*M,770);
+    x.fillStyle=WHITE;x.fillRect(M,368,W-2*M,770);
+    x.strokeStyle=SOFT_GREEN;x.lineWidth=3;x.strokeRect(M,368,W-2*M,770);
+    drawLogo(x,apprenticeLogo,M,64,250,112);if(collegeLogo)drawLogo(x,collegeLogo,W-M-310,70,310,100);
+    x.fillStyle=TEAL;x.font='700 64px Arial';fitText(x,clean(course.name||'Apprenticeship Course'),M,254,W-2*M,64);
+    x.fillStyle=MUTED;x.font='600 21px Arial';x.fillText(`${clean(course.standard||'')}  •  Level ${clean(course.level||'-')}`,M,302);
+    x.fillStyle=INK;x.font='700 36px Arial';x.fillText('EVIDENCE PORTFOLIO',M,448);
+    x.fillStyle=GREEN;x.fillRect(M,474,145,7);
+    let y=548;
+    [['Learner',profile.fullName],['Evidence',`Assignment ${assignment.n} - ${assignment.title}`],['Employer',profile.employer],['Training provider',branding?.name||profile.trainingProvider||profile.provider||'-'],['Assessor',profile.mentor],['Portfolio date',new Date().toLocaleDateString('en-GB')],['Evidence items',String(evidenceCatalogue.length)]].forEach(([a,b])=>{x.fillStyle=MUTED;x.font='700 15px Arial';x.fillText(clean(a).toUpperCase(),M+48,y);x.fillStyle=INK;x.font='700 25px Arial';fitText(x,clean(b||'-'),M+48,y+34,W-2*M-96,25);y+=96});
+    x.fillStyle=TEAL;x.font='700 21px Arial';x.fillText('APPRENTICE+',M,H-122);x.fillStyle=MUTED;x.font='600 18px Arial';x.fillText('Your Course, Your Way',M,H-88);
+    pages.push({canvas:c,ctx:x,colour:TEAL,sectionName:'Portfolio',isCover:true});
   }
 
   // Page 1 - portfolio contents
