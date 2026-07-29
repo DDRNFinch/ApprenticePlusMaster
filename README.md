@@ -73,6 +73,11 @@ Learning Support settings are global and apply to every part of Apprentice+, not
 The PDF KSB Evidence Matrix now uses one consistent evidence-linking method across learner statements, practical assessments, witness evidence, professional discussions, walkthroughs, supporting evidence and any photographic evidence carrying KSB metadata. Existing saved learner statements are also recovered from their linked KSB photographs if older data does not contain the selected-KSB array.
 
 
-## v1.38.5
+## v1.38.6
 
 Evidence camera inputs now display a landscape reminder and validate the finished photograph. Portrait and square camera captures are rejected before any evidence handler can save them, with options to retake the photograph or choose one from the gallery.
+
+
+## V1.38.6
+- Reorganised Admin Mode into clear management cards with a cleaner mobile layout.
+- Modernised the practical task specification action.

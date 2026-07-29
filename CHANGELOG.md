@@ -1,3 +1,10 @@
+## V1.38.6 — Admin Mode UI Refresh
+
+- Rebuilt Admin Mode as a clean card-based dashboard.
+- Grouped course, branding, RPL, optional-unit and data controls.
+- Added a compact sticky header and mobile full-screen layout.
+- Replaced the dated specification-sheet button with a modern action card.
+
 # v1.38.5 – Landscape Camera Enforcement
 
 - Added a full-screen landscape reminder before every in-app evidence camera opens.
