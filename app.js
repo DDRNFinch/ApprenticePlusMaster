@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.38.3';
+const APP_VERSION='V1.38.4';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -507,7 +507,7 @@ function nvqOutcomeCoverage(n){
  // collapsed into one generic "Assessor observation" source.
  const add=(code,source)=>{if(result[code]&&!result[code].sources.includes(source)){result[code].sources.push(source);result[code].count=Math.min(2,result[code].sources.length)}};
  sectionData(n,'practical').versions.forEach((v,i)=>selectedNvqOutcomes(a,v).forEach(([code])=>add(code,`Assessor observation #${i+1}`)));
- sectionData(n,'statement').versions.forEach((v,i)=>Object.keys(v.outcomePhotos||{}).filter(code=>!!v.outcomePhotos?.[code]?.data).forEach(code=>add(code,`Learner statement #${i+1}`)));
+ sectionData(n,'statement').versions.forEach((v,i)=>selectedKsbCodes(a,v).forEach(code=>add(code,`Learner statement #${i+1}`)));
  sectionData(n,'discussion').versions.forEach((v,i)=>Object.keys(v.recordings||{}).filter(code=>!!v.recordings?.[code]?.data).forEach(code=>add(code,`Professional discussion #${i+1}`)));
  sectionData(n,'witness').versions.forEach((v,i)=>selectedNvqOutcomes(a,v).forEach(([code])=>add(code,`Witness testimony #${i+1}`)));
  return result;
@@ -515,10 +515,12 @@ function nvqOutcomeCoverage(n){
 function nvqCoverageComplete(n){const values=Object.values(nvqOutcomeCoverage(n));return values.length>0&&values.every(item=>item.count>=2)}
 function nvqCoverageSummary(n){const coverage=nvqOutcomeCoverage(n),items=Object.entries(coverage),met=items.filter(([,v])=>v.count>=2).length;return {coverage,total:items.length,met,requirementsMet:items.reduce((sum,[,v])=>sum+Math.min(2,v.count),0),requirementsTotal:items.length*2,missing:items.filter(([,v])=>v.count<2).map(([code,v])=>`${code} ${v.count}/2`)}}
 function selectedKsbCodes(a,d){
+ const valid=new Set(a.ksbs.map(([code])=>code));
  const explicit=Array.isArray(d?.ksbEvidence)?d.ksbEvidence:[];
- if(explicit.length)return explicit.filter(code=>a.ksbs.some(([c])=>c===code));
- const scored=Object.keys(d?.scores||{}).map(k=>String(k).split('::')[0]);
- return [...new Set(scored.filter(code=>a.ksbs.some(([c])=>c===code)))];
+ const photoLinked=Object.keys(d?.outcomePhotos||{}).filter(code=>!!d.outcomePhotos?.[code]?.data);
+ const scored=Object.keys(d?.scores||{}).map(k=>String(k).split('::')[0]).filter(code=>Object.entries(d?.scores||{}).some(([key,value])=>String(key).split('::')[0]===code&&Number(value)>0));
+ const recorded=Object.keys(d?.recordings||{}).filter(code=>!!d.recordings?.[code]?.data);
+ return [...new Set([...explicit,...photoLinked,...scored,...recorded].filter(code=>valid.has(code)))];
 }
 function selectedPracticalSkillCodes(a,d){
  const skillCodes=new Set(a.ksbs.filter(([code])=>String(code).toUpperCase().startsWith('S')).map(([code])=>code));
@@ -534,7 +536,7 @@ function ksbEvidenceCoverage(n){
  // same evidence form. For example, two practical assessments can complete 2/2.
  const add=(code,source)=>{if(result[code]&&!result[code].sources.includes(source)){result[code].sources.push(source);result[code].count=Math.min(2,result[code].sources.length)}};
  sectionData(n,'practical').versions.forEach((v,i)=>selectedPracticalSkillCodes(a,v).forEach(code=>add(code,`Practical assessment #${i+1}`)));
- sectionData(n,'statement').versions.forEach((v,i)=>Object.keys(v.outcomePhotos||{}).filter(code=>!!v.outcomePhotos?.[code]?.data).forEach(code=>add(code,`Learner statement #${i+1}`)));
+ sectionData(n,'statement').versions.forEach((v,i)=>selectedKsbCodes(a,v).forEach(code=>add(code,`Learner statement #${i+1}`)));
  sectionData(n,'witness').versions.forEach((v,i)=>selectedKsbCodes(a,v).forEach(code=>add(code,`Witness testimony #${i+1}`)));
  walkthroughKnowledge(a).forEach(([code])=>{if(walkthroughComplete(n,code))add(code,'Video walkthrough')});
  return result;

@@ -1,3 +1,12 @@
+# v1.38.4 – Complete PDF KSB Evidence Linking
+
+- Fixed learner statements not appearing against their selected KSBs in the PDF KSB Evidence Matrix.
+- PDF mapping now reads every supported evidence link source: selected KSBs, linked KSB photographs, scored criteria and recorded discussion outcomes.
+- Existing learner statements created in earlier versions are recovered through their linked KSB photographs when the selected-KSB array is missing.
+- Photographic evidence is also linked in the PDF matrix whenever KSB metadata is present.
+- The in-app KSB coverage calculation now uses the same evidence-linking rules as the PDF generator.
+- Updated the visible app version and offline cache.
+
 # v1.38.3 – Witness Testimony Resubmission Fix
 
 - Added **Edit and resubmit** to submitted witness testimonies.

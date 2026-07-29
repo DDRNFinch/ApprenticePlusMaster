@@ -66,3 +66,8 @@ Learning Support settings are global and apply to every part of Apprentice+, not
 ## v1.38.3
 - Witness testimonies can now be reopened, edited and submitted again without clearing the existing testimony.
 - Each resubmission is saved as a new evidence attempt while earlier attempts remain in history.
+
+
+## v1.38.4
+
+The PDF KSB Evidence Matrix now uses one consistent evidence-linking method across learner statements, practical assessments, witness evidence, professional discussions, walkthroughs, supporting evidence and any photographic evidence carrying KSB metadata. Existing saved learner statements are also recovered from their linked KSB photographs if older data does not contain the selected-KSB array.
