@@ -1,3 +1,10 @@
+# v1.23 — Practical Assessment Task Generator
+
+- Added trade-specific Easy, Medium and Hard practical task generation inside every non-NVQ Practical Assessment.
+- Added a completely blank Custom Task option.
+- Generated briefs include title, duration, description, dimensions, suggested materials and completion requirements.
+- Existing official KSB marking criteria and scoring remain unchanged.
+
 ## V1.22 — Standalone ProjectMate generator
 
 - Removed generated-project dependence on assignment mapping.
