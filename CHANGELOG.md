@@ -1,3 +1,4 @@
+v1.37.6: Practical Assessment grades now calculate only from scored criteria. Unobserved criteria are excluded and assessments with no graded criteria show Not yet graded.
 v1.37.5: Added display-only privacy blurring for all saved in-app signature previews while preserving the original clear signature data for PDF generation.
 v1.37.4: Removed the Learning Outcome Coverage tile from NVQ Evidence Pack assignment pages while retaining all underlying outcome tracking and reporting.
 

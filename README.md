@@ -1,4 +1,7 @@
-## v1.37.5
+## v1.37.6
+
+Practical Assessment results now use only criteria that were actually graded. Unobserved/unscored criteria are excluded from the denominator, and assessments with no scores show “Not yet graded”.
+
 Saved signatures are blurred in the app for privacy while remaining clear in generated PDFs.
 
 
