@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3.33';
+const APP_VERSION='V1.3.34';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -4132,7 +4132,7 @@ function prepareEpaPracticalTask(source){const task=structuredClone(source),hour
 function epaPracticalHistoryKey(){return `epaPracticalHistory:${COURSE.id}:v1`}
 function epaPracticalHistory(){return Array.isArray(state.data[epaPracticalHistoryKey()])?state.data[epaPracticalHistoryKey()]:[]}
 function epaPracticalBestId(){const marked=epaPracticalHistory().filter(x=>x?.assessor&&Number.isFinite(Number(x.assessor.percentage)));if(!marked.length)return null;return marked.sort((a,b)=>Number(b.assessor.percentage)-Number(a.assessor.percentage)||new Date(b.assessor.submittedAt)-new Date(a.assessor.submittedAt))[0].id}
-function startEpaPractical(){const bank=epaPracticalBank(),history=epaPracticalHistory(),lastTask=history[0]?.task?.id||state.data[epaPracticalDraftKey()]?.task?.id;const choices=bank.length>1?bank.filter(x=>x.id!==lastTask):bank,task=prepareEpaPracticalTask(choices[Math.floor(Math.random()*choices.length)]||bank[0]);state.epaPractical={id:uid(),task,stage:'planning',entries:{tools:[],materials:[],ppe:[]},understood:false,createdAt:new Date().toISOString(),attemptNumber:history.length+1};state.view='epa-practical';render();window.scrollTo(0,0)}
+async function startEpaPractical(){const bank=epaPracticalBank(),history=epaPracticalHistory(),lastTask=history[0]?.task?.id||state.data[epaPracticalDraftKey()]?.task?.id;const choices=bank.length>1?bank.filter(x=>x.id!==lastTask):bank,task=prepareEpaPracticalTask(choices[Math.floor(Math.random()*choices.length)]||bank[0]);state.epaPractical={id:uid(),task,stage:'planning',entries:{tools:[],materials:[],ppe:[]},understood:false,createdAt:new Date().toISOString(),attemptNumber:history.length+1};state.data[epaPracticalDraftKey()]=structuredClone(state.epaPractical);await saveData();state.view='epa-practical';render();window.scrollTo(0,0)}
 function openEpaPracticalHistoryAttempt(id){const found=epaPracticalHistory().find(x=>x.id===id);if(!found)return toast('Attempt not found');state.epaPractical=structuredClone(found);state.view='epa-practical';render();window.scrollTo(0,0)}
 async function downloadEpaPracticalReport(attempt){
  if(!attempt?.assessor)return toast('This attempt has not been marked');

@@ -1,3 +1,8 @@
+## v1.3.34 — EPA new-attempt fix
+
+- Fixed **Start new attempt** so a new EPA practical is created, saved immediately, and replaces the previous draft correctly.
+- Retains the cross-course EPA PDF preparation lists and flexible preparation matching introduced in v1.3.32–v1.3.33.
+
 ## v1.3.33 — Flexible EPA preparation wording
 
 - Accepts common equivalent names for tools, materials and PPE.
