@@ -1,11 +1,11 @@
-## v1.3.36 – EPA Start New Attempt Button Fix
+## v1.3.37 – EPA Start New Attempt Button Fix
 
 - Replaced the fragile EPA practical new-attempt click binding with a mobile-safe awaited action.
 - Added explicit button types, click prevention, progress feedback and visible error handling.
 - Added a structuredClone fallback for wider mobile browser support.
 - Validates that a practical bank and generated task exist before saving the new attempt.
 
-# Apprentice+ v1.3.36
+# Apprentice+ v1.3.37
 
 ## Cross-course EPA preparation completion
 - EPA Practical PDFs include the learner-selected Tools and Equipment, Materials and Fixings, and PPE and Safety Equipment for all four courses.

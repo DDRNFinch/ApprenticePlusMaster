@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3.36';
+const APP_VERSION='V1.3.37';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -4141,7 +4141,7 @@ const EPA_PRACTICAL_BANKS={
  ]
 };
 function epaPracticalBank(){return EPA_PRACTICAL_BANKS[COURSE.id]||EPA_PRACTICAL_BANKS['bricklayer-st0095-v1-2']}
-function prepareEpaPracticalTask(source){const task=structuredClone(source),hours=Number(task.duration)/60;if(COURSE.id==='bricklayer-st0095-v1-2'){const rate=Math.max(25,Number(task.productivityRate)||25),maxBricks=Math.floor(hours*rate);task.productivityRate=rate;task.maxBricks=maxBricks;if(Number(task.estimatedBricks)>maxBricks)task.estimatedBricks=maxBricks;task.workloadNote=`Planned workload: approximately ${task.estimatedBricks||maxBricks} bricks. Allowance: ${maxBricks} bricks maximum at ${rate} bricks per hour over ${hours} hours.`;return task}if(task.workloadType&&Number(task.productivityRate)>0){const rate=Number(task.productivityRate),maxWork=Math.floor(hours*rate*10)/10;task.maxWork=maxWork;if(Number(task.estimatedWork)>maxWork)task.estimatedWork=maxWork;task.workloadNote=`Planned workload: approximately ${task.estimatedWork} ${task.workloadType}. Allowance: no more than ${maxWork} ${task.workloadType} at a planning rate of ${rate} per hour over ${hours} hours.`}return task}
+function prepareEpaPracticalTask(source){const task=cloneData(source),hours=Number(task.duration)/60;if(COURSE.id==='bricklayer-st0095-v1-2'){const rate=Math.max(25,Number(task.productivityRate)||25),maxBricks=Math.floor(hours*rate);task.productivityRate=rate;task.maxBricks=maxBricks;if(Number(task.estimatedBricks)>maxBricks)task.estimatedBricks=maxBricks;task.workloadNote=`Planned workload: approximately ${task.estimatedBricks||maxBricks} bricks. Allowance: ${maxBricks} bricks maximum at ${rate} bricks per hour over ${hours} hours.`;return task}if(task.workloadType&&Number(task.productivityRate)>0){const rate=Number(task.productivityRate),maxWork=Math.floor(hours*rate*10)/10;task.maxWork=maxWork;if(Number(task.estimatedWork)>maxWork)task.estimatedWork=maxWork;task.workloadNote=`Planned workload: approximately ${task.estimatedWork} ${task.workloadType}. Allowance: no more than ${maxWork} ${task.workloadType} at a planning rate of ${rate} per hour over ${hours} hours.`}return task}
 function epaPracticalHistoryKey(){return `epaPracticalHistory:${COURSE.id}:v1`}
 function epaPracticalHistory(){return Array.isArray(state.data[epaPracticalHistoryKey()])?state.data[epaPracticalHistoryKey()]:[]}
 function epaPracticalBestId(){const marked=epaPracticalHistory().filter(x=>x?.assessor&&Number.isFinite(Number(x.assessor.percentage)));if(!marked.length)return null;return marked.sort((a,b)=>Number(b.assessor.percentage)-Number(a.assessor.percentage)||new Date(b.assessor.submittedAt)-new Date(a.assessor.submittedAt))[0].id}
