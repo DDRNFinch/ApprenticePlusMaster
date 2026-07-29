@@ -1,3 +1,12 @@
+# V1.3.30 — EPA Task Regeneration & Workload Balance
+
+- Added a visible ♻️ Generate new EPA task button during practical preparation.
+- New task generation clears the current draft only after confirmation when preparation entries exist.
+- Rebalanced Bricklayer EPA practical dimensions and estimated quantities.
+- Added a minimum planning productivity baseline of 25 bricks per hour.
+- Added a workload allowance to each Bricklayer task specification.
+- Prevented task estimates from exceeding time allowed × 25 bricks per hour.
+
 # V1.3.29 — Mobile Preparation Entry Buttons
 
 - Added a visible Add Item button to Tools and Equipment.
