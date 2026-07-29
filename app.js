@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.38.9';
+const APP_VERSION='V1.39.0';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -775,7 +775,7 @@ function renderAcademyLesson(){
 
 
 
-// v1.38.9 approved EPA Knowledge Practice framework (KSB courses only)
+// v1.39.0 Bricklayer EPA professional-judgement question bank (Update 1: K1-K10)
 // Locked MCQ writing standard: realistic workplace judgement, four plausible trade-language answers,
 // no joke/"I do not care" distractors, no official-sounding giveaway, and an explanation for coaching.
 // Questions are deliberately stored as an approved, fixed bank. Nothing is generated at runtime.
@@ -794,7 +794,148 @@ const EPA_MCQ_WRITING_STANDARD=Object.freeze({
  ])
 });
 const EPA_KNOWLEDGE_PRACTICE_BANKS={
- 'bricklayer-st0095-v1-2':[]
+ 'bricklayer-st0095-v1-2':[
+  {
+   code:'K1',
+   question:'You are about to cut a chase in an old internal wall, but the refurbishment survey does not clearly cover that room. What is the best next step?',
+   options:[
+    'Use hand tools and keep the dust down while you open a small test area',
+    'Check the survey information with the supervisor before disturbing the wall',
+    'Wear suitable RPE and make the chase in short sections',
+    'Ask someone who worked in the building whether asbestos was found elsewhere'
+   ],
+   correct:1,
+   explanation:'Checking the survey first is the strongest choice because the material must be confirmed before it is disturbed. Using hand tools or RPE may reduce exposure, but neither tells you whether asbestos is present. Asking someone familiar with the job is useful background, but it is not a reliable substitute for the survey.',
+   keyTakeaway:'When asbestos information is unclear, confirm it before breaking into the material.',
+   id:'brick-epa-v139-k1'
+  },
+  {
+   code:'K2',
+   question:'While dry-cutting dense blocks outside, you are wearing a face-fit-tested mask, but the water suppression keeps stopping. What is the best way to carry on?',
+   options:[
+    'Cut in shorter bursts and step away while the dust settles',
+    'Keep the mask on and position yourself upwind of the cutter',
+    'Stop cutting until the suppression is working properly again',
+    'Swap with another bricklayer so neither person gets the full exposure'
+   ],
+   correct:2,
+   explanation:'Stopping until the suppression works controls the dust where it is made. The mask is still important, but it should not be relied on as the main control. Short bursts, working upwind or sharing the cutting may reduce individual exposure, yet the same uncontrolled dust is still being produced.',
+   keyTakeaway:'Control silica dust at the cutter first; RPE is the backup, not the whole plan.',
+   id:'brick-epa-v139-k2'
+  },
+  {
+   code:'K3',
+   question:'You arrive at a plot where the method statement covers the walling, but access has changed and materials are now being lifted over the work area. What should you do before starting?',
+   options:[
+    'Start the low-level work and review the lifting once the first course is laid',
+    'Agree a safe exclusion area with the lifting team and have the plan reviewed',
+    'Keep one person watching the lift while the rest of the gang carries on',
+    'Move the brick stacks closer so less time is spent under the lifting route'
+   ],
+   correct:1,
+   explanation:'The changed access and lifting route alter the risks, so the work plan needs reviewing before the gang starts. A lookout can help during an agreed lift, but it does not replace a proper exclusion area. Starting part of the task or moving materials closer still puts people into a changed setup that has not been assessed.',
+   keyTakeaway:'When site conditions change, update the safe system before work begins.',
+   id:'brick-epa-v139-k3'
+  },
+  {
+   code:'K4',
+   question:'At the end of a walling job, you have clean half-bricks, hardened mortar, plastic packaging and a small amount of usable sand left. What is the best way to deal with them?',
+   options:[
+    'Keep the usable materials together and put each waste type in its proper stream',
+    'Put everything in the general skip because the quantities are small',
+    'Save the half-bricks and sand, then put the mortar and plastic together',
+    'Leave the materials by the plot so the next trade can take what they need'
+   ],
+   correct:0,
+   explanation:'Separating reusable materials from each waste stream gives the best chance of reuse and recycling while avoiding contamination. A mixed skip is convenient but can make recovery harder. Saving only some materials is partly right, although mortar and plastic still need separating. Leaving items for others can create clutter and does not confirm they will be managed properly.',
+   keyTakeaway:'Reuse what is sound, then separate the remaining waste correctly.',
+   id:'brick-epa-v139-k4'
+  },
+  {
+   code:'K5',
+   question:'A delivery of bricks arrives just as the site team is discussing a change to the opening size. You need the bricks near the scaffold without blocking access. What is the best response?',
+   options:[
+    'Unload beside the scaffold and adjust the stacks once the opening is agreed',
+    'Ask for the final detail, then agree a safe storage point with the relevant people',
+    'Put the packs where they were shown on the original logistics plan',
+    'Split the delivery between two nearby spaces so one route stays open'
+   ],
+   correct:1,
+   explanation:'Confirming the latest information and agreeing the storage point prevents wasted handling, blocked access and materials ending up in the wrong place. Following the old plan may normally be reasonable, but the job has changed. Splitting or temporarily placing the packs keeps work moving, although it risks extra handling and confusion.',
+   keyTakeaway:'Clear, timely communication prevents small site changes becoming bigger problems.',
+   id:'brick-epa-v139-k5'
+  },
+  {
+   code:'K6',
+   question:'You are working in an occupied area and the client asks why the doorway cannot be used for the next hour. How should you explain it?',
+   options:[
+    'Tell them the area is closed because that is how the job has been set up',
+    'Explain the work taking place, the temporary risk and the safe alternative route',
+    'Say the site manager has decided it and direct any questions to the office',
+    'Give a brief warning about falling materials and ask them to use another door'
+   ],
+   correct:1,
+   explanation:'A clear explanation of the task, the temporary risk and the alternative route gives the client enough information to act safely. A brief warning may be useful, but it does not fully explain the arrangement. Referring everything elsewhere or simply stating the area is closed can sound dismissive and may leave the person unsure about what to do.',
+   keyTakeaway:'Good communication tells people what is happening, why it matters and what they should do.',
+   id:'brick-epa-v139-k6'
+  },
+  {
+   code:'K7',
+   question:'While setting out a cavity wall, the drawing dimension works, but the opening shown would leave less bearing for the lintel than the manufacturer requires. What should you do?',
+   options:[
+    'Keep the drawing dimension because it is the latest issued information',
+    'Increase the bearing equally at both ends and record the small change',
+    'Raise the conflict before building and get the opening detail confirmed',
+    'Use a stronger mortar at the bearings to make up for the short length'
+   ],
+   correct:2,
+   explanation:'The drawing and lintel requirement conflict, so the detail needs confirming before masonry fixes the opening size. Following the drawing is understandable, but it could leave inadequate bearing. Changing the opening yourself may solve one issue while creating another. Stronger mortar does not replace the required lintel bearing.',
+   keyTakeaway:'Do not guess when drawings and product requirements disagree; get the detail resolved first.',
+   id:'brick-epa-v139-k7'
+  },
+  {
+   code:'K8',
+   question:'While you are building, a new batch of facing bricks arrives slightly wetter and darker than the packs already in use. The wall must continue today. What is the best approach?',
+   options:[
+    'Use the new packs on a separate elevation so the colour difference is contained',
+    'Blend bricks from several packs and check the finished appearance as you go',
+    'Lay the wetter bricks with a slightly drier mortar to balance the suction',
+    'Leave the new packs open for an hour, then continue from the same pack'
+   ],
+   correct:1,
+   explanation:'Blending from several packs reduces noticeable banding and lets you monitor the appearance throughout the work. Keeping one batch on a separate elevation may still create a visible change at corners. Adjusting mortar consistency to compensate can affect joint quality. Briefly opening the packs may not bring the bricks to a consistent moisture or shade.',
+   keyTakeaway:'Blend facing bricks across packs and keep checking colour and consistency during the build.',
+   id:'brick-epa-v139-k8'
+  },
+  {
+   code:'K9',
+   question:'Precast masonry panels are being installed above the area where your gang is due to build. The programme shows both tasks happening together. What is the best way to plan your work?',
+   options:[
+    'Build the opposite end first and move closer once each panel is fixed',
+    'Agree separate work zones and timings so the lifting operation stays clear',
+    'Work beneath the completed panels while the next panel is being prepared',
+    'Keep the gang mobile and pause whenever a panel passes over the workface'
+   ],
+   correct:1,
+   explanation:'Separate zones and agreed timings manage the interface between masonry work and the lifting operation. Moving around or pausing when a load approaches sounds practical, but it relies on people reacting at the right moment. Working under completed panels may still place the gang inside the lifting exclusion zone for the next installation.',
+   keyTakeaway:'Modern construction methods need trades to coordinate space, sequence and lifting—not just their own task.',
+   id:'brick-epa-v139-k9'
+  },
+  {
+   code:'K10',
+   question:'Before starting a return wall, you notice the plan dimension and the written specification give different cavity widths. What should you use for setting out?',
+   options:[
+    'Use the plan because dimensions on drawings are normally set out first',
+    'Use the specification because written information usually carries more detail',
+    'Check the latest revision and get the conflicting information clarified',
+    'Use the cavity width already built on the next plot as the working reference'
+   ],
+   correct:2,
+   explanation:'Checking the revision and resolving the conflict is the only choice that confirms which requirement is current. Either the plan or specification might be correct, so choosing one by habit is risky. A neighbouring plot can offer a useful comparison, but it may have a different revision or detail.',
+   keyTakeaway:'When project information conflicts, verify the current detail before setting out.',
+   id:'brick-epa-v139-k10'
+  }
+ ]
 };
 function epaQuestionWritingIssues(q){
  const issues=[];

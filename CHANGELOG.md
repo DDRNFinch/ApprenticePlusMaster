@@ -1,3 +1,9 @@
+## V1.39.0 — Bricklayer EPA Question Bank Update 1A
+
+- Added 10 scenario-based EPA professional-judgement questions covering K1–K10.
+- Added four plausible trade-language options, coaching explanations and key takeaways.
+- Preserved random answer order, random 20-question selection and existing grade thresholds.
+
 ## V1.38.9 — Locked Professional-Judgement MCQ Standard
 
 - Added a locked Apprentice+ EPA MCQ writing standard for all approved question banks.
