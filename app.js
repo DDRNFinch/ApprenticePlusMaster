@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.37.6';
+const APP_VERSION='V1.37.7';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -421,6 +421,7 @@ async function saveWalkthroughVideo(n,code,video,{name,type}={}){
  saveNavigationSnapshot(navigationSnapshot(window.scrollY||0));
  renderWalkthrough();
  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,Number(loadNavigationSnapshot()?.scrollY)||0)));
+ toast('Video saved');
  return true;
 }
 function storedWalkthroughBlob(value,meta){
@@ -431,7 +432,13 @@ function storedWalkthroughBlob(value,meta){
 }
 async function saveWalkthroughOverall(n){
  const count=walkthroughCount(n);if(!count.done)return toast('Add at least one KSB video before saving the walkthrough');
- const meta=walkthroughMeta(n);meta._saved=true;meta._savedAt=Date.now();state.data[walkthroughMetaKey(n)]=meta;await saveData();invalidatePackStatus(n);state.assignment=n;state.walkthroughCode=null;state.view='assignment';render();
+ const scrollY=window.scrollY||0,meta=walkthroughMeta(n);
+ meta._saved=true;meta._savedAt=Date.now();state.data[walkthroughMetaKey(n)]=meta;
+ await saveData();invalidatePackStatus(n);
+ state.assignment=n;state.walkthroughCode=null;state.view='walkthrough';
+ saveNavigationSnapshot(navigationSnapshot(scrollY));renderWalkthrough();
+ requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,scrollY)));
+ toast('Walkthrough saved');
 }
 async function removeWalkthroughVideo(n,code){const scrollY=window.scrollY||0,meta=walkthroughMeta(n),item=meta[code];if(item?.blobKey){try{await deleteStore(item.blobKey)}catch(error){console.warn(error)}}delete meta[code];meta._saved=false;state.data[walkthroughMetaKey(n)]=meta;await saveData();invalidatePackStatus(n);state.view='walkthrough';state.assignment=n;state.walkthroughCode=null;saveNavigationSnapshot(navigationSnapshot(scrollY));renderWalkthrough();requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,scrollY)))}
 function walkthroughPrompt(code,text,a){return learnerPromptTitle(a.n,code,text)||text}
@@ -470,7 +477,7 @@ async function openWalkthroughRecorder(n,code,text,a,fallbackInput){
   useButton.disabled=true;retakeButton.disabled=true;useButton.textContent='Saving…';live.textContent='Saving…';
   close();
   state.view='walkthrough';state.assignment=n;state.walkthroughCode=null;
-  try{await saveWalkthroughVideo(n,code,videoToSave,{name:recordingName,type:mime});window.alert('Video saved. Refresh the page to update.')}
+  try{await saveWalkthroughVideo(n,code,videoToSave,{name:recordingName,type:mime})}
   catch(error){console.error('Walkthrough video save failed',error)}
  };
  modal.onclick=e=>{if(e.target===modal&&recorder?.state!=='recording')close()};
@@ -484,8 +491,8 @@ function renderWalkthrough(){
  document.getElementById('walkBack').onclick=()=>{releaseThumbs();state.view='assignment';state.walkthroughCode=null;render()};
  document.getElementById('saveWalkthroughOverall').onclick=()=>saveWalkthroughOverall(a.n);
  document.querySelectorAll('[data-record-walk]').forEach(button=>button.onclick=()=>{releaseThumbs();const code=button.dataset.recordWalk,item=items.find(([k])=>k===code),input=document.getElementById(`walkVideoInput-${code}`);openWalkthroughRecorder(a.n,code,item?.[1]||'',a,input)});
- items.forEach(([code])=>{const input=document.getElementById(`walkVideoInput-${code}`);input.onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{await saveWalkthroughVideo(a.n,code,file);window.alert('Video saved. Refresh the page to update.')}catch(error){console.error('Walkthrough video save failed',error)}}});
- document.querySelectorAll('[data-remove-walk]').forEach(button=>button.onclick=async()=>{releaseThumbs();await removeWalkthroughVideo(a.n,button.dataset.removeWalk);window.alert('Video removed. Refresh the page to update.')});
+ items.forEach(([code])=>{const input=document.getElementById(`walkVideoInput-${code}`);input.onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{await saveWalkthroughVideo(a.n,code,file)}catch(error){console.error('Walkthrough video save failed',error)}}});
+ document.querySelectorAll('[data-remove-walk]').forEach(button=>button.onclick=async()=>{releaseThumbs();await removeWalkthroughVideo(a.n,button.dataset.removeWalk);toast('Video removed')});
  document.querySelectorAll('[data-view-walk]').forEach(button=>button.onclick=async()=>{const code=button.dataset.viewWalk,meta=walkthroughMeta(a.n)[code],stored=await getStore(meta?.blobKey),blob=storedWalkthroughBlob(stored,meta);if(!blob)return toast('Video file could not be opened');const url=URL.createObjectURL(blob);app.insertAdjacentHTML('beforeend',`<div class="modal" id="walkVideoModal"><div class="modal-card video-modal"><video controls autoplay playsinline src="${url}"></video><button class="btn secondary" id="closeWalkVideo">Close</button></div></div>`);document.getElementById('closeWalkVideo').onclick=()=>{URL.revokeObjectURL(url);document.getElementById('walkVideoModal').remove()}});
  document.querySelectorAll('[data-walk-thumb]').forEach(async video=>{const code=video.dataset.walkThumb,meta=walkthroughMeta(a.n)[code];try{const stored=await getStore(meta?.blobKey),blob=storedWalkthroughBlob(stored,meta);if(!blob)return;const url=URL.createObjectURL(blob);thumbnailUrls.push(url);video.src=url;video.currentTime=.1;video.addEventListener('loadeddata',()=>{try{video.currentTime=Math.min(.2,video.duration||.2)}catch{}},{once:true})}catch(error){console.warn('Thumbnail unavailable',error)}});
 }

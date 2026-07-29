@@ -1,4 +1,4 @@
-## v1.37.6
+## v1.37.7
 
 Practical Assessment results now use only criteria that were actually graded. Unobserved/unscored criteria are excluded from the denominator, and assessments with no scores show “Not yet graded”.
 
