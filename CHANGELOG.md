@@ -1,3 +1,9 @@
+# V1.39.0 EPA MCQ Update — K21–K30
+
+- Added ten Bricklayer EPA professional-judgement questions mapped to K21–K30.
+- The cumulative Bricklayer EPA bank now contains K1–K30.
+- Preserved random answer order, 20-question attempt selection, coaching explanations, key takeaways and existing grade thresholds.
+
 ## V1.39.0 — Bricklayer EPA Question Bank Update 1A
 
 - Added 20 scenario-based EPA professional-judgement questions covering K1–K20.

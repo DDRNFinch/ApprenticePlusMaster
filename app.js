@@ -775,7 +775,7 @@ function renderAcademyLesson(){
 
 
 
-// v1.39.0 Bricklayer EPA professional-judgement question bank (Update 1: K1-K20)
+// v1.39.0 Bricklayer EPA professional-judgement question bank (K1-K30)
 // Locked MCQ writing standard: realistic workplace judgement, four plausible trade-language answers,
 // no joke/"I do not care" distractors, no official-sounding giveaway, and an explanation for coaching.
 // Questions are deliberately stored as an approved, fixed bank. Nothing is generated at runtime.
@@ -1074,6 +1074,146 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
    explanation:'A noticeable change in consistency should be checked before it is built into the work. Trying it on the inner leaf still risks weak or inconsistent joints. Adding materials changes the designed mix, while leaving it exposed can make consistency vary further across the batch.',
    keyTakeaway:'Do not alter supplied mortar by guesswork; stop and check any unexpected change before use.',
    id:'brick-epa-v139-k20'
+  },
+  {
+   code:'K21',
+   question:'While setting out a cavity wall with a window opening, your gauge works at one jamb but leaves a narrow cut at the other. What is the best next step?',
+   options:[
+    'Keep the first jamb fixed and adjust the perpends across the opening',
+    'Recheck the opening, bond and gauge from both ends before fixing the profiles',
+    'Make the narrow cut at the less visible jamb and keep the courses level',
+    'Move the window opening slightly so full and half bricks work at both jambs'
+   ],
+   correct:1,
+   explanation:'Rechecking the full setting out before fixing the profiles finds whether the issue comes from the opening size, bond or gauge. Adjusting perpends can make joints inconsistent, while accepting a narrow cut may weaken the detail. Moving the opening could affect the drawings and other trades, so it should not be done without agreement.',
+   keyTakeaway:'Set out both jambs, the bond and the gauge together before committing to the wall position.',
+   id:'brick-epa-v139-k21'
+  },
+  {
+   code:'K22',
+   question:'While building above a new window, the cavity tray is fitted but one end does not turn up as shown on the detail. What is the best response?',
+   options:[
+    'Form the stop end before carrying on with the brickwork above',
+    'Carry on and seal the end of the tray once the lintel course is complete',
+    'Add an extra weep vent near the low end to deal with any water',
+    'Lap a small piece of DPC over the end and bed it into the next joint'
+   ],
+   correct:0,
+   explanation:'The stop end needs forming correctly before it is covered because it keeps water from running off the end of the tray into the cavity. Sealing it later may leave gaps that cannot be checked. An extra weep does not control water escaping sideways, and a loose DPC patch may not form a reliable sealed end.',
+   keyTakeaway:'Complete and check cavity trays, stop ends and outlets before building over them.',
+   id:'brick-epa-v139-k22'
+  },
+  {
+   code:'K23',
+   question:'You are laying a soldier course over an opening and the final joint would be much wider than the others. What is the best way to deal with it?',
+   options:[
+    'Make the wider joint at the centre so it looks balanced from both sides',
+    'Re-gauge the soldiers and share the difference evenly across the opening',
+    'Cut the last soldier narrower and keep all the joints the same size',
+    'Use slightly thicker joints near each end and normal joints through the middle'
+   ],
+   correct:1,
+   explanation:'Re-gauging and sharing the difference evenly gives a balanced soldier course without one obvious closing joint. A single wide joint stands out, while narrowing one soldier changes the unit width and appearance. Altering only the end joints can still make the spacing look uneven.',
+   keyTakeaway:'Gauge decorative courses across the full length so any difference is shared evenly.',
+   id:'brick-epa-v139-k23'
+  },
+  {
+   code:'K24',
+   question:'While replacing a spalled brick, the bricks around it look sound but the joint above is cracked. What is the best approach before fitting the replacement?',
+   options:[
+    'Replace the damaged brick and repoint the cracked joint once the mortar firms',
+    'Open the area enough to check what caused the damage before completing the repair',
+    'Use a stronger mortar around the new brick to stop the crack returning',
+    'Fit the replacement slightly loose so any further movement is taken in the joints'
+   ],
+   correct:1,
+   explanation:'Checking the cause before finishing the repair reduces the chance of replacing the brick while leaving the original problem behind. Repointing alone may hide continuing movement or moisture. Stronger mortar can push damage into the masonry, while deliberately loose work will not provide a sound repair.',
+   keyTakeaway:'A lasting repair deals with the cause as well as the visible damage.',
+   id:'brick-epa-v139-k24'
+  },
+  {
+   code:'K25',
+   question:'A newly built wall is finished late in the day and a sharp frost is forecast overnight. The mortar has started to firm but is not fully set. What is the best protection?',
+   options:[
+    'Cover the wall securely with insulated protection without trapping it against the fresh work',
+    'Lay plastic sheeting directly over the top courses and weight it down with bricks',
+    'Brush the joints firm, then leave the wall open so the mortar can dry naturally',
+    'Build one extra sacrificial course and remove it after the cold weather passes'
+   ],
+   correct:0,
+   explanation:'Secure insulated protection helps retain heat and keeps frost and rain off without marking the fresh face. Plastic laid directly on the wall can smear joints and hold water against the masonry. Leaving it exposed risks frost damage, while a sacrificial course does not protect the mortar already laid.',
+   keyTakeaway:'Protect fresh masonry from frost and water without letting the covering damage the work.',
+   id:'brick-epa-v139-k25'
+  },
+  {
+   code:'K26',
+   question:'A telehandler driver asks where to place the next brick delivery, but the usual storage area is being used for drainage work. What is the best reply?',
+   options:[
+    'Put it beside the nearest scaffold and leave enough room for the gang to pass',
+    'Hold the delivery while you agree a safe location with the supervisor and driver',
+    'Split the packs between several open plots so no single route is blocked',
+    'Use the original drop point and ask the drainage gang to work around the packs'
+   ],
+   correct:1,
+   explanation:'Agreeing a safe location with the people coordinating the site avoids blocked access, unstable ground and repeated handling. The nearest scaffold may not have enough capacity or safe access. Splitting packs can create several obstructions, while using the original area ignores the changed site conditions.',
+   keyTakeaway:'Clear site communication means confirming changes before materials are moved or unloaded.',
+   id:'brick-epa-v139-k26'
+  },
+  {
+   code:'K27',
+   question:'Your gang is ready to start the outer leaf, but the insulation team has not finished the section ahead and everyone is under programme pressure. What is the best team decision?',
+   options:[
+    'Start where the insulation is complete and agree a sequence that keeps both teams moving',
+    'Build the outer leaf first and leave access points for the insulation to be fitted later',
+    'Move the bricklayers to another plot and let the insulation team finish the whole elevation',
+    'Help fit the remaining insulation so the brickwork can start at the planned position'
+   ],
+   correct:0,
+   explanation:'Agreeing a workable sequence uses the completed area and keeps both teams productive without covering unfinished work. Leaving access points can compromise continuity and quality. Moving the whole gang may lose time unnecessarily, while carrying out another trade’s task may create competence and responsibility issues.',
+   keyTakeaway:'Good teamwork coordinates the sequence so progress does not come at the cost of finished quality.',
+   id:'brick-epa-v139-k27'
+  },
+  {
+   code:'K28',
+   question:'A new labourer on the gang is quiet during the briefing and later says they did not understand some of the site terms. What is the best response?',
+   options:[
+    'Explain the terms privately and check they are comfortable asking again',
+    'Give them simpler jobs until they pick up the language from the rest of the gang',
+    'Ask the supervisor to repeat future briefings more slowly for everyone',
+    'Pair them with the most experienced bricklayer and let them learn by watching'
+   ],
+   correct:0,
+   explanation:'A private explanation and an open invitation to ask questions helps the person understand without putting them on the spot. Simpler work or observation may help them settle in but does not confirm they understand safety and task information. Slowing every briefing may not address the specific terms they missed.',
+   keyTakeaway:'An inclusive gang checks that everyone understands and makes it easy to speak up.',
+   id:'brick-epa-v139-k28'
+  },
+  {
+   code:'K29',
+   question:'You need several half bricks for a tight repair where a disc cutter cannot be used. The first brick splits unevenly with the bolster. What is the best adjustment?',
+   options:[
+    'Score the cut line around the brick, support it properly and use controlled blows',
+    'Use a heavier hammer so the brick breaks cleanly with one firm strike',
+    'Cut each brick slightly oversize and trim the face after it is bedded',
+    'Soak the bricks first so they are less likely to shatter during cutting'
+   ],
+   correct:0,
+   explanation:'Scoring the line, supporting the unit and using controlled blows gives the best chance of an accurate hand cut. A heavier strike can make the break less predictable. Trimming after laying risks disturbing the repair, while soaking does not provide reliable control of the cut.',
+   keyTakeaway:'Accurate hand cutting comes from good marking, support and controlled blows rather than extra force.',
+   id:'brick-epa-v139-k29'
+  },
+  {
+   code:'K30',
+   question:'While setting out a raking garden wall, the line of the slope meets the bond with several small triangular cuts near the top. What is the best next step?',
+   options:[
+    'Keep the slope and use the small cuts because the coping will cover most of them',
+    'Adjust the starting height slightly and recheck the rake against the bond',
+    'Change to stack bond through the last few courses to reduce the cutting',
+    'Make the cuts from full bricks and use a stronger mortar around the narrow ends'
+   ],
+   correct:1,
+   explanation:'A small agreed adjustment to the starting height can improve the bond and remove weak slivers while keeping the intended rake. Accepting tiny cuts may leave fragile pieces. Changing the bond alters the appearance and strength, while stronger mortar does not make poor-shaped cuts sound.',
+   keyTakeaway:'Set out the rake and the bond together so the wall finishes without weak sliver cuts.',
+   id:'brick-epa-v139-k30'
   }
  ]
 };
