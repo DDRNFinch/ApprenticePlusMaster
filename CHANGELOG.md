@@ -1,3 +1,11 @@
+# Apprentice+ v1.3.35
+
+## Cross-course EPA preparation completion
+- EPA Practical PDFs include the learner-selected Tools and Equipment, Materials and Fixings, and PPE and Safety Equipment for all four courses.
+- Added the preparation saved date/time to the final EPA Practical PDF.
+- Expanded flexible matching across Site Carpentry, Architectural Joinery and Property Maintenance, including common tool names, trade synonyms, PPE wording and grouped materials.
+- Retained the v1.3.34 Start new attempt fix.
+
 ## v1.3.34 — EPA new-attempt fix
 
 - Fixed **Start new attempt** so a new EPA practical is created, saved immediately, and replaces the previous draft correctly.
