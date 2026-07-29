@@ -25,3 +25,7 @@ City & Guilds Level 3 NVQ Diploma in Trowel Occupations (Construction)
   - Supporting Evidence
 
 The primary-unit criterion details and criterion-specific evidence prompts can be added later in `course-data.js`.
+
+
+## v1.34
+Admin Mode now includes locally stored college branding and reusable learner QR setup sheets.

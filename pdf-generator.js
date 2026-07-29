@@ -1,7 +1,7 @@
 'use strict';
 
 /* Apprentice+ offline PDF generator. Evidence stays in the browser; no data is uploaded. */
-async function generateEvidencePackPDF({course, assignment, profile, sections}) {
+async function generateEvidencePackPDF({course, assignment, profile, sections, branding}) {
   if(course && course.nvqUnits) return generateNVQEvidencePackPDF({course, assignment, profile, sections});
   const W=1240,H=1754,M=88,TEAL='#073539',GREEN='#48E023',INK='#1A1A1A',MUTED='#5f6f70',PALE='#f2f7f5',WHITE='#ffffff';
   const pages=[];
@@ -33,7 +33,7 @@ async function generateEvidencePackPDF({course, assignment, profile, sections}) 
   function meta(p,version,date,type){const {x}=p;let y=p.y;x.fillStyle=PALE;x.fillRect(M,y,W-2*M,132);label(x,'Learner',M+24,y+31);value(x,profile.fullName,M+24,y+62,21,true);label(x,'Date submitted',M+560,y+31);value(x,date||'-',M+560,y+62,21,true);label(x,'Evidence type',M+24,y+96);value(x,type,M+190,y+96,19,true);label(x,'Status',M+560,y+96);value(x,'Submitted - Locked',M+650,y+96,19,true);p.y=y+168;return p}
   function signature(x,data,y,title='Signature') {label(x,title,M,y);x.strokeStyle='#b8c4c1';x.lineWidth=2;x.strokeRect(M,y+18,420,122);if(data){try{x.drawImage(data._img||data,M+12,y+28,396,98)}catch{}}return y+162}
   async function loadImage(src){if(!src)return null;return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src})}
-  function footerAll(){const numbered=pages.filter(p=>!p.isCover),total=numbered.length;let pageNo=0;pages.forEach(p=>{if(p.isCover)return;pageNo++;const x=p.ctx;x.fillStyle=p.colour||TEAL;x.fillRect(0,H-62,W,62);x.fillStyle=WHITE;x.font='600 17px Arial';x.fillText('Apprentice+ | Your Course, Your Way',M,H-25);x.textAlign='right';x.fillText(`Page ${pageNo} of ${total}`,W-M,H-25);x.textAlign='left'})}
+  function footerAll(){const numbered=pages.filter(p=>!p.isCover),total=numbered.length;let pageNo=0;pages.forEach(p=>{if(p.isCover)return;pageNo++;const x=p.ctx;x.fillStyle=p.colour||TEAL;x.fillRect(0,H-62,W,62);x.fillStyle=WHITE;x.font='600 17px Arial';x.fillText(`${branding?.name?branding.name+'  |  ':''}Apprentice+ | Your Course, Your Way`,M,H-25);x.textAlign='right';x.fillText(`Page ${pageNo} of ${total}`,W-M,H-25);x.textAlign='left'})}
 
   const evidenceCatalogue=[];
   const evidenceMatrix={};(assignment.ksbs||[]).forEach(([code])=>evidenceMatrix[code]=[]);
@@ -86,12 +86,14 @@ async function generateEvidencePackPDF({course, assignment, profile, sections}) 
     }
   }
 
+  const collegeLogo=branding?.logo?await loadImage(branding.logo):null;
+
   // Front cover (unnumbered)
   {
     const p=newPage('Apprenticeship Evidence Portfolio','Portfolio','Issued portfolio');pages[pages.length-1].isCover=true;const x=p.x;
-    x.fillStyle=PDF_COLOURS.cover;x.fillRect(0,0,W,H);x.fillStyle=WHITE;x.font='700 34px Arial';x.fillText('APPRENTICE+',M,150);x.font='700 58px Arial';fitText(x,'APPRENTICESHIP EVIDENCE PORTFOLIO',M,280,W-2*M,58);
+    x.fillStyle=PDF_COLOURS.cover;x.fillRect(0,0,W,H);if(collegeLogo){const maxW=360,maxH=120,sc=Math.min(maxW/collegeLogo.width,maxH/collegeLogo.height);x.drawImage(collegeLogo,W-M-collegeLogo.width*sc,70,collegeLogo.width*sc,collegeLogo.height*sc)}x.fillStyle=WHITE;x.font='700 34px Arial';x.fillText('APPRENTICE+',M,150);x.font='700 58px Arial';fitText(x,'APPRENTICESHIP EVIDENCE PORTFOLIO',M,280,W-2*M,58);
     x.fillStyle='rgba(255,255,255,.16)';x.fillRect(M,370,W-2*M,720);let y=445;
-    [['Learner',profile.fullName],['Course',course.name],['Standard',course.standard],['Level',course.level],['Assignment',`${assignment.n}: ${assignment.title}`],['Employer',profile.employer],['Training provider',profile.trainingProvider||profile.provider||'-'],['Assessor',profile.mentor],['Portfolio date',new Date().toLocaleDateString('en-GB')],['Evidence items',String(evidenceCatalogue.length)]].forEach(([a,b])=>{x.fillStyle=WHITE;x.font='700 18px Arial';x.fillText(clean(a).toUpperCase(),M+45,y);x.font='700 27px Arial';fitText(x,clean(b||'-'),M+325,y,W-2*M-390,27);y+=62});
+    [['Learner',profile.fullName],['Course',course.name],['Standard',course.standard],['Level',course.level],['Assignment',`${assignment.n}: ${assignment.title}`],['Employer',profile.employer],['Training provider',branding?.name||profile.trainingProvider||profile.provider||'-'],['Assessor',profile.mentor],['Portfolio date',new Date().toLocaleDateString('en-GB')],['Evidence items',String(evidenceCatalogue.length)]].forEach(([a,b])=>{x.fillStyle=WHITE;x.font='700 18px Arial';x.fillText(clean(a).toUpperCase(),M+45,y);x.font='700 27px Arial';fitText(x,clean(b||'-'),M+325,y,W-2*M-390,27);y+=62});
     x.font='600 20px Arial';x.fillText('Your Course, Your Way',M,H-110);
   }
 

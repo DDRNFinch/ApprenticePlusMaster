@@ -1,4 +1,4 @@
-const CACHE='apprentice-plus-v1.33';
+const CACHE='apprentice-plus-v1.34';
 const APP_SHELL=['./','./index.html','./styles.css?v=1.23','./app.js?v=1.23','./manifest.json','./pdf-generator.js','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
 
 self.addEventListener('install',event=>{
@@ -17,7 +17,7 @@ self.addEventListener('fetch',event=>{
  if(event.request.method!=='GET')return;
  const url=new URL(event.request.url);
  if(url.origin!==self.location.origin)return;
- const isCoreFile=url.pathname.endsWith('/')||['index.html','app.js','pdf-generator.js','specification-sheet.js','styles.css','manifest.json','service-worker.js'].some(name=>url.pathname.endsWith('/'+name));
+ const isCoreFile=url.pathname.endsWith('/')||['index.html','app.js','qrcode-browser.js','pdf-generator.js','specification-sheet.js','styles.css','manifest.json','service-worker.js'].some(name=>url.pathname.endsWith('/'+name));
  if(isCoreFile){
   event.respondWith(
    fetch(event.request,{cache:'no-store'})

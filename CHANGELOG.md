@@ -1,11 +1,12 @@
-# v1.33 — Portfolio Cover and KSB Evidence Matrix
+# v1.34 — Admin Mode College Branding
 
-- Added an unnumbered front cover to downloaded evidence PDFs.
-- Added page 1 portfolio contents with evidence references.
-- Added page 2 automatic KSB evidence matrix.
-- References include PA, LS, WT, VW, PD, PE and SE.
-- Evidence section headings now display their matching reference.
-- Existing assessment criteria and saved evidence remain unchanged.
+- Renamed Developer Mode to Admin Mode.
+- Added college name, campus, address, telephone, email, website and logo settings.
+- Added reusable learner QR generation with the branding package embedded in the QR.
+- Added printable/save-as-PDF learner setup sheet.
+- College branding is stored locally on each learner device and remains unchanged when another college creates a new QR.
+- Added college logo/name to the app header and generated evidence portfolio PDFs.
+- No signatures were added to college branding.
 
 # v1.32 — Matching In-App Ribbon Colours
 
