@@ -1,3 +1,9 @@
+## v1.3.40 – EPA New Attempt Creation Rewrite
+- Replaced the failing asynchronous new-attempt chain with a synchronous mobile-safe builder.
+- Opens the new practical before background storage.
+- Uses plain JSON task copies and a dependency-free attempt ID.
+- Displays the actual runtime error message if creation ever fails again.
+
 ## v1.3.38 – EPA New Attempt Runtime Fix
 
 - Rebuilt the new-attempt creation sequence for mobile compatibility.
@@ -81,7 +87,7 @@
 - Reduced task dimensions and quantities to realistic mock-EPA workloads.
 - Added explicit measurements, tolerances and workload allowances to every task specification.
 
-## v1.3.39 — EPA 2×2 Dashboard and Complete Test History
+## v1.3.40 — EPA 2×2 Dashboard and Complete Test History
 - Rebuilt EPA Academy as four 2×2 tiles: Knowledge Practice, Professional Discussion, EPA Practical, Scores and Results.
 - Added a combined Scores and Results screen with search and test-type filtering.
 - Removed the 20-attempt cap so every completed Knowledge Practice and Professional Discussion is retained.

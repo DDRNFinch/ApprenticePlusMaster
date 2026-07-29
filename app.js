@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3.39';
+const APP_VERSION='V1.3.40';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -4093,7 +4093,7 @@ function renderEpaMockHome(){
  const start=document.getElementById('startEpa');if(start)start.onclick=()=>{state.epaMock={questions:chooseEpaQuestions(),answers:{},index:0};state.view='epa-test';render();window.scrollTo(0,0)};
  document.getElementById('startDiscussion').onclick=()=>startEpaDiscussion();
  document.getElementById('openEpaResults').onclick=()=>{state.view='epa-results';render();window.scrollTo(0,0)};
- const practical=document.getElementById('startEpaPractical');if(practical)practical.addEventListener('click',async event=>{event.preventDefault();event.stopPropagation();const existing=state.data[epaPracticalDraftKey()];if(existing&&!['marked','finished','timed-out'].includes(existing.stage)&&!confirm('Start a new practical and replace the unfinished saved attempt?'))return;practical.disabled=true;const originalText=practical.textContent;practical.textContent='Generating new attempt…';try{await startEpaPractical()}catch(error){console.error('Unable to start EPA practical attempt',error);practical.disabled=false;practical.textContent=originalText;toast('Could not start a new attempt. Please try again.')}});
+ const practical=document.getElementById('startEpaPractical');if(practical)practical.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();const existing=state.data[epaPracticalDraftKey()];if(existing&&!['marked','finished','timed-out'].includes(existing.stage)&&!confirm('Start a new practical and replace the unfinished saved attempt?'))return;practical.disabled=true;const originalText=practical.textContent;practical.textContent='Generating new attempt…';const opened=startEpaPractical();if(!opened&&document.body.contains(practical)){practical.disabled=false;practical.textContent=originalText}});
  const resume=document.getElementById('resumeEpaPractical');if(resume)resume.onclick=()=>{state.epaPractical=cloneData(state.data[epaPracticalDraftKey()]);state.view='epa-practical';render();window.scrollTo(0,0)};
 }
 function renderEpaResults(){
@@ -4155,24 +4155,49 @@ function prepareEpaPracticalTask(source){const task=cloneData(source),hours=Numb
 function epaPracticalHistoryKey(){return `epaPracticalHistory:${COURSE.id}:v1`}
 function epaPracticalHistory(){return Array.isArray(state.data[epaPracticalHistoryKey()])?state.data[epaPracticalHistoryKey()]:[]}
 function epaPracticalBestId(){const marked=epaPracticalHistory().filter(x=>x?.assessor&&Number.isFinite(Number(x.assessor.percentage)));if(!marked.length)return null;return marked.sort((a,b)=>Number(b.assessor.percentage)-Number(a.assessor.percentage)||new Date(b.assessor.submittedAt)-new Date(a.assessor.submittedAt))[0].id}
-async function startEpaPractical(){
- const bank=epaPracticalBank();
- if(!Array.isArray(bank)||!bank.length)throw new Error('No EPA practical tasks are available for this course');
- const history=epaPracticalHistory();
- const draft=state.data[epaPracticalDraftKey()];
- const lastTask=history[0]?.task?.id||draft?.task?.id;
- const alternatives=bank.filter(item=>item&&item.id!==lastTask);
- const choices=alternatives.length?alternatives:bank.filter(Boolean);
- const selected=choices[Math.floor(Math.random()*choices.length)]||bank[0];
- const task=prepareEpaPracticalTask(selected);
- if(!task)throw new Error('EPA practical task could not be prepared');
- const attempt={id:uid(),task,stage:'planning',entries:{tools:[],materials:[],ppe:[]},understood:false,createdAt:new Date().toISOString(),attemptNumber:history.length+1};
- state.epaPractical=attempt;
- state.data[epaPracticalDraftKey()]={...attempt,task:cloneData(task),entries:{tools:[],materials:[],ppe:[]}};
- state.view='epa-practical';
- render();
- window.scrollTo(0,0);
- try{await saveData()}catch(error){console.error('New EPA attempt opened but could not be saved immediately',error);toast('New attempt opened. It will be saved when you add your first preparation item.')}
+function startEpaPractical(){
+ try{
+  const bank=epaPracticalBank();
+  if(!Array.isArray(bank)||!bank.length){toast('No EPA practical tasks are available for this course');return false}
+  const history=epaPracticalHistory();
+  const draft=state.data[epaPracticalDraftKey()];
+  const lastTask=(history[0]&&history[0].task&&history[0].task.id)||(draft&&draft.task&&draft.task.id)||'';
+  const available=bank.filter(function(item){return item&&item.id!==lastTask});
+  const choices=available.length?available:bank.filter(function(item){return !!item});
+  const source=choices[Math.floor(Math.random()*choices.length)]||bank[0];
+  const plainSource=JSON.parse(JSON.stringify(source));
+  const task=prepareEpaPracticalTask(plainSource);
+  if(!task){toast('EPA practical task could not be prepared');return false}
+  const now=new Date().toISOString();
+  const attempt={
+   id:'epa-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10),
+   task:task,
+   stage:'planning',
+   entries:{tools:[],materials:[],ppe:[]},
+   understood:false,
+   createdAt:now,
+   attemptNumber:history.length+1
+  };
+  state.epaPractical=attempt;
+  state.data[epaPracticalDraftKey()]={
+   id:attempt.id,
+   task:JSON.parse(JSON.stringify(task)),
+   stage:'planning',
+   entries:{tools:[],materials:[],ppe:[]},
+   understood:false,
+   createdAt:now,
+   attemptNumber:attempt.attemptNumber
+  };
+  state.view='epa-practical';
+  render();
+  try{window.scrollTo(0,0)}catch(scrollError){}
+  Promise.resolve(saveData()).catch(function(error){console.error('New EPA attempt opened but could not be saved immediately',error);toast('New attempt opened. It will save when you add your first item.')});
+  return true;
+ }catch(error){
+  console.error('Unable to create EPA practical attempt',error);
+  toast('Could not create the new attempt: '+(error&&error.message?error.message:'unknown error'));
+  return false;
+ }
 }
 function openEpaPracticalHistoryAttempt(id){const found=epaPracticalHistory().find(x=>x.id===id);if(!found)return toast('Attempt not found');state.epaPractical=structuredClone(found);state.view='epa-practical';render();window.scrollTo(0,0)}
 async function downloadEpaPracticalReport(attempt){
