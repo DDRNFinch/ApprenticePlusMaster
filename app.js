@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.39.0';
+const APP_VERSION='V1.3.14';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -775,7 +775,7 @@ function renderAcademyLesson(){
 
 
 
-// v1.39.0 Bricklayer EPA professional-judgement question bank (K1-K30)
+// v1.3.14 Bricklayer EPA professional-judgement question bank (K1-K30)
 // Locked MCQ writing standard: realistic workplace judgement, four plausible trade-language answers,
 // no joke/"I do not care" distractors, no official-sounding giveaway, and an explanation for coaching.
 // Questions are deliberately stored as an approved, fixed bank. Nothing is generated at runtime.
@@ -1263,7 +1263,8 @@ function epaKnowledgeBankStatus(){
   if(!requiredCodes.has(code)){issues.push(`Question ${index+1} uses unknown KSB ${code||'(missing)'}`);return}
   if(seen.has(code)){issues.push(`More than one question is assigned to ${code}`);return}
   const writingIssues=epaQuestionWritingIssues(q);
-  if(writingIssues.length){writingIssues.forEach(issue=>issues.push(`${code}: ${issue}`));return}
+  if(writingIssues.length)writingIssues.forEach(issue=>issues.push(`${code}: ${issue}`));
+  // Writing checks are coaching warnings only. They must never silently remove an approved question from an EPA attempt.
   seen.add(code);valid.push({...q,code,type:epaType(code),id:q.id||`${COURSE.id}-${code}-epa-practice`,writingStandard:EPA_MCQ_WRITING_STANDARD.id});
  });
  const missing=required.filter(x=>!seen.has(x.code));
