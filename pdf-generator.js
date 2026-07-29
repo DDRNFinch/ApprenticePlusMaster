@@ -92,9 +92,9 @@ async function generateEvidencePackPDF({course, assignment, profile, sections}) 
     for(let j=0;j<3;j++){const px=M+j*(cellW+gap),img=practicalImgs[j];x.fillStyle=PALE;x.fillRect(px,y,cellW,cellH);if(img){const scale=Math.max(cellW/img.width,cellH/img.height),iw=img.width*scale,ih=img.height*scale;x.save();x.beginPath();x.rect(px,y,cellW,cellH);x.clip();x.drawImage(img,px+(cellW-iw)/2,y+(cellH-ih)/2,iw,ih);x.restore()}x.fillStyle=TEAL;x.font='700 12px Arial';x.fillText(`Photo ${j+1}`,px+8,y+cellH-8)}
     y+=cellH+34;y=sectionHeading(x,'Skill-specific Practical Marks',y);y=compactScoreRows(p,d,y,true);
     y+=2;label(x,'Overall result',M,y);value(x,practicalResultText(d),M+220,y,18,true);y+=34;
-    y=sectionHeading(x,'Assessment Summary',y);const sigTop=H-225;
-    drawCompactParagraph(x,d.feedback,M,y,W-2*M,Math.max(42,sigTop-y-14));
+    const sigTop=H-225;
     const sig=await loadImage(d.signature);signature(x,sig,sigTop,'Tutor / assessor signature');
+    {const fp=meta(newPage('Practical Assessment Feedback',`Attempt ${v}`),`Attempt ${v}`,d.date,'Practical Assessment');const fx=fp.x;let fy=sectionHeading(fx,'Assessment Summary',fp.y);fy=drawCompactParagraph(fx,d.feedbackSummary||d.feedback||'No assessment summary recorded.',M,fy,W-2*M,260)+22;fy=sectionHeading(fx,'Areas for Improvement',fy);fy=drawCompactParagraph(fx,d.feedbackDevelopment||'No areas for improvement recorded.',M,fy,W-2*M,260)+22;fy=sectionHeading(fx,'Additional Assessment Comments',fy);drawCompactParagraph(fx,d.feedback||'No additional comments recorded.',M,fy,W-2*M,Math.max(120,H-fy-120));}
     if(course.nvqUnits)await addOutcomePhotoPages(d,'Assessor Observation',`Attempt ${v}`,d.date,'Assessor Observation',true);
   }
 
@@ -121,6 +121,7 @@ async function generateEvidencePackPDF({course, assignment, profile, sections}) 
     y+=12;y=sectionHeading(x,'Witness Testimony',y);const sigTop=H-300;
     drawCompactParagraph(x,d.feedback,M,y,W-2*M,Math.max(80,sigTop-y-20));
     const sig=await loadImage(d.signature);signature(x,sig,sigTop,`${d.type||'Witness'} signature`);
+    {const fp=meta(newPage('Witness Testimony Feedback',`Attempt ${v}`),`Attempt ${v}`,d.date,d.type||'Witness Testimony');const fx=fp.x;let fy=sectionHeading(fx,'Assessment Summary',fp.y);fy=drawCompactParagraph(fx,d.feedbackSummary||d.feedback||'No assessment summary recorded.',M,fy,W-2*M,290)+24;fy=sectionHeading(fx,'Areas for Improvement',fy);fy=drawCompactParagraph(fx,d.feedbackDevelopment||'No areas for improvement recorded.',M,fy,W-2*M,290)+24;fy=sectionHeading(fx,'Additional Witness / Employer Comments',fy);drawCompactParagraph(fx,d.feedback||'No additional comments recorded.',M,fy,W-2*M,Math.max(120,H-fy-120));}
     if(course.nvqUnits)await addOutcomePhotoPages(d,d.type||'Witness Testimony',`Attempt ${v}`,d.date,d.type||'Witness Testimony',true);
   }
 
@@ -136,17 +137,18 @@ async function generateEvidencePackPDF({course, assignment, profile, sections}) 
     const sig=await loadImage(d.signature);if(y>H-300){p=meta(newPage('Professional Discussion - Signature',v),v,d.date,'Professional Discussion');signature(p.x,sig,p.y,'Assessor / discussion lead signature')}else signature(x,sig,y+35,'Assessor / discussion lead signature');
   }
 
-  // KSB video walkthroughs - every attached video is represented by its own thumbnail page.
-  for(let i=0;i<(sections.walkthrough||[]).length;i++){
-    const f=sections.walkthrough[i],thumb=await loadImage(f.thumbnail),p=meta(newPage('KSB Video Evidence',`Video ${i+1}`),`Video ${i+1}`,f.date,'KSB Video Walkthrough');const x=p.x;let y=sectionHeading(x,`${f.code} — ${f.summary||'Recorded evidence'}`,p.y);
-    label(x,'KSB reference',M,y);value(x,f.code,M+190,y,20,true);y+=42;
-    label(x,'Media file',M,y);value(x,ksbMediaFileName(f),M+190,y,17,true);y+=42;
-    label(x,'Recorded',M,y);value(x,f.date||'-',M+190,y,18);y+=52;
-    x.fillStyle=PALE;x.fillRect(M,y,W-2*M,610);
-    if(thumb){const maxW=W-2*M-34,maxH=570,scale=Math.min(maxW/thumb.width,maxH/thumb.height);const iw=thumb.width*scale,ih=thumb.height*scale;x.drawImage(thumb,M+(maxW-iw)/2+17,y+(maxH-ih)/2+17,iw,ih)}
-    else{value(x,'Video thumbnail unavailable',M+30,y+72,20,true)}
-    y+=660;y=sectionHeading(x,'Evidence package',y);
-    drawCompactParagraph(x,`The original playable video is included in the downloaded ZIP package. Its filename begins with the attached KSB reference so it can be matched directly to this PDF page.`,M,y,W-2*M,120);
+  // Video evidence index - list every attached video title together on one page.
+  {
+    const videoTitles=[];
+    for(const f of sections.walkthrough||[])videoTitles.push(ksbMediaFileName(f));
+    for(const d of sections.supporting||[])for(const f of d.files||[])if((f.type||'').startsWith('video/'))videoTitles.push(f.evidenceName||f.name||'Untitled video');
+    if(videoTitles.length){
+      const p=meta(newPage('Video Evidence Files','Attached media'),'Attached media','Video Evidence Index');const x=p.x;let y=sectionHeading(x,'Attached video files',p.y);
+      x.fillStyle=MUTED;x.font='400 17px Arial';x.fillText('The playable files below are included in the downloaded evidence package.',M,y);y+=42;
+      const available=H-y-145,lineH=Math.max(24,Math.min(38,Math.floor(available/Math.max(1,videoTitles.length))));
+      const fontSize=Math.max(13,Math.min(19,lineH-7));
+      videoTitles.forEach((name,i)=>{x.fillStyle=i%2?WHITE:PALE;x.fillRect(M,y-24,W-2*M,lineH);x.fillStyle=TEAL;x.font=`700 ${fontSize}px Arial`;x.fillText(`${i+1}.`,M+14,y);x.fillStyle=INK;x.font=`600 ${fontSize}px Arial`;fitText(x,clean(name),M+58,y,W-2*M-78,fontSize);y+=lineH});
+    }
   }
 
   // Supporting evidence
@@ -160,12 +162,7 @@ async function generateEvidencePackPDF({course, assignment, profile, sections}) 
         x.fillStyle=PALE;x.fillRect(M,y,W-2*M,H-y-160);
         if(img){const maxW=W-2*M-28,maxH=H-y-190,scale=Math.min(maxW/img.width,maxH/img.height);const iw=img.width*scale,ih=img.height*scale;x.drawImage(img,M+(maxW-iw)/2+14,y+(maxH-ih)/2+14,iw,ih)}
       }
-      for(let n=0;n<videos.length;n++){
-        const f=videos[n],thumb=await loadImage(f.thumbnail),p=meta(newPage('Supporting Evidence - Video',v),v,d.date,'Supporting Video');const x=p.x;let y=sectionHeading(x,`Video ${n+1} of ${videos.length}`,p.y);
-        label(x,'File name',M,y);value(x,f.evidenceName||f.name,M+180,y,19,true);y+=44;label(x,'File type',M,y);value(x,f.type||'Video',M+180,y,18);y+=48;
-        x.fillStyle=PALE;x.fillRect(M,y,W-2*M,610);if(thumb){const maxW=W-2*M-34,maxH=570,scale=Math.min(maxW/thumb.width,maxH/thumb.height);const iw=thumb.width*scale,ih=thumb.height*scale;x.drawImage(thumb,M+(maxW-iw)/2+17,y+(maxH-ih)/2+17,iw,ih)}
-        y+=660;y=sectionHeading(x,'Opening this video',y);drawCompactParagraph(x,`The playable video file is included in the downloaded evidence package as: ${f.evidenceName||f.name}. Extract the ZIP package, then open this file using the device video player.`,M,y,W-2*M,130);
-      }
+      // Video files are listed together on the single Video Evidence Files page above.
       if(other.length){const text=other.map((f,n)=>`${n+1}. ${f.evidenceName||f.name}\n   Type: ${f.type||'Unknown'} | Size: ${f.size?Math.round(f.size/1024)+' KB':'Unknown'}`).join('\n\n');addTextPages('Supporting Evidence - Documents',v,d.date,'Supporting Documents','Uploaded Files',text)}
       if(!files.length)addTextPages('Supporting Evidence - Documents',v,d.date,'Supporting Evidence','Uploaded Files','No supporting files listed');
     }else{
@@ -174,9 +171,10 @@ async function generateEvidencePackPDF({course, assignment, profile, sections}) 
       [['Evidence source',d.type],['Name',d.personName],['Role',d.role],['Organisation',d.organisation]].forEach(([a,b])=>{label(x,a,M,y);value(x,b,M+250,y,18,true);y+=36});
       y=sectionHeading(x,'Activity Details',y+4);y=drawCompactParagraph(x,d.activity,M,y,W-2*M,52)+10;
       y=sectionHeading(x,'KSB Scores',y);y=compactScoreRows(p,d,y);
-      y+=4;label(x,'Overall result',M,y);value(x,resultText(d),M+240,y,21,true);y+=42;y=sectionHeading(x,'Assessment Summary',y);const sigTop=H-320;
-      drawCompactParagraph(x,d.feedback,M,y,W-2*M,Math.max(70,sigTop-y-20));
-      const sig=await loadImage(d.signature);signature(x,sig,sigTop,`${d.type||'Contributor'} signature`);if(course.nvqUnits)await addOutcomePhotoPages(d,d.type||'Witness Testimony',`Attempt ${v}`,d.date,d.type||'Witness Testimony',true);
+      y+=4;label(x,'Overall result',M,y);value(x,resultText(d),M+240,y,21,true);const sigTop=H-320;
+      const sig=await loadImage(d.signature);signature(x,sig,sigTop,`${d.type||'Contributor'} signature`);
+      {const fp=meta(newPage('Witness / Employer Feedback',`Attempt ${v}`),`Attempt ${v}`,d.date,d.type||'Witness / Employer Statement');const fx=fp.x;let fy=sectionHeading(fx,'Assessment Summary',fp.y);fy=drawCompactParagraph(fx,d.feedbackSummary||d.feedback||'No assessment summary recorded.',M,fy,W-2*M,290)+24;fy=sectionHeading(fx,'Areas for Improvement',fy);fy=drawCompactParagraph(fx,d.feedbackDevelopment||'No areas for improvement recorded.',M,fy,W-2*M,290)+24;fy=sectionHeading(fx,'Additional Comments',fy);drawCompactParagraph(fx,d.feedback||'No additional comments recorded.',M,fy,W-2*M,Math.max(120,H-fy-120));}
+      if(course.nvqUnits)await addOutcomePhotoPages(d,d.type||'Witness Testimony',`Attempt ${v}`,d.date,d.type||'Witness Testimony',true);
     }
   }
 
@@ -240,10 +238,10 @@ async function generateNVQEvidencePackPDF({course, assignment, profile, sections
 
   {const p=newPage(`Evidence Pack ${assignment.n}: ${assignment.title}`,`Unit ${assignment.unit}${assignment.optional?' | Optional unit':''}`),x=p.x;let y=p.y;x.fillStyle=PALE;x.fillRect(M,y,W-2*M,300);y+=46;[['Qualification',course.name],['Unit',assignment.unit],['Learner',profile.fullName],['Employer',profile.employer],['Assessor',profile.mentor]].forEach(([a,b])=>{label(x,a,M+28,y);value(x,b,M+300,y,21,true);y+=46});y=sectionHeading(x,'Learning Outcome Coverage',p.y+350);for(const [code,text] of assignment.ksbs){const count=Math.min(2,evidenceMap[code].length),colour=count>=2?GREEN:count===1?YELLOW:GREY;x.fillStyle=colour;x.fillRect(M,y-28,W-2*M,66);x.fillStyle=TEAL;x.font='700 20px Arial';x.fillText(`${code}  ${count}/2`,M+18,y);x.fillStyle=INK;x.font='600 16px Arial';fitText(x,clean(text),M+150,y,W-2*M-175,16);y+=78}const met=Object.values(evidenceMap).reduce((n,a)=>n+Math.min(2,a.length),0),total=(assignment.ksbs||[]).length*2;x.fillStyle=PALE;x.fillRect(M,y,W-2*M,78);label(x,'Overall evidence coverage',M+24,y+30);value(x,`${met} of ${total} requirements met`,M+330,y+31,22,true)}
 
-  for(let i=0;i<(sections.practical||[]).length;i++){const d=sections.practical[i],attempt=i+1,outcomes=selectedScores(d),p=meta(newPage('Assessor Observation',`Attempt ${attempt}`),d.date,'Assessor Observation',attempt),x=p.x;let y=sectionHeading(x,'Observation Details',p.y);label(x,'Assessor',M,y);value(x,d.tutor,M+230,y,19,true);y+=40;label(x,'Activity observed',M,y);value(x,d.activity,M+230,y,18);y+=54;y=sectionHeading(x,'Learning Outcomes Observed',y);y=drawOutcomeRows(x,outcomes,y);y=sectionHeading(x,'Assessor Observation',y+8);y=paragraph(x,d.feedback||d.feedbackSummary||'-',y,Math.max(110,H-y-330));const sig=await loadImage(d.signature);signature(x,sig,Math.min(H-245,y+28),'Assessor signature');await photoPages(d,'Assessor Observation',attempt,outcomes)}
+  for(let i=0;i<(sections.practical||[]).length;i++){const d=sections.practical[i],attempt=i+1,outcomes=selectedScores(d),p=meta(newPage('Assessor Observation',`Attempt ${attempt}`),d.date,'Assessor Observation',attempt),x=p.x;let y=sectionHeading(x,'Observation Details',p.y);label(x,'Assessor',M,y);value(x,d.tutor,M+230,y,19,true);y+=40;label(x,'Activity observed',M,y);value(x,d.activity,M+230,y,18);y+=54;y=sectionHeading(x,'Learning Outcomes Observed',y);y=drawOutcomeRows(x,outcomes,y);y=sectionHeading(x,'Assessor Observation',y+8);y=paragraph(x,d.feedback||'-',y,Math.max(110,H-y-330));const sig=await loadImage(d.signature);signature(x,sig,Math.min(H-245,y+28),'Assessor signature');{const fp=meta(newPage('Assessor Observation Feedback',`Attempt ${attempt}`),d.date,'Assessor Observation',attempt),fx=fp.x;let fy=sectionHeading(fx,'Assessment Summary',fp.y);fy=paragraph(fx,d.feedbackSummary||d.feedback||'No assessment summary recorded.',fy,300)+24;fy=sectionHeading(fx,'Areas for Improvement',fy);paragraph(fx,d.feedbackDevelopment||'No areas for improvement recorded.',fy,300)}await photoPages(d,'Assessor Observation',attempt,outcomes)}
   for(let i=0;i<(sections.statement||[]).length;i++){const d=sections.statement[i],attempt=i+1,outcomes=selectedStatement(d),p=meta(newPage('Learner Statement',`Attempt ${attempt}`),d.date,'Learner Statement',attempt),x=p.x;let y=sectionHeading(x,'Learning Outcomes Evidenced',p.y);y=drawOutcomeRows(x,outcomes,y);y=sectionHeading(x,'Learner Statement',y+8);y=paragraph(x,d.text,y,Math.max(130,H-y-330));const sig=await loadImage(d.signature);signature(x,sig,Math.min(H-245,y+28),'Learner signature');await photoPages(d,'Learner Statement',attempt,outcomes)}
   for(let i=0;i<(sections.discussion||[]).length;i++){const d=sections.discussion[i],attempt=i+1,outcomes=selectedDiscussion(d),p=meta(newPage('Professional Discussion',`Attempt ${attempt}`),d.date,'Professional Discussion',attempt),x=p.x;let y=sectionHeading(x,'Discussion Details',p.y);label(x,'Discussion lead',M,y);value(x,d.assessor,M+230,y,19,true);y+=40;label(x,'Activity / subject',M,y);value(x,d.activity,M+230,y,18);y+=54;y=sectionHeading(x,'Recorded Learning Outcomes',y);for(const [code,text] of outcomes){if(y>H-350){break}x.fillStyle=PALE;x.fillRect(M,y-28,W-2*M,112);x.fillStyle=TEAL;x.font='700 19px Arial';x.fillText(code,M+16,y);x.fillStyle=INK;x.font='600 16px Arial';fitText(x,clean(text),M+100,y,W-2*M-125,16);const rec=d.recordings?.[code],note=String(d.notes?.[code]||'').trim();x.fillStyle=MUTED;x.font='400 14px Arial';x.fillText(`Recording included in evidence package${rec?.duration?` | ${rec.duration}`:''}`,M+100,y+28);if(note){x.fillStyle=INK;x.font='400 14px Arial';fitText(x,`Notes: ${clean(note)}`,M+100,y+54,W-2*M-125,14)}y+=126}const sig=await loadImage(d.signature);signature(x,sig,Math.min(H-245,y+20),'Assessor / discussion lead signature')}
-  for(let i=0;i<(sections.witness||[]).length;i++){const d=sections.witness[i],attempt=i+1,outcomes=selectedScores(d),p=meta(newPage('Witness Testimony',`Attempt ${attempt}`),d.date,'Witness Testimony',attempt),x=p.x;let y=sectionHeading(x,'Witness Details',p.y);[['Name',d.personName],['Role',d.role],['Organisation',d.organisation],['Activity witnessed',d.activity]].forEach(([a,b])=>{label(x,a,M,y);value(x,b,M+230,y,18,true);y+=40});y=sectionHeading(x,'Learning Outcomes Witnessed',y+10);y=drawOutcomeRows(x,outcomes,y);y=sectionHeading(x,'Witness Testimony',y+8);y=paragraph(x,d.feedback,y,Math.max(100,H-y-330));const sig=await loadImage(d.signature);signature(x,sig,Math.min(H-245,y+28),'Witness signature');await photoPages(d,'Witness Testimony',attempt,outcomes)}
+  for(let i=0;i<(sections.witness||[]).length;i++){const d=sections.witness[i],attempt=i+1,outcomes=selectedScores(d),p=meta(newPage('Witness Testimony',`Attempt ${attempt}`),d.date,'Witness Testimony',attempt),x=p.x;let y=sectionHeading(x,'Witness Details',p.y);[['Name',d.personName],['Role',d.role],['Organisation',d.organisation],['Activity witnessed',d.activity]].forEach(([a,b])=>{label(x,a,M,y);value(x,b,M+230,y,18,true);y+=40});y=sectionHeading(x,'Learning Outcomes Witnessed',y+10);y=drawOutcomeRows(x,outcomes,y);y=sectionHeading(x,'Witness Testimony',y+8);y=paragraph(x,d.feedback,y,Math.max(100,H-y-330));const sig=await loadImage(d.signature);signature(x,sig,Math.min(H-245,y+28),'Witness signature');{const fp=meta(newPage('Witness Testimony Feedback',`Attempt ${attempt}`),d.date,'Witness Testimony',attempt),fx=fp.x;let fy=sectionHeading(fx,'Assessment Summary',fp.y);fy=paragraph(fx,d.feedbackSummary||d.feedback||'No assessment summary recorded.',fy,300)+24;fy=sectionHeading(fx,'Areas for Improvement',fy);paragraph(fx,d.feedbackDevelopment||'No areas for improvement recorded.',fy,300)}await photoPages(d,'Witness Testimony',attempt,outcomes)}
 
   const total=pages.length;pages.forEach((p,i)=>{const x=p.ctx;x.fillStyle=TEAL;x.fillRect(0,H-62,W,62);x.fillStyle=WHITE;x.font='600 17px Arial';x.fillText('Apprentice+ | NVQ Evidence Portfolio',M,H-25);x.textAlign='right';x.fillText(`Page ${i+1} of ${total}`,W-M,H-25);x.textAlign='left'});
   const jpegPages=pages.map(p=>dataUrlBytes(p.canvas.toDataURL('image/jpeg',0.90))),pdf=makeImagePDF(jpegPages,W,H),safe=clean(profile.fullName).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,''),unit=String(assignment.unit||assignment.n).replace(/[^a-z0-9-]+/gi,'-'),pdfName=`${safe||'Learner'}-NVQ-Unit-${unit}-Evidence-Pack.pdf`;

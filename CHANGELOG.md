@@ -1,3 +1,10 @@
+# v1.30 — PDF Video Index and Feedback Sections
+
+- Replaced video thumbnail pages with one video filename index page.
+- Practical Assessment PDFs now include Assessment Summary and Areas for Improvement.
+- Witness Testimony and Employer Statement PDFs now include Assessment Summary and Areas for Improvement.
+- Attached media files remain included in the evidence ZIP package.
+
 # v1.29 — Evidence Package Download Fix
 
 - Replaced the memory-heavy combined ZIP builder with a mobile-safe Blob package.
