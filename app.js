@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.38.4';
+const APP_VERSION='V1.38.5';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -1887,6 +1887,57 @@ async function downloadPack(n){
 function normalisePortfolioUrl(url){const value=String(url||'').trim();return /^https?:\/\//i.test(value)?value:''}
 function openPortfolioSite(){const url=normalisePortfolioUrl(state.profile?.portfolioUrl);if(!url)return toast('Add a valid portfolio website address in Learner Details');window.open(url,'_blank','noopener,noreferrer')}
 async function confirmPackUpload(n){const status=state.data[packStatusKey(n)]||{};if(!status.downloaded)return toast('Download the latest evidence package first');if(!confirm('Confirm that you uploaded the latest evidence PDF and any required media files to your portfolio.'))return;state.data[packStatusKey(n)]={...status,uploaded:true,uploadedAt:new Date().toISOString()};await saveData();render();toast('Assignment marked as submitted')}
+
+
+const LANDSCAPE_CAMERA_REMINDER_KEY='apprenticePlusLandscapeCameraReminderHidden';
+let landscapeCameraBypass=null;
+function isCameraImageInput(input){
+ return input instanceof HTMLInputElement&&input.type==='file'&&input.hasAttribute('capture')&&String(input.accept||'').toLowerCase().includes('image');
+}
+function closeLandscapeCameraDialog(){document.getElementById('landscapeCameraDialog')?.remove()}
+function showLandscapeCameraReminder(input){
+ closeLandscapeCameraDialog();
+ app.insertAdjacentHTML('beforeend',`<div class="camera-orientation-screen" id="landscapeCameraDialog" role="dialog" aria-modal="true" aria-labelledby="landscapeCameraTitle"><div class="camera-orientation-card"><div class="camera-phone-guide" aria-hidden="true"><span class="phone-upright">▯</span><span class="camera-guide-cross">×</span><span class="phone-sideways">▭</span><span class="camera-guide-tick">✓</span></div><h2 id="landscapeCameraTitle">Landscape Photo Reminder</h2><p>Turn your phone sideways before opening the camera.</p><p class="camera-orientation-help">Landscape photographs provide larger evidence images, clearer assessor visibility and better PDF portfolio pages.</p><label class="camera-reminder-choice"><input type="checkbox" id="hideLandscapeReminder"> <span>Don't show this message again</span></label><div class="camera-orientation-actions"><button class="btn secondary" id="cancelLandscapeCamera">Cancel</button><button class="btn" id="openLandscapeCamera">I'm Ready – Open Camera</button></div></div></div>`);
+ const dialog=document.getElementById('landscapeCameraDialog');
+ document.getElementById('cancelLandscapeCamera').onclick=()=>dialog.remove();
+ document.getElementById('openLandscapeCamera').onclick=()=>{
+  if(document.getElementById('hideLandscapeReminder')?.checked)localStorage.setItem(LANDSCAPE_CAMERA_REMINDER_KEY,'1');
+  dialog.remove();landscapeCameraBypass=input;input.click();
+ };
+}
+function imageFileDimensions(file){return new Promise((resolve,reject)=>{const url=URL.createObjectURL(file),img=new Image();img.onload=()=>{const result={width:img.naturalWidth||img.width,height:img.naturalHeight||img.height};URL.revokeObjectURL(url);resolve(result)};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Unable to read image dimensions'))};img.src=url})}
+async function filesAreLandscape(files){for(const file of [...files]){if(!file.type.startsWith('image/'))continue;const size=await imageFileDimensions(file);if(size.width<=size.height)return false}return true}
+function deliverFilesToCameraInput(input,files){
+ try{const transfer=new DataTransfer();[...files].forEach(file=>transfer.items.add(file));input.files=transfer.files}catch(error){console.warn('Unable to transfer selected gallery files',error)}
+ input._landscapeValidated=true;input.dispatchEvent(new Event('change',{bubbles:true}));
+}
+function showPortraitPhotoRejected(input){
+ closeLandscapeCameraDialog();
+ app.insertAdjacentHTML('beforeend',`<div class="camera-orientation-screen" id="landscapeCameraDialog" role="dialog" aria-modal="true" aria-labelledby="portraitRejectedTitle"><div class="camera-orientation-card"><div class="portrait-rejected-icon" aria-hidden="true">↻</div><h2 id="portraitRejectedTitle">Portrait Photo Detected</h2><p>This photo was taken in portrait and has not been saved.</p><p class="camera-orientation-help">Retake it with your phone turned sideways, or choose an existing photograph from your gallery.</p><div class="camera-orientation-actions stacked"><button class="btn" id="retakeLandscapePhoto">Retake Photo</button><button class="btn secondary" id="chooseLandscapeGallery">Choose From Gallery</button><button class="link-button" id="cancelRejectedPhoto">Cancel</button></div></div></div>`);
+ const dialog=document.getElementById('landscapeCameraDialog');
+ document.getElementById('cancelRejectedPhoto').onclick=()=>dialog.remove();
+ document.getElementById('retakeLandscapePhoto').onclick=()=>{dialog.remove();landscapeCameraBypass=input;input.value='';input.click()};
+ document.getElementById('chooseLandscapeGallery').onclick=()=>{
+  const gallery=document.createElement('input');gallery.type='file';gallery.accept=input.accept||'image/*';gallery.multiple=input.multiple;gallery.className='hide';document.body.appendChild(gallery);
+  gallery.onchange=()=>{const files=gallery.files;if(files?.length){dialog.remove();deliverFilesToCameraInput(input,files)}gallery.remove()};gallery.click();
+ };
+}
+document.addEventListener('click',event=>{
+ const input=event.target;
+ if(!isCameraImageInput(input))return;
+ if(landscapeCameraBypass===input){landscapeCameraBypass=null;return}
+ if(localStorage.getItem(LANDSCAPE_CAMERA_REMINDER_KEY)==='1')return;
+ event.preventDefault();event.stopImmediatePropagation();showLandscapeCameraReminder(input);
+},true);
+document.addEventListener('change',async event=>{
+ const input=event.target;if(!isCameraImageInput(input)||input._landscapeValidated){if(input?._landscapeValidated)delete input._landscapeValidated;return}
+ const files=input.files;if(!files?.length)return;
+ event.stopImmediatePropagation();
+ try{
+  if(await filesAreLandscape(files)){input._landscapeValidated=true;input.dispatchEvent(new Event('change',{bubbles:true}))}
+  else{input.value='';showPortraitPhotoRejected(input)}
+ }catch(error){console.error('Photo orientation check failed',error);input.value='';toast('Unable to check that photo. Please try again.')}
+},true);
 
 async function createUpdateSafetyBackup(){
  const key=`updateSafetyBackup:${APP_VERSION}`;

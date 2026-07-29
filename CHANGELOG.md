@@ -1,3 +1,14 @@
+# v1.38.5 – Landscape Camera Enforcement
+
+- Added a full-screen landscape reminder before every in-app evidence camera opens.
+- Added an optional “Don’t show this message again” preference.
+- Added automatic validation of the actual captured image dimensions.
+- Landscape photographs are accepted and passed to the existing evidence workflow.
+- Portrait or square photographs are rejected and are not saved.
+- Added Retake Photo and Choose From Gallery actions after a rejected capture.
+- Applied globally to all image inputs that open the device camera, including assignments, practical evidence, learner statements, witness evidence, notes, projects and drawing tools.
+- Updated the visible app version and offline cache to v1.38.5.
+
 # v1.38.4 – Complete PDF KSB Evidence Linking
 
 - Fixed learner statements not appearing against their selected KSBs in the PDF KSB Evidence Matrix.
