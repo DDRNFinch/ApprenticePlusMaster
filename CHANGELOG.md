@@ -265,3 +265,11 @@ Added Targeted Revision engine backend helpers.
 - Added local PDF drawing viewer with saved drawing notes.
 - Added camera/photo compare alongside the symbol and hatching libraries.
 - Added clear drawing-legend and measurement accuracy notices.
+
+
+## V1.19 — ProjectMate input and quote-status fix
+- Fixed ProjectMate quantity, labour and overhead fields closing after each character was entered.
+- Project totals now update live without rebuilding the page or removing input focus.
+- Accepted quotations now display in green.
+- Rejected quotations now display in red.
+- Negotiation requests display in amber.
