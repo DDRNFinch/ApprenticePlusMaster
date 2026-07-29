@@ -1,3 +1,19 @@
+# v1.31 — Colour-Coded PDF Evidence Sections
+
+- Added evidence-type colours to exported PDFs only.
+- Practical Assessment pages use deep green.
+- Learner Statement pages use royal blue.
+- Witness and Employer Statement pages use amber.
+- Video Walkthrough pages use purple.
+- Professional Discussion pages use teal.
+- Photo Evidence pages use orange.
+- Knowledge and theory pages use indigo.
+- Supporting documents use slate grey.
+- Specification sheets use dark red.
+- Portfolio covers and indexes retain Apprentice+ green.
+- Added matching page headers, left-edge colour strips, section tabs and footer accents.
+- App interface and official assessment criteria are unchanged.
+
 # v1.30 — PDF Video Index and Feedback Sections
 
 - Replaced video thumbnail pages with one video filename index page.
