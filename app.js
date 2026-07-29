@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3.19';
+const APP_VERSION='V1.3.20';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -775,7 +775,7 @@ function renderAcademyLesson(){
 
 
 
-// v1.3.19 EPA professional-judgement banks: Bricklayer, Site Carpentry and Architectural Joinery
+// v1.3.20 EPA professional-judgement banks: Bricklayer, Site Carpentry and Architectural Joinery
 // Locked MCQ writing standard: realistic workplace judgement, four plausible trade-language answers,
 // no joke/"I do not care" distractors, no official-sounding giveaway, and an explanation for coaching.
 // Questions are deliberately stored as an approved, fixed bank. Nothing is generated at runtime.
@@ -3095,6 +3095,876 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
    explanation:"A team focus means working collaboratively across manufacturing stages to achieve shared production targets and support team members.",
    keyTakeaway:"Collaborate across production stages to support team goals and meet deadlines.",
    id:"arch-epa-v1319-b5-58"
+  }
+ ],
+ "property-maintenance-operative-st0171-v1-1":[
+  {
+   code:"K1",
+   question:"You are managing maintenance schedules for a commercial facility. How do you distinguish between Planned Preventative Maintenance (PPM) and reactive maintenance when allocating resources?",
+   options:[
+    "PPM involves scheduled servicing and inspections to prevent asset failure, whereas reactive maintenance repairs equipment after an unexpected breakdown occurs.",
+    "PPM is only carried out after a complete system shutdown, while reactive maintenance occurs on a fixed monthly calendar.",
+    "PPM applies exclusively to minor cosmetic paint repairs, whereas reactive maintenance applies strictly to fire alarms.",
+    "PPM is performed by external contractors, while reactive maintenance is managed exclusively by apprentices."
+   ],
+   correct:0,
+   explanation:"PPM consists of pre-scheduled tasks designed to keep equipment running efficiently and avoid failures, whereas reactive maintenance responds to unforeseen breakdowns or defects.",
+   keyTakeaway:"PPM prevents failures through scheduled servicing; reactive maintenance repairs active breakdowns.",
+   id:"pmo-epa-v1320-k1-1"
+  },
+  {
+   code:"K2",
+   question:"While inspecting a traditional solid-wall Victorian property compared to a modern timber-frame residential block, what typical structural defect are you most likely to encounter in the solid-wall structure?",
+   options:[
+    "Penetrating damp and mortar degradation due to the lack of a continuous cavity wall and modern damp-proof course.",
+    "Rotten engineered I-joists inside sealed external wall cavity trays.",
+    "Complete failure of lightweight structural insulated panels (SIPs) from internal condensation.",
+    "Corrosion of galvanized wall ties within the 50mm clear air cavity."
+   ],
+   correct:0,
+   explanation:"Solid-wall Victorian properties lack cavity wall insulation gaps and modern DPCs, making them far more vulnerable to penetrating damp and mortar deterioration over time.",
+   keyTakeaway:"Solid masonry walls lack cavities, making them prone to damp penetration and mortar decay.",
+   id:"pmo-epa-v1320-k2-2"
+  },
+  {
+   code:"K3",
+   question:"When preparing to remove loose asbestos-containing textured ceiling coating (Artex) during a lighting refit, what is your primary legal obligation under COSHH and asbestos regulations?",
+   options:[
+    "Stop work immediately, verify whether a licensed or non-licensed specialist procedure/survey is required, and use appropriate RPE/PPE.",
+    "Scrape the coating off wet using a standard hand trowel while wearing a paper nuisance dust mask.",
+    "Dry sand the surface using an orbital sander attached to a standard workshop vacuum cleaner.",
+    "Cover the area with emulsion paint to seal the loose fibres without reporting the finding."
+   ],
+   correct:0,
+   explanation:"Disturbing asbestos requires strict adherence to regulations: stop, check the asbestos register or survey, follow controlled non-licensed work procedures or hire licensed contractors, and wear correct respiratory protection.",
+   keyTakeaway:"Never disturb suspected asbestos without checking surveys and using appropriate controls or specialists.",
+   id:"pmo-epa-v1320-k3-3"
+  },
+  {
+   code:"K4",
+   question:"You are tasked with replacing an external floodlight located 5 metres high on a building wall. How does a formal Risk Assessment mitigate the hazards associated with this task?",
+   options:[
+    "It identifies fall hazards and specifies control measures such as using an inspected MEWP or tower scaffold, harness checks, and ground exclusion zones.",
+    "It transfers all legal liability to the manufacturer of the LED light fitting.",
+    "It allows you to bypass electrical isolation steps if the work takes less than 15 minutes.",
+    "It eliminates the need to wear safety helmets or eye protection at ground level."
+   ],
+   correct:0,
+   explanation:"Risk assessments evaluate specific hazards such as working at height and specify suitable control equipment to reduce risk to an acceptable level.",
+   keyTakeaway:"Risk assessments identify specific hazards and define control measures to keep workers safe.",
+   id:"pmo-epa-v1320-k4-4"
+  },
+  {
+   code:"K5",
+   question:"Under the Building Safety Act and BSI Flex 8670, what key responsibility rests on a Property Maintenance Operative working in a Higher-Risk Residential Building (HRRB)?",
+   options:[
+    "Maintaining the 'golden thread' of building information by accurately recording all structural or fire-safety maintenance alterations.",
+    "Re-certifying main structural foundation calculations every 12 months.",
+    "Ignoring minor alterations to fire doors if requested directly by a tenant.",
+    "Issuing statutory Building Control completion certificates for external wall cladding."
+   ],
+   correct:0,
+   explanation:"The Building Safety Act and BSI Flex 8670 emphasize competence and maintaining the 'golden thread' of accurate safety information, particularly concerning fire and structural safety in HRRBs.",
+   keyTakeaway:"Operatives must maintain fire and structural safety integrity and record changes for the golden thread.",
+   id:"pmo-epa-v1320-k5-5"
+  },
+  {
+   code:"K6",
+   question:"When setting up to repair a floor joist in a busy communal corridor of a care home, what is the correct approach to establishing your work area?",
+   options:[
+    "Erect physical safety barriers, place warning signage, protect surrounding floor coverings with dust sheets, and ensure a clear escape route remains open.",
+    "Leave tools across the corridor floor provided you plan to finish the job before lunchtime.",
+    "Prop emergency exit doors open to allow dust to escape out into main stairwells.",
+    "Perform the repair without barriers, relying on verbal warnings to passing residents."
+   ],
+   correct:0,
+   explanation:"Creating a safe, tidy work environment requires physical segregation, floor protection, clear access and egress routes, and protecting vulnerable site users.",
+   keyTakeaway:"Secure work zones with barriers, protect surroundings, and maintain clear escape routes.",
+   id:"pmo-epa-v1320-k6-6"
+  },
+  {
+   code:"K7",
+   question:"Which pre-use safety check must be performed before using a 110V portable angle grinder to cut steel fence posts?",
+   options:[
+    "Inspect the guard position, check the disc rating matches the tool RPM, inspect the trailing lead, and confirm the PAT test date is valid.",
+    "Remove the side handle and wheel guard to cut closer into narrow wall corners.",
+    "Run the grinder at maximum speed against a concrete floor to check disc balance.",
+    "Replace the grinding disc with a wood-cutting saw blade to complete two jobs at once."
+   ],
+   correct:0,
+   explanation:"Safe power tool usage requires checking guard placement, disc speed ratings, cable condition, and up-to-date electrical safety testing.",
+   keyTakeaway:"Verify guards, disc ratings, lead condition, and PAT inspection status before operating power tools.",
+   id:"pmo-epa-v1320-k7-7"
+  },
+  {
+   code:"K8",
+   question:"What is the mandatory procedure for safe isolation of an electrical circuit before replacing a fused spur in an office bay?",
+   options:[
+    "Isolate the supply at the distribution board, lock off the MCB with a padlock, retain the key, and verify dead with a proved voltage indicator.",
+    "Switch off the wall switch and place a piece of masking tape over the switch rocker.",
+    "Unscrew the faceplate carefully with insulated screwdrivers while the circuit remains live.",
+    "Turn off the main isolator, perform the repair immediately, and turn it back on without testing."
+   ],
+   correct:0,
+   explanation:"Safe isolation requires identifying the supply, isolating, locking off with a unique lock and key, posting warning notices, and proving dead with an approved voltage indicator tested against a proving unit.",
+   keyTakeaway:"Always isolate, lock off, retain the key, and test dead using a proved voltage indicator.",
+   id:"pmo-epa-v1320-k8-8"
+  },
+  {
+   code:"K9",
+   question:"During a routine monthly inspection of emergency lighting and fire exit signage, what preventative maintenance check is required?",
+   options:[
+    "Simulate a mains failure using a test key to ensure luminaires remain illuminated for their rated duration and check sign visibility.",
+    "Disconnect all backup batteries permanently to lower electrical consumption.",
+    "Replace emergency light bulbs annually regardless of whether they are functional or LED units.",
+    "Paint over discolored escape route signs to match adjacent wall finishes."
+   ],
+   correct:0,
+   explanation:"Preventative maintenance of emergency systems requires functional testing to ensure batteries activate luminaires and escape signs remain unobstructed and readable.",
+   keyTakeaway:"Test emergency light functionality via test switches and ensure escape signs remain clearly visible.",
+   id:"pmo-epa-v1320-k9-9"
+  },
+  {
+   code:"K10",
+   question:"You need to drain down a localized section of a domestic direct hot water pipework system to replace a leaking gate valve. What is the correct sequence?",
+   options:[
+    "Isolate the cold feed supply, turn off the water heater, open the lowest drain cock, and open high-level taps to vent air.",
+    "Cut the copper pipe directly with an angle grinder while the system is under full pressure.",
+    "Open all low-level taps while keeping the main incoming stopcock fully open.",
+    "Close all internal drainage taps and heat the pipework with a blowtorch to evaporate residual water."
+   ],
+   correct:0,
+   explanation:"Safe draining requires isolating the incoming water supply, switching off heat sources, opening low drain valves, and opening high taps to break the vacuum.",
+   keyTakeaway:"Isolate supply and heat sources, then open drain cocks and high-level taps to drain water safely.",
+   id:"pmo-epa-v1320-k10-10"
+  },
+  {
+   code:"K11",
+   question:"A ground-floor commercial toilet is backing up due to a blockage in the external underground drainage system. How do you locate and clear the fault safely?",
+   options:[
+    "Inspect downstream inspection chambers (manholes) to locate the blocked section, then clear using drain rods or high-pressure water jetting directed upstream.",
+    "Pour concentrated sulfuric acid directly into the indoor toilet bowl and flush repeatedly.",
+    "Strike the underground PVC drain pipes with a sledgehammer through the lawn to break up solids.",
+    "Cap off the external vent pipe to force water pressure to clear the obstruction."
+   ],
+   correct:0,
+   explanation:"Fault diagnosis involves checking manholes to locate standing water, then inserting rods or jetting equipment from the clean downstream side working back toward the blockage.",
+   keyTakeaway:"Locate blockages via manholes and clear from downstream using rods or water jetting.",
+   id:"pmo-epa-v1320-k11-11"
+  },
+  {
+   code:"K12",
+   question:"To comply with L8 Legionella control guidelines in a commercial building water system, what temperature parameter must be maintained at hot water storage calorifiers?",
+   options:[
+    "Stored at a minimum of 60°C and distributed so hot water reaches at least 50°C at outlets within one minute.",
+    "Stored at 30°C to save heating energy and reduce scalding risks.",
+    "Stored at 40°C continuously without monitoring distribution temperatures.",
+    "Boiled to 100°C every hour continuously using secondary immersion heaters."
+   ],
+   correct:0,
+   explanation:"Legionella bacteria proliferate between 20°C and 45°C. Storing hot water at 60°C or above and delivering it at 50°C or above helps control the bacteria and supports L8 compliance.",
+   keyTakeaway:"Store hot water at 60°C or above and ensure outlets reach 50°C within 60 seconds.",
+   id:"pmo-epa-v1320-k12-12"
+  },
+  {
+   code:"K13",
+   question:"How does a solar photovoltaic (PV) array integration interact with a building's energy management system (EMS)?",
+   options:[
+    "The PV system converts solar radiation into DC power, inverted to AC power, which the EMS prioritizes over grid electricity to lower building operational emissions.",
+    "The PV array stores hot water directly inside central heating radiators during winter months.",
+    "The PV panel generates natural gas to feed backup boiler systems during peak demand periods.",
+    "The EMS converts PV electricity into compressed air to operate pneumatic ventilation dampers."
+   ],
+   correct:0,
+   explanation:"Solar PV generates DC power converted to AC via an inverter. An EMS monitors and prioritizes this green energy for immediate building loads over grid import.",
+   keyTakeaway:"PV systems supply renewable AC electricity that EMS networks prioritize over grid power.",
+   id:"pmo-epa-v1320-k13-13"
+  },
+  {
+   code:"K14",
+   question:"A double-glazed UPVC window unit exhibits internal condensation (misting) between the two glass panes. What is the root defect and correct repair method?",
+   options:[
+    "The peripheral edge seal of the sealed double-glazed unit (IGU) has failed; the complete glass unit must be replaced.",
+    "The UPVC frame has expanded; drill drainage holes through the front glass face to release moisture.",
+    "The friction stay hinges are loose; tighten the hinge screws to clear the internal glass misting.",
+    "The window handle seal is missing; inject silicone sealant into the trickle vent slot."
+   ],
+   correct:0,
+   explanation:"Misting between panes indicates a broken hermetic seal around the Insulated Glass Unit, letting moist air inside. The entire IGU panel must be replaced.",
+   keyTakeaway:"Internal window misting signifies IGU seal failure, requiring complete glass unit replacement.",
+   id:"pmo-epa-v1320-k14-14"
+  },
+  {
+   code:"K15",
+   question:"When repairing a deep hole (50mm depth) in an internal masonry plaster wall, why should you use a backing plaster such as bonding coat before applying finishing plaster?",
+   options:[
+    "Backing plaster builds up depth quickly, provides good adhesion, and minimizes shrinkage cracks before applying a thin 2mm smooth finish coat.",
+    "Finish coat plaster expands when applied thick, causing wall structural collapse.",
+    "Backing plaster is completely waterproof and acts as a primary damp-proof membrane.",
+    "Finish coat plaster cannot be sanded or painted under any circumstances."
+   ],
+   correct:0,
+   explanation:"Deep repairs require a coarse backing plaster to fill depth stably without excessive shrinkage, followed by a thin skim coat for a smooth finish.",
+   keyTakeaway:"Fill deep wall damage with backing plaster first to prevent shrinkage, then skim finish.",
+   id:"pmo-epa-v1320-k15-15"
+  },
+  {
+   code:"K16",
+   question:"Flaking and peeling paintwork is observed on an exterior wooden window sill. What is the primary cause and proper safe disposal method for scraped paint waste?",
+   options:[
+    "Poor surface preparation or moisture ingress behind the paint film; collect lead or chemical paint scrapings and dispose as hazardous waste via licensed routes.",
+    "Excessive paint thickness; wash scrapings down storm water drains using cold water.",
+    "Using oil-based primer under gloss paint; burn scraped paint waste in an open yard incinerator.",
+    "Natural wood expansion; mix paint scrapings into garden soil to act as organic compost."
+   ],
+   correct:0,
+   explanation:"Peeling results from trapped moisture or inadequate keying or priming. Scrapings, especially older paints potentially containing lead or VOCs, must be collected and disposed of safely.",
+   keyTakeaway:"Paint peels due to moisture or poor preparation; waste scrapings must be safely disposed of without polluting drains.",
+   id:"pmo-epa-v1320-k16-16"
+  },
+  {
+   code:"K17",
+   question:"Several wall tiles in a public shower room have debonded from the substrate. What is the most likely cause of this failure?",
+   options:[
+    "Inappropriate adhesive selection for wet environments or tiling directly onto an unprimed, dusty, or water-damaged substrate.",
+    "Using flexible grout instead of solid sand and cement mortar between tile joints.",
+    "Applying tiles in a staggered brick-bond pattern rather than a straight grid layout.",
+    "Soaking porcelain tiles in cold water for 24 hours prior to installation."
+   ],
+   correct:0,
+   explanation:"Tile debonding in wet areas is usually caused by using non-water-resistant adhesive, failing to tank or waterproof the substrate, or poor surface priming.",
+   keyTakeaway:"Ensure water-resistant adhesive is used and substrates are properly primed and waterproofed in wet areas.",
+   id:"pmo-epa-v1320-k17-17"
+  },
+  {
+   code:"K18",
+   question:"Commercial vinyl safety flooring in a kitchen is lifting along a seam line. What repair process prevents liquid from penetrating underneath?",
+   options:[
+    "Clean and re-adhere the vinyl edge using contact adhesive, then hot-weld the joint seam using matching vinyl weld rod.",
+    "Secure the lifted vinyl edge with open steel staples every 50mm along the seam.",
+    "Fill the open joint gap with standard decorating caulk and press flat with a hand roller.",
+    "Cut away a 300mm strip of flooring and leave the bare concrete subfloor exposed."
+   ],
+   correct:0,
+   explanation:"Repairing commercial vinyl requires full adhesive re-bonding to the subfloor followed by hot-grooving and hot-rod welding to create an airtight, waterproof seal.",
+   keyTakeaway:"Re-bond lifted vinyl with suitable adhesive and hot-weld seams to restore water-tight integrity.",
+   id:"pmo-epa-v1320-k18-18"
+  },
+  {
+   code:"K19",
+   question:"You are repointing a damaged section of external brickwork on a 1930s property showing signs of spalling brick faces. What mortar mix should be used?",
+   options:[
+    "A soft, vapor-permeable sand and lime mortar mix that allows the masonry to breathe and prevents further frost damage to bricks.",
+    "A dense, high-strength 1:1 OPC and sharp sand mix.",
+    "Pure plaster of Paris mixed with PVA bonding agent.",
+    "Expandable polyurethane foam coated with clear silicone sealant."
+   ],
+   correct:0,
+   explanation:"Mortar must be softer and more permeable than the surrounding bricks. Modern hard cement traps moisture in historic bricks, causing spalling during freeze-thaw cycles.",
+   keyTakeaway:"Repoint with breathable mortar softer than the brickwork to prevent frost spalling.",
+   id:"pmo-epa-v1320-k19-19"
+  },
+  {
+   code:"K20",
+   question:"After a storm, water is leaking through a flat roof covered with bituminous felt. What temporary emergency repair method should be applied while waiting for full renewal?",
+   options:[
+    "Clean away debris, dry the surface around the tear, and apply a fiber-reinforced bitumen emergency repair compound or patch coat.",
+    "Cover the entire roof area with loose dry sand to absorb water.",
+    "Flame-torch a new three-layer felt system directly over wet, standing water puddles.",
+    "Puncture additional holes in lower ceiling plaster to let water drain faster into buckets."
+   ],
+   correct:0,
+   explanation:"Emergency flat roof repairs require clearing loose gravel and dirt and applying an all-weather, fiber-reinforced bituminous roof mastic or emergency acrylic compound.",
+   keyTakeaway:"Clean the area and apply fiber-reinforced bituminous compound for temporary flat roof seal repairs.",
+   id:"pmo-epa-v1320-k20-20"
+  },
+  {
+   code:"K21",
+   question:"A timber closeboard fence post has rotted at ground level, causing the fence line to lean. What is the most cost-effective, durable repair method?",
+   options:[
+    "Install a concrete repair spur set in Postcrete alongside the post and bolt it securely to the sound upper timber section.",
+    "Wrap gaffer tape around the rotted ground-level timber joint.",
+    "Mound garden soil 300mm higher around the timber base to hold it upright.",
+    "Screw a wooden panel directly to adjacent tree branches for support."
+   ],
+   correct:0,
+   explanation:"Concrete repair spurs set in concrete extend the life of fence posts rotted at ground level without requiring full fence dismantle and post replacement.",
+   keyTakeaway:"Use concrete repair spurs set in Postcrete to repair timber posts rotted at ground level.",
+   id:"pmo-epa-v1320-k21-21"
+  },
+  {
+   code:"K22",
+   question:"A sunken concrete block paving area near a building entrance presents a trip hazard. What remediation process restores a safe, level walkway?",
+   options:[
+    "Lift the sunken pavers, excavate degraded sub-base, compact fresh sharp sand or aggregate, re-lay pavers level, and sweep in jointing sand.",
+    "Pour liquid asphalt directly over the sunken pavers without lifting them.",
+    "Grind down surrounding high pavers using a diamond wheel until level with the dip.",
+    "Place a rubber doormat over the sunken area to hide the drop."
+   ],
+   correct:0,
+   explanation:"Repairing block paving requires lifting blocks, correcting and compacting the underlying bedding sand or sub-base, re-laying blocks flush, and re-sanding joints.",
+   keyTakeaway:"Lift pavers, level and compact the sub-base and sand bed, re-lay blocks flush, and sand joints.",
+   id:"pmo-epa-v1320-k22-22"
+  },
+  {
+   code:"K23",
+   question:"Where can a Property Maintenance Operative find authoritative technical specifications regarding maximum allowable clear distances between stair balusters?",
+   options:[
+    "UK Building Regulations Approved Document K (Protection from falling, collision and impact).",
+    "COSHH essential safety data sheet section 4.",
+    "The delivery docket supplied with raw timber lengths.",
+    "The manufacturer's instruction leaflet for hand-held circular saws."
+   ],
+   correct:0,
+   explanation:"Approved Document K of the UK Building Regulations defines structural geometry rules, including the requirement that a 100mm sphere cannot pass through stair guarding gaps.",
+   keyTakeaway:"Building Regulations Approved Documents provide technical compliance criteria for building works.",
+   id:"pmo-epa-v1320-k23-23"
+  },
+  {
+   code:"K24",
+   question:"When logging completed job details and tenant information into a mobile maintenance management app, what GDPR and Data Protection requirement must you follow?",
+   options:[
+    "Ensure device passwords or biometrics are active, lock screens when unattended, and record only necessary job information without sharing personal data inappropriately.",
+    "Store tenant contact telephone numbers in a publicly readable notebook left on your van dashboard.",
+    "Share tenant door access codes on public social media channels to coordinate sub-contractor entry.",
+    "Email full tenant medical and financial history to material supply merchants."
+   ],
+   correct:0,
+   explanation:"Data protection legislation requires keeping personal data secure, using encrypted or password-protected devices, and limiting recorded data strictly to job operational needs.",
+   keyTakeaway:"Protect digital maintenance devices with passwords and handle personal data confidentially.",
+   id:"pmo-epa-v1320-k24-24"
+  },
+  {
+   code:"K25",
+   question:"A maintenance department notes recurring hot-water circulation pump failures across multiple sites. How does continuous quality improvement resolve this issue?",
+   options:[
+    "Analyze root causes, identify improper system balancing or strainer debris, update the PPM checklist procedure, and re-train staff.",
+    "Order cheaper replacement pumps in bulk to replace failed units faster.",
+    "Ignore the pattern as long as replacement pumps arrive within 48 hours.",
+    "Instruct tenants to run hot water taps continuously to prevent pump overload."
+   ],
+   correct:0,
+   explanation:"Quality assurance and continuous improvement use root-cause analysis on repeated faults to modify procedures, preventing future occurrences and improving efficiency.",
+   keyTakeaway:"Investigate recurring defects to address root causes and improve standard PPM procedures.",
+   id:"pmo-epa-v1320-k25-25"
+  },
+  {
+   code:"K26",
+   question:"Under the Environmental Protection Act Duty of Care, what document must you obtain when transferring mixed construction waste from a job site to an external disposal company?",
+   options:[
+    "A controlled Waste Transfer Note (WTN) signed by both parties, detailing waste types and verifying the carrier's license number.",
+    "A verbal confirmation from the truck driver that the waste will be buried.",
+    "A standard store purchase receipt for new timber materials.",
+    "An internal site risk assessment form covering working at height."
+   ],
+   correct:0,
+   explanation:"Duty of Care laws mandate that taking waste off-site requires a signed Waste Transfer Note and checking that the waste carrier holds a valid Environment Agency permit.",
+   keyTakeaway:"Always issue and retain Waste Transfer Notes when transferring waste to licensed carriers.",
+   id:"pmo-epa-v1320-k26-26"
+  },
+  {
+   code:"K27",
+   question:"You are reporting a severe roof truss failure to a non-technical building owner versus a structural engineer. How should your communication style adapt?",
+   options:[
+    "Explain the safety risk and required access restrictions simply to the owner, while providing exact technical terminology and structural span dimensions to the engineer.",
+    "Use complex engineering formulas when speaking to the owner to demonstrate technical authority.",
+    "Avoid informing the building owner about the collapse risk to prevent alarming them.",
+    "Use informal slang terminology when sending formal reports to the structural engineer."
+   ],
+   correct:0,
+   explanation:"Effective communication requires tailoring technical language: plain, clear, non-jargon explanations for clients and occupants, and precise technical terms for engineering professionals.",
+   keyTakeaway:"Adapt technical language to match the understanding of non-technical stakeholders versus trade peers.",
+   id:"pmo-epa-v1320-k27-27"
+  },
+  {
+   code:"K28",
+   question:"A tenant is frustrated because a replacement radiator part is delayed by two days. How do you maintain professional customer service?",
+   options:[
+    "Contact the tenant proactively, explain the reason for the delay calmly, provide an updated arrival time, and ensure temporary heating is offered if needed.",
+    "Avoid answering the tenant's phone calls until the radiator part arrives at the depot.",
+    "Blame the supplier using aggressive language and tell the tenant to call the manufacturer directly.",
+    "Arrive at the property unannounced late at night to explain the situation in person."
+   ],
+   correct:0,
+   explanation:"Good customer service relies on proactive communication, setting realistic expectations, demonstrating empathy, and offering practical interim solutions when delays occur.",
+   keyTakeaway:"Communicate delays proactively, remain polite, and provide practical interim solutions.",
+   id:"pmo-epa-v1320-k28-28"
+  },
+  {
+   code:"K29",
+   question:"You are coordinating a washroom refurbishment involving plumbing, tiling, and electrical works. How do trade inter-dependencies dictate task sequencing?",
+   options:[
+    "First-fix plumbing and electrical, complete plastering and wall tiling, then second-fix electrical and plumbing fittings after decoration.",
+    "Complete final wall painting and floor tiling before installing internal concealed pipework.",
+    "Mount light switches and washbasins onto bare studs before carpenters erect wall frames.",
+    "Fit second-fix electrical sockets while plumbers are pressure testing open water pipes directly overhead."
+   ],
+   correct:0,
+   explanation:"Property maintenance depends on logical sequencing: first-fix services first, followed by wet trades and board linings, then decorative finishes, and finally second-fix fit-outs.",
+   keyTakeaway:"Sequence works logically: first-fix services, substrates and finishes, then second-fix fit-out.",
+   id:"pmo-epa-v1320-k29-29"
+  },
+  {
+   code:"K30",
+   question:"While working in a public sector facility, you notice a vulnerable resident displaying signs of unexplained physical injury and distress. What is your responsibility under Safeguarding policy?",
+   options:[
+    "Report your observations immediately to the designated Safeguarding Lead following the organization's reporting procedure.",
+    "Confront other residents aggressively to investigate who caused the injury.",
+    "Promise the resident you will keep their situation completely secret from management.",
+    "Ignore the situation as safeguarding concerns lie outside a maintenance operative's role."
+   ],
+   correct:0,
+   explanation:"All operatives working in public and residential environments have a duty of care under Safeguarding and Prevent policies to promptly report concerns to designated safeguarding leads.",
+   keyTakeaway:"Report all safeguarding or welfare concerns immediately to designated organizational leads.",
+   id:"pmo-epa-v1320-k30-30"
+  },
+  {
+   code:"K31",
+   question:"A client asks you to perform a complex gas boiler combustion test. You are qualified in property maintenance but do not hold Gas Safe registration. What should you do?",
+   options:[
+    "Decline the task, explaining that it exceeds your legal authority and competence, and escalate it to a registered Gas Safe engineer.",
+    "Attempt the test using online videos while working carefully.",
+    "Perform the combustion check as long as a supervisor is present on site.",
+    "Isolate the gas valve permanently without informing the customer or recording the action."
+   ],
+   correct:0,
+   explanation:"Recognizing personal limits of competence is critical for safety and legal compliance. Unregistered personnel must never carry out gas work.",
+   keyTakeaway:"Never exceed your legal authority; refer specialized tasks like gas fitting to certified specialists.",
+   id:"pmo-epa-v1320-k31-31"
+  },
+  {
+   code:"S1",
+   question:"You have a daily work list containing four tasks: an emergency water leak, a scheduled emergency light test, replacing a blown lamp, and repairing a door latch. How do you plan your sequence?",
+   options:[
+    "Isolate and repair the emergency water leak first, then perform scheduled emergency light tests, and finally complete minor repairs.",
+    "Replace the blown lamp first, leave the water leak until the end of the shift, and ignore the light test.",
+    "Complete tasks in strict alphabetical order based on location room names.",
+    "Carry out the easiest job first regardless of emergency risk to finish early."
+   ],
+   correct:0,
+   explanation:"Sequencing routine work requires prioritizing active hazards and emergencies before PPM tasks and low-priority cosmetic repairs.",
+   keyTakeaway:"Prioritize active leaks and critical safety risks before scheduled PPM and minor repairs.",
+   id:"pmo-epa-v1320-s1-32"
+  },
+  {
+   code:"S2",
+   question:"You need to replace damaged fire-door intumescent seals during maintenance. How do you ensure the replacement components comply with regulations?",
+   options:[
+    "Check the fire door manufacturer's specification matrix and select identical, certified intumescent seal dimensions and fire rating such as FD30 or FD60.",
+    "Fit generic rubber draft excluder strips from a local DIY shop.",
+    "Fill the rebate gap with standard silicone sealant.",
+    "Use undersized intumescent strips and fill gaps with wooden wedges."
+   ],
+   correct:0,
+   explanation:"Fire safety components must strictly match the fire door test evidence and manufacturer specifications to maintain compliance and fire resistance.",
+   keyTakeaway:"Match fire door seals strictly to tested manufacturer specifications and ratings.",
+   id:"pmo-epa-v1320-s2-33"
+  },
+  {
+   code:"S3",
+   question:"When preparing to work inside a shallow ceiling void where overhead electrical cables are present, how do you comply with statutory health and safety rules?",
+   options:[
+    "Carry out a risk assessment, safely isolate nearby electrical circuits, use low-voltage lighting, and wear a bump cap and safety glasses.",
+    "Reach into the void using uninsulated metal tools without isolating power.",
+    "Pull trailing cables out of the way using wet leather gloves.",
+    "Work in the dark to avoid touching electrical components."
+   ],
+   correct:0,
+   explanation:"Compliance requires risk assessment, isolating hazards such as live cables, utilizing suitable head and eye PPE, and ensuring safe working conditions.",
+   keyTakeaway:"Assess risks, isolate electrical hazards, and wear appropriate protective gear in ceiling voids.",
+   id:"pmo-epa-v1320-s3-34"
+  },
+  {
+   code:"S4",
+   question:"You are clearing a blocked outdoor drain gulley on a public footpath. How do you organize the workplace to satisfy your risk assessment?",
+   options:[
+    "Set up safety cones and pedestrian barrier tape around the gulley, wear hi-vis clothing and heavy nitrile gloves, and keep tools within the barrier zone.",
+    "Leave the manhole cover wide open while walking away to fetch tools from the van.",
+    "Bucket drain sludge directly across the active public footway without warning signs.",
+    "Perform the work at night in unlit conditions without high-visibility clothing."
+   ],
+   correct:0,
+   explanation:"Organizing a workplace safely involves setting up physical barriers, warning signs, wearing appropriate PPE, and preventing hazards to the public.",
+   keyTakeaway:"Erect barrier zones around open excavations and manholes and wear high-visibility PPE.",
+   id:"pmo-epa-v1320-s4-35"
+  },
+  {
+   code:"S5",
+   question:"When installing a replacement extract fan in a domestic bathroom, how do you comply with Building Regulations Approved Documents F and P?",
+   options:[
+    "Ensure minimum extraction airflow rates are achieved, ducting exhausts directly outside, and electrical connections meet Part P zone requirements.",
+    "Vent the moist exhaust air directly into an unventilated attic space.",
+    "Connect the fan to a lighting circuit using uninsulated bell wire.",
+    "Reduce ducting diameter down to 25mm to avoid drilling standard core holes."
+   ],
+   correct:0,
+   explanation:"Approved Document F mandates correct extraction rates routed to outside air; Approved Document P mandates safe electrical installation in wet zones.",
+   keyTakeaway:"Route ventilation ductwork directly outside and observe electrical zone rules.",
+   id:"pmo-epa-v1320-s5-36"
+  },
+  {
+   code:"S6",
+   question:"You are replacing broken roof slates from a lean-to roof structure. How do you implement safe working practices for access?",
+   options:[
+    "Use a correctly tied-off ladder to access a properly erected roof ladder, setting up ground warning barriers below the eaves line.",
+    "Climb directly onto fragile roof slates wearing smooth-soled trainers.",
+    "Stand on top of a wheelbarrow positioned on uneven garden soil.",
+    "Throw broken slate pieces down onto the access path without checking below."
+   ],
+   correct:0,
+   explanation:"Safe access to pitched roofs requires secured access ladders combined with specialized roof ladders to distribute weight, plus ground drop-zone protection.",
+   keyTakeaway:"Use secured access equipment, specialized roof ladders, and establish drop zones below.",
+   id:"pmo-epa-v1320-s6-37"
+  },
+  {
+   code:"S7",
+   question:"You need to cut a sheet of 18mm plywood using a portable circular saw. How do you verify correct tool functioning before starting?",
+   options:[
+    "Check that the lower blade guard snaps back automatically, inspect the blade for missing teeth, check cable integrity, and test the off-switch trigger.",
+    "Lock the retractable lower guard open using a wooden wedge.",
+    "Use a grinding disc fitted onto the circular saw arbor.",
+    "Bypass the safety dead-man trigger switch with electrical tape."
+   ],
+   correct:0,
+   explanation:"Safe tool operation requires verifying safety guards move freely and return automatically, blades are intact, and switch controls function correctly.",
+   keyTakeaway:"Confirm automatic guard operation, blade integrity, and switch controls before cutting.",
+   id:"pmo-epa-v1320-s7-38"
+  },
+  {
+   code:"S8",
+   question:"Before replacing a faulty 230V immersion heater element, how do you execute safe electrical isolation?",
+   options:[
+    "Isolate at the DP switch or MCB, lock off with a padlock, tag out, test your voltage indicator on a proving unit, verify dead at the element terminals, and re-prove the indicator.",
+    "Turn off the wall switch and proceed directly without testing voltage.",
+    "Switch off the main stopcock and start unscrewing wires immediately.",
+    "Cut electrical cables with insulated pliers while keeping the breaker energized."
+   ],
+   correct:0,
+   explanation:"The standard safe isolation procedure requires isolate, lock off, tag, prove the voltage tester, test circuits for dead, and re-test the voltage tester.",
+   keyTakeaway:"Follow the full Safe Isolation Procedure: isolate, lock, prove tester, test dead, and re-prove.",
+   id:"pmo-epa-v1320-s8-39"
+  },
+  {
+   code:"S9",
+   question:"During routine testing of a commercial fire alarm system via a manual call point, the alarm fails to activate the sounders or signal the panel. What action must you take?",
+   options:[
+    "Log the failure immediately in the fire logbook, notify the responsible person or building manager, and escalate for urgent specialist repair.",
+    "Ignore the failure and re-test the system in six months.",
+    "Silence the main panel power supply permanently to clear fault lights.",
+    "Melt the call point glass reset key inside the housing to hold the contact down."
+   ],
+   correct:0,
+   explanation:"Emergency system failures require immediate documentation in statutory logbooks and prompt escalation to ensure safety life-systems are restored without delay.",
+   keyTakeaway:"Document emergency system failures immediately in safety logs and escalate for repair.",
+   id:"pmo-epa-v1320-s9-40"
+  },
+  {
+   code:"S10",
+   question:"A kitchen mixer tap is leaking profusely from the spindle head. How do you perform the repair cleanly?",
+   options:[
+    "Isolate local service valves under the sink, open tap handles to relieve residual water pressure, disassemble the tap valve, and replace internal O-rings or cartridge.",
+    "Wrap string tightly around the exterior of the tap spout while the supply remains under pressure.",
+    "Hit the brass body with a steel hammer to tighten internal threads.",
+    "Solder the tap spout closed completely using lead-free solder."
+   ],
+   correct:0,
+   explanation:"Plumbing repairs require isolating water, venting system pressure, dismantling components safely, and renewing worn internal seals or cartridges.",
+   keyTakeaway:"Isolate supply, depressurize, dismantle tap assembly, and renew worn cartridges or seals.",
+   id:"pmo-epa-v1320-s10-41"
+  },
+  {
+   code:"S11",
+   question:"An external rainwater downpipe has snapped at a socket joint, causing rainwater to saturate the masonry wall. How do you repair it?",
+   options:[
+    "Cut out the damaged pipe section, clean pipe ends, and install a replacement plastic downpipe section using a pipe connector and pipe clip assembly.",
+    "Wrap the cracked joint with cloth duct tape.",
+    "Divert the gutter outlet into an open top-floor window.",
+    "Fill the interior of the downpipe with expanding foam to block water entry."
+   ],
+   correct:0,
+   explanation:"External drainage repairs involve removing damaged sections and fitting correct matching replacement components secured with purpose-made socket couplers.",
+   keyTakeaway:"Cut out broken sections cleanly and fit purpose-made replacement pipe fittings.",
+   id:"pmo-epa-v1320-s11-42"
+  },
+  {
+   code:"S12",
+   question:"A mechanical ventilation heat recovery (MVHR) unit filter indicator shows a clogged warning light. What maintenance step is required?",
+   options:[
+    "Isolate electrical power to the unit, remove dirty filters, clean or install new manufacturer-specified filter inserts, reset the indicator, and restore power.",
+    "Remove dirty filters permanently and operate the system without filtration.",
+    "Spray liquid oil directly onto dirty filter media while the fan operates.",
+    "Bypass the MVHR control board using jump wires to eliminate warning lights."
+   ],
+   correct:0,
+   explanation:"MVHR maintenance requires safe power isolation, clearing or replacing filter media with correct parts, and clearing system maintenance alerts.",
+   keyTakeaway:"Isolate power, replace dirty MVHR filters with specified parts, and reset system monitors.",
+   id:"pmo-epa-v1320-s12-43"
+  },
+  {
+   code:"S13",
+   question:"A wooden sash window frame is binding and refusing to slide smoothly. How do you restore functional operation using joinery skills?",
+   options:[
+    "Remove staff beads, ease sticking sash edges using a hand plane, lubricate pulley tracks with paraffin wax, and re-hang with correct balance weights.",
+    "Force the window open using a heavy crowbar and nail it shut permanently.",
+    "Cut away lower window sills completely with an electric chainsaw.",
+    "Apply thick gloss paint over dirty pulley wheels and sash cords."
+   ],
+   correct:0,
+   explanation:"Repairing sash windows involves dismantling perimeter beads, easing high spots on meeting rails or stiles with joinery hand tools, and maintaining pulley mechanisms.",
+   keyTakeaway:"Remove retaining beads, plane down sticking timber edges, and service balance mechanisms.",
+   id:"pmo-epa-v1320-s13-44"
+  },
+  {
+   code:"S14",
+   question:"You are repairing a damaged plasterboard section where a door handle has punched a 100mm hole. How do you prepare and fill the repair?",
+   options:[
+    "Square off the damaged area, fix a timber backing batten or plasterboard patch, apply jointing tape over seams, and apply filler flushed smooth.",
+    "Stuff loose newspaper into the cavity and paint over it immediately.",
+    "Fill the entire wall cavity solid with mixed masonry sand and cement mortar.",
+    "Glue a sheet of cardboard over the hole using PVA adhesive."
+   ],
+   correct:0,
+   explanation:"Plasterboard repairs require cutting out damaged material square, installing solid backing supports, scrim taping joints to prevent cracking, and feathering joint compound.",
+   keyTakeaway:"Square off damage, install backing or patches, tape joints, and apply smooth joint compound.",
+   id:"pmo-epa-v1320-s14-45"
+  },
+  {
+   code:"S15",
+   question:"You are decorating a newly plastered office room. How do you prepare the fresh plaster surface before applying contract emulsion?",
+   options:[
+    "Ensure plaster is fully dry, lightly sand imperfections, apply a mist coat of diluted emulsion to seal suction, then apply full coats.",
+    "Apply two coats of full-strength solvent gloss paint directly onto damp plaster.",
+    "Coat the wall with engine oil before applying emulsion paint.",
+    "Apply un-diluted heavy vinyl wallpaper paste directly onto powdery dry plaster."
+   ],
+   correct:0,
+   explanation:"Fresh plaster requires drying time, light sanding, and a breathable mist coat to penetrate and seal surface suction before finishing coats.",
+   keyTakeaway:"Apply a diluted mist coat to fresh dry plaster to seal high suction before full paint coats.",
+   id:"pmo-epa-v1320-s15-46"
+  },
+  {
+   code:"S16",
+   question:"You are replacing three cracked ceramic tiles on a splashback. How do you prepare the substrate before placing new tiles?",
+   options:[
+    "Rake out surrounding grout, carefully rake or chisel away old tiles and hard adhesive down to a clean flat substrate, and prime before re-tiling.",
+    "Stick new tiles directly on top of loose cracked tiles using mastic tape.",
+    "Fill cracks with oil paint and skip tile replacement.",
+    "Hammer new tiles into place over high ridges of old adhesive."
+   ],
+   correct:0,
+   explanation:"Successful tile replacement requires isolating broken tiles by scoring grout lines, removing tiles safely, chipping old adhesive flat, and priming the substrate.",
+   keyTakeaway:"Isolate damaged tiles, clear old adhesive back to a flat clean substrate, and prime before re-laying.",
+   id:"pmo-epa-v1320-s16-47"
+  },
+  {
+   code:"S17",
+   question:"You need to replace a damaged 300mm carpet tile in an office corridor floor layout. How do you execute the repair?",
+   options:[
+    "Peel up the damaged tile, scrape clean old adhesive bed, apply tackifier adhesive, cut matching new tile to size using a utility knife, and press flush.",
+    "Cut out a circle in the damaged carpet tile and fill the gap with silicone.",
+    "Staple a piece of loose household rug over the damaged carpet tile.",
+    "Glue the new carpet tile upside down using polyurethane wood glue."
+   ],
+   correct:0,
+   explanation:"Carpet tile repairs involve lifting damaged units, preparing subfloors, applying non-permanent tackifier adhesive, and accurately cutting and fitting replacement tiles.",
+   keyTakeaway:"Remove damaged tiles, re-apply carpet tackifier adhesive, and cut replacement tiles to a tight fit.",
+   id:"pmo-epa-v1320-s17-48"
+  },
+  {
+   code:"S18",
+   question:"A wooden post on a timber boundary garden railing is loose due to decayed timber ground fixings. How do you carry out a responsive repair?",
+   options:[
+    "Excavate around the loose post base, cut away rotten timber, support rails, set a new pressure-treated timber post in rapid-setting concrete, and re-fix rails.",
+    "Tie the railing to a nearby drainage downpipe using plastic cable ties.",
+    "Lean timber offcuts against the railing without setting fixings in ground.",
+    "Mound loose topsoil around the base without compacting."
+   ],
+   correct:0,
+   explanation:"Responsive repairs to ground structures require excavating degraded foundations, renewing structural posts with treated timber and concrete, and re-attaching rails securely.",
+   keyTakeaway:"Dig out failed post foundations, install treated posts set in concrete, and re-secure rails.",
+   id:"pmo-epa-v1320-s18-49"
+  },
+  {
+   code:"S19",
+   question:"You are servicing an unfamiliar commercial thermostatic mixing valve (TMV). How do you use technical literature to guide your maintenance procedure?",
+   options:[
+    "Consult the manufacturer's technical manual for exploded parts diagrams, strainer cleaning sequences, and specific calibration temperature settings.",
+    "Guess internal component arrangements by forcing internal springs out with pliers.",
+    "Discard technical datasheets and adjust temperature settings to maximum.",
+    "Replace internal seals with non-standard rubber O-rings cut from hosepipe."
+   ],
+   correct:0,
+   explanation:"Technical literature provides precise instructions for servicing complex components like TMVs, detailing maintenance steps, filter cleaning, and safe temperature calibration.",
+   keyTakeaway:"Use manufacturer datasheets for step-by-step disassembly, strainer maintenance, and thermal setting.",
+   id:"pmo-epa-v1320-s19-50"
+  },
+  {
+   code:"S20",
+   question:"Upon completing a water hygiene temperature inspection across twenty outlet points, how should test data be formally recorded?",
+   options:[
+    "Enter exact temperature readings, outlet locations, date, and technician name into the digital facilities compliance logbook or paper log sheets.",
+    "Jot down pass or fail notes on a scrap cardboard box and dispose of it after your shift.",
+    "Record temperature readings only if they fail to meet compliance criteria.",
+    "Memorize the numbers without writing them down."
+   ],
+   correct:0,
+   explanation:"Compliance tracking requires structured, accurate recording of statutory data including location, date, values, and inspector details.",
+   keyTakeaway:"Log compliance inspection readings accurately on approved digital or written maintenance records.",
+   id:"pmo-epa-v1320-s20-51"
+  },
+  {
+   code:"S21",
+   question:"How do you perform a quality self-inspection after fitting a replacement timber fire door leaf?",
+   options:[
+    "Check door gaps stay between 2mm and 4mm using a feeler gauge, verify latch operation, test intumescent seal contact, and confirm the door closer shuts the leaf fully.",
+    "Verify that the door opens halfway and leave without testing latching function.",
+    "Ensure the gap under the door exceeds 25mm to avoid trimming bottom timber edges.",
+    "Paint over non-compliant 10mm frame gaps using thick intumescent paint."
+   ],
+   correct:0,
+   explanation:"Inspecting fire door installations against specification requires checking perimeter gaps, drop seals or threshold gaps, self-closing hardware, and latching engagement.",
+   keyTakeaway:"Inspect completed work using feeler gauges to confirm compliance with regulatory gap limits.",
+   id:"pmo-epa-v1320-s21-52"
+  },
+  {
+   code:"S22",
+   question:"You are clearing waste following a plumbing and radiator replacement job. How do you comply with environmental waste segregation rules?",
+   options:[
+    "Separate scrap copper and brass metal for recycling, drain residual chemical inhibitor into sealable containers, and segregate general packaging.",
+    "Throw old copper pipes, packaging, and liquid chemical waste together into an open skip.",
+    "Pour system chemical sludge down an external storm water drain.",
+    "Burn cardboard packaging and old plastic radiator valves on site."
+   ],
+   correct:0,
+   explanation:"Proper waste segregation requires separating recyclable metals, collecting hazardous chemical fluids separately, and managing packaging waste responsibly.",
+   keyTakeaway:"Segregate scrap metals, chemicals, and packaging into distinct recycling and waste streams.",
+   id:"pmo-epa-v1320-s22-53"
+  },
+  {
+   code:"S23",
+   question:"You are explaining a complex boiler system fault to a building manager and a heating engineer simultaneously. How do you adapt your communication?",
+   options:[
+    "Provide the manager with a high-level operational impact summary and timeline, while discussing specific pressure differential values and fault codes with the engineer.",
+    "Use heavy technical jargon exclusively so the manager feels excluded.",
+    "Refuse to talk to the heating engineer directly.",
+    "Blame the building manager in front of sub-contractors for system failures."
+   ],
+   correct:0,
+   explanation:"Adapting communication requires providing high-level operational summaries to management while using detailed technical terms when briefing trade specialists.",
+   keyTakeaway:"Tailor details: clear operational impact for managers, technical codes and metrics for specialists.",
+   id:"pmo-epa-v1320-s23-54"
+  },
+  {
+   code:"S24",
+   question:"While repairing a light fitting inside an occupied office, an employee complains about noise levels. How do you handle customer service effectively?",
+   options:[
+    "Acknowledge their concern politely, explain the quick timeframe required to complete noisy steps, and offer to reschedule loud tasks during lunch breaks.",
+    "Tell the employee to leave the office immediately if they dislike noise.",
+    "Increase power tool usage speed to intentionally create more noise.",
+    "Ignore the employee and refuse to answer their questions."
+   ],
+   correct:0,
+   explanation:"Effective customer service involves active listening, courteous explanation, and offering practical adjustments to minimize disturbance to building occupants.",
+   keyTakeaway:"Acknowledge occupant concerns courteously and adjust noisy schedules where practical.",
+   id:"pmo-epa-v1320-s24-55"
+  },
+  {
+   code:"S25",
+   question:"While carrying out routine maintenance, you discover severely degraded electrical main busbars exhibiting signs of arcing inside a primary distribution panel. What is the correct action?",
+   options:[
+    "Recognize the hazard exceeds your authority, immediately isolate and secure the area, report the emergency fault, and escalate to a qualified industrial electrician.",
+    "Attempt to file away burn marks on live busbars using a metal hand file.",
+    "Wrap plastic insulation tape around live primary busbars.",
+    "Close the panel door and leave site without informing anyone."
+   ],
+   correct:0,
+   explanation:"When encountering severe hazards beyond your competence level, you must secure the immediate danger zone, report the emergency, and escalate to authorized specialists.",
+   keyTakeaway:"Isolate high-risk hazards beyond your competence and escalate immediately to qualified specialists.",
+   id:"pmo-epa-v1320-s25-56"
+  },
+  {
+   code:"B1",
+   question:"You are replacing old fluorescent light fittings across a 3-story office building. How do you demonstrate a commitment to promoting sustainable working practices?",
+   options:[
+    "Upgrade fittings to high-efficiency LED units, install presence sensors, and send old mercury tubes to dedicated hazardous recycling facilities.",
+    "Replace old fluorescent tubes with higher-wattage incandescent lamps.",
+    "Dispose of all old fluorescent tubes inside standard general refuse bins.",
+    "Leave lights running 24/7 during installation without installing energy controls."
+   ],
+   correct:0,
+   explanation:"Promoting sustainability involves installing energy-efficient systems and ensuring hazardous waste such as mercury tubes is recycled responsibly.",
+   keyTakeaway:"Prioritize energy-efficient components and route hazardous waste to specialized recycling facilities.",
+   id:"pmo-epa-v1320-b1-57"
+  },
+  {
+   code:"B2",
+   question:"You notice a contractor working on a mobile scaffold tower with unlocked caster wheels and missing guardrails. How do you demonstrate prioritizing health and safety?",
+   options:[
+    "Stop the unsafe work activity immediately, explain the hazard to the contractor, and report the safety breach to the site manager.",
+    "Walk past quickly to avoid getting involved in a disagreement.",
+    "Borrow tools from the contractor while they balance on the unsafe tower.",
+    "Take photographs from a distance and post them online without taking corrective action."
+   ],
+   correct:0,
+   explanation:"Prioritizing health and safety requires intervention when observing unsafe acts, stopping dangerous work, and escalating safety breaches immediately.",
+   keyTakeaway:"Intervene and stop unsafe work practices immediately to protect site safety.",
+   id:"pmo-epa-v1320-b2-58"
+  },
+  {
+   code:"B3",
+   question:"You are assigned a list of ten responsive maintenance work orders for the day. How do you demonstrate taking responsibility for completing your work?",
+   options:[
+    "Manage your time effectively, complete repairs to required standards, re-stock your van at the end of the shift, and ensure all job tickets are closed out accurately.",
+    "Complete three quick jobs and mark the remaining complex jobs as access denied without visiting them.",
+    "Leave incomplete job sites dirty for night cleaning staff to resolve.",
+    "Pass your assigned work tickets to another operative without checking their availability."
+   ],
+   correct:0,
+   explanation:"Taking personal responsibility means taking ownership of tasks from start to finish, maintaining quality standards, managing time, and completing documentation.",
+   keyTakeaway:"Take full ownership of task completion, work quality, time management, and job reporting.",
+   id:"pmo-epa-v1320-b3-59"
+  },
+  {
+   code:"B4",
+   question:"Your maintenance team must prepare a facility for a major compliance audit in two days. How do you demonstrate a strong team focus?",
+   options:[
+    "Coordinate with colleagues, offer assistance on lagging tasks outside your usual remit, and share tools to ensure the team meets the audit deadline.",
+    "Refuse to help team members once your individual daily job tasks are finished.",
+    "Criticize colleagues publicly for taking longer on complex repair tasks.",
+    "Hide shared specialist testing equipment inside your personal locker."
+   ],
+   correct:0,
+   explanation:"Team focus means collaborating proactively, supporting colleagues under pressure, sharing resources, and prioritizing overall team targets over individual preferences.",
+   keyTakeaway:"Collaborate, assist colleagues, and align personal efforts with overall team goals.",
+   id:"pmo-epa-v1320-b4-60"
+  },
+  {
+   code:"B5",
+   question:"How can you actively contribute to an inclusive workplace culture within your property maintenance team?",
+   options:[
+    "Treat all colleagues, contractors, and building occupants with dignity and respect, value diverse perspectives, and challenge discriminatory language.",
+    "Use exclusionary trade slang designed to confuse new trainees.",
+    "Avoid communicating with building users who speak English as a second language.",
+    "Assign unpleasant tasks exclusively to junior or apprentice workers."
+   ],
+   correct:0,
+   explanation:"Contributing to an inclusive culture requires demonstrating respect, treating everyone fairly, encouraging diverse contributions, and challenging bias or discrimination.",
+   keyTakeaway:"Promote equity, show respect to all stakeholders, and challenge non-inclusive behavior.",
+   id:"pmo-epa-v1320-b5-61"
+  },
+  {
+   code:"B6",
+   question:"A new smart-building management system (BMS) is being installed across your site portfolio. How do you demonstrate seeking learning and development opportunities?",
+   options:[
+    "Request to shadow commissioning engineers, ask for system user guides, and sign up for technical BMS operator training modules.",
+    "Complain that smart technology makes maintenance work unnecessarily complicated.",
+    "Ignore training sessions and continue attempting repairs using obsolete methods.",
+    "Refuse to use digital BMS control interfaces."
+   ],
+   correct:0,
+   explanation:"Seeking development opportunities involves taking initiative to learn new skills, embracing modern technology, and seeking formal training to enhance capability.",
+   keyTakeaway:"Proactively engage with new systems, request technical training, and expand professional skills.",
+   id:"pmo-epa-v1320-b6-62"
   }
  ]
 };

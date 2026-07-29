@@ -1,15 +1,21 @@
-# V1.3.19 — Architectural Joinery EPA MCQ
+# V1.3.20 — Property Maintenance Operative EPA MCQ
+
+- Added 62 supplied PMO EPA questions as a separate course bank.
+- Kept Bricklayer, Site Carpentry and Architectural Joinery banks unchanged.
+- Preserved random 20-question selection, answer randomisation, explanations and key takeaways.
+
+# V1.3.20 — Architectural Joinery EPA MCQ
 
 - Added 58 supplied Architectural Joinery EPA questions as a separate course bank.
 - Kept Bricklayer and Site Carpentry EPA banks unchanged.
 - Preserved random 20-question selection, answer randomisation, explanations and key takeaways.
 
-# V1.3.19 — Site Carpentry EPA MCQ bank
+# V1.3.20 — Site Carpentry EPA MCQ bank
 
 - Added 56 supplied Site Carpentry EPA questions to the Academy EPA section.
 - Added a separate `site-carpentry-v1-4` question bank; Bricklayer questions remain unchanged.
 - Preserved random 20-question selection, random answer order, explanations, key takeaways and grading thresholds.
-- Updated app and cache version references to V1.3.19.
+- Updated app and cache version references to V1.3.20.
 
 # V1.3.17 — Bricklayer EPA MCQ S10–S16, S18, S20 and S22
 
