@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1-17';
-const APP_SHELL=['./','./index.html','./styles.css?v=1.17','./app.js?v=1.17','./manifest.json','./pdf-generator.js','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
+const CACHE='apprentice-plus-v1-18';
+const APP_SHELL=['./','./index.html','./styles.css?v=1.18','./app.js?v=1.18','./manifest.json','./pdf-generator.js','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
 
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()));

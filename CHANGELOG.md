@@ -1,3 +1,14 @@
+## V1.18 – ProjectMate
+
+- Added course-specific 2–3 hour customer-style workshop projects.
+- Added material price lists, learner quantity entry, labour and overhead quotation.
+- Added budget/urgency-based accepted, negotiation and rejected quote outcomes.
+- Added persistent start, pause, resume and finish job timer.
+- Added effective hourly labour-rate calculation.
+- Added finished-project photo capture and saved completion notes.
+- Generated and custom projects map to a course assignment and its KSBs.
+- Added custom project creation and saved project library.
+
 ## V1.12
 - Replaced the Toolbox audio file input with a true in-app microphone recorder.
 - Added permission handling, timer, stop/cancel controls, Android-compatible audio formats, IndexedDB storage and playback.
