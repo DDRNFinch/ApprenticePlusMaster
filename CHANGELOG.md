@@ -1,3 +1,12 @@
+# v1.33 — Portfolio Cover and KSB Evidence Matrix
+
+- Added an unnumbered front cover to downloaded evidence PDFs.
+- Added page 1 portfolio contents with evidence references.
+- Added page 2 automatic KSB evidence matrix.
+- References include PA, LS, WT, VW, PD, PE and SE.
+- Evidence section headings now display their matching reference.
+- Existing assessment criteria and saved evidence remain unchanged.
+
 # v1.32 — Matching In-App Ribbon Colours
 
 - Practical Assessment / Assessor Only ribbons now use deep green.
