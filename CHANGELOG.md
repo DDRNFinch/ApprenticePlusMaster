@@ -273,3 +273,10 @@ Added Targeted Revision engine backend helpers.
 - Accepted quotations now display in green.
 - Rejected quotations now display in red.
 - Negotiation requests display in amber.
+
+## V1.20 — ProjectMate material quantity guidance
+- Added hidden target quantities to generated ProjectMate materials.
+- Added live ▲ increase, ✓ suitable and ▼ reduce feedback while quantities are entered.
+- Targets use each generated project’s verified material allowance, including wastage and pack rounding where applicable.
+- Quotation submission remains disabled until every listed material quantity is suitable.
+- Existing saved generated projects remain compatible through their stored suggested quantities.

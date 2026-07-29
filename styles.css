@@ -362,3 +362,15 @@
   color:#78350f;
 }
 .quote-outcome.negotiate strong,.quote-outcome.negotiate p{color:#78350f}
+
+/* V1.20 ProjectMate material quantity guidance */
+.material-feedback-key{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px}
+.material-status{display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:11px;font-weight:850}
+.material-status.empty{color:var(--muted,#667085)}
+.material-status.low{color:#b45309}
+.material-status.high{color:#b91c1c}
+.material-status.correct{color:#15803d}
+.material-qty-input.low{border-color:#d97706;background:#fffbeb}
+.material-qty-input.high{border-color:#dc2626;background:#fef2f2}
+.material-qty-input.correct{border-color:#22c55e;background:#f0fdf4}
+#submitQuote:disabled{opacity:.48;cursor:not-allowed}
