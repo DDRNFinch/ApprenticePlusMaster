@@ -80,3 +80,9 @@
 - Added trade-specific productivity planning for components, operations, linear output and repair stages.
 - Reduced task dimensions and quantities to realistic mock-EPA workloads.
 - Added explicit measurements, tolerances and workload allowances to every task specification.
+
+## v1.3.39 — EPA 2×2 Dashboard and Complete Test History
+- Rebuilt EPA Academy as four 2×2 tiles: Knowledge Practice, Professional Discussion, EPA Practical, Scores and Results.
+- Added a combined Scores and Results screen with search and test-type filtering.
+- Removed the 20-attempt cap so every completed Knowledge Practice and Professional Discussion is retained.
+- Practical attempt history remains unlimited, with best result and PDF access retained.
