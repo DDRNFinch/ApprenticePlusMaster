@@ -1,3 +1,7 @@
+## v1.36
+
+Adds professional colour-coded circular identification seals to the top-right of every PDF page while retaining the clean white v1.35 layout and college branding.
+
 ## v1.35
 
 Professional PDF redesign with white pages, Apprentice+ logo headers, clearer course and evidence hierarchy, and a light-green 3D-inspired portfolio cover.

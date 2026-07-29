@@ -1,3 +1,11 @@
+# v1.36 — PDF Identification Seals
+
+- Added a large circular colour-coded identification seal to the top-right of every generated PDF page.
+- Seals use clear evidence abbreviations and full labels, including PA, LS, WT, VW, PD, PE, KQ, SE, KSB and Portfolio.
+- Added double-ring, highlight and shadow styling for a professional embossed appearance.
+- Repositioned college branding where necessary so the seal does not cover the existing PDF header content.
+- Applied the same identification system to standard and NVQ evidence PDFs.
+
 # v1.35 — Professional PDF Redesign
 
 - Replaced lime-green PDF pages with clean white layouts.
