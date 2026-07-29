@@ -1,3 +1,10 @@
+# v1.26 — Optional Witness KSB Mapping
+
+- Witness testimony and employer statements no longer require every KSB to be selected or scored.
+- KSB mapping remains available as optional supporting evidence.
+- Submission now requires only the witness/employer details, observed activity and signature.
+- Updated wording clearly identifies the KSB section as optional.
+
 # v1.24 — ProjectMate Mobile Layout Fix
 
 - Rebuilt the ProjectMate tabs as three equal-width mobile controls.
