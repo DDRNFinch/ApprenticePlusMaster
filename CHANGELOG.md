@@ -246,3 +246,11 @@ Added Targeted Revision engine backend helpers.
 - Restyled Learner Notepad as a square Toolbox tile.
 - Added a new Tools tile and dedicated Tools page for future workplace mini apps.
 - Updated the application version and offline cache to V1.14.
+
+## V1.17 — DrawingMate
+- Added DrawingMate as a fourth square Toolbox app tile.
+- Added searchable construction symbol and material-hatching reference libraries with favourites.
+- Added bidirectional drawing-scale calculator and calibrated on-screen scale ruler.
+- Added local PDF drawing viewer with saved drawing notes.
+- Added camera/photo compare alongside the symbol and hatching libraries.
+- Added clear drawing-legend and measurement accuracy notices.
