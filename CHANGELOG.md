@@ -1,3 +1,12 @@
+# v1.32 — Matching In-App Ribbon Colours
+
+- Practical Assessment / Assessor Only ribbons now use deep green.
+- Witness and Employer ribbons now use amber.
+- Optional Evidence ribbons now use slate grey.
+- Submitted remains Apprentice+ green and RPL remains dark red.
+- Ribbon colours now match the evidence-type colours used in exported PDFs.
+- No PDF templates, assessment criteria, saved evidence or app layout were changed.
+
 # v1.31 — Colour-Coded PDF Evidence Sections
 
 - Added evidence-type colours to exported PDFs only.

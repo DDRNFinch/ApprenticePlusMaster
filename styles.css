@@ -44,9 +44,13 @@
 .optional-unit-choice strong{font-size:1rem}
 .optional-unit-choice small{color:var(--muted,#60706d);line-height:1.4}
 
-.assessor-ribbon {
-    background: #7c3aed !important;
-}
+/* v1.32 evidence-type ribbon colours — mirrors exported PDFs */
+.assessor-ribbon{background:#2e7d32 !important;color:#fff} /* Practical assessment */
+.witness-ribbon,.employer-ribbon{background:#f9a825 !important;color:#172026} /* Witness / employer */
+.optional-evidence-ribbon{background:#546e7a !important;color:#fff} /* Documents / certificates */
+.video-ribbon{background:#6a1b9a !important;color:#fff} /* Video walkthrough */
+.statement-ribbon{background:#1565c0 !important;color:#fff} /* Learner statement */
+.discussion-ribbon{background:#00897b !important;color:#fff} /* Professional discussion */
 
 /* Assessor-only practical assessment and observation ribbons */
 .evidence-tile {
@@ -261,7 +265,7 @@
 .brand-title-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.brand-title-row h1{margin:0}.app-version-bottom{text-align:center;color:#7a8782;font-size:11px;font-weight:800;letter-spacing:.04em;margin:28px 0 12px;padding-bottom:2px}
 
 /* V1.2 witness-only evidence ribbon */
-.witness-ribbon{background:#7c3aed !important;color:#fff}
+.witness-ribbon,.employer-ribbon{background:#f9a825 !important;color:#172026}
 
 /* V1.8 Resources and learner notepad */
 .bottom-nav{grid-template-columns:repeat(3,minmax(0,1fr))}
