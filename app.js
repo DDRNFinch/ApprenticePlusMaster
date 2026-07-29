@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.38.0';
+const APP_VERSION='V1.38.1';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -639,10 +639,13 @@ function beginVoiceToText(target,button){
  const base=target.value||'';
  const start=Number.isInteger(target.selectionStart)?target.selectionStart:base.length;
  const end=Number.isInteger(target.selectionEnd)?target.selectionEnd:start;
- let finalWords='';
+ let inserted=false;
  recognition.lang='en-GB';
- recognition.continuous=true;
- recognition.interimResults=true;
+ // Android Chromium can repeat the same final phrase several times in continuous mode.
+ // Use one clean utterance per tap so spoken text is inserted exactly once.
+ recognition.continuous=false;
+ recognition.interimResults=false;
+ recognition.maxAlternatives=1;
  activeSpeechRecognition=recognition;
  activeSpeechButton=button;
  button.classList.add('listening');
@@ -650,16 +653,18 @@ function beginVoiceToText(target,button){
  button.title='Stop voice to text';
  target.focus();
  recognition.onresult=event=>{
-  let interim='';
-  for(let i=event.resultIndex;i<event.results.length;i++){
-   const words=event.results[i][0]?.transcript||'';
-   if(event.results[i].isFinal)finalWords+=(finalWords?' ':'')+words.trim();else interim+=(interim?' ':'')+words.trim();
-  }
-  const combined=[finalWords,interim].filter(Boolean).join(' ');
-  target.value=spokenInsertion(base,start,end,combined);
-  const cursor=Math.min(target.value.length,start+combined.length+1);
+  if(inserted)return;
+  const result=event.results?.[event.resultIndex]||event.results?.[0];
+  const spoken=String(result?.[0]?.transcript||'').trim();
+  if(!spoken)return;
+  inserted=true;
+  target.value=spokenInsertion(base,start,end,spoken);
+  const insertedAt=target.value.indexOf(spoken,start);
+  const cursor=insertedAt>=0?insertedAt+spoken.length:target.value.length;
   try{target.setSelectionRange(cursor,cursor)}catch{}
   target.dispatchEvent(new Event('input',{bubbles:true}));
+  // Stop immediately after the first recognised phrase to prevent duplicate Android results.
+  try{recognition.stop()}catch{}
  };
  recognition.onerror=event=>{
   if(event.error==='not-allowed'||event.error==='service-not-allowed')toast('Microphone permission is needed for voice to text');

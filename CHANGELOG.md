@@ -1,3 +1,10 @@
+# v1.38.1 – Voice Dictation Duplicate Fix
+
+- Fixed Android voice-to-text repeatedly inserting the same spoken phrase.
+- Dictation now records one clean utterance per microphone tap.
+- Recognition stops immediately after the first final result.
+- Existing text and cursor-position insertion are preserved.
+
 v1.37.8: Fixed the actual Video Walkthrough save callback. A missing pack-status invalidation function was throwing after the video had saved, preventing the walkthrough list from re-rendering until the page was refreshed.
 v1.37.7: Video Walkthrough now refreshes instantly after adding, replacing, removing or saving videos. Saved counts, thumbnails and status update without reloading the page.
 v1.37.6: Practical Assessment grades now calculate only from scored criteria. Unobserved criteria are excluded and assessments with no graded criteria show Not yet graded.
