@@ -1,4 +1,4 @@
-## v1.37
+## v1.37.2
 
 Adds a one-tap entire portfolio download containing only evidence that has been saved within assignments, including saved evidence from unfinished assignments. Blank and unsaved sections are excluded. Admin Mode no longer displays manual export or restore backup controls.
 

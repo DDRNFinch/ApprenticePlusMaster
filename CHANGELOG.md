@@ -421,3 +421,5 @@ Added Targeted Revision engine backend helpers.
 
 
 v1.37.1: PDF header evidence block moved left and wrapped within printable margins.
+
+v1.37.2: Removed the KSB Evidence Coverage panel from standard assignment pages. KSB tracking and the dedicated KSB Matrix remain unchanged.
