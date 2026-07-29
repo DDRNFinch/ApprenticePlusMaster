@@ -1,76 +1,10 @@
-# V1.3.26 — EPA Practical Results & Planning Comparison
+# V1.3.27 — EPA Practical History & Polish
 
-- Compares learner tools, materials and PPE entries against the hidden task lists.
-- Shows correct, missed and unnecessary items.
-- Displays time taken, time remaining, break duration, overall mark and grade.
-- Adds an EPA Readiness outcome based on the final assessor grade and safety result.
+- Unlimited EPA practical retakes.
+- A different random practical is selected for each new attempt where possible.
+- Completed practical attempts are retained in searchable history.
+- Best practical result is automatically highlighted.
+- Attempt history can be searched and filtered by grade.
+- Each marked practical has its own downloadable PDF report.
+- Added result, history-card and panel animations with responsive UI polish.
 
-# V1.3.25 — EPA Practical Assessor Marking
-
-- Added weighted assessor scorecard with six 1–5 marking areas.
-- Added safety and technical-accuracy minimum thresholds.
-- Added critical-fail override.
-- Added generated strengths and areas for improvement.
-- Added optional additional assessor comments.
-- Submitted marks are final and locked.
-- Ended practicals can be reopened for assessor marking.
-
-## V1.3.23
-- Added the EPA Practical foundation for all four apprenticeship courses.
-- Added random course-specific practical task generation and a full task specification view.
-- Added tag-entry planning for Tools and Equipment, Materials and Fixings, and PPE and Safety Equipment.
-- Preparation lists remain editable until the learner confirms readiness, then save as a locked practical draft.
-
-## V1.3.22
-- Reduced EPA Knowledge Practice from 20 questions to 10 per attempt.
-- Hidden EPA question-bank counts and diagnostic status from learner-facing course screens.
-
-# V1.3.20 — Property Maintenance Operative EPA MCQ
-
-- Added 62 supplied PMO EPA questions as a separate course bank.
-- Kept Bricklayer, Site Carpentry and Architectural Joinery banks unchanged.
-- Preserved random 20-question selection, answer randomisation, explanations and key takeaways.
-
-# V1.3.20 — Architectural Joinery EPA MCQ
-
-- Added 58 supplied Architectural Joinery EPA questions as a separate course bank.
-- Kept Bricklayer and Site Carpentry EPA banks unchanged.
-- Preserved random 20-question selection, answer randomisation, explanations and key takeaways.
-
-# V1.3.20 — Site Carpentry EPA MCQ bank
-
-- Added 56 supplied Site Carpentry EPA questions to the Academy EPA section.
-- Added a separate `site-carpentry-v1-4` question bank; Bricklayer questions remain unchanged.
-- Preserved random 20-question selection, random answer order, explanations, key takeaways and grading thresholds.
-- Updated app and cache version references to V1.3.20.
-
-# V1.3.17 — Bricklayer EPA MCQ S10–S16, S18, S20 and S22
-
-- Added the 10 supplied Gemini EPA questions to the Bricklayer Academy EPA bank.
-- The cumulative bank now includes K1–K31, S1–S16, S18, S20 and S22.
-- Preserved random 20-question selection, answer randomisation, explanations and key takeaways.
-- Updated app and service-worker cache references to V1.3.17.
-
-# V1.3.17 — Bricklayer EPA MCQ K31 and S1–S9
-
-- Added 10 professional-judgement EPA questions: K31 and S1–S9.
-- Bricklayer EPA bank now contains 40 cumulative questions: K1–K31 and S1–S9.
-- Preserved random 20-question attempts, shuffled answer order, immediate coaching, takeaways and existing grade thresholds.
-- Updated app and cache-busting references to V1.3.17.
-
-# V1.3.15 — EPA practice unlock and validator fix
-
-- EPA Knowledge Practice now unlocks when at least 20 valid questions are installed.
-- Missing future KSB questions no longer block testing of the current bank.
-- Writing checks are shown as review notes and never remove approved questions.
-- Broadened workplace-scenario detection so realistic site setups are not falsely rejected.
-- Added installed, available, warning and missing counts to the EPA question-bank status panel.
-- Updated app and cache-busting version references to V1.3.15.
-
-# V1.3.14 — EPA MCQ cumulative-bank fix
-
-- Corrected the Bricklayer EPA Academy so approved K1–K30 questions are not silently removed by writing-quality warnings.
-- The practice engine now selects 20 questions from the full cumulative 30-question bank.
-- Preserved random question selection, random answer order, immediate incorrect-answer feedback, key takeaways and existing grade thresholds.
-- Updated app and cache-busting version references to V1.3.14.
-- Changed version numbering back to the sequential V1.3.x format.
