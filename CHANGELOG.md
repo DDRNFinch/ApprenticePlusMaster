@@ -1,3 +1,7 @@
+## V1.3.22
+- Reduced EPA Knowledge Practice from 20 questions to 10 per attempt.
+- Hidden EPA question-bank counts and diagnostic status from learner-facing course screens.
+
 # V1.3.20 — Property Maintenance Operative EPA MCQ
 
 - Added 62 supplied PMO EPA questions as a separate course bank.
