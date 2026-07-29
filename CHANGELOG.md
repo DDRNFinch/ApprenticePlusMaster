@@ -30,3 +30,10 @@
 - Every generated EPA practical now stores its own complete measurements and tolerances.
 - Added front elevation, plan view and section drawings matched to the selected task.
 - Specification PDF now includes a dedicated dimensioned drawing page and written dimension schedule.
+
+
+## v1.3.31 — Cross-course EPA workload controls
+- Applied time-based workload limits to Site Carpentry, Architectural Joinery and Property Maintenance EPA practicals.
+- Added trade-specific productivity planning for components, operations, linear output and repair stages.
+- Reduced task dimensions and quantities to realistic mock-EPA workloads.
+- Added explicit measurements, tolerances and workload allowances to every task specification.
