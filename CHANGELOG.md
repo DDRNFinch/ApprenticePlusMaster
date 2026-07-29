@@ -1,3 +1,13 @@
+# v1.37 — Entire Saved Portfolio Download
+
+- Added **Download Entire Portfolio** to the end of the Assignments page.
+- Includes every assignment that contains evidence saved through an assignment evidence section, even when the assignment itself is unfinished.
+- Includes only submitted/saved evidence versions and saved walkthrough recordings.
+- Excludes blank assignments, unsaved drafts and untouched evidence sections.
+- Packages each included assignment in its own clearly named folder inside one portfolio ZIP.
+- Removed **Export complete backup** and **Restore backup** from Admin Mode.
+- Updated the visible app version and offline cache.
+
 # v1.36 — PDF Identification Seals
 
 - Added a large circular colour-coded identification seal to the top-right of every generated PDF page.

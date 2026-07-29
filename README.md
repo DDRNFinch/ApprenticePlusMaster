@@ -1,3 +1,7 @@
+## v1.37
+
+Adds a one-tap entire portfolio download containing only evidence that has been saved within assignments, including saved evidence from unfinished assignments. Blank and unsaved sections are excluded. Admin Mode no longer displays manual export or restore backup controls.
+
 ## v1.36
 
 Adds professional colour-coded circular identification seals to the top-right of every PDF page while retaining the clean white v1.35 layout and college branding.

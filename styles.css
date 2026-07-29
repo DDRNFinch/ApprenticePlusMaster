@@ -500,3 +500,8 @@
 .college-logo-upload span{width:86px;height:70px;display:grid;place-items:center}.college-logo-upload span img{max-width:82px;max-height:64px;object-fit:contain}
 .brand-qr-area{margin-top:16px}.brand-qr-card{border:1px solid #dfe6df;border-radius:18px;padding:20px;text-align:center;background:#fff}.brand-qr-card>img{max-width:180px;max-height:80px;object-fit:contain}.brand-qr-card canvas{max-width:100%;height:auto;margin:12px auto}.brand-qr-card p{color:var(--muted);font-size:13px}
 @media(max-width:560px){.college-header-brand span{display:none}.college-header-brand{max-width:48px}.college-header-brand img{width:40px;height:40px}}
+
+/* v1.37 entire saved portfolio download */
+.entire-portfolio-card{margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:20px;border:1px solid #dbe8e1;background:#fff}
+.entire-portfolio-card h3{margin:0 0 5px}.entire-portfolio-card p{margin:0;max-width:700px}.entire-portfolio-card .btn{flex:0 0 auto}
+@media(max-width:650px){.entire-portfolio-card{display:block}.entire-portfolio-card .btn{width:100%;margin-top:16px}}

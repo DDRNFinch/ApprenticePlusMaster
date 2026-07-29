@@ -1,8 +1,8 @@
 'use strict';
 
 /* Apprentice+ offline PDF generator. Evidence stays in the browser; no data is uploaded. */
-async function generateEvidencePackPDF({course, assignment, profile, sections, branding}) {
-  if(course && course.nvqUnits) return generateNVQEvidencePackPDF({course, assignment, profile, sections});
+async function generateEvidencePackPDF({course, assignment, profile, sections, branding, returnPackage=false}) {
+  if(course && course.nvqUnits) return generateNVQEvidencePackPDF({course, assignment, profile, sections, branding, returnPackage});
   const W=1240,H=1754,M=88,TEAL='#073539',GREEN='#22C55E',LIGHT_GREEN='#DDF4E6',SOFT_GREEN='#B9E8CA',INK='#172426',MUTED='#627274',PALE='#F5F8F7',WHITE='#ffffff';
   const pages=[];
   const percentageScore=d=>{const max=assignment.ksbs.length*5;if(!max)return 0;const achieved=assignment.ksbs.reduce((sum,[code])=>sum+(+d?.scores?.[code]||0),0);return Math.round((achieved/max)*100)};
@@ -255,8 +255,14 @@ async function generateEvidencePackPDF({course, assignment, profile, sections, b
     videos.forEach((f,i)=>{const original=String(f.name||''),dot=original.lastIndexOf('.'),ext=dot>0?original.slice(dot):'.mp4',prefix=(f.ksbCodes||[]).join('-'),base=safeZipName(`${prefix?prefix+' - ':''}${(f.evidenceName||`Supporting video ${i+1}`).trim()}`);let name=uniqueMediaName(base,ext,used);entries.push({name:`Supporting Videos/${name}`,data:dataUrlBytes(f.data)})});
     walkthroughVideos.forEach(f=>{const ext=mediaExtension(f.type,f.name,'video'),base=safeZipName(`${f.code} - ${f.summary||'Video evidence'}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Video Evidence/${name}`,data:dataUrlBytes(f.data)})});
     audios.forEach(({code,rec,attempt},i)=>{const ext=mediaExtension(rec.type,'','audio'),base=safeZipName(`${code} - Professional Discussion - Attempt ${attempt}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Voice Notes/${name}`,data:dataUrlBytes(rec.data)})});
-    await downloadBlob(makeZipBlob(entries),'application/zip',`${safe||'Learner'}-Assignment-${assignment.n}-Complete-Evidence-Package.zip`);
-  }else await downloadBlob(pdf,'application/pdf',pdfName);
+    const packageName=`${safe||'Learner'}-Assignment-${assignment.n}-Complete-Evidence-Package.zip`;
+    if(returnPackage)return {assignmentNumber:assignment.n,pdfName,entries,packageName};
+    await downloadBlob(makeZipBlob(entries),'application/zip',packageName);
+  }else{
+    const entries=[{name:pdfName,data:pdf}];
+    if(returnPackage)return {assignmentNumber:assignment.n,pdfName,entries,packageName:pdfName};
+    await downloadBlob(pdf,'application/pdf',pdfName);
+  }
 }
 
 function selectedKsbCodesForMedia(assignment,version){
@@ -273,7 +279,7 @@ function ksbMediaFileName(f){return `${safeZipName(`${f.code||'KSB'} - ${f.summa
 /* NVQ-only portfolio PDF. This branch is intentionally isolated so the original
    Bricklaying, Site Carpentry, Architectural Joiner and Property Maintenance
    PDF layouts and grading logic remain unchanged. */
-async function generateNVQEvidencePackPDF({course, assignment, profile, sections}) {
+async function generateNVQEvidencePackPDF({course, assignment, profile, sections, branding, returnPackage=false}) {
   const W=1240,H=1754,M=88,TEAL='#073539',GREEN='#48E023',YELLOW='#F7D75C',GREY='#EEF1F1',INK='#1A1A1A',MUTED='#5f6f70',PALE='#f2f7f5',WHITE='#ffffff';
   const pages=[];
   const clean=v=>String(v??'').replace(/[\u2010-\u2015]/g,'-').replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"');
@@ -314,7 +320,17 @@ async function generateNVQEvidencePackPDF({course, assignment, profile, sections
   const total=pages.length;pages.forEach((p,i)=>{const x=p.ctx;x.fillStyle=p.colour||TEAL;x.fillRect(0,H-62,W,62);x.fillStyle=WHITE;x.font='600 17px Arial';x.fillText('Apprentice+ | NVQ Evidence Portfolio',M,H-25);x.textAlign='right';x.fillText(`Page ${i+1} of ${total}`,W-M,H-25);x.textAlign='left'});
   const jpegPages=pages.map(p=>dataUrlBytes(p.canvas.toDataURL('image/jpeg',0.90))),pdf=makeImagePDF(jpegPages,W,H),safe=clean(profile.fullName).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,''),unit=String(assignment.unit||assignment.n).replace(/[^a-z0-9-]+/gi,'-'),pdfName=`${safe||'Learner'}-NVQ-Unit-${unit}-Evidence-Pack.pdf`;
   const audios=[];for(let vi=0;vi<(sections.discussion||[]).length;vi++){const version=sections.discussion[vi];for(const [code,rec] of Object.entries(version.recordings||{}))if(rec?.data)audios.push({code,rec,attempt:vi+1})}
-  if(audios.length){const entries=[{name:pdfName,data:pdf}],used=new Set();audios.forEach(({code,rec,attempt},i)=>{const mime=String(rec.type||'audio/webm'),ext=mime.includes('mp4')?'.m4a':mime.includes('ogg')?'.ogg':'.webm',base=safeZipName(`Attempt ${attempt} - ${code} Professional Discussion`);let name=`${base}${ext}`;if(used.has(name.toLowerCase()))name=`${base}-${i+1}${ext}`;used.add(name.toLowerCase());entries.push({name:`Professional Discussion Recordings/${name}`,data:dataUrlBytes(rec.data)})});await downloadBlob(makeZipBlob(entries),'application/zip',`${safe||'Learner'}-NVQ-Unit-${unit}-Evidence-Package.zip`)}else await downloadBlob(pdf,'application/pdf',pdfName);
+  if(audios.length){
+    const entries=[{name:pdfName,data:pdf}],used=new Set();
+    audios.forEach(({code,rec,attempt},i)=>{const mime=String(rec.type||'audio/webm'),ext=mime.includes('mp4')?'.m4a':mime.includes('ogg')?'.ogg':'.webm',base=safeZipName(`Attempt ${attempt} - ${code} Professional Discussion`);let name=`${base}${ext}`;if(used.has(name.toLowerCase()))name=`${base}-${i+1}${ext}`;used.add(name.toLowerCase());entries.push({name:`Professional Discussion Recordings/${name}`,data:dataUrlBytes(rec.data)})});
+    const packageName=`${safe||'Learner'}-NVQ-Unit-${unit}-Evidence-Package.zip`;
+    if(returnPackage)return {assignmentNumber:assignment.n,pdfName,entries,packageName};
+    await downloadBlob(makeZipBlob(entries),'application/zip',packageName);
+  }else{
+    const entries=[{name:pdfName,data:pdf}];
+    if(returnPackage)return {assignmentNumber:assignment.n,pdfName,entries,packageName:pdfName};
+    await downloadBlob(pdf,'application/pdf',pdfName);
+  }
 }
 
 async function downloadBlob(bytes,type,name){
