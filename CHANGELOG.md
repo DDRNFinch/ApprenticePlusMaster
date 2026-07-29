@@ -1,3 +1,5 @@
+v1.37.3: Fixed the NVQ Assessor Observation evidence tile. The observation page now opens correctly with assessor details, activity, learning-outcome selection, outcome photographs, generated narrative and assessor signature.
+
 # v1.37 — Entire Saved Portfolio Download
 
 - Added **Download Entire Portfolio** to the end of the Assignments page.
