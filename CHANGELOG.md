@@ -1,3 +1,10 @@
+## v1.3.38 – EPA New Attempt Runtime Fix
+
+- Rebuilt the new-attempt creation sequence for mobile compatibility.
+- Added safe UUID and cloning fallbacks.
+- Opens the new practical before the background save, preventing storage errors from blocking the screen.
+- Retains all v1.3.35 preparation matching and PDF updates.
+
 ## v1.3.37 – EPA Start New Attempt Button Fix
 
 - Replaced the fragile EPA practical new-attempt click binding with a mobile-safe awaited action.
