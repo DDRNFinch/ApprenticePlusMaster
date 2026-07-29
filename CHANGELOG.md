@@ -1,4 +1,4 @@
-# V1.3.28 — Mobile Preparation Entry Buttons
+# V1.3.29 — Mobile Preparation Entry Buttons
 
 - Added a visible Add Item button to Tools and Equipment.
 - Added a visible Add Item button to Materials and Fixings.
@@ -16,3 +16,8 @@
 - Each marked practical has its own downloadable PDF report.
 - Added result, history-card and panel animations with responsive UI polish.
 
+
+## v1.3.29 — Generated Dimensioned Drawings
+- Every generated EPA practical now stores its own complete measurements and tolerances.
+- Added front elevation, plan view and section drawings matched to the selected task.
+- Specification PDF now includes a dedicated dimensioned drawing page and written dimension schedule.
