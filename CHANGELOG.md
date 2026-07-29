@@ -1,3 +1,10 @@
+# V1.3.18 — Site Carpentry EPA MCQ bank
+
+- Added 56 supplied Site Carpentry EPA questions to the Academy EPA section.
+- Added a separate `site-carpentry-v1-4` question bank; Bricklayer questions remain unchanged.
+- Preserved random 20-question selection, random answer order, explanations, key takeaways and grading thresholds.
+- Updated app and cache version references to V1.3.18.
+
 # V1.3.17 — Bricklayer EPA MCQ S10–S16, S18, S20 and S22
 
 - Added the 10 supplied Gemini EPA questions to the Bricklayer Academy EPA bank.

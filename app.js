@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3.17';
+const APP_VERSION='V1.3.18';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -775,7 +775,7 @@ function renderAcademyLesson(){
 
 
 
-// v1.3.17 Bricklayer EPA professional-judgement question bank (K1-K31, S1-S16, S18, S20, S22)
+// v1.3.18 EPA professional-judgement banks: Bricklayer and Site Carpentry
 // Locked MCQ writing standard: realistic workplace judgement, four plausible trade-language answers,
 // no joke/"I do not care" distractors, no official-sounding giveaway, and an explanation for coaching.
 // Questions are deliberately stored as an approved, fixed bank. Nothing is generated at runtime.
@@ -1495,7 +1495,794 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
    explanation:"Raking cuts require marking the pitch line accurately with a line or bevel and cutting units individually to fit tightly against the raking angle within tolerance. Cutting hardened bricks in place or guessing angles results in uneven joints and weak edges.",
    keyTakeaway:"Mark raking cuts directly from a precise pitch line to maintain accurate tolerances.",
    id:"brick-epa-v1317-s22"
-  } ]
+  }
+ ],
+ 'site-carpentry-v1-4':[
+  {
+   code:"K1",
+   question:"You are preparing to cut timber in a confined area on site where dust accumulation is high. Under PUWER and CoSHH guidelines, what essential safety step must be taken regarding equipment and health protection?",
+   options:[
+    "Ensure power tools have valid safety inspections and combine local dust extraction (LEV) with a fitted FFP3 respirator.",
+    "Open a far window and use a standard dust mask while disabling the saw guard for faster cutting.",
+    "Sweep up the timber dust with a dry broom after finishing all the cuts for the day.",
+    "Use cordless tools only, as respiratory protection is not required for natural timber dust."
+   ],
+   correct:0,
+   explanation:"PUWER requires safe, inspected equipment, while CoSHH requires controlling hazardous wood dust at source using LEV and appropriate RPE (FFP3 mask).",
+   keyTakeaway:"Always combine inspected tools with effective LEV and RPE to control timber dust exposure.",
+   id:"site-carp-epa-v1318-k1"
+  },
+  {
+   code:"K2",
+   question:"When operating a portable circular saw to rip down sheet materials, how should local exhaust ventilation (LEV) and personal protective equipment (PPE) be used together?",
+   options:[
+    "Attach an extraction vacuum directly to the saw's dust port and wear eye protection and ear defenders.",
+    "Rely solely on safety glasses, as LEV is only needed when working with solid hardwoods.",
+    "Set the LEV hose next to the work bench without connecting it to the tool shroud.",
+    "Wear heavy leather gloves while feeding sheet material quickly past the unguarded blade."
+   ],
+   correct:0,
+   explanation:"Connecting LEV directly to the tool removes dust at the point of creation, while eye and hearing protection guard against flying particles and high noise levels.",
+   keyTakeaway:"Directly connect extraction to power tools and wear eye and hearing protection.",
+   id:"site-carp-epa-v1318-k2"
+  },
+  {
+   code:"K3",
+   question:"Before starting a first-fix roofing task on a busy site, where do you find the specific safe working sequence and control measures established for that task?",
+   options:[
+    "In the site-specific Method Statement and Risk Assessment (RAMS) reviewed during the toolbox talk.",
+    "On the delivery note attached to the roof truss timber pack.",
+    "In the general health and safety poster displayed inside the site canteen.",
+    "By asking a colleague how they installed rafters on their previous project."
+   ],
+   correct:0,
+   explanation:"RAMS and site toolbox talks provide the task-specific safe systems of work and control measures for high-risk operations like roofing.",
+   keyTakeaway:"Review task RAMS and attend safety briefings before starting structural tasks.",
+   id:"site-carp-epa-v1318-k3"
+  },
+  {
+   code:"K4",
+   question:"When sourcing timber for a commercial build committed to sustainable practices, what certification ensures the wood comes from sustainably managed forests?",
+   options:[
+    "FSC (Forest Stewardship Council) or PEFC certification.",
+    "CE / UKCA structural grading stamp only.",
+    "ISO 9001 quality management stamp.",
+    "Local sawmill delivery receipt."
+   ],
+   correct:0,
+   explanation:"FSC and PEFC chain-of-custody schemes verify that timber products originate from responsibly managed, sustainable forests.",
+   keyTakeaway:"Look for FSC or PEFC certification to verify sustainable timber sourcing.",
+   id:"site-carp-epa-v1318-k4"
+  },
+  {
+   code:"K5",
+   question:"Why is an airtightness membrane installed on the warm side of insulation in a modern timber-frame wall construction?",
+   options:[
+    "To prevent warm, moist internal air from entering the wall cavity and causing interstitial condensation.",
+    "To provide a rigid structural backing for fixing heavy external timber cladding.",
+    "To allow external rainwater to drain quickly down into the foundation footing.",
+    "To increase the fire resistance rating of the external plasterboard lining."
+   ],
+   correct:0,
+   explanation:"Vapour control layers placed on the warm side stop moist room air from migrating into cold insulation layers where it would condense and rot timber frames.",
+   keyTakeaway:"Vapour control layers prevent internal moisture from condensing inside the structural frame.",
+   id:"site-carp-epa-v1318-k5"
+  },
+  {
+   code:"K6",
+   question:"In a digital 3D BIM (Building Information Modelling) environment, how do digital models assist site carpenters before structural floor joists are installed?",
+   options:[
+    "By identifying spatial clashes where service pipes or ductwork cross joist locations before physical installation.",
+    "By automatically sharpening hand chisels and saw blades prior to site delivery.",
+    "By replacing the need to use mechanical fixings or joist hangers during assembly.",
+    "By calculating the exact moisture content of timber delivered to site."
+   ],
+   correct:0,
+   explanation:"3D digital design models allow trade teams to spot spatial clashes between structural timber elements and mechanical or electrical services before work begins.",
+   keyTakeaway:"BIM models identify clash locations between structural members and service runs early.",
+   id:"site-carp-epa-v1318-k6"
+  },
+  {
+   code:"K7",
+   question:"Which regulatory standard dictates structural safety, fire separation, and thermal insulation requirements for carpentry work in residential buildings in England?",
+   options:[
+    "The Building Regulations (Approved Documents A, B, and L).",
+    "The Highways Act regulatory manual.",
+    "The CDM 2015 client appointment duty register.",
+    "The Consumer Rights Act standard documentation."
+   ],
+   correct:0,
+   explanation:"Building Regulations Part A, Part B and Part L set mandatory performance standards for building works.",
+   keyTakeaway:"Carpentry installations must meet the relevant Building Regulations Approved Documents.",
+   id:"site-carp-epa-v1318-k7"
+  },
+  {
+   code:"K8",
+   question:"On a working architectural drawing, what does a dashed line running through a floor plan view typically represent?",
+   options:[
+    "Hidden structural elements, such as floor joists or steel beams overhead.",
+    "The boundary line for site material waste skips.",
+    "An area where timber sanding is strictly prohibited.",
+    "A wall that must be constructed using non-standard metric timber."
+   ],
+   correct:0,
+   explanation:"In technical drawing standards, dashed lines indicate hidden details or structural members located above or below the immediate section plane.",
+   keyTakeaway:"Dashed lines on structural plans denote overhead or hidden structural members.",
+   id:"site-carp-epa-v1318-k8"
+  },
+  {
+   code:"K9",
+   question:"Why is manufactured Birch Plywood preferred over standard OSB/3 for constructing rigid site jigs and high-load structural gussets?",
+   options:[
+    "Its cross-laminated veneer construction offers superior dimensional stability, smooth faces, and high shear strength.",
+    "It is significantly cheaper and lighter than low-density fibreboards.",
+    "It does not require cutting tools and can be scored and snapped by hand.",
+    "It completely absorbs water without expanding or delaminating over time."
+   ],
+   correct:0,
+   explanation:"Plywood's cross-grained thin wood veneers provide multi-directional strength, high screw-holding power, and resistance to warping under load.",
+   keyTakeaway:"Plywood provides multi-directional strength and stability due to cross-laminated veneers.",
+   id:"site-carp-epa-v1318-k9"
+  },
+  {
+   code:"K10",
+   question:"What maximum moisture content threshold should structural timber typically not exceed before being enclosed within a modern building envelope?",
+   options:[
+    "20% (ideally 12-16% for internal finish timber).",
+    "35% moisture content.",
+    "5% moisture content.",
+    "50% moisture content."
+   ],
+   correct:0,
+   explanation:"Timber enclosed at over 20% moisture content is at risk of fungal decay and severe dimensional shrinkage as it dries in service.",
+   keyTakeaway:"Keep timber moisture below 20% to prevent fungal attack and shrinkage.",
+   id:"site-carp-epa-v1318-k10"
+  },
+  {
+   code:"K11",
+   question:"Which ironmongery component is specifically designed to allow an internal fire door to self-close fully into its frame rebate against a latch?",
+   options:[
+    "An overhead hydraulic door closer compliant with BS EN 1154.",
+    "A surface-mounted straight barrel bolt.",
+    "A pair of unrated brass decorative butt hinges.",
+    "A magnetic cabinet catch set into the door head."
+   ],
+   correct:0,
+   explanation:"Fire doors require certified self-closing devices to ensure the leaf shuts automatically and maintains fire compartmentation.",
+   keyTakeaway:"Fire doors require certified self-closing hardware to maintain fire seals.",
+   id:"site-carp-epa-v1318-k11"
+  },
+  {
+   code:"K12",
+   question:"You are calculating stud lengths for a 12-metre long stud wall with studs placed at 600mm centres. How do you calculate the total number of vertical studs required, excluding openings?",
+   options:[
+    "Divide the wall length by the spacing (12m / 0.6m = 20) and add 1 for the starting end stud (21 studs total).",
+    "Multiply 12 metres by 0.6mm to get 7.2 studs.",
+    "Divide 12 metres by 2 and subtract 1 stud.",
+    "Multiply 12 studs by 4 corners to equal 48 studs."
+   ],
+   correct:0,
+   explanation:"To calculate vertical studs for a run, divide the total length by the centre spacing distance and add one stud to cap the starting end.",
+   keyTakeaway:"Number of studs equals total length divided by spacing, plus one end stud.",
+   id:"site-carp-epa-v1318-k12"
+  },
+  {
+   code:"K13",
+   question:"When explaining a stair installation to a site supervisor, which term correctly describes the vertical height from top of one tread to the top of the next?",
+   options:[
+    "The rise.",
+    "The going.",
+    "The margin.",
+    "The pitch line."
+   ],
+   correct:0,
+   explanation:"Rise is the vertical distance between consecutive treads, whereas going is the horizontal depth from nosing to nosing.",
+   keyTakeaway:"Rise measures vertical step height; going measures horizontal step depth.",
+   id:"site-carp-epa-v1318-k13"
+  },
+  {
+   code:"K14",
+   question:"Which hand tool is designed specifically for laying out precise 90-degree lines across timber faces prior to sawing?",
+   options:[
+    "Try square.",
+    "Sliding bevel.",
+    "Mortise gauge.",
+    "Chalk line reel."
+   ],
+   correct:0,
+   explanation:"A try square has a fixed 90-degree stock and blade used to mark and check right-angled cuts on timber.",
+   keyTakeaway:"Use a try square to mark and verify precise 90-degree angles.",
+   id:"site-carp-epa-v1318-k14"
+  },
+  {
+   code:"K15",
+   question:"When sharpening a bevel-edged woodworking chisel using an oilstone or whetstone, what is the ideal primary bevel grinding angle?",
+   options:[
+    "25 degrees, with a secondary honing angle of approximately 30 degrees.",
+    "45 degrees primary and 60 degrees secondary.",
+    "10 degrees primary and 15 degrees secondary.",
+    "90 degrees square to the chisel back."
+   ],
+   correct:0,
+   explanation:"Standard chisels are ground to a 25-degree primary angle and honed at around 30 degrees to create a durable cutting edge.",
+   keyTakeaway:"Grind chisels to 25 degrees and hone a secondary micro-bevel at around 30 degrees.",
+   id:"site-carp-epa-v1318-k15"
+  },
+  {
+   code:"K16",
+   question:"Why are custom router jigs constructed with dedicated guide bush collars when routing multiple identical door hinge recesses?",
+   options:[
+    "To ensure exact repeatability and prevent the cutter from wandering outside the hinge footprint.",
+    "To lubricate the router bit continuously during cutting.",
+    "To eliminate the need for clamping the jig to the door edge.",
+    "To automatically adjust the routing depth between passes."
+   ],
+   correct:0,
+   explanation:"Jigs used with router guide bushes ensure identical, repeatable cuts across multiple workpieces without measuring each recess individually.",
+   keyTakeaway:"Router jigs ensure fast, identical and repeatable cuts.",
+   id:"site-carp-epa-v1318-k16"
+  },
+  {
+   code:"K17",
+   question:"When using a portable plunge saw with a guide rail to trim doors to length, what safety mechanism prevents the saw from kicking back along the track?",
+   options:[
+    "An anti-kickback cam or cleat fitted to the saw base and an integrated riving knife.",
+    "Wrapping electrical tape around the rail track ends.",
+    "Increasing plunge speed as fast as possible through thick wood.",
+    "Removing the lower guard from the blade housing."
+   ],
+   correct:0,
+   explanation:"Anti-kickback devices and riving knives prevent the saw blade from binding in the cut and pinching back toward the operator.",
+   keyTakeaway:"Anti-kickback features stop track saws binding or kicking back toward the user.",
+   id:"site-carp-epa-v1318-k17"
+  },
+  {
+   code:"K18",
+   question:"How does effective communication between carpenters and dryliners improve site progress during first-fix framing?",
+   options:[
+    "It ensures timber noggins are installed at correct height locations for fixing plasterboard edges and heavy wall items.",
+    "It allows dryliners to alter structural timber roof trusses without engineering approval.",
+    "It eliminates the need for site managers to inspect work quality.",
+    "It ensures all timber walls are left uninsulated until second fix."
+   ],
+   correct:0,
+   explanation:"Clear inter-trade communication ensures backing timber is placed where dryliners and other follow-on trades require solid fixings later.",
+   keyTakeaway:"Coordinate with follow-on trades to ensure backing support is placed correctly.",
+   id:"site-carp-epa-v1318-k18"
+  },
+  {
+   code:"K19",
+   question:"What is the primary goal of applying inclusion, equity, and diversity principles within a site construction team?",
+   options:[
+    "To create a respectful environment where every worker feels valued, safe, and able to contribute.",
+    "To assign the heaviest physical labour strictly to new apprentices.",
+    "To restrict specialised tool usage to senior workers only.",
+    "To eliminate the need for site toolbox talks and safety inductions."
+   ],
+   correct:0,
+   explanation:"EDI principles foster an environment of fairness, mutual respect, and psychological safety, improving overall safety and productivity.",
+   keyTakeaway:"EDI creates a fair, respectful and high-performing workplace environment.",
+   id:"site-carp-epa-v1318-k19"
+  },
+  {
+   code:"K20",
+   question:"If you notice a team member showing signs of severe physical exhaustion and emotional distress on site, what is the best immediate supportive response?",
+   options:[
+    "Speak to them privately, express care, and signpost them to site Mental Health First Aiders or confidential helpline resources.",
+    "Tell them to work faster to distract themselves from their personal worries.",
+    "Assign them high-risk scaffold work to raise their energy levels.",
+    "Ignore their situation as mental health is unrelated to construction safety."
+   ],
+   correct:0,
+   explanation:"Recognising early signs of mental or physical distress and directing colleagues to trained welfare resources promotes early intervention.",
+   keyTakeaway:"Identify signs of distress early and signpost available support services.",
+   id:"site-carp-epa-v1318-k20"
+  },
+  {
+   code:"K21",
+   question:"When fitting architrave around a door lining, why is a mitre joint cut at 45 degrees used at the top corners instead of a butt joint?",
+   options:[
+    "It neatly joins two decorative end profiles together while hiding end grain across the corner junction.",
+    "It increases the fire resistance rating of the timber door frame.",
+    "It allows architrave mouldings to expand up to 50mm during humid weather.",
+    "It eliminates the need for wood adhesive or pin fixings."
+   ],
+   correct:0,
+   explanation:"Mitre joints meet at half the overall angle to align matching moulding profiles continuously.",
+   keyTakeaway:"Mitring aligns decorative profiles seamlessly across corner intersections.",
+   id:"site-carp-epa-v1318-k21"
+  },
+  {
+   code:"K22",
+   question:"When sizing floor joists for a residential building using standard span tables, which two main factors determine the required timber depth?",
+   options:[
+    "The clear span distance between supports and the design load, including dead and imposed loads.",
+    "The colour of the timber grain and the blade speed of the mitre saw.",
+    "The brand of wood glue used on the joist ends.",
+    "The height of the skirting boards in the room below."
+   ],
+   correct:0,
+   explanation:"Span tables cross-reference clear span length against design loading to specify the minimum timber cross-section required for structural stability.",
+   keyTakeaway:"Timber spans are determined by clear span length and imposed loading requirements.",
+   id:"site-carp-epa-v1318-k22"
+  },
+  {
+   code:"K24",
+   question:"When joining two structural timber members end-to-end over a support using a spliced joint, what requirement must be met?",
+   options:[
+    "The splice must be structurally engineered and fixed with the specified bolts or timber connectors.",
+    "The splice can be held together using standard PVA glue and masking tape.",
+    "The joint cut must be positioned in the middle of the longest unsupported span.",
+    "The end grain must be left unsealed with an open 10mm gap between timbers."
+   ],
+   correct:0,
+   explanation:"Structural timber splices must transfer shear and tensile loads safely through engineered joint geometry and specified mechanical connectors.",
+   keyTakeaway:"Structural timber splices require specified mechanical fixings to transfer load safely.",
+   id:"site-carp-epa-v1318-k24"
+  },
+  {
+   code:"K25",
+   question:"In traditional cut roofing, what structural member connects the feet of opposing rafters to prevent outward spread on external walls?",
+   options:[
+    "Ceiling joists or suitable rafter ties.",
+    "Bargeboards.",
+    "Tilting fillets.",
+    "Fascia boards."
+   ],
+   correct:0,
+   explanation:"Ceiling joists or suitable ties act at the base of opposing rafters, preventing side walls from being pushed outward by roof loads.",
+   keyTakeaway:"Ceiling joists or rafter ties prevent the roof from spreading the walls.",
+   id:"site-carp-epa-v1318-k25"
+  },
+  {
+   code:"K26",
+   question:"In a warm flat roof design, where is the main thermal insulation layer positioned relative to the structural timber deck?",
+   options:[
+    "Above the timber roof deck, keeping the deck and structure at internal warm temperatures.",
+    "Directly below the ceiling plasterboard only, leaving an unventilated cavity above.",
+    "Underneath the ground floor concrete slab.",
+    "Loosely packed between joists with continuous cross-ventilation above."
+   ],
+   correct:0,
+   explanation:"Warm flat roofs place insulation on top of the deck, reducing condensation risk by keeping the deck timber inside the warm zone.",
+   keyTakeaway:"Warm flat roofs place insulation above the structural roof deck.",
+   id:"site-carp-epa-v1318-k26"
+  },
+  {
+   code:"K27",
+   question:"When constructing a load-bearing timber stud partition, what structural component is installed directly above a door opening to transfer loads around the opening?",
+   options:[
+    "A structural header or lintel supported by jack studs.",
+    "A single 12mm plasterboard strip screwed to the head plate.",
+    "A softwood skirting board nailed flat across the opening.",
+    "A diagonal softwood noggin placed centrally in the doorway."
+   ],
+   correct:0,
+   explanation:"Headers transfer vertical loads from above around wall openings down through the supporting studs.",
+   keyTakeaway:"Headers carry loads over partition openings and transfer them to supporting studs.",
+   id:"site-carp-epa-v1318-k27"
+  },
+  {
+   code:"K28",
+   question:"When fitting timber skirting boards along a wall with an internal 90-degree corner, which joint technique prevents gaps from opening up if timber shrinks?",
+   options:[
+    "A scribed joint, cutting the profile of one board over the face of the other.",
+    "A square butt joint without glue or fixings.",
+    "A half-lap edge joint held with carpet tape.",
+    "A straight 45-degree bevel cut along the top edge only."
+   ],
+   correct:0,
+   explanation:"Internal skirting corners are scribed to match the face profile, maintaining a tight visual joint even if timber shrinks in width later.",
+   keyTakeaway:"Use scribed joints on internal skirting corners to absorb timber movement cleanly.",
+   id:"site-carp-epa-v1318-k28"
+  },
+  {
+   code:"K29",
+   question:"Before using a self-levelling cross-line laser to mark datum lines for joist hangers across a large room, what calibration check should be performed?",
+   options:[
+    "Check the laser line against a known datum and rotate the unit 180 degrees to confirm line-height consistency.",
+    "Wipe the glass lens with heavy lubricating oil.",
+    "Place the unit on an uneven pile of loose timber cut-offs without locking the pendulum.",
+    "Charge the battery until it reaches maximum heat."
+   ],
+   correct:0,
+   explanation:"Verifying a laser level requires projecting a mark, rotating the level 180 degrees, and checking that the beam returns to the same height.",
+   keyTakeaway:"Verify laser accuracy over distance by performing a 180-degree rotation check.",
+   id:"site-carp-epa-v1318-k29"
+  },
+  {
+   code:"K40",
+   question:"What is a key tax obligation for a self-employed site carpenter working under the UK Construction Industry Scheme (CIS)?",
+   options:[
+    "Registering with HMRC for CIS so contractors can deduct tax at source, typically 20%, from labour payments.",
+    "Paying no income tax as long as tool costs exceed income.",
+    "Filing VAT returns weekly regardless of turnover level.",
+    "Paying employee National Insurance directly through the site main contractor's payroll."
+   ],
+   correct:0,
+   explanation:"Under CIS, contractors deduct advance tax directly from subcontractor labour payments and submit it to HMRC on their behalf.",
+   keyTakeaway:"CIS requires contractors to deduct advance tax at source from subcontractor labour.",
+   id:"site-carp-epa-v1318-k40"
+  },
+  {
+   code:"S1",
+   question:"You notice an unguarded floor opening on the first-floor joist deck where someone could fall. How do you demonstrate compliance with safety regulations?",
+   options:[
+    "Stop work, secure a temporary guardrail or solid cover over the opening immediately, and label it clearly.",
+    "Step over the gap carefully while carrying heavy timber lengths.",
+    "Cover the hole loosely with a sheet of thin cardboard.",
+    "Ignore it until floor boarding starts next week."
+   ],
+   correct:0,
+   explanation:"Work at height controls require effective edge protection or a secured rigid cover over floor openings.",
+   keyTakeaway:"Securely cover or guard all floor voids and edges before working near them.",
+   id:"site-carp-epa-v1318-s1"
+  },
+  {
+   code:"S2",
+   question:"You need to sand filled timber joints on installed window boards inside a completed room. How do you correctly apply safety control equipment?",
+   options:[
+    "Connect an M-Class dust extraction vacuum to the sander and wear suitable FFP2 or FFP3 respiratory protection.",
+    "Blow dust off the boards using an airline hose toward the doorway.",
+    "Wear eye protection only while keeping all windows tightly shut without extraction.",
+    "Use a wire brush by hand without any respiratory protection."
+   ],
+   correct:0,
+   explanation:"Fine timber and filler dust require suitable extraction attached to the tool along with suitable RPE.",
+   keyTakeaway:"Use tool extraction combined with RPE when sanding timber.",
+   id:"site-carp-epa-v1318-s2"
+  },
+  {
+   code:"S3",
+   question:"At the end of a first-fix framing shift, you have clean timber offcuts, treated wood scraps, and metal joist hanger offcuts. How should you process these waste materials?",
+   options:[
+    "Segregate untreated wood, treated wood, and scrap metal into their designated site recycling bins.",
+    "Throw all wood and metal waste together into the general landfill skip.",
+    "Burn treated timber scraps on site to heat the working area.",
+    "Bury metal fixings underneath the floor insulation boards."
+   ],
+   correct:0,
+   explanation:"Environmental guidance requires sorting site waste by material type so metals and suitable timber can be reclaimed or recycled.",
+   keyTakeaway:"Sort and segregate waste streams to support site material recycling.",
+   id:"site-carp-epa-v1318-s3"
+  },
+  {
+   code:"S4",
+   question:"When installing structural floor joists, the manufacturer's guidance states joist hangers must be fully nailed into solid backing using specified square twist nails. How do you ensure compliance?",
+   options:[
+    "Fill every designated nail hole in the hanger flange with the specified square twist nails.",
+    "Put two drywall screws through the top holes only to hold the hanger in place.",
+    "Use smooth oval wire nails in every second hole to save time.",
+    "Weld the galvanised hanger to the timber plate using a spot torch."
+   ],
+   correct:0,
+   explanation:"Structural fixings must follow the manufacturer's specification, using the correct nails in all designated holes to achieve the rated capacity.",
+   keyTakeaway:"Install specified fixings in all designated fixing holes to achieve the structural rating.",
+   id:"site-carp-epa-v1318-s4"
+  },
+  {
+   code:"S5",
+   question:"Before setting up a chop saw station inside a room under construction, how do you prepare a safe working area?",
+   options:[
+    "Ensure adequate lighting, clear trip hazards, manage power cables, and set up a stable work stand with dust extraction.",
+    "Set the saw directly on the floor surrounded by loose timber offcuts.",
+    "Block the main exit doorway with timber racks so materials stay close by.",
+    "Run extension leads through standing surface water across the access path."
+   ],
+   correct:0,
+   explanation:"Safe work area preparation requires clear access routes, stable equipment stands, good lighting, managed cables and suitable dust control.",
+   keyTakeaway:"Maintain clean, well-lit and uncluttered work zones around power tool stations.",
+   id:"site-carp-epa-v1318-s5"
+  },
+  {
+   code:"S6",
+   question:"You are reading a structural floor drawing and notice the joist spacing is specified as 400mm centres, but the site layout pencil mark shows 600mm centres. What should you do?",
+   options:[
+    "Halt joist layout, check the specification drawing, and correct the layout marks before fixing.",
+    "Lay the joists at 600mm centres because it uses fewer materials.",
+    "Split the difference and lay joists at 500mm centres.",
+    "Ignore the drawing and lay joists wherever existing wall ties are located."
+   ],
+   correct:0,
+   explanation:"Structural drawings must be followed. If site marks contradict the drawing, stop and verify before fixing structural elements.",
+   keyTakeaway:"Verify layout marks against structural drawings before installing components.",
+   id:"site-carp-epa-v1318-s6"
+  },
+  {
+   code:"S7",
+   question:"You are tasked with framing a stud partition wall measuring 6m long by 2.4m high. How do you produce an accurate timber cutting list?",
+   options:[
+    "Calculate top and bottom plates, studs at the specified centres, opening members and noggins, adding an appropriate waste allowance.",
+    "Order 50 identical timber lengths without measuring the wall run.",
+    "Guess the required timber count by looking at a nearby completed room.",
+    "Order studs only and cut top plates out of spare floorboards."
+   ],
+   correct:0,
+   explanation:"An accurate cutting list calculates plates, studs, noggins and opening components systematically from the actual dimensions, with a reasonable waste allowance.",
+   keyTakeaway:"Calculate all framing components systematically when compiling timber cutting lists.",
+   id:"site-carp-epa-v1318-s7"
+  },
+  {
+   code:"S8",
+   question:"You need to ask the site supervisor for additional ceiling joist timber. How do you communicate this using correct construction terminology?",
+   options:[
+    "We require twenty 47x145mm C24 graded timber lengths at 4.2 metres for the ceiling joists.",
+    "We need a bunch of medium-sized wood planks for the top floor ceiling.",
+    "Send up twenty long sticks of brown wood so we can finish the roof floor.",
+    "We need some structural timber cut to whatever size is available in the yard."
+   ],
+   correct:0,
+   explanation:"Clear professional communication requires exact dimensions, structural grade, intended use and required lengths.",
+   keyTakeaway:"Specify exact structural grade, dimensions and lengths when ordering materials.",
+   id:"site-carp-epa-v1318-s8"
+  },
+  {
+   code:"S9",
+   question:"How should sharp bevel-edged chisels be safely carried and stored when moving around a busy construction site?",
+   options:[
+    "Stored inside a protective tool roll or box with edge guards fitted over the blades.",
+    "Carried loose in trouser side pockets with blades facing upwards.",
+    "Tucked blade-first into a high-visibility vest chest pocket.",
+    "Balanced on top of an open stepladder while moving between rooms."
+   ],
+   correct:0,
+   explanation:"Protecting sharp edges in guards or tool rolls prevents edge damage and protects workers from puncture injuries.",
+   keyTakeaway:"Keep sharp hand tools sheathed or stored securely when moving around site.",
+   id:"site-carp-epa-v1318-s9"
+  },
+  {
+   code:"S10",
+   question:"When using a 110V plunge router to trim laminate edges, what operational step ensures tool control and user safety?",
+   options:[
+    "Feed the router against the cutter rotation with both hands on the handles, allowing the bit to reach full speed before engaging.",
+    "Climb-cut rapidly by pulling the router in the same direction as cutter rotation.",
+    "Hold the workpiece with one hand and operate the router with the other.",
+    "Adjust bit depth while the motor cable is plugged in and powered."
+   ],
+   correct:0,
+   explanation:"Feeding against cutter rotation helps prevent the tool grabbing and running out of control. Both hands should remain on the handles.",
+   keyTakeaway:"Maintain two-handed control on routers and feed against cutter rotation.",
+   id:"site-carp-epa-v1318-s10"
+  },
+  {
+   code:"S11",
+   question:"While planing a hardwood door edge, your hand plane blade begins to tear the timber grain and skip. How do you return the blade to good working condition?",
+   options:[
+    "Remove the iron, hone the secondary bevel on a fine stone, remove the wire burr from the back, and reset the plane correctly.",
+    "Hit the iron with a claw hammer to force it further through the sole opening.",
+    "Grind the iron on a high-speed dry bench grinder until the metal turns blue.",
+    "File the cutting edge rounded using a coarse rasp."
+   ],
+   correct:0,
+   explanation:"Proper sharpening requires honing a refined edge, removing the wire burr from the flat back, and resetting the plane correctly.",
+   keyTakeaway:"Hone blade edges on sharpening stones and remove burrs to maintain clean cuts.",
+   id:"site-carp-epa-v1318-s11"
+  },
+  {
+   code:"S12",
+   question:"You need to cut twenty identical timber wedge fillets for a flat roof firring installation. How do you produce a jig to ensure fast, safe and accurate repeatable cuts?",
+   options:[
+    "Construct a secure plywood fence jig that holds stock at the correct angle against a suitable saw stop.",
+    "Mark each wedge individually by hand and cut every one freehand.",
+    "Hold short timber blocks against a bare circular saw blade with your fingers.",
+    "Judge the angle by eye on each cut without using end stops or clamps."
+   ],
+   correct:0,
+   explanation:"A fixed jig with stops and a secure holding method produces repeatable cuts while keeping hands away from the blade.",
+   keyTakeaway:"Use custom guide jigs with end stops for accurate, safe repeatable cuts.",
+   id:"site-carp-epa-v1318-s12"
+  },
+  {
+   code:"S13",
+   question:"A colleague mentions feeling overwhelmed by financial pressure and personal stress. What practical action demonstrates identifying wellbeing support?",
+   options:[
+    "Provide details for the Construction Industry Helpline or Employee Assistance Programme and encourage them to speak to a trained site representative.",
+    "Advise them to work extra night shifts to double their pay.",
+    "Tell them feeling stressed is standard for site trades so they should ignore it.",
+    "Discuss their personal situation publicly with the rest of the site workforce."
+   ],
+   correct:0,
+   explanation:"Supporting a colleague involves connecting them with confidential industry support services and trained welfare staff.",
+   keyTakeaway:"Direct colleagues to confidential industry wellbeing services and trained advisers.",
+   id:"site-carp-epa-v1318-s13"
+  },
+  {
+   code:"S14",
+   question:"You are installing a straight flight of timber stairs between two structural floors. How do you ensure the stair stringers are secured accurately?",
+   options:[
+    "Fix the stair head securely to the floor trimmer using the specified structural connection, ensuring top and bottom risers suit finished floor levels.",
+    "Rest the stair stringer loosely against the plasterboard wall and nail it through the floorboards.",
+    "Support the middle of the stair flight on temporary loose brick stacks.",
+    "Screw the bottom step into carpet underlay without fixing the stair head."
+   ],
+   correct:0,
+   explanation:"Stair flights must be structurally tied to the floor trimmer at the top and anchored securely at the base, while maintaining consistent riser heights between finished floors.",
+   keyTakeaway:"Fix stair flights securely to floor trimmers, accounting for finished floor levels.",
+   id:"site-carp-epa-v1318-s14"
+  },
+  {
+   code:"S15",
+   question:"When securing a heavy timber sole plate down into a concrete floor slab, which structural fixing method should be applied?",
+   options:[
+    "Drill and anchor using specified heavy-duty expansion bolts or concrete screws at the required centres.",
+    "Use 40mm panel pins driven into plastic wall plugs every 2 metres.",
+    "Apply a thin bead of PVA wood glue along the damp proof membrane.",
+    "Weight the timber down with loose concrete blocks until framed walls are built on top."
+   ],
+   correct:0,
+   explanation:"Sole plates require rated mechanical anchors into the concrete slab to resist uplift and lateral loads.",
+   keyTakeaway:"Use rated mechanical masonry anchors to secure structural sole plates to concrete.",
+   id:"site-carp-epa-v1318-s15"
+  },
+  {
+   code:"S16",
+   question:"You need to select timber joists for a clear floor span of 3.8 metres. How do you size the timber correctly using standard sizing tables?",
+   options:[
+    "Use the relevant span table for the 3.8m clear span and expected loading to identify the required grade and section size.",
+    "Pick any timber depth as long as the wood looks clean and free of large knots.",
+    "Measure the wall thickness and choose a timber length that matches wall height.",
+    "Use 38x89mm studding timber doubled up with wood glue."
+   ],
+   correct:0,
+   explanation:"Timber span tables specify the minimum grade and section required for a particular clear span, spacing and loading condition.",
+   keyTakeaway:"Cross-reference span and loading against approved timber span tables to select joist sizes.",
+   id:"site-carp-epa-v1318-s16"
+  },
+  {
+   code:"S17",
+   question:"You are installing internal timber window boards above radiators during second-fix operations. How should these be fitted and secured?",
+   options:[
+    "Cut the ends accurately to fit the reveals, pack the board level, and secure it with the specified adhesive or concealed mechanical fixings.",
+    "Nail window boards loosely through window frame glazing beads using 100mm wire nails.",
+    "Rely on expanding foam alone without mechanical fixings or level checks.",
+    "Leave a 25mm forward slope so the board slides away from the wall line."
+   ],
+   correct:0,
+   explanation:"Window boards must fit the reveals neatly, be packed level and be secured using a suitable approved fixing method.",
+   keyTakeaway:"Fit window boards neatly to reveals, pack them level and fix them securely.",
+   id:"site-carp-epa-v1318-s17"
+  },
+  {
+   code:"S18",
+   question:"When framing a traditional cut rafter roof on site, how do you mark and cut the birdsmouth joint where rafters meet the timber wall plate?",
+   options:[
+    "Mark the plumb and seat cuts from the roof pitch, keeping the notch within the permitted rafter depth, then cut neatly to bear on the plate.",
+    "Chop a square notch halfway through the wall plate so the rafter sits flat.",
+    "Cut the rafter completely flat on the end and butt-nail it to the side of the wall plate.",
+    "Saw through the entire rafter and reconnect the pieces with nail plates over the wall plate."
+   ],
+   correct:0,
+   explanation:"A birdsmouth combines a plumb cut and a level seat cut so the rafter bears correctly on the wall plate without excessive loss of section.",
+   keyTakeaway:"Mark birdsmouth cuts from the roof pitch and keep the notch within the permitted rafter depth.",
+   id:"site-carp-epa-v1318-s18"
+  },
+  {
+   code:"S19",
+   question:"You are transferring a finished floor datum level across four rooms using a self-levelling cross-line laser. How do you ensure accuracy and protect the instrument?",
+   options:[
+    "Mount the laser securely, allow it to self-level, mark points precisely, and lock the pendulum before moving it.",
+    "Balance the laser loosely on an inverted bucket and tilt it by hand to reach high marks.",
+    "Leave the self-levelling lock disengaged while transporting the tool across rough ground.",
+    "Mark datum points using the wide outer edge of the laser beam."
+   ],
+   correct:0,
+   explanation:"Laser levels need a stable setup to self-level accurately, and the pendulum should be locked during transport to protect the mechanism.",
+   keyTakeaway:"Mount laser levels securely and lock the pendulum before transport.",
+   id:"site-carp-epa-v1318-s19"
+  },
+  {
+   code:"S20",
+   question:"When installing timber wall cladding outdoors, what fixing method prevents moisture from corroding nails and staining timber faces?",
+   options:[
+    "Use the specified stainless steel or hot-dip galvanised ring-shank nails, driven to the required finish.",
+    "Use untreated black mild steel wire nails.",
+    "Use indoor drywall screws driven flush into timber faces.",
+    "Glue cladding panels directly to masonry walls using PVA adhesive."
+   ],
+   correct:0,
+   explanation:"External timber cladding requires corrosion-resistant fixings to prevent rust staining and premature fixing failure.",
+   keyTakeaway:"Use stainless steel or suitably galvanised fixings for external timber cladding.",
+   id:"site-carp-epa-v1318-s20"
+  },
+  {
+   code:"S21",
+   question:"You are hanging a solid softwood internal door into a newly installed timber lining. How do you mark out and cut the hinge recesses?",
+   options:[
+    "Mark hinge positions accurately, gauge the hinge-leaf depth, cut the recess cleanly, and fix the hinges flush with suitable screws.",
+    "Chisel a slot twice as deep as the hinge leaf so the hinge drops below the timber face.",
+    "Screw hinges directly onto the unrecessed face of the door edge.",
+    "Cut hinge recesses using a handsaw angled at 45 degrees into the door edge."
+   ],
+   correct:0,
+   explanation:"Hinge recesses must be marked accurately and cut to the exact leaf thickness so the hinge sits flush and the door operates correctly.",
+   keyTakeaway:"Cut hinge recesses to the exact leaf depth so the hardware sits flush.",
+   id:"site-carp-epa-v1318-s21"
+  },
+  {
+   code:"S22",
+   question:"When fitting dado rails along an uneven wall face, how do you execute a scribed joint on an internal corner?",
+   options:[
+    "Fit the first moulding square into the corner, mitre the second to expose the profile, then cope along that profile for a tight fit.",
+    "Cut two opposing 45-degree mitres and pack any gap behind with folded paper.",
+    "Butt both pieces together and fill the front voids with dark wood filler.",
+    "Bevel both timber ends to 30 degrees and overlap them across the corner."
+   ],
+   correct:0,
+   explanation:"Scribing exposes the moulding profile with a mitre and then removes the waste behind it so the second piece fits tightly over the first.",
+   keyTakeaway:"Use a coping saw along the exposed profile to create tight internal scribed joints.",
+   id:"site-carp-epa-v1318-s22"
+  },
+  {
+   code:"B1",
+   question:"You notice that the main guardrail on a mobile scaffold tower has been unclipped and left hanging loose by another team. How do you demonstrate putting safety and wellbeing first?",
+   options:[
+    "Stop work on or near the tower, prevent access, and report the defect so the tower can be made safe by a competent person.",
+    "Climb the tower quickly to grab a tool, taking care not to lean against the open side.",
+    "Wait until the end of the shift to mention the loose guardrail.",
+    "Ignore the scaffold because your immediate carpentry task is on ground level."
+   ],
+   correct:0,
+   explanation:"Putting safety first means stopping exposure to the hazard and ensuring the equipment is made safe before use.",
+   keyTakeaway:"Take immediate ownership of safety hazards, regardless of who caused them.",
+   id:"site-carp-epa-v1318-b1"
+  },
+  {
+   code:"B2",
+   question:"When cutting short joist noggins out of 4.8m timber lengths, how do you demonstrate environmental consideration during work processes?",
+   options:[
+    "Plan the cutting sequence and use suitable existing offcuts before opening new full-length timber packs.",
+    "Cut every short noggin from fresh full-length timber and discard the remaining pieces.",
+    "Throw all timber offcuts under 2 metres into the general waste skip.",
+    "Order custom short noggins regardless of suitable stock already on site."
+   ],
+   correct:0,
+   explanation:"Environmental responsibility includes planning cuts to reduce waste and using suitable offcuts before opening new stock.",
+   keyTakeaway:"Use material offcuts productively to reduce site timber waste.",
+   id:"site-carp-epa-v1318-b2"
+  },
+  {
+   code:"B3",
+   question:"A female apprentice carpenter joins your first-fix team. How do you actively contribute to an inclusive and diverse culture on site?",
+   options:[
+    "Treat her with equal respect, involve her fully in skilled framing tasks, and challenge non-inclusive behaviour.",
+    "Assign her light cleaning duties only so she avoids physical framing work.",
+    "Expect her to prove her skills before giving her access to power tools.",
+    "Avoid speaking to her so you do not accidentally say something wrong."
+   ],
+   correct:0,
+   explanation:"An inclusive culture gives every team member equal respect, learning opportunities and access to skilled work.",
+   keyTakeaway:"Treat all colleagues equally and ensure everyone can participate in skilled work.",
+   id:"site-carp-epa-v1318-b3"
+  },
+  {
+   code:"B4",
+   question:"A specialist subcontractor is using a high-precision CNC timber routing system on site for prefabricated roof components. How do you demonstrate seeking learning and development opportunities?",
+   options:[
+    "Ask permission to observe the setup, ask relevant technical questions, and read the component fabrication information.",
+    "Dismiss the technology as unnecessary compared with traditional hand sawing.",
+    "Assume you will never need to understand automated machinery in your career.",
+    "Complain that automated machinery reduces traditional site hours."
+   ],
+   correct:0,
+   explanation:"Seeking development means showing initiative and learning about modern methods, equipment and processes.",
+   keyTakeaway:"Take initiative to learn modern methods and equipment from specialist trades.",
+   id:"site-carp-epa-v1318-b4"
+  },
+  {
+   code:"B5",
+   question:"Your carpentry team is tasked with boarding a floor deck before dryliners arrive to erect internal partitions. How do you demonstrate a team focus to meet goals?",
+   options:[
+    "Coordinate the floor layout and handover sequence with the drylining team so priority partition areas are ready on time.",
+    "Board floors randomly without discussing room priorities with follow-on trades.",
+    "Focus only on your own daily output regardless of whether partition areas are accessible.",
+    "Leave floor boarding incomplete around doorways so another trade can finish it later."
+   ],
+   correct:0,
+   explanation:"Team focus means coordinating with adjoining trades and considering the wider programme rather than only individual output.",
+   keyTakeaway:"Coordinate actively with adjoining trades to achieve project-wide milestones.",
+   id:"site-carp-epa-v1318-b5"
+  }
+ ]
 };
 function epaQuestionWritingIssues(q){
  const issues=[];
