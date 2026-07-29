@@ -1,3 +1,13 @@
+# v1.27 — Assignment-Specific Practical Tasks
+
+- Replaced the shared three-task practical generator with assignment-specific Easy, Medium and Hard activities.
+- Added a unique practical activity set for every Bricklayer, Site Carpentry, Architectural Joiner and Property Maintenance assignment.
+- Task-titled assignments now generate activities directly related to their topic, including solid walling, cavity walling, roofing, staircases, doors, windows, plumbing, masonry and other trade activities.
+- General assignments such as health and safety, sustainability, communication and preparation still use genuine trade tasks so the existing KSBs can be observed during practical work.
+- Kept Custom Task completely blank.
+- Left all official Practical Assessment KSB marking criteria and scoring unchanged.
+- Updated the visible version and offline cache.
+
 # v1.26 — Optional Witness KSB Mapping
 
 - Witness testimony and employer statements no longer require every KSB to be selected or scored.
