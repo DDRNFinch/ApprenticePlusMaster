@@ -1,3 +1,13 @@
+# v1.38.2 – Global Learning Support
+
+- Applied Learning Support preferences across the entire app, including Course, assignments, practical assessments, theory, walkthroughs, Toolbox, Academy, EPA, KSB views, documents, forms and pop-ups.
+- Text size and line spacing now update all current and newly rendered screens.
+- Readable font and coloured reading backgrounds now apply globally to cards, forms, navigation and modal content.
+- Focus Mode now enlarges controls and reduces motion throughout the app.
+- Caption preferences are applied to every available video text track, with optional larger captions.
+- Visual alerts and vibration preferences now apply to app-wide confirmations.
+- Accessibility preferences continue to persist on the device.
+
 # v1.38.1 – Voice Dictation Duplicate Fix
 
 - Fixed Android voice-to-text repeatedly inserting the same spoken phrase.

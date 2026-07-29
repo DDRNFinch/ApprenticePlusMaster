@@ -55,5 +55,9 @@ Admin Mode now includes locally stored college branding and reusable learner QR 
 ### V1.37.9
 Every editable text field now includes app-wide voice-to-text dictation using an Apprentice+ microphone control. Dictation inserts at the cursor and continues to use each field's existing save or auto-save behaviour.
 
-### V1.38.1 Learning Support
+### V1.38.2 Learning Support
 The Toolbox now includes a Learning Support hub with reading, writing, focus, hearing, memory, planning and plain-English support tools. Accessibility preferences are stored locally on the learner's device and do not record diagnoses or medical information.
+
+
+## v1.38.2
+Learning Support settings are global and apply to every part of Apprentice+, not only the Learning Support pages.
