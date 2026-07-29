@@ -1,3 +1,11 @@
+## V1.22 — Standalone ProjectMate generator
+
+- Removed generated-project dependence on assignment mapping.
+- Added Easy, Medium and Hard project generation with 1–2, 2–4 and 4–6 hour targets.
+- Expanded Bricklayer projects beyond a small fixed wall set, including returns, coping, piers, cavity corners, openings, lintels, decorative and movement-joint work.
+- KSBs are now selected for the generated task itself rather than copied from a single assignment.
+- Custom projects are standalone and no longer alter or rely on official practical-assessment criteria.
+
 ## V1.21 — ProjectMate wastage and project management
 
 - Material quantities now accept the calculated requirement through to a maximum of 10% extra wastage.
