@@ -245,25 +245,25 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.12';
+const APP_VERSION='V1.14';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
 const app=document.getElementById('app');
 const toastEl=document.getElementById('toast');
-let state={view:'home',assignment:null,section:null,profile:null,data:{},dev:false,academySearch:'',academyTopic:null,epaMock:null,knowledgeTest:null,walkthroughCode:null,resourceSearch:'',editingNoteId:null};
+let state={view:'home',assignment:null,section:null,profile:null,data:{},dev:false,academySearch:'',academyTopic:null,epaMock:null,knowledgeTest:null,walkthroughCode:null,resourceSearch:'',notepadSearchOpen:false,editingNoteId:null};
 let db;
 const NAV_STATE_KEY='apprenticeplus.navigation.v1';
 let restoringNavigation=false;
 let navigationReady=false;
 let lastNavigationSignature='';
-function navigationSnapshot(scrollY=window.scrollY||0){return {view:state.view,assignment:state.assignment,section:state.section,academyTopic:state.academyTopic,academySearch:state.academySearch,walkthroughCode:state.walkthroughCode,resourceSearch:state.resourceSearch,editingNoteId:state.editingNoteId,scrollY,courseId:ACTIVE_COURSE_ID}}
+function navigationSnapshot(scrollY=window.scrollY||0){return {view:state.view,assignment:state.assignment,section:state.section,academyTopic:state.academyTopic,academySearch:state.academySearch,walkthroughCode:state.walkthroughCode,resourceSearch:state.resourceSearch,notepadSearchOpen:state.notepadSearchOpen,editingNoteId:state.editingNoteId,scrollY,courseId:ACTIVE_COURSE_ID}}
 function navigationSignature(snapshot){return JSON.stringify([snapshot.courseId,snapshot.view,snapshot.assignment,snapshot.section,snapshot.academyTopic,snapshot.walkthroughCode])}
 function saveNavigationSnapshot(snapshot=navigationSnapshot()){
  try{localStorage.setItem(NAV_STATE_KEY,JSON.stringify(snapshot))}catch{}
 }
 function validRestoredView(snapshot){
- const allowed=new Set(['home','assignment','academy','library','lesson','epa','epa-result','walkthrough','section','resources','notepad']);
+ const allowed=new Set(['home','assignment','academy','library','lesson','epa','epa-result','walkthrough','section','resources','notepad','tools']);
  if(!snapshot||snapshot.courseId!==ACTIVE_COURSE_ID||!allowed.has(snapshot.view))return false;
  if(['assignment','walkthrough','section'].includes(snapshot.view)&&!assignment(Number(snapshot.assignment)))return false;
  if(snapshot.view==='section'&&!['practical','photos','statement','discussion','witness','supporting'].includes(snapshot.section))return false;
@@ -271,7 +271,7 @@ function validRestoredView(snapshot){
 }
 function applyNavigationSnapshot(snapshot){
  if(!validRestoredView(snapshot))return false;
- state.view=snapshot.view;state.assignment=snapshot.assignment==null?null:Number(snapshot.assignment);state.section=snapshot.section||null;state.academyTopic=snapshot.academyTopic||null;state.academySearch=snapshot.academySearch||'';state.walkthroughCode=snapshot.walkthroughCode||null;state.resourceSearch=snapshot.resourceSearch||'';state.editingNoteId=snapshot.editingNoteId||null;
+ state.view=snapshot.view;state.assignment=snapshot.assignment==null?null:Number(snapshot.assignment);state.section=snapshot.section||null;state.academyTopic=snapshot.academyTopic||null;state.academySearch=snapshot.academySearch||'';state.walkthroughCode=snapshot.walkthroughCode||null;state.resourceSearch=snapshot.resourceSearch||'';state.notepadSearchOpen=!!snapshot.notepadSearchOpen;state.editingNoteId=snapshot.editingNoteId||null;
  return true;
 }
 function recordNavigation(){
@@ -312,7 +312,10 @@ function appIcon(name,extra=''){
   academy:'<path d="m3 10 9-7 9 7-9 5Z"/><path d="M7 13v5c3 2 7 2 10 0v-5M21 10v6"/>',
   revision:'<path d="M12 3a9 9 0 1 0 8.2 5.3"/><path d="M20 3v6h-6M12 7v5l3 2"/>',
   library:'<path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v15H6a2 2 0 0 1-2-2Z"/><path d="M8 7h8M8 11h8M8 15h5"/>',
-  questionPack:'<path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M8 7h8"/><path d="M9.5 11a2.5 2.5 0 1 1 4.1 1.9c-.9.7-1.6 1.1-1.6 2.1"/><path d="M12 18h.01"/><path d="M3 7v12a2 2 0 0 0 2 2"/>'
+  questionPack:'<path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M8 7h8"/><path d="M9.5 11a2.5 2.5 0 1 1 4.1 1.9c-.9.7-1.6 1.1-1.6 2.1"/><path d="M12 18h.01"/><path d="M3 7v12a2 2 0 0 0 2 2"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+  close:'<path d="M6 6l12 12M18 6 6 18"/>',
+  tools:'<path d="M14.7 6.3a4 4 0 0 0-5 5L3.5 17.5a2.1 2.1 0 0 0 3 3l6.2-6.2a4 4 0 0 0 5-5l-2.4 2.4-3-3Z"/><path d="m15 15 5 5"/><path d="m17 13 4 4"/>'
  };
  return `<svg class="app-icon ${extra}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${paths[name]||paths.file}</svg>`;
 }
@@ -582,9 +585,9 @@ async function load(){
 async function saveData(){await putStore('data',state.data)}
 async function saveProfile(){await putStore('profile',state.profile)}
 
-function shell(content){const active=state.view==='resources'||state.view==='notepad'?'resources':state.view==='academy'||state.view==='library'?'academy':'course';return `<main class="shell"><header class="topbar"><div class="brand"><div class="logo"><img src="logo-apprentice-plus.png" alt="Apprentice+ logo"></div><div><div class="brand-title-row"><h1>Apprentice+</h1></div><p class="subtitle">Your evidence, organised</p></div></div>${state.profile?`<span class="pill">${esc(state.profile.fullName.split(' ')[0]||'Learner')}</span>`:''}</header>${content}<div class="app-version-bottom no-print">${APP_VERSION}</div><nav class="bottom-nav no-print" aria-label="Main navigation"><button class="bottom-nav-item ${active==='resources'?'active':''}" data-nav="resources" aria-label="Toolbox"><span>${appIcon('toolbox','nav-icon')}</span><strong>Toolbox</strong></button><button class="bottom-nav-item ${active==='course'?'active':''}" data-nav="course" aria-label="Course"><span>${appIcon('course','nav-icon')}</span><strong>Course</strong></button><button class="bottom-nav-item ${active==='academy'?'active':''}" data-nav="academy" aria-label="Academy"><span>${appIcon('academy','nav-icon')}</span><strong>Academy</strong></button></nav></main>`}
+function shell(content){const active=state.view==='resources'||state.view==='notepad'||state.view==='tools'?'resources':state.view==='academy'||state.view==='library'?'academy':'course';return `<main class="shell"><header class="topbar"><div class="brand"><div class="logo"><img src="logo-apprentice-plus.png" alt="Apprentice+ logo"></div><div><div class="brand-title-row"><h1>Apprentice+</h1></div><p class="subtitle">Your evidence, organised</p></div></div>${state.profile?`<span class="pill">${esc(state.profile.fullName.split(' ')[0]||'Learner')}</span>`:''}</header>${content}<div class="app-version-bottom no-print">${APP_VERSION}</div><nav class="bottom-nav no-print" aria-label="Main navigation"><button class="bottom-nav-item ${active==='resources'?'active':''}" data-nav="resources" aria-label="Toolbox"><span>${appIcon('toolbox','nav-icon')}</span><strong>Toolbox</strong></button><button class="bottom-nav-item ${active==='course'?'active':''}" data-nav="course" aria-label="Course"><span>${appIcon('course','nav-icon')}</span><strong>Course</strong></button><button class="bottom-nav-item ${active==='academy'?'active':''}" data-nav="academy" aria-label="Academy"><span>${appIcon('academy','nav-icon')}</span><strong>Academy</strong></button></nav></main>`}
 function courseHeader(){const p=courseProgressStats(),red=p.red??0;return `<section class="course-card"><div class="course-summary"><div class="course-copy"><div class="course-title-row"><h2>${COURSE.name}</h2><span class="target-status ${p.tone}">${p.label}</span></div><div class="meta"><span class="pill">${COURSE.standard}</span><span class="pill">Version ${COURSE.version}</span><span class="pill">Level ${COURSE.level}</span><span class="pill green">${courseAssignments().length} evidence packs</span></div></div><button class="progress-rings" id="courseProgressBtn" aria-label="Open course progress details" style="--green:${p.green*3.6}deg;--yellow:${p.yellow*3.6}deg;--red:${red*3.6}deg"><span class="ring ring-green"></span><span class="ring ring-yellow"></span><span class="ring ring-red"></span><strong>${p.green}%</strong></button></div></section>`}
-function render(){recordNavigation();if(state.view==='resources')renderResources();else if(state.view==='notepad')renderNotepad();else if(state.view==='home')renderHome();else if(state.view==='assignment')renderAssignment();else if(state.view==='academy')renderAcademy();else if(state.view==='library')renderKnowledgeLibrary();else if(state.view==='lesson')renderAcademyLesson();else if(state.view==='epa')renderEpaMockHome();else if(state.view==='epa-test')renderEpaMockTest();else if(state.view==='epa-result')renderEpaMockResult();else if(state.view==='knowledge-test')renderAssignmentKnowledgeTest();else if(state.view==='knowledge-result')renderAssignmentKnowledgeResult();else if(state.view==='walkthrough')renderWalkthrough();else renderSection()}
+function render(){recordNavigation();if(state.view==='resources')renderResources();else if(state.view==='notepad')renderNotepad();else if(state.view==='tools')renderTools();else if(state.view==='home')renderHome();else if(state.view==='assignment')renderAssignment();else if(state.view==='academy')renderAcademy();else if(state.view==='library')renderKnowledgeLibrary();else if(state.view==='lesson')renderAcademyLesson();else if(state.view==='epa')renderEpaMockHome();else if(state.view==='epa-test')renderEpaMockTest();else if(state.view==='epa-result')renderEpaMockResult();else if(state.view==='knowledge-test')renderAssignmentKnowledgeTest();else if(state.view==='knowledge-result')renderAssignmentKnowledgeResult();else if(state.view==='walkthrough')renderWalkthrough();else renderSection()}
 
 function isAcademyKnowledge(code){return COURSE.nvqUnits||String(code).toUpperCase().startsWith('K')}
 function courseRevisionTopics(){
@@ -974,8 +977,13 @@ const NOTEPAD_KEY='resources:learner-notes:v1';
 function learnerNotes(){return Array.isArray(state.data[NOTEPAD_KEY])?state.data[NOTEPAD_KEY]:[]}
 function noteDate(value){try{return new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(value))}catch{return ''}}
 function renderResources(){
- app.innerHTML=shell(`<div class="section-heading"><div><div class="number">Toolbox</div><h2>Your learning toolbox</h2><p class="muted">Useful tools and information saved for future reference.</p></div></div><section class="resource-grid"><button class="resource-card" id="openNotepad"><span class="resource-icon">${appIcon('note')}</span><div><h3>Learner Notepad</h3><p>Create searchable notes with text, photographs, voice recordings and videos.</p><small>${learnerNotes().length} saved note${learnerNotes().length===1?'':'s'}</small></div><span class="resource-arrow">›</span></button></section>`);
+ app.innerHTML=shell(`<div class="section-heading"><div><div class="number">Toolbox</div><h2>Your learning toolbox</h2><p class="muted">Workplace tools and information saved for future reference.</p></div></div><section class="resource-grid"><button class="resource-card" id="openNotepad"><span class="resource-icon">${appIcon('note')}</span><div class="resource-card-copy"><h3>Learner Notepad</h3><p>Save notes, photos, videos and voice recordings.</p><small>${learnerNotes().length} saved note${learnerNotes().length===1?'':'s'}</small></div><span class="resource-arrow">›</span></button><button class="resource-card" id="openTools"><span class="resource-icon">${appIcon('tools')}</span><div class="resource-card-copy"><h3>Tools</h3><p>Open mini apps designed to help in the workplace.</p><small>Mini apps coming soon</small></div><span class="resource-arrow">›</span></button></section>`);
  document.getElementById('openNotepad').onclick=()=>{state.view='notepad';state.editingNoteId=null;render();window.scrollTo(0,0)};
+ document.getElementById('openTools').onclick=()=>{state.view='tools';render();window.scrollTo(0,0)};
+}
+function renderTools(){
+ app.innerHTML=shell(`<button class="back no-print" id="backResources">← Toolbox</button><div class="section-heading"><div><div class="number">Toolbox</div><h2>Tools</h2><p class="muted">Workplace mini apps will be added here.</p></div></div><section class="card panel empty-tools"><div class="panel-body"><span class="empty-tools-icon">${appIcon('tools')}</span><h3>No tools added yet</h3><p class="muted">This area is ready for calculators, checkers, guides and other mini apps for learners.</p></div></section>`);
+ document.getElementById('backResources').onclick=()=>{state.view='resources';render();window.scrollTo(0,0)};
 }
 function noteMediaLabel(type){return type==='image'?'Photo':type==='audio'?'Voice recording':'Video'}
 async function storeNoteFiles(files,type,noteId){
@@ -997,10 +1005,11 @@ function renderNotepad(){
  const query=(state.resourceSearch||'').trim().toLowerCase();
  const notes=learnerNotes().filter(n=>!query||`${n.title} ${n.text}`.toLowerCase().includes(query));
  const editing=state.editingNoteId?learnerNotes().find(n=>n.id===state.editingNoteId):null;
- app.innerHTML=shell(`<button class="back no-print" id="backResources">← Toolbox</button><div class="section-heading notepad-heading"><div><div class="number">Toolbox</div><h2>Learner Notepad</h2><p class="muted">Save workplace reminders, ideas and useful evidence references.</p></div><button class="btn" id="newNote">+ New note</button></div><div class="notepad-search"><input class="input" id="noteSearch" type="search" placeholder="Search notes" value="${esc(state.resourceSearch||'')}"></div>${editing?noteEditor(editing):''}<section class="note-list">${notes.length?notes.map(noteCard).join(''):`<div class="card panel empty-notes"><h3>${query?'No matching notes':'No notes saved yet'}</h3><p class="muted">${query?'Try a different search.':'Press New note to create your first learner note.'}</p></div>`}</section>`);
- document.getElementById('backResources').onclick=()=>{state.view='resources';state.editingNoteId=null;render()};
- document.getElementById('newNote').onclick=()=>{const note={id:uid(),title:'',text:'',media:[],createdAt:Date.now(),updatedAt:Date.now()};state.data[NOTEPAD_KEY]=[note,...learnerNotes()];state.editingNoteId=note.id;render();window.scrollTo(0,0)};
- const search=document.getElementById('noteSearch');search.oninput=()=>{state.resourceSearch=search.value;clearTimeout(search._timer);search._timer=setTimeout(render,180)};
+ app.innerHTML=shell(`<button class="back no-print" id="backResources">← Toolbox</button><div class="notepad-search-launch-row no-print"><button class="notepad-search-button ${query?'active':''}" id="openNoteSearch" aria-label="Search learner notes" title="Search learner notes">${appIcon('search')}</button></div><div class="section-heading notepad-heading"><div><div class="number">Toolbox</div><h2>Learner Notepad</h2><p class="muted">Save workplace reminders, ideas and useful evidence references.</p></div><button class="btn" id="newNote">+ New note</button></div>${editing?noteEditor(editing):''}<section class="note-list">${notes.length?notes.map(noteCard).join(''):`<div class="card panel empty-notes"><h3>${query?'No matching notes':'No notes saved yet'}</h3><p class="muted">${query?'Try a different search.':'Press New note to create your first learner note.'}</p></div>`}</section>${state.notepadSearchOpen?`<div class="modal notepad-search-modal no-print" id="noteSearchModal"><section class="modal-card notepad-search-sheet" role="dialog" aria-modal="true" aria-labelledby="noteSearchTitle"><div class="notepad-search-modal-head"><h2 id="noteSearchTitle">Search notes</h2><button class="icon-close-button" id="closeNoteSearch" aria-label="Close search">${appIcon('close')}</button></div><div class="notepad-search-popup-field"><span>${appIcon('search')}</span><input class="input" id="noteSearch" type="search" placeholder="Search note names or text" value="${esc(state.resourceSearch||'')}" autocomplete="off"></div>${query?'<button class="link-button clear-note-search" id="clearNoteSearch">Clear search</button>':''}</section></div>`:''}`);
+ document.getElementById('backResources').onclick=()=>{state.view='resources';state.editingNoteId=null;state.notepadSearchOpen=false;render()};
+ document.getElementById('newNote').onclick=()=>{const note={id:uid(),title:'',text:'',media:[],createdAt:Date.now(),updatedAt:Date.now()};state.data[NOTEPAD_KEY]=[note,...learnerNotes()];state.editingNoteId=note.id;state.notepadSearchOpen=false;render();window.scrollTo(0,0)};
+ document.getElementById('openNoteSearch').onclick=()=>{state.notepadSearchOpen=true;render()};
+ if(state.notepadSearchOpen){const search=document.getElementById('noteSearch');const refocus=()=>{const next=document.getElementById('noteSearch');if(next){next.focus();next.setSelectionRange(next.value.length,next.value.length)}};setTimeout(refocus,0);search.oninput=()=>{state.resourceSearch=search.value;clearTimeout(search._timer);search._timer=setTimeout(()=>{render();setTimeout(refocus,0)},120)};document.getElementById('closeNoteSearch').onclick=()=>{state.notepadSearchOpen=false;render()};document.getElementById('noteSearchModal').onclick=e=>{if(e.target.id==='noteSearchModal'){state.notepadSearchOpen=false;render()}};const clear=document.getElementById('clearNoteSearch');if(clear)clear.onclick=()=>{state.resourceSearch='';render();setTimeout(refocus,0)}};
  document.querySelectorAll('[data-edit-note]').forEach(b=>b.onclick=()=>{state.editingNoteId=b.dataset.editNote;render();window.scrollTo(0,0)});
  document.querySelectorAll('[data-delete-note]').forEach(b=>b.onclick=async()=>{const note=learnerNotes().find(n=>n.id===b.dataset.deleteNote);if(!note||!confirm(`Delete “${note.title||'Untitled note'}”?`))return;await deleteNoteMedia(note);state.data[NOTEPAD_KEY]=learnerNotes().filter(n=>n.id!==note.id);await saveData();render();toast('Note deleted')});
  if(editing)bindNoteEditor(editing);

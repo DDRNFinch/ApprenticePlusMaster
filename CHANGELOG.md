@@ -232,3 +232,17 @@ Added Targeted Revision engine backend helpers.
 - Toolbox saved-note cards now show only the note name, date and content-type icons.
 - Full note text and media display only after opening the note.
 - Restored the Gallery icon and made Camera, Video, Voice and Gallery each occupy one quarter of the attachment row.
+
+
+## V1.13
+- Replaced the permanent Learner Notepad search bar with a compact magnifying-glass button directly below the learner-name area.
+- Tapping the icon opens a focused search popup for note names and note text.
+- Added close, backdrop-dismiss and clear-search controls while preserving filtered results.
+- Updated the app version and offline cache to V1.13.
+
+
+## V1.14
+- Changed Toolbox items to square tiles in a two-column mobile grid.
+- Restyled Learner Notepad as a square Toolbox tile.
+- Added a new Tools tile and dedicated Tools page for future workplace mini apps.
+- Updated the application version and offline cache to V1.14.
