@@ -1,3 +1,10 @@
+# V1.3.26 — EPA Practical Results & Planning Comparison
+
+- Compares learner tools, materials and PPE entries against the hidden task lists.
+- Shows correct, missed and unnecessary items.
+- Displays time taken, time remaining, break duration, overall mark and grade.
+- Adds an EPA Readiness outcome based on the final assessor grade and safety result.
+
 # V1.3.25 — EPA Practical Assessor Marking
 
 - Added weighted assessor scorecard with six 1–5 marking areas.
