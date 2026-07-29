@@ -1,3 +1,9 @@
+## V1.3.23
+- Added the EPA Practical foundation for all four apprenticeship courses.
+- Added random course-specific practical task generation and a full task specification view.
+- Added tag-entry planning for Tools and Equipment, Materials and Fixings, and PPE and Safety Equipment.
+- Preparation lists remain editable until the learner confirms readiness, then save as a locked practical draft.
+
 ## V1.3.22
 - Reduced EPA Knowledge Practice from 20 questions to 10 per attempt.
 - Hidden EPA question-bank counts and diagnostic status from learner-facing course screens.
