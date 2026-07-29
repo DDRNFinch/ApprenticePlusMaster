@@ -1,3 +1,4 @@
+v1.37.5: Added display-only privacy blurring for all saved in-app signature previews while preserving the original clear signature data for PDF generation.
 v1.37.4: Removed the Learning Outcome Coverage tile from NVQ Evidence Pack assignment pages while retaining all underlying outcome tracking and reporting.
 
 v1.37.3: Fixed the NVQ Assessor Observation evidence tile. The observation page now opens correctly with assessor details, activity, learning-outcome selection, outcome photographs, generated narrative and assessor signature.

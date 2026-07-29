@@ -1,4 +1,6 @@
-## v1.37.4
+## v1.37.5
+Saved signatures are blurred in the app for privacy while remaining clear in generated PDFs.
+
 
 - Removed the Learning Outcome Coverage tile from NVQ Evidence Pack assignment pages.
 - Learning Outcome tracking, evidence counts and PDF reporting remain unchanged.
