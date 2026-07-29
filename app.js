@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.37.7';
+const APP_VERSION='V1.37.8';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -390,6 +390,7 @@ function gradeForPercentage(p){return p>=90?'Distinction':p>=80?'Merit':p>=70?'P
 function assessmentPassed(a,d,isPractical=false){if(!d)return false;const pct=isPractical?practicalPercentageScore(a,d):percentageScore(a,d);return pct!==null&&pct>=70}
 function sectionReadyForPack(n,s){const latest=latestVersion(n,s);if(!latest)return false;if(s==='practical')return COURSE.nvqUnits?true:assessmentPassed(assignment(n),latest,true);if(s==='witness')return true;if(s==='supporting'&&latest.tab!=='files')return assessmentPassed(assignment(n),latest);return true}
 function packStatusKey(n){return `${COURSE.id}:packStatus:${n}`}
+function invalidatePackStatus(n){const current=state.data[packStatusKey(n)];if(!current||current.rpl)return;state.data[packStatusKey(n)]={...current,downloaded:false,uploaded:false,changedAt:new Date().toISOString()}}
 function knowledgeResultKey(n){return `${COURSE.id}:knowledgeAssessment:${n}`}
 function knowledgeAttempts(n){return Array.isArray(state.data[knowledgeResultKey(n)])?state.data[knowledgeResultKey(n)]:[]}
 function knowledgePassedAttempts(n){return knowledgeAttempts(n).filter(x=>Number(x.percentage)>=70)}
@@ -414,9 +415,9 @@ async function saveWalkthroughVideo(n,code,video,{name,type}={}){
  meta[code]={blobKey,name:name||video.name||`${code}-walkthrough.webm`,type:mime,size:video.size,date:today(),createdAt:Date.now()};
  meta._saved=false;
  state.data[walkthroughMetaKey(n)]=meta;
+ invalidatePackStatus(n);
  await saveData();
  if(old?.blobKey){try{await deleteStore(old.blobKey)}catch(error){console.warn(error)}}
- invalidatePackStatus(n);
  state.view='walkthrough';state.assignment=n;state.walkthroughCode=null;
  saveNavigationSnapshot(navigationSnapshot(window.scrollY||0));
  renderWalkthrough();
@@ -434,13 +435,13 @@ async function saveWalkthroughOverall(n){
  const count=walkthroughCount(n);if(!count.done)return toast('Add at least one KSB video before saving the walkthrough');
  const scrollY=window.scrollY||0,meta=walkthroughMeta(n);
  meta._saved=true;meta._savedAt=Date.now();state.data[walkthroughMetaKey(n)]=meta;
- await saveData();invalidatePackStatus(n);
+ invalidatePackStatus(n);await saveData();
  state.assignment=n;state.walkthroughCode=null;state.view='walkthrough';
  saveNavigationSnapshot(navigationSnapshot(scrollY));renderWalkthrough();
  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,scrollY)));
  toast('Walkthrough saved');
 }
-async function removeWalkthroughVideo(n,code){const scrollY=window.scrollY||0,meta=walkthroughMeta(n),item=meta[code];if(item?.blobKey){try{await deleteStore(item.blobKey)}catch(error){console.warn(error)}}delete meta[code];meta._saved=false;state.data[walkthroughMetaKey(n)]=meta;await saveData();invalidatePackStatus(n);state.view='walkthrough';state.assignment=n;state.walkthroughCode=null;saveNavigationSnapshot(navigationSnapshot(scrollY));renderWalkthrough();requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,scrollY)))}
+async function removeWalkthroughVideo(n,code){const scrollY=window.scrollY||0,meta=walkthroughMeta(n),item=meta[code];if(item?.blobKey){try{await deleteStore(item.blobKey)}catch(error){console.warn(error)}}delete meta[code];meta._saved=false;state.data[walkthroughMetaKey(n)]=meta;invalidatePackStatus(n);await saveData();state.view='walkthrough';state.assignment=n;state.walkthroughCode=null;saveNavigationSnapshot(navigationSnapshot(scrollY));renderWalkthrough();requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,scrollY)))}
 function walkthroughPrompt(code,text,a){return learnerPromptTitle(a.n,code,text)||text}
 function preferredWalkthroughMime(){
  const types=['video/webm;codecs=vp8,opus','video/webm','video/mp4'];

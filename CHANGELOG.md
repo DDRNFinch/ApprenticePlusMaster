@@ -1,3 +1,4 @@
+v1.37.8: Fixed the actual Video Walkthrough save callback. A missing pack-status invalidation function was throwing after the video had saved, preventing the walkthrough list from re-rendering until the page was refreshed.
 v1.37.7: Video Walkthrough now refreshes instantly after adding, replacing, removing or saving videos. Saved counts, thumbnails and status update without reloading the page.
 v1.37.6: Practical Assessment grades now calculate only from scored criteria. Unobserved criteria are excluded and assessments with no graded criteria show Not yet graded.
 v1.37.5: Added display-only privacy blurring for all saved in-app signature previews while preserving the original clear signature data for PDF generation.
