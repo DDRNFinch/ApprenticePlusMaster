@@ -1,6 +1,6 @@
 ## V1.39.0 — Bricklayer EPA Question Bank Update 1A
 
-- Added 10 scenario-based EPA professional-judgement questions covering K1–K10.
+- Added 20 scenario-based EPA professional-judgement questions covering K1–K20.
 - Added four plausible trade-language options, coaching explanations and key takeaways.
 - Preserved random answer order, random 20-question selection and existing grade thresholds.
 

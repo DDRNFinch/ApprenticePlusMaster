@@ -775,7 +775,7 @@ function renderAcademyLesson(){
 
 
 
-// v1.39.0 Bricklayer EPA professional-judgement question bank (Update 1: K1-K10)
+// v1.39.0 Bricklayer EPA professional-judgement question bank (Update 1: K1-K20)
 // Locked MCQ writing standard: realistic workplace judgement, four plausible trade-language answers,
 // no joke/"I do not care" distractors, no official-sounding giveaway, and an explanation for coaching.
 // Questions are deliberately stored as an approved, fixed bank. Nothing is generated at runtime.
@@ -934,6 +934,146 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
    explanation:'Checking the revision and resolving the conflict is the only choice that confirms which requirement is current. Either the plan or specification might be correct, so choosing one by habit is risky. A neighbouring plot can offer a useful comparison, but it may have a different revision or detail.',
    keyTakeaway:'When project information conflicts, verify the current detail before setting out.',
    id:'brick-epa-v139-k10'
+  },
+  {
+   code:'K11',
+   question:'The latest tablet model shows a masonry support angle in a different position from the printed drawing in your work area. What is the best way to proceed?',
+   options:[
+    'Use the tablet model because digital information is usually the newest',
+    'Use the printed drawing because it has already been issued to the gang',
+    'Check the revision details and get the position confirmed before building',
+    'Set it midway between both positions so either detail can still be adjusted'
+   ],
+   correct:2,
+   explanation:'The model and drawing conflict, so the revision and support position need confirming before the masonry fixes it in place. Either source could be current, which makes choosing one by format unreliable. Splitting the difference may look practical, but it creates an unapproved position that may suit neither design.',
+   keyTakeaway:'Treat digital models like any other project information: check revisions and resolve conflicts before building.',
+   id:'brick-epa-v139-k11'
+  },
+  {
+   code:'K12',
+   question:'You calculate 1,050 facing bricks for an elevation, but the packs contain 500 and the brick has a noticeable colour variation. What is the best order quantity?',
+   options:[
+    'Order 1,050 and use any shortfall from spare bricks already on site',
+    'Order 1,100 so the exact estimate is covered with a small allowance',
+    'Order three full packs and return the unopened pack if it is not needed',
+    'Order two packs now and arrange a smaller top-up once the wall is underway'
+   ],
+   correct:1,
+   explanation:'Ordering 1,100 covers the measured quantity plus a sensible allowance while limiting excess material. Ordering exactly 1,050 leaves no room for cuts or damage. Three full packs create a large surplus and returning a matching batch may not be simple. A later top-up risks delay and a visible batch difference.',
+   keyTakeaway:'Allow for realistic waste without creating unnecessary surplus or relying on a later matching delivery.',
+   id:'brick-epa-v139-k12'
+  },
+  {
+   code:'K13',
+   question:'Your spirit level has taken a fall and now gives a slightly different reading when you turn it end for end. You still have several corners to build. What is the best response?',
+   options:[
+    'Use the same face of the level each time so the readings stay consistent',
+    'Check it against another level and take it out of use if it is inaccurate',
+    'Use it for short work only and check the corners later with a longer level',
+    'Adjust each reading by the amount it appears to be out'
+   ],
+   correct:1,
+   explanation:'A level that gives different reversed readings may be inaccurate, so it should be checked and removed from use if faulty. Using one face or estimating a correction can repeat the same error through the work. Checking later may reveal a problem only after several courses need rebuilding.',
+   keyTakeaway:'Check suspect hand tools straight away; consistent use does not make an inaccurate tool reliable.',
+   id:'brick-epa-v139-k13'
+  },
+  {
+   code:'K14',
+   question:'A block needs a narrow service notch, and the large disc cutter would remove more material than the drawing allows. What is the best approach?',
+   options:[
+    'Make two shallow cuts with the disc cutter and knock out the centre',
+    'Use a smaller suitable tool that gives better control over the notch',
+    'Cut the notch wider and fill around the service with mortar afterwards',
+    'Drill a row of holes and finish the shape with the disc cutter'
+   ],
+   correct:1,
+   explanation:'A suitable smaller tool gives the control needed to keep the notch within the required size. Shallow disc cuts or drilled holes may work in some situations, but both can still damage the unit or exceed the detail. Making the opening wider and filling it later changes the intended masonry support around the service.',
+   keyTakeaway:'Choose equipment for the accuracy and limits of the task, not simply the fastest tool available.',
+   id:'brick-epa-v139-k14'
+  },
+  {
+   code:'K15',
+   question:'While building a one-brick-thick wall in English bond, the corner begins to show too many straight vertical joints. What is the best way to correct it?',
+   options:[
+    'Use extra queen closers in the next course to break up the joints',
+    'Take the corner back to the point where the bond first went wrong',
+    'Change to Flemish bond at the corner and continue English bond along the wall',
+    'Use three-quarter bats in the bed joints until the lap is recovered'
+   ],
+   correct:1,
+   explanation:'Taking the corner back to the first incorrect course restores the intended bond and lap properly. Adding closers or bats later may hide some straight joints but can introduce irregular bond and small pieces. Changing bond at the corner creates a different detail rather than correcting the original setting out.',
+   keyTakeaway:'When bond is lost, correct it at the first faulty course rather than trying to disguise it higher up.',
+   id:'brick-epa-v139-k15'
+  },
+  {
+   code:'K16',
+   question:'You are setting out a capped garden wall and find the pier positions leave an awkward short brick at one end. What is the best adjustment?',
+   options:[
+    'Move the nearest pier slightly so the end brick becomes a half brick',
+    'Spread the small difference through the perpend joints across the wall',
+    'Recheck the overall size, bond and pier positions before fixing the layout',
+    'Keep the pier positions and cut the end brick neatly to the remaining space'
+   ],
+   correct:2,
+   explanation:'Rechecking the full layout shows whether the issue comes from the overall dimension, bond or pier spacing and allows an agreed adjustment before work starts. Moving one pier may affect the design, while spreading joint sizes can leave inconsistent work. A neat cut may be acceptable in some details, but it should not be the first answer to poor setting out.',
+   keyTakeaway:'Set out the whole wall, bond and features together before accepting an awkward closing piece.',
+   id:'brick-epa-v139-k16'
+  },
+  {
+   code:'K17',
+   question:'A freshly built wall is due to receive a weather-struck finish, but the mortar is still very soft and pulls when you test a joint. What is the best approach?',
+   options:[
+    'Finish the joints now with light pressure so the face stays clean',
+    'Wait until the mortar firms enough to hold a clean, consistent profile',
+    'Brush the joints first, then strike them once the surface has dried',
+    'Add a little dry cement to the jointing tool to stop the mortar dragging'
+   ],
+   correct:1,
+   explanation:'Waiting for the right firmness allows the joint to compact and hold a clean weather-struck profile. Working too early can smear the face and pull mortar from the joint. Brushing first may roughen or weaken the surface, and adding dry cement changes the joint rather than solving the timing issue.',
+   keyTakeaway:'Joint finish depends on timing; work the mortar when it is firm enough to shape and compact cleanly.',
+   id:'brick-epa-v139-k17'
+  },
+  {
+   code:'K18',
+   question:'A decorative band is specified across a long elevation, but the contrasting bricks are a slightly different height from the main bricks. What is the best way to keep the band level?',
+   options:[
+    'Use slightly thinner bed joints in the courses below the band',
+    'Gauge the band separately and agree how the difference will be taken up',
+    'Lay the band to a line and make up the height in the course above',
+    'Sort the contrasting bricks and use only the shortest ones'
+   ],
+   correct:1,
+   explanation:'Gauging the decorative bricks separately shows the true difference and allows it to be distributed or detailed without spoiling the line. Altering only one or two bed joints can make the variation obvious. Correcting above the band transfers the problem, and selecting only shorter units may not provide enough bricks or a consistent result.',
+   keyTakeaway:'Check the gauge of decorative units before laying them and plan where any size difference will be absorbed.',
+   id:'brick-epa-v139-k18'
+  },
+  {
+   code:'K19',
+   question:'An expansion joint is shown close to a return, but moving it one brick would make the bond and sealant detail much neater. What is the best decision?',
+   options:[
+    'Move it one brick and keep the joint width exactly as specified',
+    'Keep it where shown and use cut bricks to maintain the bond',
+    'Check whether the designer will accept the small change before setting it out',
+    'Split the difference by widening two nearby perpends'
+   ],
+   correct:2,
+   explanation:'The joint position controls movement in the wall, so even a small change should be confirmed before setting out. Leaving it as shown may be correct, but the awkward detail could indicate a coordination issue worth raising. Moving it without approval or widening ordinary joints changes how the wall accommodates movement.',
+   keyTakeaway:'Expansion joints are part of the movement design; do not relocate them just to simplify the brickwork.',
+   id:'brick-epa-v139-k19'
+  },
+  {
+   code:'K20',
+   question:'A silo mortar delivery feels noticeably wetter than the previous batch, although the colour and mix ticket look right. What is the best next step?',
+   options:[
+    'Use it on the inner leaf first and see how it handles over a few courses',
+    'Add a little cement and sand until it matches the previous batch',
+    'Pause its use and have the consistency checked before laying with it',
+    'Spread it on the boards for a while so some moisture can come out'
+   ],
+   correct:2,
+   explanation:'A noticeable change in consistency should be checked before it is built into the work. Trying it on the inner leaf still risks weak or inconsistent joints. Adding materials changes the designed mix, while leaving it exposed can make consistency vary further across the batch.',
+   keyTakeaway:'Do not alter supplied mortar by guesswork; stop and check any unexpected change before use.',
+   id:'brick-epa-v139-k20'
   }
  ]
 };
