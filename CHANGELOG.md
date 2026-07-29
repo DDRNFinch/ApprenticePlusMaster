@@ -1,3 +1,11 @@
+## v1.3.32 — EPA practical PDF preparation lists
+
+- Added the learner-selected Tools and Equipment to every completed EPA practical PDF.
+- Added the learner-selected Materials and Fixings to every completed EPA practical PDF.
+- Added the learner-selected PPE and Safety Equipment to every completed EPA practical PDF.
+- Added item totals and a dedicated Learner Preparation section.
+- Split the report into two pages so preparation, marks and feedback remain clear and unclipped.
+
 # V1.3.30 — EPA Task Regeneration & Workload Balance
 
 - Added a visible ♻️ Generate new EPA task button during practical preparation.
