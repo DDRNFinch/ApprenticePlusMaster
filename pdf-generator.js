@@ -193,8 +193,8 @@ async function generateEvidencePackPDF({course, assignment, profile, sections}) 
     videos.forEach((f,i)=>{const original=String(f.name||''),dot=original.lastIndexOf('.'),ext=dot>0?original.slice(dot):'.mp4',prefix=(f.ksbCodes||[]).join('-'),base=safeZipName(`${prefix?prefix+' - ':''}${(f.evidenceName||`Supporting video ${i+1}`).trim()}`);let name=uniqueMediaName(base,ext,used);entries.push({name:`Supporting Videos/${name}`,data:dataUrlBytes(f.data)})});
     walkthroughVideos.forEach(f=>{const ext=mediaExtension(f.type,f.name,'video'),base=safeZipName(`${f.code} - ${f.summary||'Video evidence'}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Video Evidence/${name}`,data:dataUrlBytes(f.data)})});
     audios.forEach(({code,rec,attempt},i)=>{const ext=mediaExtension(rec.type,'','audio'),base=safeZipName(`${code} - Professional Discussion - Attempt ${attempt}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Voice Notes/${name}`,data:dataUrlBytes(rec.data)})});
-    downloadBlob(makeZip(entries),'application/zip',`${safe||'Learner'}-Assignment-${assignment.n}-Complete-Evidence-Package.zip`);
-  }else downloadBlob(pdf,'application/pdf',pdfName);
+    await downloadBlob(makeZipBlob(entries),'application/zip',`${safe||'Learner'}-Assignment-${assignment.n}-Complete-Evidence-Package.zip`);
+  }else await downloadBlob(pdf,'application/pdf',pdfName);
 }
 
 function selectedKsbCodesForMedia(assignment,version){
@@ -248,19 +248,45 @@ async function generateNVQEvidencePackPDF({course, assignment, profile, sections
   const total=pages.length;pages.forEach((p,i)=>{const x=p.ctx;x.fillStyle=TEAL;x.fillRect(0,H-62,W,62);x.fillStyle=WHITE;x.font='600 17px Arial';x.fillText('Apprentice+ | NVQ Evidence Portfolio',M,H-25);x.textAlign='right';x.fillText(`Page ${i+1} of ${total}`,W-M,H-25);x.textAlign='left'});
   const jpegPages=pages.map(p=>dataUrlBytes(p.canvas.toDataURL('image/jpeg',0.90))),pdf=makeImagePDF(jpegPages,W,H),safe=clean(profile.fullName).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,''),unit=String(assignment.unit||assignment.n).replace(/[^a-z0-9-]+/gi,'-'),pdfName=`${safe||'Learner'}-NVQ-Unit-${unit}-Evidence-Pack.pdf`;
   const audios=[];for(let vi=0;vi<(sections.discussion||[]).length;vi++){const version=sections.discussion[vi];for(const [code,rec] of Object.entries(version.recordings||{}))if(rec?.data)audios.push({code,rec,attempt:vi+1})}
-  if(audios.length){const entries=[{name:pdfName,data:pdf}],used=new Set();audios.forEach(({code,rec,attempt},i)=>{const mime=String(rec.type||'audio/webm'),ext=mime.includes('mp4')?'.m4a':mime.includes('ogg')?'.ogg':'.webm',base=safeZipName(`Attempt ${attempt} - ${code} Professional Discussion`);let name=`${base}${ext}`;if(used.has(name.toLowerCase()))name=`${base}-${i+1}${ext}`;used.add(name.toLowerCase());entries.push({name:`Professional Discussion Recordings/${name}`,data:dataUrlBytes(rec.data)})});downloadBlob(makeZip(entries),'application/zip',`${safe||'Learner'}-NVQ-Unit-${unit}-Evidence-Package.zip`)}else downloadBlob(pdf,'application/pdf',pdfName);
+  if(audios.length){const entries=[{name:pdfName,data:pdf}],used=new Set();audios.forEach(({code,rec,attempt},i)=>{const mime=String(rec.type||'audio/webm'),ext=mime.includes('mp4')?'.m4a':mime.includes('ogg')?'.ogg':'.webm',base=safeZipName(`Attempt ${attempt} - ${code} Professional Discussion`);let name=`${base}${ext}`;if(used.has(name.toLowerCase()))name=`${base}-${i+1}${ext}`;used.add(name.toLowerCase());entries.push({name:`Professional Discussion Recordings/${name}`,data:dataUrlBytes(rec.data)})});await downloadBlob(makeZipBlob(entries),'application/zip',`${safe||'Learner'}-NVQ-Unit-${unit}-Evidence-Package.zip`)}else await downloadBlob(pdf,'application/pdf',pdfName);
 }
 
-function downloadBlob(bytes,type,name){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([bytes],{type}));a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000)}
+async function downloadBlob(bytes,type,name){
+  const blob=bytes instanceof Blob?bytes:new Blob([bytes],{type});
+  if(!blob.size)throw new Error('Generated download was empty');
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=name;a.rel='noopener';a.style.display='none';
+  document.body.appendChild(a);
+  // Give mobile browsers one frame to register the object URL and anchor.
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  a.click();
+  setTimeout(()=>{a.remove();URL.revokeObjectURL(url)},30000);
+  return {name,size:blob.size};
+}
 function safeZipName(name){return String(name||'file').replace(/[\\/:*?"<>|]/g,'-').replace(/^\.+/,'').slice(0,140)||'file'}
 
-function dataUrlBytes(url){const b=atob(url.split(',')[1]),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
-function makeZip(entries){
-  const enc=new TextEncoder(),locals=[],centrals=[];let offset=0;
+function dataUrlBytes(url){
+  const value=String(url||''),comma=value.indexOf(',');
+  if(comma<0)throw new Error('Evidence media is not stored as a downloadable data URL');
+  const payload=value.slice(comma+1),isBase64=/;base64/i.test(value.slice(0,comma));
+  if(!isBase64)return new TextEncoder().encode(decodeURIComponent(payload));
+  const b=atob(payload),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u
+}
+function makeZipBlob(entries){
+  const enc=new TextEncoder(),parts=[],centrals=[];let offset=0;
   const u16=n=>new Uint8Array([n&255,(n>>>8)&255]),u32=n=>new Uint8Array([n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255]);
-  const join=parts=>{const len=parts.reduce((n,p)=>n+p.length,0),out=new Uint8Array(len);let at=0;for(const p of parts){out.set(p,at);at+=p.length}return out};
-  for(const e of entries){const name=enc.encode(e.name),data=e.data instanceof Uint8Array?e.data:new Uint8Array(e.data),crc=crc32(data);const local=join([u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name,data]);locals.push(local);const central=join([u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),name]);centrals.push(central);offset+=local.length}
-  const localData=join(locals),centralData=join(centrals),end=join([u32(0x06054b50),u16(0),u16(0),u16(entries.length),u16(entries.length),u32(centralData.length),u32(localData.length),u16(0)]);return join([localData,centralData,end]);
+  for(const e of entries){
+    const name=enc.encode(e.name),data=e.data instanceof Uint8Array?e.data:new Uint8Array(e.data),crc=crc32(data);
+    const header=[u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name];
+    parts.push(...header,data);
+    const localLength=header.reduce((n,p)=>n+p.length,0)+data.length;
+    centrals.push(u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),name);
+    offset+=localLength;
+  }
+  const centralSize=centrals.reduce((n,p)=>n+p.length,0);
+  parts.push(...centrals,u32(0x06054b50),u16(0),u16(0),u16(entries.length),u16(entries.length),u32(centralSize),u32(offset),u16(0));
+  // Blob keeps the media buffers as separate parts and avoids allocating several full copies of a large package.
+  return new Blob(parts,{type:'application/zip'});
 }
 function crc32(data){let c=0xffffffff;for(const b of data){c^=b;for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xedb88320:0)}return(c^0xffffffff)>>>0}
 

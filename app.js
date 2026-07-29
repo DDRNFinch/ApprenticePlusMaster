@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.28';
+const APP_VERSION='V1.29';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -1688,8 +1688,12 @@ async function downloadPack(n){
  // Include every saved evidence section, including older/optional sections that may still contain learner evidence.
  ['practical','photos','statement','discussion','witness','supporting'].forEach(s=>sections[s]=sectionData(n,s).versions.map(v=>structuredClone(v)));
  sections.walkthrough=await collectWalkthroughEvidence(n,a);
- try{toast('Creating complete evidence package...');await generateEvidencePackPDF({course:COURSE,assignment:a,profile:state.profile,sections});state.data[packStatusKey(n)]={downloaded:true,uploaded:false,downloadedAt:new Date().toISOString()};await saveData();render();toast('Evidence package downloaded — PDF and media are included')}
- catch(e){console.error(e);toast('Unable to create evidence package')}
+ try{
+  toast('Creating complete evidence package...');
+  const result=await generateEvidencePackPDF({course:COURSE,assignment:a,profile:state.profile,sections});
+  state.data[packStatusKey(n)]={downloaded:true,uploaded:false,downloadedAt:new Date().toISOString()};
+  await saveData();render();toast('Evidence package download started — check your Downloads folder');
+ }catch(e){console.error('Evidence package download failed',e);toast(`Unable to download evidence package${e?.message?`: ${e.message}`:''}`)}
 }
 
 function normalisePortfolioUrl(url){const value=String(url||'').trim();return /^https?:\/\//i.test(value)?value:''}

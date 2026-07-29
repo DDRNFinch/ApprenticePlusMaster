@@ -1,3 +1,12 @@
+# v1.29 — Evidence Package Download Fix
+
+- Replaced the memory-heavy combined ZIP builder with a mobile-safe Blob package.
+- Prevented large video and voice-note exports from creating several full in-memory copies.
+- Added validation for empty or invalid media data.
+- Extended object-URL lifetime for Android downloads.
+- Added a clear download-start confirmation and visible error detail.
+- Practical Assessment criteria and saved evidence are unchanged.
+
 # v1.28 — Complete PDF and Media Evidence Packages
 
 - Added every saved evidence section to the downloaded evidence package.
