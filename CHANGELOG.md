@@ -1,3 +1,11 @@
+## v1.3.41 – EPA Practical Missing Renderer Fix
+
+- Restored the missing practical preparation-list renderer used by EPA Practical.
+- Fixed Start new attempt failing after confirmation.
+- Added mobile-friendly Add Item controls for Tools, Materials and PPE.
+- Replaced remaining mobile-unsafe cloning calls in the EPA Practical save and history flow.
+- Updated the service-worker cache to v1.3.41.
+
 ## v1.3.40 – EPA New Attempt Creation Rewrite
 - Replaced the failing asynchronous new-attempt chain with a synchronous mobile-safe builder.
 - Opens the new practical before background storage.
