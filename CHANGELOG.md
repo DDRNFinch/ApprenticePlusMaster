@@ -1,3 +1,10 @@
+## V1.38.8 — EPA Knowledge Practice 20-Question Attempts
+
+- EPA Knowledge Practice now selects 20 questions per attempt from the full approved KSB bank.
+- Question order is randomised for every attempt.
+- Answer order is also randomised while preserving the correct answer.
+- The full approved-bank progress remains visible, for example 59/59 when Bricklayer is complete.
+
 ## V1.38.6 — Admin Mode UI Refresh
 
 - Rebuilt Admin Mode as a clean card-based dashboard.
@@ -502,3 +509,11 @@ v1.37.2: Removed the KSB Evidence Coverage panel from standard assignment pages.
 - Added saved memory reminders and cue cards.
 - Added plain-English assignment explanations while preserving official KSB wording.
 - Added a central accessibility settings page with persistent device-level preferences.
+
+## V1.38.7 — EPA Academy Knowledge Practice Framework
+- Replaced the old runtime-generated 40-question EPA mock with an approved fixed-bank framework.
+- Added an EPA Academy landing page with Knowledge Practice, Professional Discussion and Practical Pack stages.
+- Knowledge Practice now requires exactly one validated question for every unique course KSB.
+- Added Distinction, Merit, Pass and Needs More Practice result bands.
+- Removed old EPA mock history from the active interface by moving results to the new Knowledge Practice result store.
+- Added disabled placeholders for Professional Discussion and the EPA Practical Pack while the question stage is built.

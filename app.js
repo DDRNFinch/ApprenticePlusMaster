@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.38.6';
+const APP_VERSION='V1.38.8';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -753,7 +753,7 @@ function academyLessonData(topic){
 }
 function renderAcademy(){
  const count=courseRevisionTopics().length;
- app.innerHTML=shell(`<section class="academy-hero"><div class="number">${esc(COURSE.name)}</div><h2>Academy</h2><p>Short teaching sessions created from the Knowledge KSBs or NVQ Learning Outcomes in your selected course.</p></section><section class="academy-grid"><article class="academy-card library"><div class="academy-icon">${appIcon('library')}</div><div><h3>Knowledge Library</h3><p>Each topic includes an approximately 100-word lesson, key points, a workplace example and automatically generated checks.</p></div><div class="library-summary"><strong>${count}</strong><span>knowledge sessions available</span></div><button class="btn" id="openLibrary">Open Knowledge Library</button></article>${!COURSE.nvqUnits?`<article class="academy-card epa-academy-card"><div class="academy-icon">${appIcon('questions')}</div><div><h3>EPA Multiple-Choice Mock</h3><p>Complete a balanced 40-question mock generated from the Knowledge, Skills and Behaviours across your course.</p></div><div class="library-summary"><strong>40</strong><span>questions per mock</span></div><button class="btn" id="openEpaMock">Open EPA Mock</button></article>`:''}</section>`);
+ app.innerHTML=shell(`<section class="academy-hero"><div class="number">${esc(COURSE.name)}</div><h2>Academy</h2><p>Short teaching sessions created from the Knowledge KSBs or NVQ Learning Outcomes in your selected course.</p></section><section class="academy-grid"><article class="academy-card library"><div class="academy-icon">${appIcon('library')}</div><div><h3>Knowledge Library</h3><p>Each topic includes an approximately 100-word lesson, key points, a workplace example and automatically generated checks.</p></div><div class="library-summary"><strong>${count}</strong><span>knowledge sessions available</span></div><button class="btn" id="openLibrary">Open Knowledge Library</button></article>${!COURSE.nvqUnits?`<article class="academy-card epa-academy-card"><div class="academy-icon">${appIcon('questions')}</div><div><h3>EPA Academy</h3><p>Practise every course KSB, prepare for professional discussion and complete an in-house EPA practical pack.</p></div><div class="library-summary"><strong>3</strong><span>EPA preparation stages</span></div><button class="btn" id="openEpaMock">Open EPA Academy</button></article>`:''}</section>`);
  document.getElementById('openLibrary').onclick=()=>{state.view='library';state.academySearch='';state.academyTopic=null;render()};
  const epaBtn=document.getElementById('openEpaMock');if(epaBtn)epaBtn.onclick=()=>{state.view='epa';state.assignment=null;state.section=null;render();window.scrollTo(0,0)};
 }
@@ -775,264 +775,48 @@ function renderAcademyLesson(){
 
 
 
-// v1.3.35 examiner-standard EPA question framework (KSB courses only)
-function epaResultKey(){return `${COURSE.id}:epaMockResults`}
+// v1.38.8 approved EPA Knowledge Practice framework (KSB courses only)
+// Questions are deliberately stored as an approved, fixed bank. Nothing is generated at runtime.
+const EPA_KNOWLEDGE_PRACTICE_BANKS={
+ 'bricklayer-st0095-v1-2':[]
+};
+function epaResultKey(){return `${COURSE.id}:epaKnowledgePracticeResults:v2`}
 function epaType(code){const c=String(code||'').toUpperCase();return c.startsWith('K')?'Knowledge':c.startsWith('S')?'Skill':'Behaviour'}
 function allCourseKsbs(){
- const seen=new Set(),items=[];
- courseAssignments().forEach(a=>a.ksbs.forEach(([code,text])=>{
-  const key=`${code}|${text}`;if(seen.has(key))return;seen.add(key);
-  items.push({code,text:cleanCriterion(text),type:epaType(code),assignment:a.n,assignmentTitle:a.title});
+ const byCode=new Map();
+ courseAssignments().forEach(a=>(a.ksbs||[]).forEach(([code,text])=>{
+  const cleanCode=String(code||'').trim().toUpperCase();
+  if(!cleanCode||byCode.has(cleanCode))return;
+  byCode.set(cleanCode,{code:cleanCode,text:cleanCriterion(text),type:epaType(cleanCode),assignment:a.n,assignmentTitle:a.title});
  }));
- return items;
+ return [...byCode.values()].sort((a,b)=>{
+  const order={Knowledge:0,Skill:1,Behaviour:2},typeDiff=order[a.type]-order[b.type];
+  if(typeDiff)return typeDiff;
+  return Number(a.code.replace(/\D/g,''))-Number(b.code.replace(/\D/g,''));
+ });
 }
 function shuffle(items){const a=[...items];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function epaTopicProfile(item){
- const text=`${item.assignmentTitle} ${item.text}`.toLowerCase();
- const profile=(focus,scenario,best,check,risk,wrong,edge)=>({focus,scenario,best,check,risk,wrong,edge});
- if(/ppe|rpe|lev|dust suppression/.test(text))return profile('selecting and using the correct PPE, RPE or extraction','A dusty cutting task is about to begin','Select the controls specified by the risk assessment, check the RPE fit and condition, and use extraction or suppression throughout the exposure.','Confirm the hazard, required protection factor, face fit, equipment condition and compatibility with other PPE.','The worker may inhale hazardous dust or suffer injury because unsuitable protection gives a false sense of security.',['Use the nearest disposable mask without checking its rating or fit.','Wear the RPE only while the supervisor is present.','Open a nearby door and rely on natural ventilation instead of the specified controls.'],'The selected mask interferes with eye protection and the extraction unit has reduced suction.');
- if(/coshh|hazard|risk assessment|method statement|safe system|health and safety|working at height|manual handling|fire safety|asbestos|electrical safety/.test(text))return profile('applying safe systems of work and legal controls','Site conditions differ from the approved method statement','Stop at a safe point, reassess the changed conditions and obtain approval for revised controls before continuing.','Confirm the hazards, people at risk, hierarchy of controls, competence, equipment and emergency arrangements.','Uncontrolled hazards could cause injury, ill health, enforcement action, damage or an invalid safe system of work.',['Continue because the same task was completed safely on another site.','Change the method informally and tell the supervisor after the task.','Finish the urgent part first, then review whether the controls were adequate.'],'Access has changed, another trade is working nearby and the planned exclusion zone cannot be maintained.');
- if(/environment|sustainab|recycl|reuse|waste|contamination|energy/.test(text))return profile('reducing environmental impact and using resources responsibly','The task produces reusable offcuts, general waste and potentially contaminated material','Segregate each waste stream, protect reusable materials and follow the site plan for storage, recycling and authorised disposal.','Check waste classification, contamination risk, storage, documentation and opportunities to reduce or reuse materials.','Reusable material may be lost, waste streams contaminated and disposal made unsafe or non-compliant.',['Put all waste into one skip so the work area is cleared quickly.','Leave reusable materials uncovered until the project is complete.','Dispose of usable offcuts because sorting them takes additional time.'],'Rain is forecast and one container is almost full, increasing the risk of runoff and cross-contamination.');
- if(/drawing|specification|digital design|setting.?out|marking.?out|rod|level|gauge|profile|tolerance/.test(text))return profile('interpreting information and setting work out accurately','A site dimension conflicts with the latest drawing','Pause, verify the drawing revision and datum, remeasure independently and raise the discrepancy before work proceeds.','Check revision, scale, dimensions, datum, specification, tolerances and whether site conditions have changed.','The work may be built in the wrong position or size, affecting following trades and requiring costly rework.',['Alter the dimension by eye so the work fits the available space.','Use the older printed drawing because it already has site notes on it.','Split the difference between the drawing and site measurement without authorisation.'],'Two drawings show different dimensions and the benchmark has been disturbed since the original survey.');
- if(/estimate|cutting list|quantity|resource estimation|materials and characteristics|timber types|masonry units|mortar|dpc|lintel|insulation/.test(text))return profile('selecting and calculating suitable materials','Materials must be ordered from drawings containing openings and several cut components','Calculate net quantities from the current information, include a justified waste allowance and select products meeting the specification.','Check dimensions, units, openings, pack sizes, compatibility, storage conditions and the stated performance requirements.','Incorrect quantities or unsuitable materials can cause delay, waste, defects and non-compliant work.',['Order a large surplus so no detailed calculation is needed.','Choose the cheapest available product even though its performance differs.','Estimate visually and ignore openings, cuts and pack quantities.'],'The specified product is temporarily unavailable and the proposed substitute has a different size or performance rating.');
- if(/hand tool|power tool|machinery|disc cutter|mixer|drill|saw|router|planer|sharpen|maintain and store/.test(text))return profile('selecting, checking and operating tools safely','A required tool shows wear during its pre-use inspection','Quarantine the defective tool, report it and select a suitable inspected replacement operated with the specified controls.','Check guards, blade or bit, cables, extraction, settings, condition, inspection status and operator competence.','A damaged or unsuitable tool may cause injury, inaccurate work or damage to materials.',['Use it at a lower speed until the task is finished.','Remove the guard because it obstructs the cutting line.','Choose a similar-looking tool without checking its capacity or controls.'],'The replacement tool has the correct function but a different capacity and requires an accessory not available on site.');
- if(/cavity wall|wall tie|cavity tray|weep|fire stopping|opening|lintel|insulation/.test(text))return profile('constructing a compliant cavity wall and keeping the cavity clear','A cavity wall with an opening, lintel, tray and partial-fill insulation is being built','Follow the detail for bond, gauge, ties, insulation, tray, stop ends and weep holes while preventing mortar bridging and checking the opening continuously.','Check bearing, opening size, tie spacing and embedment, insulation continuity, tray falls, stop ends, weeps, fire stopping and cavity cleanliness.','Moisture, thermal and fire performance may be compromised and the wall may fail inspection.',['Pack gaps around insulation with mortar to hold it firmly.','Position weep holes for appearance rather than in relation to the tray.','Cut insulation short around wall ties so each board is easier to install.'],'Wind-driven rain begins before the tray and insulation are fully protected, and mortar droppings are visible below the opening.');
- if(/joint finish|pointing|mortar ratio|mix mortar|gauging|expansion joint/.test(text))return profile('producing consistent mortar and joint finishes','Mortar colour and workability vary between consecutive batches','Use consistent measured proportions and mixing time, control water addition and finish joints at the correct stage for the specified profile.','Check ratio, materials, water content, mixing time, batch consistency, weather, joint depth and finishing timing.','Inconsistent mortar or finishing can reduce durability, appearance and resistance to water penetration.',['Add extra water whenever a batch stiffens, regardless of its age.','Use different joint profiles where access is more difficult.','Gauge each batch by approximate shovel counts without a fixed measure.'],'The temperature rises quickly, units have differing suction and one batch has already begun to set.');
- if(/bond|solid wall|brick.?on.?edge|soldier|decorative|pier|raking cut|gable|brick wall/.test(text))return profile('setting out and building masonry accurately','A wall contains a feature course, bond change and raking cuts','Set out the bond and gauge before laying, use templates or calculated cuts and check line, level, plumb and dimensions throughout.','Check bond, perp alignment, gauge, feature dimensions, cut quality, stability and specified tolerances.','Poor setting out can create broken bond, weak sections, uneven features and visible defects.',['Correct the alignment only in the final two courses.','Use random cut sizes and compensate with thicker joints.','Ignore a gauge discrepancy because the top course can be trimmed.'],'The opening width is slightly out, the feature must align with an adjacent elevation and several cut units are damaged.');
- if(/repair|defect|protect materials|frost|water|construction damage|maintenance/.test(text))return profile('diagnosing defects and protecting completed work','A defect is found beside completed work and stored materials','Identify and remove the cause, select a compatible repair, protect surrounding work and verify the finished repair against the required standard.','Check cause, extent, substrate condition, material compatibility, weather, access, curing and finish requirements.','The defect may recur or spread, and nearby completed work or materials may be damaged.',['Cover the visible defect without investigating its cause.','Use any fast-setting repair product regardless of compatibility.','Leave completed work exposed because it previously passed a visual check.'],'The substrate is damp, frost is forecast and the original material specification is not immediately available.');
- if(/communicat|terminology|customer service|team work|teamwork|wider team|shared goals/.test(text))return profile('communicating clearly with the correct people','A change affects another trade, the programme and the customer','Explain the issue accurately for each audience, confirm understanding, agree responsibilities and record the decision where required.','Check audience, urgency, technical detail, impact, agreed action, ownership and the required communication record.','Poor communication can cause unsafe assumptions, duplicated work, delay, defects or customer dissatisfaction.',['Tell only the nearest worker and assume the message will be passed on.','Use unexplained technical language with the customer to save time.','Wait for the next meeting even though current work is affected.'],'The supervisor is off site, the customer requests an immediate answer and another trade is about to conceal the affected area.');
- if(/equality|diversity|inclusion|wellbeing|mental|physical wellbeing|safeguard|prevent/.test(text))return profile('supporting inclusion and wellbeing appropriately','A colleague appears distressed and is being excluded from a task discussion','Address the immediate situation respectfully, include the colleague, listen without assumptions and use the correct support or reporting route.','Check immediate safety, confidentiality limits, workplace policy, support routes and whether safeguarding escalation is required.','The person may remain unsupported, discrimination may continue and safety or wellbeing could deteriorate.',['Ignore it because personal wellbeing is unrelated to the task.','Discuss the colleague’s situation openly with the whole team.','Decide what support they need without speaking to them or following procedure.'],'The colleague asks for confidentiality but also describes conduct that may create an immediate safety risk.');
- if(/roof|rafter|truss|flat roof|warm roof|cold roof/.test(text))return profile('constructing roof components to the specified geometry','Roof members are being marked and assembled from calculated dimensions','Use verified drawings and reference points, form accurate cuts and connections, and check alignment, restraint and stability before final fixing.','Check span, pitch, centres, bearings, ventilation or insulation detail, fixings, bracing and temporary stability.','Errors can affect geometry, load transfer, weather performance and following trades.',['Force misaligned members into position with additional fixings.','Change centres to suit available timber without approval.','Omit hidden ventilation details because they cannot be seen after completion.'],'One support is out of level, timber moisture varies and wind increases before permanent bracing is complete.');
- if(/stair|handrail|spindle|balustrade/.test(text))return profile('setting out and fitting stair and guarding components accurately','A stair, handrail or spindle layout is being prepared from site dimensions','Verify the total rise and available going, calculate consistent geometry and fit guarding securely within dimensional requirements.','Check rise, going, pitch, headroom, landings, spindle gaps, handrail height, fixings and alignment.','Inconsistent geometry or spacing can create a fall risk and fail dimensional requirements.',['Adjust individual steps by eye so the flight reaches the landing.','Space spindles equally without checking the maximum gap.','Use decorative fixings where structural fixings are specified.'],'The finished floor level has changed and the available opening is smaller than shown on the original drawing.');
- if(/door|window|glazing|ironmongery|hinge|lock|latch|frame|lining/.test(text))return profile('fitting doors, windows or ironmongery square and functional','A door or window binds after initial fitting','Check the frame for square, level and twist, verify clearances and adjust the cause without weakening fire, security or weather performance.','Check opening dimensions, diagonals, plumb, level, clearances, fixings, seals, operation and specified ironmongery.','The unit may operate poorly, fail to seal, damage components or breach fire or security requirements.',['Plane or cut the first tight area without checking the frame.','Increase every clearance so the unit cannot bind.','Force the unit closed repeatedly until the hinges settle.'],'The frame is slightly twisted, the closer affects operation and the product has a fire-resistance requirement.');
- if(/plumb|drainage|water hygiene|legionella|isolate.*water|blockage/.test(text))return profile('diagnosing and repairing water or drainage systems safely','A leak or blockage is reported in an occupied building','Identify the system, isolate and control contamination where required, diagnose the fault, complete an authorised repair and test before reinstatement.','Check isolation, stored pressure or water, hygiene risks, drainage route, component compatibility, leaks and safe reinstatement.','Water damage, contamination, flooding or recurrence of the fault may result.',['Begin dismantling before confirming isolation.','Use a component that fits physically but is not specified for the system.','Restore the supply without pressure or leak testing the repair.'],'The isolation valve does not fully close, vulnerable occupants remain nearby and the replacement component differs from the original.');
- if(/electrical|safe isolation|electronic supply/.test(text))return profile('safely isolating electrical or electronic supplies','Maintenance is required near an electrical component','Identify the correct circuit, isolate and lock off, prove the tester, test for dead and re-prove before work begins.','Check authorisation, correct circuit, isolation point, lock-off, warning notice, test instrument and possible alternative supplies.','Unexpected energisation could cause electric shock, burns, fire or equipment damage.',['Switch off at the local control and begin work.','Ask another worker whether the circuit is dead instead of testing it.','Remove the lock-off so the supply can be restored quickly if needed.'],'The labelling is unclear and the equipment may have a secondary or stored-energy supply.');
- return profile(`applying the requirements of ${item.assignmentTitle.toLowerCase()}`,`A workplace task linked to ${item.assignmentTitle.toLowerCase()} is underway`,`Use the current task information to apply this requirement accurately: ${item.text}` ,`Verify the specification, conditions, sequence, checks and evidence needed to demonstrate the requirement.`,`Failure to apply the requirement may create unsafe work, defects, delay, non-compliance or rework.`,['Use the normal method without checking the current task information.','Judge compliance only from appearance and ignore the specified process.','Continue despite uncertainty and seek clarification after completion.'],`The information is incomplete, site conditions have changed and the work will soon be concealed.`);
-}
-function epaCognitiveTemplates(item,p){
- const title=item.assignmentTitle;
- return [
-  {kind:'action',level:'Application',stem:`During ${title}, ${p.scenario.toLowerCase()}. Which action should be taken first?`,answer:p.best,why:`This applies the requirement directly to a realistic ${title.toLowerCase()} situation.`},
-  {kind:'check',level:'Analysis',stem:`During ${title}, ${p.edge} Which combination of checks is most important before deciding how to proceed?`,answer:p.check,why:'The answer identifies the evidence needed to diagnose the situation rather than relying on assumption.'},
-  {kind:'action',level:'Evaluation',stem:`A worker proposes continuing with ${title} despite the changed conditions. Which response is most defensible?`,answer:p.best,why:'The correct response balances safety, specification, quality and authorisation.'},
-  {kind:'consequence',level:'Consequence',stem:`During ${title}, what is the most likely consequence if this requirement is ignored?`,answer:p.risk,why:'The consequence is directly linked to the actual topic and workplace task.'},
-  {kind:'action',level:'Application',stem:`Which method best demonstrates competent performance of ${item.text.toLowerCase()} during ${title}?`,answer:p.best,why:'Competence requires the requirement to be applied and checked in the real task.'},
-  {kind:'evidence',level:'Evaluation',stem:`Which evidence would give an EPA assessor the strongest assurance that this requirement was met during ${title}?`,answer:`A specific workplace example explaining the decision, method, checks, result and how it met the current specification.`,why:'Strong EPA evidence is specific, applied, checked and justified rather than a generic statement.'}
- ];
-}
-function epaCategory(item){
- const text=`${item.assignmentTitle} ${item.text}`.toLowerCase();
- if(/ppe|rpe|lev|dust suppression/.test(text))return 'ppe';
- if(/coshh|hazard|risk assessment|method statement|safe system|health and safety|working at height|manual handling|fire safety|asbestos|electrical safety/.test(text))return 'safety';
- if(/environment|sustainab|recycl|reuse|waste|contamination|energy/.test(text))return 'environment';
- if(/drawing|specification|digital design|setting.?out|marking.?out|rod|level|gauge|profile|tolerance/.test(text))return 'settingout';
- if(/estimate|cutting list|quantity|resource estimation|materials and characteristics|timber types|masonry units|mortar|dpc|lintel|insulation/.test(text))return 'materials';
- if(/hand tool|power tool|machinery|disc cutter|mixer|drill|saw|router|planer|sharpen|maintain and store/.test(text))return 'tools';
- if(/cavity wall|wall tie|cavity tray|weep|fire stopping|opening|lintel|insulation/.test(text))return 'cavity';
- if(/joint finish|pointing|mortar ratio|mix mortar|gauging|expansion joint/.test(text))return 'mortar';
- if(/bond|solid wall|brick.?on.?edge|soldier|decorative|pier|raking cut|gable|brick wall/.test(text))return 'masonry';
- if(/repair|defect|protect materials|frost|water|construction damage|maintenance/.test(text))return 'repair';
- if(/communicat|terminology|customer service|team work|teamwork|wider team|shared goals/.test(text))return 'communication';
- if(/wellbeing|mental health|equality|diversity|inclusion|edi|safeguard|prevent/.test(text))return 'edi';
- if(/roof|rafter|truss|flat roof|warm roof|cold roof/.test(text))return 'roof';
- if(/stair|handrail|spindle|balustrade/.test(text))return 'stairs';
- if(/door|window|glazing|ironmongery|hinge|lock|latch|frame|lining/.test(text))return 'openings';
- if(/plumb|drainage|water hygiene|legionella|isolate.*water|blockage/.test(text))return 'water';
- if(/electrical|safe isolation|electronic supply/.test(text))return 'electrical';
- return 'general';
-}
-const EPA_DISTRACTORS={
- ppe:{
-  check:['Check only that a mask is being worn, without confirming its protection rating, fit or compatibility with eye protection.','Confirm the extraction unit is switched on, but do not check airflow, filter condition or whether dust is escaping at the source.','Review the task after cutting has started and rely on visible dust levels to decide whether additional controls are needed.'],
-  consequence:['Dust exposure may increase slightly, but any suitable face covering will prevent significant harm.','The main consequence will be slower cutting because extraction reduces the tool’s performance.','Only the cleanliness of the work area will be affected; the worker’s health risk will remain unchanged.']},
- safety:{
-  check:['Check that the worker has completed similar tasks before, without reviewing the changed hazards or control measures.','Confirm the task is urgent and that basic PPE is available, but do not reassess access, nearby trades or emergency arrangements.','Read the original method statement only, without checking whether the current site conditions still match it.'],
-  consequence:['The task may take longer, but the original safe system remains valid even when site conditions change.','The only likely outcome is a minor paperwork issue if the revised method is recorded after completion.','Risk remains acceptable provided an experienced worker supervises the task informally.']},
- environment:{
-  check:['Check whether the nearest skip has space, without confirming waste classification, contamination or authorised disposal routes.','Identify reusable materials after the work is complete, when they may already be mixed with damaged or contaminated waste.','Confirm the site is tidy, but do not check storage, runoff controls, documentation or whether materials can be reused.'],
-  consequence:['The main effect will be a less tidy work area, with no impact on disposal compliance or material recovery.','Mixed waste can still be fully recycled later, so segregation at source is unnecessary.','Rainwater may enter the containers, but this will not affect contamination risk or disposal costs.']},
- settingout:{
-  check:['Compare the two drawings visually and use the dimension that appears easiest to build, without checking revisions or the datum.','Measure from the nearest completed wall only, without confirming the benchmark, diagonals, tolerances or drawing scale.','Check the overall length after construction, but do not verify intermediate dimensions, openings or alignment before work begins.'],
-  consequence:['Only the final appearance may vary; following trades can normally adjust without delay or rework.','A small dimensional error will correct itself through normal joint tolerances as the work progresses.','The work can remain compliant provided it is level, even if it is built from the wrong datum or drawing revision.']},
- materials:{
-  check:['Check the gross wall area and add a standard percentage, without deducting openings or considering cuts and pack quantities.','Confirm only that the proposed substitute is the same colour, without checking dimensions, strength, durability or compatibility.','Use the supplier’s suggested quantity without independently checking the current drawings, units or waste allowance.'],
-  consequence:['The only likely effect is surplus stock at the end of the job, with no impact on programme or quality.','Any shortage can be solved by changing to another available product, even if its performance differs from the specification.','Incorrect quantities affect purchasing records only and will not influence waste, delays or finished-work compliance.']},
- tools:{
-  check:['Check that the tool still runs, without inspecting the guard, blade, cable, extraction or inspection status.','Confirm the replacement tool looks similar, but do not check its capacity, accessories or required controls.','Ask the previous user whether the tool worked, instead of completing and recording a proper pre-use inspection.'],
-  consequence:['The main consequence will be a slower finish; worn or unsuitable tools rarely affect safety or accuracy.','A missing guard only affects comfort and visibility, not the likelihood or severity of injury.','Material damage is unlikely provided the operator reduces speed and uses additional force.']},
- cavity:{
-  check:['Check the external appearance and joint finish only, without inspecting ties, insulation, trays, stop ends or cavity cleanliness.','Confirm the opening dimensions after the lintel is installed, but do not check bearing, tray falls or weep-hole positions.','Measure wall-tie spacing in one accessible area and assume concealed sections were installed in the same way.'],
-  consequence:['The defect will mainly affect appearance; moisture, thermal and fire performance will remain unchanged.','Mortar droppings in the cavity will provide additional support and are unlikely to create damp bridging.','Missing or poorly positioned weep holes will have no effect if the outer leaf has a neat joint finish.']},
- mortar:{
-  check:['Check colour consistency only, without confirming proportions, water content, mixing time or whether the mortar has begun to set.','Measure the first batch accurately and then allow later batches to be gauged by eye.','Inspect the joint profile after hardening, but do not check depth, compaction or finishing time while the mortar is workable.'],
-  consequence:['Variation will affect colour only; durability and resistance to water penetration will remain consistent.','Adding water to aged mortar restores its original performance without affecting strength or bond.','Different joint profiles can be used across the elevation without influencing weathering or appearance.']},
- masonry:{
-  check:['Check line and level at the end of the wall only, without monitoring gauge, bond, perp alignment or feature dimensions as work progresses.','Confirm the decorative feature looks symmetrical, but do not check templates, cut sizes, stability or specified tolerances.','Measure the opening after surrounding masonry is complete and rely on thicker joints to correct any discrepancy.'],
-  consequence:['Broken bond or irregular cuts will affect appearance only and will not influence stability or durability.','Gauge errors can always be corrected in the final course without creating visible or structural defects.','Uneven feature dimensions are acceptable provided the wall remains generally plumb.']},
- repair:{
-  check:['Check only the visible extent of the defect, without investigating moisture, movement, substrate condition or the original cause.','Select a repair product by setting time and colour alone, without checking compatibility, curing or weather limitations.','Inspect the repair immediately after application, but do not plan later checks for adhesion, recurrence or surrounding damage.'],
-  consequence:['Covering the defect will normally prevent recurrence even when the original cause remains.','Any compatible-looking product will perform adequately, so differences in strength or permeability are unlikely to matter.','Frost or damp conditions may change appearance but will not affect bond, curing or durability.']},
- communication:{
-  check:['Confirm that a message was sent, without checking whether the correct people understood the technical detail, impact or required action.','Tell the nearest supervisor verbally and assume they will inform the customer, other trades and programme team.','Record the change after completion, without agreeing responsibilities or confirming how it affects other work.'],
-  consequence:['The only likely effect is duplicated paperwork; the programme and other trades will be unaffected.','Technical misunderstandings are unlikely if everyone has worked on similar projects before.','A verbal message to one person is sufficient evidence that all affected parties received and understood the change.']},
- edi:{
-  check:['Decide whether the concern is serious based only on the person’s recent productivity, without listening to them or following support procedures.','Ask several colleagues for their opinion before speaking privately with the person who raised the concern.','Promise absolute confidentiality immediately, without considering safeguarding, safety or the need to escalate serious risks.'],
-  consequence:['The person may feel uncomfortable temporarily, but discrimination or wellbeing concerns will normally resolve without support.','The issue will affect morale only and is unlikely to influence safety, attendance or work quality.','Keeping the matter within the immediate team will prevent escalation and is always the most appropriate response.']},
- roof:{check:['Check pitch and overall span only, without verifying bearings, centres, bracing, fixings or temporary stability.','Confirm individual cuts fit, but do not check cumulative alignment, load paths or ventilation and insulation details.','Inspect the roof after covering, when concealed restraint and bracing details can no longer be verified.'],consequence:['Minor geometry errors affect appearance only and will not alter load transfer or weather performance.','Temporary instability is acceptable once several members are loosely fixed in position.','Omitted ventilation or restraint details will not matter because they are concealed after completion.']},
- stairs:{check:['Check that the flight reaches the landing, without verifying consistent rise, going, pitch, headroom or guarding dimensions.','Space spindles evenly by eye and check appearance rather than the maximum permitted opening.','Confirm handrail height at one point only, without checking alignment, fixings or changes in floor level.'],consequence:['Inconsistent steps may be noticeable but will not create a significant trip or fall risk.','Oversized spindle gaps are acceptable when the balustrade feels rigid.','A changed floor level affects the first step only and does not require the stair geometry to be recalculated.']},
- openings:{check:['Check where the unit binds and remove material there, without checking frame square, twist, clearances, seals or ironmongery.','Confirm the door or window closes once, but do not test repeated operation, latching, weather seals or fire-performance details.','Measure width and height only, without checking diagonals, plumb, level or the fixing sequence.'],consequence:['Extra clearance will solve binding without affecting fire, security, acoustic or weather performance.','A twisted frame affects operation only and will not damage hinges, seals or glazing.','Force-closing the unit will allow the components to settle into alignment without further adjustment.']},
- water:{check:['Check the visible leak only, without confirming isolation, stored pressure, contamination risks or the full drainage route.','Select a replacement because it fits physically, without checking pressure rating, material compatibility or hygiene requirements.','Restore the supply once the joint looks dry, without pressure testing or checking hidden connections.'],consequence:['A small leak will normally seal itself once the system returns to operating pressure.','Using a physically compatible component will not affect hygiene, durability or future maintenance.','Incomplete isolation may cause inconvenience, but flooding or contamination is unlikely during a short repair.']},
- electrical:{check:['Check that the local switch is off, without identifying the circuit, locking off or proving dead with a suitable tester.','Rely on labels and another worker’s confirmation, without testing for alternative or stored supplies.','Test for dead once, but do not prove the tester before and after the test.'],consequence:['The main risk is damage to the component; electric shock is unlikely when the local switch is off.','Clear labelling is sufficient evidence of isolation, so lock-off and proving dead add little protection.','A secondary supply may cause a warning light to operate but is unlikely to energise the work area.']},
- general:{check:['Check only the final appearance, without confirming the current information, sequence, tolerances or concealed work.','Use the previous task as the reference, without checking whether the specification or site conditions have changed.','Confirm the work is complete, but do not record the decisions, checks or evidence needed to demonstrate compliance.'],consequence:['The requirement will affect paperwork only, provided the finished work looks acceptable.','Any defect can be corrected later without affecting safety, cost, programme or following trades.','Previous experience is enough to ensure compliance even when current information is incomplete.']}
-};
-function epaDistractors(item,p,template){
- const category=epaCategory(item),set=EPA_DISTRACTORS[category]||EPA_DISTRACTORS.general;
- let pool=[];
- if(template.kind==='consequence')pool=set.consequence;
- else if(template.kind==='check')pool=set.check;
- else if(template.kind==='evidence')pool=[
-  `A brief statement that ${item.assignmentTitle.toLowerCase()} was completed safely, without identifying the actual decision, checks or result.`,
-  `A finished-work photograph with no explanation of the method, specification, concealed details or corrective action.`,
-  `A supervisor’s general confirmation that the apprentice usually performs well, without evidence from this specific activity.`
- ];
- else pool=p.wrong;
- return shuffle([...new Set(pool.filter(x=>x&&x!==template.answer))]).slice(0,3);
-}
-function epaQuestionScore(q,usedStems=new Set()){
- let score=0;const issues=[];
- const stem=q.question.trim(),lower=stem.toLowerCase(),answers=q.options.map(x=>x.trim());
- const banned=[/what(?:'s| is) an issue with/i,/what is [ksb]\d+/i,/which statement is correct/i,/follow procedures\.?$/i,/do the task safely\.?$/i];
- if(stem.length>=65&&stem.length<=280)score+=2;else issues.push('stem length');
- if(q.level&&['Application','Analysis','Evaluation','Consequence'].includes(q.level))score+=2;else issues.push('cognitive level');
- if(/during|before|after|site|work|task|worker|learner|building|repair|install|construct/i.test(stem))score+=2;else issues.push('workplace context');
- if(!banned.some(r=>r.test(stem)))score+=2;else issues.push('vague wording');
- if(!/\b[ksb]\d+\b/i.test(stem))score+=1;else issues.push('learner-facing KSB code');
- if(new Set(answers.map(x=>x.toLowerCase())).size===4&&answers.every(x=>x.length>=28))score+=2;else issues.push('answer quality');
- if(Number.isInteger(q.correct)&&q.correct>=0&&q.correct<4)score+=1;else issues.push('correct answer');
- const correct=answers[q.correct]||'';
- if(correct.length>=45&&!/^(follow|use) (the )?(correct|appropriate) (procedure|method)/i.test(correct))score+=2;else issues.push('specific correct answer');
- if(q.explanation&&q.explanation.length>=45)score+=1;else issues.push('explanation');
- const fingerprint=lower.replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').slice(0,120);
- if(!usedStems.has(fingerprint))score+=1;else issues.push('duplicate stem');
- return {score,max:16,pass:score>=13,issues,fingerprint};
-}
-function buildEpaQuestion(item,template,variant,usedStems){
- const p=epaTopicProfile(item),alternatives=epaDistractors(item,p,template);
- if(alternatives.length<3)return null;
- const options=shuffle([template.answer,...alternatives]);
- const q={id:`${item.code}-${item.assignment}-${variant}-v136`,code:item.code,type:item.type,level:template.level,assignment:item.assignment,assignmentTitle:item.assignmentTitle,wording:item.text,question:template.stem,options,correct:options.indexOf(template.answer),explanation:template.why};
- const audit=epaQuestionScore(q,usedStems);q.qualityScore=audit.score;q.qualityIssues=audit.issues;
- if(audit.pass)usedStems.add(audit.fingerprint);
- return audit.pass?q:null;
-}
-function epaVerifiedFallback(item,usedStems){
- const p=epaTopicProfile(item),title=item.assignmentTitle;
- const templates=[
-  {kind:'action',level:'Application',stem:`While completing ${title}, the current site conditions no longer match the planned method. What should the apprentice do before proceeding?`,answer:p.best,why:'The response applies the actual topic using current information and appropriate checks.'},
-  {kind:'check',level:'Analysis',stem:`A quality or safety concern is identified during ${title}. Which checks would best establish whether the work meets the requirement?`,answer:p.check,why:'These checks are directly linked to the topic, task conditions and required standard.'}
- ];
- for(let i=0;i<templates.length;i++){const q=buildEpaQuestion(item,templates[i],90+i,usedStems);if(q)return q}
- return null;
-}
-function epaQuestionVariants(item,usedStems=new Set()){
- const p=epaTopicProfile(item),templates=epaCognitiveTemplates(item,p),questions=[];
- templates.forEach((template,variant)=>{const q=buildEpaQuestion(item,template,variant,usedStems);if(q)questions.push(q)});
- if(questions.length<2){const fallback=epaVerifiedFallback(item,usedStems);if(fallback)questions.push(fallback)}
- return questions;
-}
-
-// v1.4.0 concise construction EPA multiple-choice framework
-const THEORY_MCQ_FRAMEWORK_V140=`Short, direct construction questions. One concept per question. Exactly four realistic options. One correct answer. No trick wording, long scenarios, all/none answers or combined answers.`;
-const CONCISE_EPA_QUESTIONS={
- ppe:[
-  ['Which control best reduces respirable dust when cutting masonry?','Use water suppression or suitable extraction','Wear a high-visibility vest','Work faster to reduce exposure time','Stand further from the cutting line','Source control reduces airborne dust before it reaches the worker.'],
-  ['What must be checked before using tight-fitting RPE?','The face fit and condition','The colour of the mask','The worker’s glove size','The tool battery level','Tight-fitting RPE must seal correctly and be suitable for the hazard.']],
- safety:[
-  ['What should happen when site conditions no longer match the method statement?','Stop and review the controls','Continue with extra care','Finish the urgent section first','Ask another trade to supervise','Changed conditions require the safe system of work to be reassessed.'],
-  ['Which document identifies hazards and suitable control measures?','Risk assessment','Delivery note','Timesheet','Product invoice','A risk assessment identifies hazards, risk and the controls required.']],
- environment:[
-  ['Why should construction waste be separated at source?','To support safe reuse and recycling','To make every skip equally full','To avoid recording waste transfers','To remove the need for storage areas','Separation prevents contamination and improves recovery of reusable materials.'],
-  ['How should reusable materials be stored?','Protected from damage and contamination','Mixed with general waste','Left uncovered near access routes','Placed in the nearest empty skip','Protected storage preserves materials for safe reuse.']],
- settingout:[
-  ['What should be checked before setting out from a drawing?','Revision, dimensions and datum','Only the drawing scale','Only the wall length','The supplier’s delivery time','Current revisions, dimensions and the correct datum prevent setting-out errors.'],
-  ['Which check confirms a rectangular setting-out is square?','Equal diagonal measurements','Equal joint thicknesses','Matching material colours','A level top edge only','Equal diagonals confirm that a rectangle is square.']],
- materials:[
-  ['What should be confirmed before using a substitute material?','Its specification and compatibility','Its colour only','Its lowest price','Its nearest supplier','A substitute must meet the required performance and compatibility.'],
-  ['Why are openings deducted when calculating material quantities?','They reduce the net area required','They increase mortar strength','They change the drawing scale','They remove the waste allowance','Openings reduce the area that requires materials.']],
- tools:[
-  ['What should be done with a defective power tool?','Quarantine and report it','Use it at a lower speed','Remove the damaged guard','Finish the cut before reporting it','Defective equipment must be taken out of use and reported.'],
-  ['Which check is essential before using a cutting tool?','Guard, blade and cable condition','The colour of the casing','The age of the operator','The brand of the material','Safety-critical parts must be sound before operation.']],
- cavity:[
-  ['What is the purpose of a cavity wall tie?','Connect the inner and outer leaves','Support the DPC course','Carry the roof load','Hold insulation against the outer leaf','Wall ties connect the leaves while maintaining the cavity.'],
-  ['Which barrier prevents rising damp in a wall?','DPC','RWP','DPM','RDC','A damp-proof course prevents moisture rising through the wall.'],
-  ['Why must a cavity be kept clear of mortar droppings?','To prevent damp bridging','To increase wall weight','To strengthen wall ties','To reduce brick suction','Mortar bridging can carry moisture across the cavity.']],
- mortar:[
-  ['Why should mortar batches use consistent proportions?','To maintain strength and colour','To increase brick suction','To reduce wall-tie spacing','To change the bond pattern','Consistent proportions produce predictable performance and appearance.'],
-  ['When should mortar joints normally be finished?','At the correct stage of stiffening','Immediately after mixing','After the wall is fully cured','Before the units are laid','Correct timing gives a compact, durable joint finish.']],
- masonry:[
-  ['Why are perp joints staggered in bonded brickwork?','To improve strength and stability','To reduce mortar colour variation','To support the DPC','To increase cavity width','Staggered joints maintain bond and distribute loads effectively.'],
-  ['Which tool checks that brickwork is vertical?','Spirit level or plumb rule','Tape measure','Brick hammer','Jointing iron','A level or plumb rule checks vertical alignment.']],
- repair:[
-  ['What should be identified before repairing a defect?','The underlying cause','Only the visible colour','The cheapest repair product','The nearest access route','Removing the cause helps prevent the defect returning.'],
-  ['Why must repair materials be compatible?','To avoid further damage or failure','To make the repair set instantly','To remove the need for curing','To change the original finish','Compatible materials perform without harming the existing construction.']],
- communication:[
-  ['How should a technical change be communicated?','Clearly, to everyone affected','Only to the nearest worker','At the end of the project','Using unexplained trade terms','Clear communication ensures affected people understand the change and action required.'],
-  ['Why should important site decisions be recorded?','To provide an accurate agreed record','To replace all verbal communication','To avoid speaking to the customer','To remove supervisor responsibility','A record confirms what was agreed, by whom and why.']],
- edi:[
-  ['What is the best response to a colleague raising a wellbeing concern?','Listen privately and follow support procedures','Discuss it with the whole team','Ignore it unless work stops','Promise absolute secrecy immediately','A respectful private response allows appropriate support and escalation.'],
-  ['What does inclusive working require?','Respect and fair access to participation','Treating every person identically in all situations','Avoiding all workplace discussions','Allowing only supervisors to contribute','Inclusion means removing barriers and enabling fair participation.']],
- roof:[
-  ['What must be checked before permanently fixing roof members?','Alignment, bearing and bracing','Paint colour and supplier','Only the overall span','Only the first rafter cut','Correct geometry and restraint are essential for stability and load transfer.'],
-  ['Why is temporary roof bracing required?','To maintain stability during construction','To improve timber colour','To reduce insulation thickness','To replace permanent fixings','Temporary bracing prevents movement or collapse before permanent restraint is complete.']],
- stairs:[
-  ['Why must stair rises be consistent?','To reduce trip and fall risk','To improve timber colour','To reduce handrail height','To increase spindle spacing','Consistent rises provide a safe and predictable walking rhythm.'],
-  ['What should be checked when setting out stair spindles?','Maximum permitted gap','Only the first spindle','Timber moisture only','The tread colour','Spindle spacing must prevent unsafe openings in the guarding.']],
- openings:[
-  ['What should be checked first when a door binds?','Frame square, level and twist','The paint colour','The handle brand','The wall-tie spacing','Frame alignment should be checked before removing material from the door.'],
-  ['Why are clearances important around a fitted door?','For correct operation and performance','To increase the door weight','To reduce hinge numbers','To avoid using a frame','Correct clearances allow operation while maintaining fire, acoustic or weather performance.']],
- water:[
-  ['What must be done before dismantling a water fitting?','Isolate and control the supply','Open every outlet','Increase system pressure','Remove the nearest trap','Isolation prevents uncontrolled water release and damage.'],
-  ['What should follow a completed plumbing repair?','Leak or pressure testing','Immediate concealment','Changing the pipe material','Removing the isolation valve','Testing confirms the repair is sound before reinstatement.']],
- electrical:[
-  ['What confirms an electrical circuit is safely isolated?','Lock-off and proving dead','Turning off the local switch','Reading the circuit label','Asking another worker','Safe isolation requires secure isolation and testing with a suitable instrument.'],
-  ['Why is a voltage tester proved before and after use?','To confirm the tester works correctly','To discharge the circuit','To reset the fuse board','To identify cable size','Proving the tester confirms that a dead reading can be trusted.']],
- general:[
-  ['What should be checked before starting construction work?','Current information and site conditions','Only the previous method used','Only the material colour','The final invoice value','Current information and conditions determine the correct method and controls.'],
-  ['Why should completed work be checked against the specification?','To confirm quality and compliance','To reduce the need for measurements','To avoid recording evidence','To change the agreed tolerance','The specification defines the required standard for the finished work.']]
-};
-function conciseQuestionSet(item){
- const category=epaCategory(item),pool=CONCISE_EPA_QUESTIONS[category]||CONCISE_EPA_QUESTIONS.general;
- const seed=(item.assignment+String(item.code).split('').reduce((n,c)=>n+c.charCodeAt(0),0))%pool.length;
- return [pool[seed],pool[(seed+1)%pool.length]];
-}
-function rotateOptions(answer,distractors,offset){
- const options=[...distractors];options.splice(offset%4,0,answer);return options;
-}
-function epaQuestionVariants(item,usedStems=new Set()){
- return conciseQuestionSet(item).map((row,variant)=>{
-  const [question,answer,b,c,d,explanation]=row;
-  const fingerprint=question.toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
-  const uniqueKey=`${fingerprint}|${item.code}|${item.assignment}`;
-  if(usedStems.has(uniqueKey))return null;usedStems.add(uniqueKey);
-  const correct=(item.assignment+variant+String(item.code).charCodeAt(0))%4;
-  const options=rotateOptions(answer,[b,c,d],correct);
-  return {id:`${item.code}-${item.assignment}-${variant}-v140`,code:item.code,type:item.type,level:'Knowledge',assignment:item.assignment,assignmentTitle:item.assignmentTitle,wording:item.text,question,options,correct,explanation,qualityScore:16,qualityIssues:[]};
- }).filter(Boolean);
-}
-
-function epaQuestionBank(){
- const usedStems=new Set(),bank=[];
- allCourseKsbs().forEach(item=>bank.push(...epaQuestionVariants(item,usedStems)));
- return bank;
+function approvedEpaKnowledgeBank(){return Array.isArray(EPA_KNOWLEDGE_PRACTICE_BANKS[COURSE.id])?EPA_KNOWLEDGE_PRACTICE_BANKS[COURSE.id]:[]}
+function epaKnowledgeBankStatus(){
+ const required=allCourseKsbs(),requiredCodes=new Set(required.map(x=>x.code)),questions=approvedEpaKnowledgeBank();
+ const valid=[],seen=new Set(),issues=[];
+ questions.forEach((q,index)=>{
+  const code=String(q?.code||'').trim().toUpperCase();
+  if(!requiredCodes.has(code)){issues.push(`Question ${index+1} uses unknown KSB ${code||'(missing)'}`);return}
+  if(seen.has(code)){issues.push(`More than one question is assigned to ${code}`);return}
+  if(!q.question||!Array.isArray(q.options)||q.options.length!==4||!Number.isInteger(q.correct)||q.correct<0||q.correct>3||!q.explanation){issues.push(`${code} is incomplete`);return}
+  seen.add(code);valid.push({...q,code,type:epaType(code),id:q.id||`${COURSE.id}-${code}-epa-practice`});
+ });
+ const missing=required.filter(x=>!seen.has(x.code));
+ return {required,questions:valid,missing,issues,ready:missing.length===0&&issues.length===0&&valid.length===required.length};
 }
 function chooseEpaQuestions(){
- const bank=epaQuestionBank(),previous=state.data[epaResultKey()]?.[0]?.questionIds||[];
- const fresh=bank.filter(q=>!previous.includes(q.id)),source=fresh.length>=40?fresh:bank;
- const targets={Knowledge:24,Skill:10,Behaviour:6},selected=[];
- Object.entries(targets).forEach(([type,count])=>selected.push(...shuffle(source.filter(q=>q.type===type)).slice(0,count)));
- if(selected.length<40){const ids=new Set(selected.map(q=>q.id));selected.push(...shuffle(source.filter(q=>!ids.has(q.id))).slice(0,40-selected.length))}
- return shuffle(selected.slice(0,40)).map(q=>({...q,options:[...q.options]}));
+ return shuffle(epaKnowledgeBankStatus().questions).slice(0,20).map(q=>{
+  const mixed=shuffle(q.options.map((text,index)=>({text,index})));
+  return {...q,options:mixed.map(x=>x.text),correct:mixed.findIndex(x=>x.index===q.correct)};
+ });
 }
+function epaPracticeGrade(score){return score>=90?'Distinction':score>=80?'Merit':score>=70?'Pass':'Needs More Practice'}
 
 function assignmentTheoryKsbs(a){
  return (a?.ksbs||[]).filter(([code])=>/^[KB]/i.test(String(code||'')));
@@ -1077,24 +861,25 @@ function renderAssignmentKnowledgeResult(){
 
 function renderEpaMockHome(){
  if(COURSE.nvqUnits){state.view='home';render();return}
- const results=state.data[epaResultKey()]||[],best=results.length?Math.max(...results.map(r=>r.score)):null,last=results[0];
- app.innerHTML=shell(`<button class="back no-print" id="epaBack">← Assignments</button><section class="epa-hero"><div class="number">${esc(COURSE.name)} · ${esc(COURSE.standard)}</div><h2>EPA Multiple-Choice Mock</h2><p>Each attempt selects 40 challenging questions from a bank generated across every Knowledge, Skill and Behaviour in this course.</p></section><section class="epa-summary-grid"><article class="card panel"><strong>${epaQuestionBank().length}</strong><span>questions in the course bank</span></article><article class="card panel"><strong>40</strong><span>questions in each attempt</span></article><article class="card panel"><strong>${best===null?'—':best+'%'}</strong><span>best result</span></article></section><section class="card panel epa-start-card"><h3>Start a new mock</h3><p class="muted">The selection is balanced across Knowledge, Skills and Behaviours. Questions from your previous attempt are avoided whenever the bank allows.</p><div class="epa-breakdown"><span>24 Knowledge</span><span>10 Skills</span><span>6 Behaviours</span></div><button class="btn" id="startEpa">Generate 40 questions</button></section>${last?`<section class="card panel"><h3>Latest attempt</h3><p class="epa-latest-score">${last.score}% — ${last.score>=70?'Pass':'Resit required'}</p><p class="muted">${esc(last.date)}</p><button class="btn secondary" id="reviewLatest">Review latest result</button></section>`:''}`);
- document.getElementById('epaBack').onclick=()=>{state.view='home';render()};
- document.getElementById('startEpa').onclick=()=>{state.epaMock={questions:chooseEpaQuestions(),answers:{},index:0};state.view='epa-test';render();window.scrollTo(0,0)};
+ const status=epaKnowledgeBankStatus(),results=state.data[epaResultKey()]||[],best=results.length?Math.max(...results.map(r=>r.score)):null,last=results[0];
+ const knowledgeAction=status.ready?'<button class="btn" id="startEpa">Start Knowledge Practice</button>':'<button class="btn" disabled>Questions being prepared</button>';
+ app.innerHTML=shell(`<button class="back no-print" id="epaBack">← Academy</button><section class="epa-hero"><div class="number">${esc(COURSE.name)} · ${esc(COURSE.standard)}</div><h2>EPA Academy</h2><p>Prepare for the three stages of your end-point assessment through KSB practice, professional discussion and an in-house practical task.</p></section><section class="academy-grid epa-stage-grid"><article class="academy-card epa-academy-card"><div class="academy-icon">${appIcon('questions')}</div><div><div class="number">Stage 1</div><h3>Knowledge Practice</h3><p>Each attempt uses 20 questions randomly selected from the approved KSB bank, with the answer order mixed.</p></div><div class="library-summary"><strong>${status.questions.length}/${status.required.length}</strong><span>approved KSB questions</span></div>${knowledgeAction}${last?`<button class="btn secondary" id="reviewLatest">Review latest result</button>`:''}</article><article class="academy-card"><div class="academy-icon">${appIcon('microphone')}</div><div><div class="number">Stage 2</div><h3>Professional Discussion</h3><p>Ten randomly selected KSB questions, read aloud and answered by voice.</p></div><div class="library-summary"><strong>Next</strong><span>planned EPA stage</span></div><button class="btn secondary" disabled>Coming next</button></article><article class="academy-card"><div class="academy-icon">${appIcon('practical')}</div><div><div class="number">Stage 3</div><h3>EPA Practical Pack</h3><p>An in-house timed task with planning, material calculations and objective assessor measurements.</p></div><div class="library-summary"><strong>Later</strong><span>planned EPA stage</span></div><button class="btn secondary" disabled>Coming later</button></article></section><section class="epa-summary-grid"><article class="card panel"><strong>${status.required.length}</strong><span>KSBs to practise</span></article><article class="card panel"><strong>${best===null?'—':best+'%'}</strong><span>best Knowledge Practice result</span></article><article class="card panel"><strong>${best===null?'—':epaPracticeGrade(best)}</strong><span>best grade</span></article></section>${status.issues.length?`<section class="card panel"><h3>Question bank checks</h3><p class="muted">${status.issues.map(esc).join('<br>')}</p></section>`:''}`);
+ document.getElementById('epaBack').onclick=()=>{state.view='academy';render()};
+ const start=document.getElementById('startEpa');if(start)start.onclick=()=>{state.epaMock={questions:chooseEpaQuestions(),answers:{},index:0};state.view='epa-test';render();window.scrollTo(0,0)};
  const review=document.getElementById('reviewLatest');if(review)review.onclick=()=>{state.epaMock={result:last};state.view='epa-result';render();window.scrollTo(0,0)};
 }
 function renderEpaMockTest(){
- const mock=state.epaMock;if(!mock?.questions){state.view='epa';render();return}const i=mock.index||0,q=mock.questions[i],picked=mock.answers[i];
- app.innerHTML=shell(`<button class="back no-print" id="quitEpa">← Exit mock</button><section class="epa-test-head"><div><div class="number">Question ${i+1} of ${mock.questions.length}</div><h2>${esc(q.code)} · ${esc(q.type)}</h2></div><span class="status-pill">${Object.keys(mock.answers).length}/40 answered</span></section><div class="epa-progress"><span style="width:${((i+1)/mock.questions.length)*100}%"></span></div><section class="card panel epa-question"><small>Assignment ${q.assignment} · ${esc(q.assignmentTitle)}</small><h3>${esc(q.question)}</h3><div class="epa-options">${q.options.map((o,n)=>`<label class="epa-option ${picked===n?'selected':''}"><input type="radio" name="epaAnswer" value="${n}" ${picked===n?'checked':''}><span><b>${String.fromCharCode(65+n)}</b>${esc(o)}</span></label>`).join('')}</div></section><div class="epa-controls"><button class="btn secondary" id="epaPrev" ${i===0?'disabled':''}>Previous</button>${i===mock.questions.length-1?'<button class="btn" id="epaSubmit">Submit mock</button>':'<button class="btn" id="epaNext">Next</button>'}</div>`);
- document.getElementById('quitEpa').onclick=()=>{if(confirm('Exit this mock? Your current answers will be discarded.')){state.epaMock=null;state.view='epa';render()}};
+ const mock=state.epaMock;if(!mock?.questions?.length){state.view='epa';render();return}const i=mock.index||0,q=mock.questions[i],picked=mock.answers[i],answered=Object.keys(mock.answers).length;
+ app.innerHTML=shell(`<button class="back no-print" id="quitEpa">← Exit practice</button><section class="epa-test-head"><div><div class="number">Question ${i+1} of ${mock.questions.length}</div><h2>EPA Knowledge Practice</h2></div><span class="status-pill">${answered}/${mock.questions.length} answered</span></section><div class="epa-progress"><span style="width:${((i+1)/mock.questions.length)*100}%"></span></div><section class="card panel epa-question"><small>${esc(q.code)} · ${esc(q.type)}</small><h3>${esc(q.question)}</h3><div class="epa-options">${q.options.map((o,n)=>`<label class="epa-option ${picked===n?'selected':''}"><input type="radio" name="epaAnswer" value="${n}" ${picked===n?'checked':''}><span><b>${String.fromCharCode(65+n)}</b>${esc(o)}</span></label>`).join('')}</div></section><div class="epa-controls"><button class="btn secondary" id="epaPrev" ${i===0?'disabled':''}>Previous</button>${i===mock.questions.length-1?'<button class="btn" id="epaSubmit">Finish practice</button>':'<button class="btn" id="epaNext">Next</button>'}</div>`);
+ document.getElementById('quitEpa').onclick=()=>{if(confirm('Exit this practice? Your current answers will be discarded.')){state.epaMock=null;state.view='epa';render()}};
  document.querySelectorAll('input[name="epaAnswer"]').forEach(r=>r.onchange=()=>{mock.answers[i]=Number(r.value);renderEpaMockTest()});
- const prev=document.getElementById('epaPrev');if(prev)prev.onclick=()=>{mock.index=Math.max(0,i-1);renderEpaMockTest();window.scrollTo(0,0)};
- const next=document.getElementById('epaNext');if(next)next.onclick=()=>{mock.index=Math.min(mock.questions.length-1,i+1);renderEpaMockTest();window.scrollTo(0,0)};
- const submit=document.getElementById('epaSubmit');if(submit)submit.onclick=async()=>{const unanswered=mock.questions.length-Object.keys(mock.answers).length;if(unanswered&& !confirm(`${unanswered} questions are unanswered. Submit anyway?`))return;const correct=mock.questions.reduce((n,q,idx)=>n+(mock.answers[idx]===q.correct?1:0),0),score=Math.round(correct/mock.questions.length*100);const result={date:new Date().toLocaleString('en-GB'),score,correct,total:mock.questions.length,questionIds:mock.questions.map(q=>q.id),questions:mock.questions,answers:{...mock.answers}};state.data[epaResultKey()]=[result,...(state.data[epaResultKey()]||[])].slice(0,20);await saveData();state.epaMock={result};state.view='epa-result';render();window.scrollTo(0,0)};
+ document.getElementById('epaPrev').onclick=()=>{mock.index=Math.max(0,i-1);renderEpaMockTest();window.scrollTo(0,0)};
+ const next=document.getElementById('epaNext');if(next)next.onclick=()=>{if(mock.answers[i]===undefined)return toast('Select an answer');mock.index=Math.min(mock.questions.length-1,i+1);renderEpaMockTest();window.scrollTo(0,0)};
+ const submit=document.getElementById('epaSubmit');if(submit)submit.onclick=async()=>{if(Object.keys(mock.answers).length<mock.questions.length)return toast(`Answer all ${mock.questions.length} questions before finishing`);const correct=mock.questions.reduce((n,x,idx)=>n+(mock.answers[idx]===x.correct?1:0),0),score=Math.round(correct/mock.questions.length*100),grade=epaPracticeGrade(score);const result={date:new Date().toLocaleString('en-GB'),score,grade,correct,total:mock.questions.length,questionIds:mock.questions.map(q=>q.id),questions:structuredClone(mock.questions),answers:structuredClone(mock.answers)};state.data[epaResultKey()]=[result,...(state.data[epaResultKey()]||[])].slice(0,20);await saveData();state.epaMock={result};state.view='epa-result';render();window.scrollTo(0,0)};
 }
 function renderEpaMockResult(){
- const result=state.epaMock?.result;if(!result){state.view='epa';render();return}const weak={};result.questions.forEach((q,i)=>{if(result.answers[i]!==q.correct)weak[q.code]=(weak[q.code]||0)+1});
- app.innerHTML=shell(`<button class="back no-print" id="resultBack">← EPA Mock</button><section class="epa-result-head ${result.score>=70?'pass':'fail'}"><div class="number">EPA Multiple-Choice Mock</div><h2>${result.score}% — ${result.score>=70?'Pass':'Resit required'}</h2><p>${result.correct} of ${result.total} correct</p></section>${Object.keys(weak).length?`<section class="card panel"><h3>Priority revision</h3><div class="ksb-row">${Object.entries(weak).sort((a,b)=>b[1]-a[1]).map(([code,count])=>`<span class="ksb-mini coverage-partial">${esc(code)} · ${count} incorrect</span>`).join('')}</div></section>`:''}<section class="epa-review-list">${result.questions.map((q,i)=>{const chosen=result.answers[i],ok=chosen===q.correct;return `<details class="epa-review ${ok?'correct':'incorrect'}"><summary><span>Question ${i+1} · ${esc(q.code)}</span>${ok?'Correct':'Incorrect'}</summary><div><p><strong>${esc(q.question)}</strong></p><p>Your answer: ${chosen===undefined?'Not answered':`${String.fromCharCode(65+chosen)}. ${esc(q.options[chosen])}`}</p>${ok?'':`<p>Correct answer: ${String.fromCharCode(65+q.correct)}. ${esc(q.options[q.correct])}</p>`}<p class="muted">${esc(q.explanation)}</p></div></details>`}).join('')}</section><div class="btn-row epa-result-actions"><button class="btn" id="newEpa">Generate another 40</button></div>`);
+ const result=state.epaMock?.result;if(!result){state.view='epa';render();return}const grade=result.grade||epaPracticeGrade(result.score),passed=result.score>=70;
+ app.innerHTML=shell(`<button class="back no-print" id="resultBack">← EPA Academy</button><section class="epa-result-head ${passed?'pass':'fail'}"><div class="number">EPA Knowledge Practice</div><h2>${result.score}% — ${esc(grade)}</h2><p>${result.correct} of ${result.total} correct</p></section><section class="epa-review-list">${result.questions.map((q,i)=>{const chosen=result.answers[i],ok=chosen===q.correct;return `<details class="epa-review ${ok?'correct':'incorrect'}"><summary><span>Question ${i+1} · ${esc(q.code)}</span>${ok?'Correct':'Review'}</summary><div><p><strong>${esc(q.question)}</strong></p><p>Your answer: ${chosen===undefined?'Not answered':`${String.fromCharCode(65+chosen)}. ${esc(q.options[chosen])}`}</p>${ok?'':`<p>Best answer: ${String.fromCharCode(65+q.correct)}. ${esc(q.options[q.correct])}</p>`}<p class="muted">${esc(q.explanation)}</p></div></details>`}).join('')}</section><div class="btn-row epa-result-actions"><button class="btn" id="newEpa">Practise again</button></div>`);
  document.getElementById('resultBack').onclick=()=>{state.epaMock=null;state.view='epa';render()};document.getElementById('newEpa').onclick=()=>{state.epaMock={questions:chooseEpaQuestions(),answers:{},index:0};state.view='epa-test';render();window.scrollTo(0,0)};
 }
 

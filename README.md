@@ -81,3 +81,13 @@ Evidence camera inputs now display a landscape reminder and validate the finishe
 ## V1.38.6
 - Reorganised Admin Mode into clear management cards with a cleaner mobile layout.
 - Modernised the practical task specification action.
+
+### V1.38.8 EPA Knowledge Practice Attempts
+
+- Each EPA Knowledge Practice attempt contains 20 randomly selected questions.
+- Questions are drawn from the full approved KSB bank.
+- Answer order is mixed on every attempt.
+- Learners can repeat the practice to receive a different combination.
+
+### V1.38.7 EPA Academy
+The previous generated EPA multiple-choice mock has been replaced by a fixed, approved Knowledge Practice bank. Each KSB course expects one validated question per unique KSB. Bricklayer questions will be added to `EPA_KNOWLEDGE_PRACTICE_BANKS` in `app.js`. Professional Discussion and EPA Practical Pack stages are present as placeholders.
