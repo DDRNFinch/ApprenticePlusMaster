@@ -418,3 +418,6 @@ Added Targeted Revision engine backend helpers.
 - Targets use each generated project’s verified material allowance, including wastage and pack rounding where applicable.
 - Quotation submission remains disabled until every listed material quantity is suitable.
 - Existing saved generated projects remain compatible through their stored suggested quantities.
+
+
+v1.37.1: PDF header evidence block moved left and wrapped within printable margins.

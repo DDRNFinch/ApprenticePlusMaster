@@ -1,3 +1,4 @@
+// v1.37.1 layout tweak
 'use strict';
 
 /* Apprentice+ offline PDF generator. Evidence stays in the browser; no data is uploaded. */
