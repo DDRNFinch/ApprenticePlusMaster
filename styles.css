@@ -386,3 +386,104 @@
 .project-delete-panel{display:flex;justify-content:flex-end}
 .danger-button{background:#a42323;border-color:#a42323;color:#fff}
 @media(max-width:520px){.project-list-card .project-open-card{padding-right:54px}.project-delete-button{right:11px}}
+
+
+/* v1.24 ProjectMate mobile layout repair */
+.projectmate-tabs{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  overflow:visible;
+  padding:2px 0 16px;
+}
+.projectmate-tabs button{
+  min-width:0;
+  width:100%;
+  padding:11px 8px;
+  text-align:center;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.projectmate-home-actions{
+  align-items:stretch;
+  margin-top:2px;
+}
+.projectmate-home-actions .tool-app-card{
+  aspect-ratio:auto;
+  min-height:0;
+  height:auto;
+  padding:20px;
+  justify-content:flex-start;
+  overflow:hidden;
+}
+.projectmate-home-actions .project-generator-card{
+  text-align:left;
+  align-items:stretch;
+}
+.projectmate-home-actions .project-generator-card .tool-app-icon{
+  align-self:center;
+}
+.projectmate-home-actions .project-generator-card h3,
+.projectmate-home-actions .project-generator-card p{
+  text-align:center;
+}
+.projectmate-home-actions .project-generator-card .field{
+  width:100%;
+  margin:18px 0 12px;
+  text-align:left;
+}
+.projectmate-home-actions .project-generator-card .field span{
+  display:block;
+  margin-bottom:7px;
+  font-size:13px;
+  font-weight:850;
+}
+.projectmate-home-actions .project-generator-card .input{
+  width:100%;
+  min-width:0;
+}
+.projectmate-home-actions .project-generator-card .btn{
+  width:100%;
+  margin-top:2px;
+  white-space:normal;
+  line-height:1.2;
+}
+.projectmate-home-actions .project-create-card{
+  text-align:center;
+  align-items:center;
+  justify-content:center;
+}
+.projectmate-info-card{
+  clear:both;
+  margin-top:16px;
+}
+
+@media(max-width:520px){
+  .projectmate-tabs{gap:6px}
+  .projectmate-tabs button{font-size:13px;padding:10px 5px}
+  .projectmate-home-actions{
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+  .projectmate-home-actions .tool-app-card{
+    width:100%;
+    min-height:0;
+    border-radius:20px;
+  }
+  .projectmate-home-actions .project-generator-card,
+  .projectmate-home-actions .project-create-card{
+    grid-column:1;
+  }
+  .projectmate-home-actions .project-create-card{
+    min-height:180px;
+  }
+  .projectmate-info-card{
+    margin-top:14px;
+    padding:18px;
+  }
+}
+
+@media(max-width:380px){
+  .projectmate-tabs button{font-size:12px}
+  .projectmate-home-actions .tool-app-card{padding:17px}
+}

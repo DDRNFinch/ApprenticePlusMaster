@@ -1,3 +1,12 @@
+# v1.24 — ProjectMate Mobile Layout Fix
+
+- Rebuilt the ProjectMate tabs as three equal-width mobile controls.
+- Removed inherited square-card sizing from the ProjectMate generator.
+- Stacked ProjectMate action cards on narrow screens.
+- Kept the difficulty selector and Generate button inside the card.
+- Corrected spacing, overflow and text wrapping.
+- Updated the visible app version and service-worker cache.
+
 # v1.23 — Practical Assessment Task Generator
 
 - Added trade-specific Easy, Medium and Hard practical task generation inside every non-NVQ Practical Assessment.
