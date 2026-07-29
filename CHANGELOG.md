@@ -1,3 +1,10 @@
+## V1.21 — ProjectMate wastage and project management
+
+- Material quantities now accept the calculated requirement through to a maximum of 10% extra wastage.
+- Quantities below the requirement show Increase; quantities above the 10% maximum show Reduce.
+- Completed projects turn green after the learner saves the completion record.
+- Every generated or custom project can be deleted, including its stored finished-project photographs.
+
 ## V1.18 – ProjectMate
 
 - Added course-specific 2–3 hour customer-style workshop projects.
