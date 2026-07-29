@@ -1,3 +1,8 @@
+## v1.37.4
+
+- Removed the Learning Outcome Coverage tile from NVQ Evidence Pack assignment pages.
+- Learning Outcome tracking, evidence counts and PDF reporting remain unchanged.
+
 ## v1.37.3
 
 Adds a one-tap entire portfolio download containing only evidence that has been saved within assignments, including saved evidence from unfinished assignments. Blank and unsaved sections are excluded. Admin Mode no longer displays manual export or restore backup controls.

@@ -1,3 +1,5 @@
+v1.37.4: Removed the Learning Outcome Coverage tile from NVQ Evidence Pack assignment pages while retaining all underlying outcome tracking and reporting.
+
 v1.37.3: Fixed the NVQ Assessor Observation evidence tile. The observation page now opens correctly with assessor details, activity, learning-outcome selection, outcome photographs, generated narrative and assessor signature.
 
 # v1.37 — Entire Saved Portfolio Download
