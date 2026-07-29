@@ -1,3 +1,11 @@
+## v1.3.33 — Flexible EPA preparation wording
+
+- Accepts common equivalent names for tools, materials and PPE.
+- Accepts “goggles” and “safety goggles” for eye protection or safety glasses.
+- Accepts “mortar” or ready-mixed mortar as the grouped equivalent of building sand, cement and plasticiser where those ingredients are required.
+- Added further common site terminology including dust mask/RPE, ear defenders/hearing protection, hi-vis variants and safety footwear variants.
+- Keeps genuinely missing and unnecessary items visible after marking.
+
 ## v1.3.32 — EPA practical PDF preparation lists
 
 - Added the learner-selected Tools and Equipment to every completed EPA practical PDF.
