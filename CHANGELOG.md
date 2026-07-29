@@ -1,3 +1,15 @@
+# v1.28 — Complete PDF and Media Evidence Packages
+
+- Added every saved evidence section to the downloaded evidence package.
+- Added a dedicated PDF page for every KSB video walkthrough, including its generated video thumbnail, KSB reference, summary, recording date and package filename.
+- KSB walkthrough video files are automatically renamed using the KSB code and KSB description.
+- Professional-discussion voice notes are automatically renamed using their KSB code and attempt number.
+- Supporting videos include their selected KSB references in the exported filename where available.
+- PDF, video files and voice notes are downloaded together in one ZIP evidence package whenever media is present.
+- Updated download labels and upload confirmation wording to reflect the complete evidence package.
+- Existing assessment criteria, scores and saved learner evidence remain unchanged.
+- Updated the visible version and offline cache.
+
 # v1.27 — Assignment-Specific Practical Tasks
 
 - Replaced the shared three-task practical generator with assignment-specific Easy, Medium and Hard activities.

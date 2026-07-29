@@ -136,6 +136,19 @@ async function generateEvidencePackPDF({course, assignment, profile, sections}) 
     const sig=await loadImage(d.signature);if(y>H-300){p=meta(newPage('Professional Discussion - Signature',v),v,d.date,'Professional Discussion');signature(p.x,sig,p.y,'Assessor / discussion lead signature')}else signature(x,sig,y+35,'Assessor / discussion lead signature');
   }
 
+  // KSB video walkthroughs - every attached video is represented by its own thumbnail page.
+  for(let i=0;i<(sections.walkthrough||[]).length;i++){
+    const f=sections.walkthrough[i],thumb=await loadImage(f.thumbnail),p=meta(newPage('KSB Video Evidence',`Video ${i+1}`),`Video ${i+1}`,f.date,'KSB Video Walkthrough');const x=p.x;let y=sectionHeading(x,`${f.code} — ${f.summary||'Recorded evidence'}`,p.y);
+    label(x,'KSB reference',M,y);value(x,f.code,M+190,y,20,true);y+=42;
+    label(x,'Media file',M,y);value(x,ksbMediaFileName(f),M+190,y,17,true);y+=42;
+    label(x,'Recorded',M,y);value(x,f.date||'-',M+190,y,18);y+=52;
+    x.fillStyle=PALE;x.fillRect(M,y,W-2*M,610);
+    if(thumb){const maxW=W-2*M-34,maxH=570,scale=Math.min(maxW/thumb.width,maxH/thumb.height);const iw=thumb.width*scale,ih=thumb.height*scale;x.drawImage(thumb,M+(maxW-iw)/2+17,y+(maxH-ih)/2+17,iw,ih)}
+    else{value(x,'Video thumbnail unavailable',M+30,y+72,20,true)}
+    y+=660;y=sectionHeading(x,'Evidence package',y);
+    drawCompactParagraph(x,`The original playable video is included in the downloaded ZIP package. Its filename begins with the attached KSB reference so it can be matched directly to this PDF page.`,M,y,W-2*M,120);
+  }
+
   // Supporting evidence
   for(let i=0;i<(sections.supporting||[]).length;i++){
     const d=sections.supporting[i],v=i+1;
@@ -172,15 +185,28 @@ async function generateEvidencePackPDF({course, assignment, profile, sections}) 
   const pdf=makeImagePDF(jpegPages,W,H);
   const safe=clean(profile.fullName).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'');
   const pdfName=`${safe||'Learner'}-Assignment-${assignment.n}-Evidence-Pack.pdf`;
-  const videos=[];for(const version of sections.supporting||[])for(const f of version.files||[])if((f.type||'').startsWith('video/')&&f.data)videos.push(f);
+  const videos=[];for(const version of sections.supporting||[]){const codes=selectedKsbCodesForMedia(assignment,version);for(const f of version.files||[])if((f.type||'').startsWith('video/')&&f.data)videos.push({...f,ksbCodes:codes})}
+  const walkthroughVideos=(sections.walkthrough||[]).filter(f=>f?.data);
   const audios=[];for(let vi=0;vi<(sections.discussion||[]).length;vi++){const version=sections.discussion[vi];for(const [code,rec] of Object.entries(version.recordings||{}))if(rec?.data)audios.push({code,rec,attempt:vi+1})}
-  if(videos.length||audios.length){
+  if(videos.length||walkthroughVideos.length||audios.length){
     const entries=[{name:pdfName,data:pdf}],used=new Set();
-    videos.forEach((f,i)=>{const original=String(f.name||''),dot=original.lastIndexOf('.'),ext=dot>0?original.slice(dot):'.mp4',base=safeZipName((f.evidenceName||`Supporting video ${i+1}`).trim());let name=`${base}${ext}`;if(used.has(name.toLowerCase())){let n=2;while(used.has(`${base} (${n})${ext}`.toLowerCase()))n++;name=`${base} (${n})${ext}`}used.add(name.toLowerCase());entries.push({name:`Supporting Videos/${name}`,data:dataUrlBytes(f.data)})});
-    audios.forEach(({code,rec,attempt},i)=>{const mime=String(rec.type||'audio/webm'),ext=mime.includes('mp4')?'.m4a':mime.includes('ogg')?'.ogg':'.webm',base=safeZipName(`Attempt ${attempt} - ${code} Professional Discussion`);let name=`${base}${ext}`;if(used.has(name.toLowerCase()))name=`${base}-${i+1}${ext}`;used.add(name.toLowerCase());entries.push({name:`Professional Discussion Recordings/${name}`,data:dataUrlBytes(rec.data)})});
-    downloadBlob(makeZip(entries),'application/zip',`${safe||'Learner'}-Assignment-${assignment.n}-Evidence-Package.zip`);
+    videos.forEach((f,i)=>{const original=String(f.name||''),dot=original.lastIndexOf('.'),ext=dot>0?original.slice(dot):'.mp4',prefix=(f.ksbCodes||[]).join('-'),base=safeZipName(`${prefix?prefix+' - ':''}${(f.evidenceName||`Supporting video ${i+1}`).trim()}`);let name=uniqueMediaName(base,ext,used);entries.push({name:`Supporting Videos/${name}`,data:dataUrlBytes(f.data)})});
+    walkthroughVideos.forEach(f=>{const ext=mediaExtension(f.type,f.name,'video'),base=safeZipName(`${f.code} - ${f.summary||'Video evidence'}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Video Evidence/${name}`,data:dataUrlBytes(f.data)})});
+    audios.forEach(({code,rec,attempt},i)=>{const ext=mediaExtension(rec.type,'','audio'),base=safeZipName(`${code} - Professional Discussion - Attempt ${attempt}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Voice Notes/${name}`,data:dataUrlBytes(rec.data)})});
+    downloadBlob(makeZip(entries),'application/zip',`${safe||'Learner'}-Assignment-${assignment.n}-Complete-Evidence-Package.zip`);
   }else downloadBlob(pdf,'application/pdf',pdfName);
 }
+
+function selectedKsbCodesForMedia(assignment,version){
+  const available=new Set((assignment?.ksbs||[]).map(([code])=>String(code)));
+  return Object.entries(version?.scores||{}).filter(([code,score])=>available.has(String(code))&&Number(score)>0).map(([code])=>String(code));
+}
+function mediaExtension(type,name,kind='video'){
+  const original=String(name||''),dot=original.lastIndexOf('.');if(dot>0&&dot>original.length-8)return original.slice(dot);
+  const mime=String(type||'').toLowerCase();if(mime.includes('mp4'))return kind==='audio'?'.m4a':'.mp4';if(mime.includes('ogg'))return '.ogg';if(mime.includes('mpeg'))return '.mp3';if(mime.includes('wav'))return '.wav';return '.webm';
+}
+function uniqueMediaName(base,ext,used){let name=`${base}${ext}`,n=2;while(used.has(name.toLowerCase()))name=`${base} (${n++})${ext}`;used.add(name.toLowerCase());return name}
+function ksbMediaFileName(f){return `${safeZipName(`${f.code||'KSB'} - ${f.summary||'Video evidence'}`)}${mediaExtension(f.type,f.name,'video')}`}
 
 /* NVQ-only portfolio PDF. This branch is intentionally isolated so the original
    Bricklaying, Site Carpentry, Architectural Joiner and Property Maintenance
