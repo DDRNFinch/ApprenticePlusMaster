@@ -208,11 +208,17 @@
 - Added fixed A4 dimensions, print margins and page-break prevention.
 - Updated the application and offline cache versions.
 
-## V1.3.52 - Academy Knowledge Slides
-- Added a full-width Knowledge tile above Functional Skills and Trade Courses tests.
-- Built teaching slides from each MCQ scenario, correct answer, explanation and key takeaway.
-- Added progress saving, resume, completion state and revision access.
-- EPA Academy is unchanged.
+## V1.3.52 - Academy|The Academy is where you build your knowledge and prepare for assessments throughout your apprenticeship.
+
+Knowledge Slides - Short lessons covering the knowledge required for your course.
+
+Trade Courses - Trade-specific learning modules containing practical guidance, techniques and quizzes.
+
+EPA Academy - Prepare for your End-Point Assessment with mock knowledge tests, professional discussion and practical assessment preparation.
+
+Functional Skills - Improve your English and Maths through revision lessons and practice questions.
+
+Certificates - View and download certificates you have earned after completing Academy courses and assessments. is unchanged.
 
 ## V1.3.51 — MCQ Status Width Fix
 
@@ -251,9 +257,17 @@
 - Applied the redesign to Functional Skills, Trade Courses, assignment knowledge assessments and EPA knowledge practice.
 - Updated the displayed version and offline cache.
 
-## V1.3.45 — Compact Academy Subsections
+## V1.3.45 — Compact Academy|The Academy is where you build your knowledge and prepare for assessments throughout your apprenticeship.
 
-- Redesigned Functional Skills, Trade Courses and EPA Academy cards into a compact two-column layout.
+Knowledge Slides - Short lessons covering the knowledge required for your course.
+
+Trade Courses - Trade-specific learning modules containing practical guidance, techniques and quizzes.
+
+EPA Academy - Prepare for your End-Point Assessment with mock knowledge tests, professional discussion and practical assessment preparation.
+
+Functional Skills - Improve your English and Maths through revision lessons and practice questions.
+
+Certificates - View and download certificates you have earned after completing Academy courses and assessments. cards into a compact two-column layout.
 - Reduced header, icon, card, status, attempt and button sizes to fit more content on each page.
 - Kept all test banks, saved attempt history, grading, retakes and navigation unchanged.
 - Added the Trade Courses question bank to the offline app shell.
@@ -267,19 +281,31 @@
 - Corrected the English homophone answer so the marked answer is grammatically valid.
 - Updated the service-worker cache and app version.
 
-## v1.3.42 – Academy 2x2 Tile Redesign
+## v1.3.42 – Academy|The Academy is where you build your knowledge and prepare for assessments throughout your apprenticeship.
 
-- Rebuilt the Academy landing page as four equal square tiles in a 2x2 grid.
-- Reduced every Academy tile to an Apprentice+-style icon and title only.
-- Added Knowledge Library, EPA Academy, Functional Skills and Certificates tiles.
+Knowledge Slides - Short lessons covering the knowledge required for your course.
+
+Trade Courses - Trade-specific learning modules containing practical guidance, techniques and quizzes.
+
+EPA Academy - Prepare for your End-Point Assessment with mock knowledge tests, professional discussion and practical assessment preparation.
+
+Functional Skills - Improve your English and Maths through revision lessons and practice questions.
+
+Certificates - View and download certificates you have earned after completing Academy courses and assessments., Functional Skills and Certificates tiles.
 - Added matching Functional Skills and Certificates destination screens.
 - Updated the displayed app version and service-worker cache to v1.3.42.
 
-## v1.3.42 – Academy 2x2 Tile Redesign
+## v1.3.42 – Academy|The Academy is where you build your knowledge and prepare for assessments throughout your apprenticeship.
 
-- Rebuilt the Academy landing page as four equal square tiles in a 2x2 grid.
-- Reduced every Academy tile to an Apprentice+-style icon and title only.
-- Added Knowledge Library, EPA Academy, Functional Skills and Certificates tiles.
+Knowledge Slides - Short lessons covering the knowledge required for your course.
+
+Trade Courses - Trade-specific learning modules containing practical guidance, techniques and quizzes.
+
+EPA Academy - Prepare for your End-Point Assessment with mock knowledge tests, professional discussion and practical assessment preparation.
+
+Functional Skills - Improve your English and Maths through revision lessons and practice questions.
+
+Certificates - View and download certificates you have earned after completing Academy courses and assessments., Functional Skills and Certificates tiles.
 - Added matching Functional Skills and Certificates destination screens.
 - Updated the displayed app version and service-worker cache to v1.3.42.
 

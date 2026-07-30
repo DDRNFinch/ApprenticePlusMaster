@@ -93,7 +93,19 @@ Evidence camera inputs now display a landscape reminder and validate the finishe
 - Answer order is mixed on every attempt.
 - Learners can repeat the practice to receive a different combination.
 
-### V1.38.7 EPA Academy
+### V1.38.7 Knowledge Slides
+Trade Courses
+EPA Academy|The Academy is where you build your knowledge and prepare for assessments throughout your apprenticeship.
+
+Knowledge Slides - Short lessons covering the knowledge required for your course.
+
+Trade Courses - Trade-specific learning modules containing practical guidance, techniques and quizzes.
+
+EPA Academy - Prepare for your End-Point Assessment with mock knowledge tests, professional discussion and practical assessment preparation.
+
+Functional Skills - Improve your English and Maths through revision lessons and practice questions.
+
+Certificates - View and download certificates you have earned after completing Academy courses and assessments.
 The previous generated EPA multiple-choice mock has been replaced by a fixed, approved Knowledge Practice bank. Each KSB course expects one validated question per unique KSB. Bricklayer questions will be added to `EPA_KNOWLEDGE_PRACTICE_BANKS` in `app.js`. Professional Discussion and EPA Practical Pack stages are present as placeholders.
 
 
