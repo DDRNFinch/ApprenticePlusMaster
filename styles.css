@@ -1464,11 +1464,27 @@ body.page-help-open,body.help-tour-open{overflow:hidden;touch-action:none}
   position:relative;
   padding:16px;
   margin-bottom:18px;
-  background:#123f36;
-  border-color:#123f36;
+  background:
+    radial-gradient(circle at 86% 12%,rgba(197,255,86,.24),transparent 30%),
+    linear-gradient(145deg,#85d908 0%,#45a90d 28%,#14753a 62%,#064b2c 100%);
+  border-color:rgba(91,183,37,.42);
   color:#fff;
   overflow:hidden;
+  box-shadow:
+    0 16px 34px rgba(5,75,44,.24),
+    0 5px 12px rgba(8,67,40,.16),
+    inset 0 1px 0 rgba(255,255,255,.28);
 }
+
+.course-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(118deg,rgba(255,255,255,.16),transparent 28%,transparent 72%,rgba(0,48,28,.11));
+}
+.course-card > *{position:relative;z-index:1}
+
 .course-summary{
   display:block;
   min-height:86px;

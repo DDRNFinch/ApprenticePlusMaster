@@ -1,3 +1,9 @@
+# V1.10.7
+
+- Restyled the top course progress tile with a lime-to-deep-green gradient inspired by the Apprentice+ logo.
+- Added a restrained outer shadow and soft inset highlight for subtle depth.
+- Preserved the compact layout, progress ring, assignment finder and all existing interactions.
+
 # Apprentice+ V1.10.6
 
 - Updated the in-app header to show **Apprentice+** with a light-green plus sign.
