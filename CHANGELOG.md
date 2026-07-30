@@ -1,3 +1,13 @@
+## V1.11.2 – Complete One-Page Evidence PDFs
+
+- Fixed Witness Testimony PDFs so every selected Knowledge, Skill and Behaviour is listed, including ticked Behaviours.
+- Rebuilt Witness Testimony exports as one complete A4 page per testimony.
+- Combined witness details, activity, selected KSBs/learning outcomes, photographs, testimony, assessment summary, development points, comments and signature onto the same sheet.
+- Added automatic compact layout: rows, text and photographs reduce in size when more evidence is present rather than omitting selected content.
+- Applied the same complete one-page Witness Testimony layout to both KSB and NVQ/learning-outcome courses.
+- Removed the separate Witness Testimony feedback and photograph pages.
+- Updated app version and offline cache.
+
 ## V1.11.1 – Logo Green Theme
 - Re-themed green UI colours to the new Apprentice+ logo palette.
 - Added light-on-dark and dark-on-light contrast rules.

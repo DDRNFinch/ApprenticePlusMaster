@@ -135,3 +135,7 @@ The course summary is now a smaller dark-green tile. The progress ring is enlarg
 
 ## V1.11.1
 The compact course progress tile now uses the Apprentice+ logo gradient with subtle depth and shadow.
+
+
+## V1.11.2
+Witness Testimony PDFs now include every selected KSB or learning outcome, including Behaviours, and combine all WT details onto one compact A4 sheet.
