@@ -1,3 +1,9 @@
+# V1.10.9
+
+- Fixed the Home help-tour highlight so it no longer changes positioned controls into normal-flow elements.
+- The course progress ring and assignment-search icon now remain in their real top-right and bottom-right positions while highlighted.
+- Preserved the compact gradient course tile and all V1.10.8 layout fixes.
+
 # V1.10.8
 
 - Restored the compact course progress tile height.
