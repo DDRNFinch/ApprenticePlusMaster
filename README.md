@@ -115,3 +115,9 @@ EPA question banks are now checked against the locked Apprentice+ writing standa
 
 ### V1.9.9
 Tap the learner name in the header to open course progress, review submitted work and evidence activity, and edit course dates. The progress ring is display-only.
+
+
+## V1.10.2 — Suggested Search Terms
+- Added three predictive grey suggestion pills below the assignment search field.
+- Suggestions respond to the learner's wording and use trade-specific synonyms.
+- Tapping a suggestion immediately opens ranked assignment matches.

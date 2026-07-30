@@ -1360,3 +1360,12 @@ body.page-help-open,body.help-tour-open{overflow:hidden;touch-action:none}
 .work-search-launcher-icon{width:52px;height:52px;border-radius:18px;display:grid;place-items:center;background:#eaf9ef;color:#159947;margin-bottom:14px}.work-search-launcher-icon svg{width:27px;height:27px}
 .work-search-launcher h2{margin:0 48px 18px 0;font-size:clamp(24px,5vw,34px);line-height:1.12}
 @media(max-width:560px){.course-card{padding-bottom:70px}.course-search-launch{right:12px;bottom:12px;width:46px;height:46px}.work-search-launcher{padding:24px 16px 18px}.work-search-launcher h2{font-size:27px}.work-search-launcher .work-search-row{grid-template-columns:1fr}.work-search-launcher .work-search-row .btn{width:100%}}
+
+/* V1.10.2 predictive assignment finder suggestions */
+.work-search-suggestions{min-height:0;margin-top:13px}
+.work-search-suggestion-label{display:block;margin:0 0 8px 2px;font-size:12px;font-weight:850;color:#6b7772;text-transform:uppercase;letter-spacing:.04em}
+.work-search-pill-row{display:flex;flex-wrap:wrap;gap:8px}
+.work-search-pill{border:1px solid #d8dfdc;background:#eef1ef;color:#374640;border-radius:999px;padding:8px 12px;font:inherit;font-size:13px;font-weight:800;line-height:1;cursor:pointer}
+.work-search-pill:hover,.work-search-pill:focus-visible{background:#e3e9e5;border-color:#b8c5bd;outline:none}
+.work-search-pill:active{transform:scale(.97)}
+@media(max-width:560px){.work-search-suggestions{margin-top:11px}.work-search-pill-row{gap:7px}.work-search-pill{padding:8px 10px;font-size:12px}}

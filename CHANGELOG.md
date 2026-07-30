@@ -497,3 +497,9 @@ Certificates - View and download certificates you have earned after completing A
 - Moved the full course progress and course-date control from the progress ring to the learner-name button.
 - The progress ring is now a visual summary only.
 - Updated page help and the quick tour to match the new interaction.
+
+
+## V1.10.2 — Suggested Search Terms
+- Added three predictive grey suggestion pills below the assignment search field.
+- Suggestions respond to the learner's wording and use trade-specific synonyms.
+- Tapping a suggestion immediately opens ranked assignment matches.
