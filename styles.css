@@ -807,3 +807,28 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
     padding-inline:2px;
   }
 }
+
+/* v1.3.52 Academy learn-before-test knowledge slides */
+.academy-knowledge-feature{width:100%;margin:0 0 11px;border:1px solid #b9e8ca;border-radius:20px;background:linear-gradient(135deg,#f7fff9,#e9faef);box-shadow:0 5px 18px rgba(16,35,38,.07);padding:15px;display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;gap:13px;text-align:left;color:var(--ink);font:inherit;cursor:pointer}
+.academy-knowledge-feature.complete{background:linear-gradient(135deg,#effdf4,#d9f8e5);border-color:#69cd8c}
+.academy-knowledge-feature-icon{width:52px;height:52px;border-radius:16px;background:#d9f8e5;color:#15803d;display:grid;place-items:center}
+.academy-knowledge-feature-icon .app-icon{width:28px;height:28px}
+.academy-knowledge-feature-copy{min-width:0;display:grid;gap:2px}
+.academy-knowledge-feature-copy small{font-size:9px;letter-spacing:.08em;color:#16813e;font-weight:900}
+.academy-knowledge-feature-copy strong{font-size:18px;line-height:1.15}
+.academy-knowledge-feature-copy em{font-style:normal;color:var(--muted);font-size:11px;line-height:1.3}
+.academy-knowledge-feature-action{font-size:11px;font-weight:900;color:#15803d;white-space:nowrap}
+.knowledge-slide-shell{min-height:calc(100dvh - 190px);display:flex;flex-direction:column;padding-bottom:82px}
+.knowledge-slide-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin:2px 0 8px}
+.knowledge-slide-head h2{font-size:20px;line-height:1.2;margin-top:2px}
+.knowledge-teaching-slide{display:grid;gap:9px;margin-top:9px;flex:1}
+.knowledge-slide-block{border-radius:17px;padding:13px 14px;border:1px solid var(--line);background:#fff;box-shadow:0 3px 12px rgba(16,35,38,.045)}
+.knowledge-slide-block small{display:block;font-size:9px;letter-spacing:.08em;font-weight:900;margin-bottom:6px;color:var(--green)}
+.knowledge-slide-block h3{font-size:15px;line-height:1.35}
+.knowledge-slide-block p{font-size:13px;line-height:1.45;color:#40514d}
+.knowledge-slide-block.answer{background:#ecfdf3;border-color:#a9e6be}
+.knowledge-slide-block.answer h3{color:#116b34}
+.knowledge-slide-block.takeaway{background:#fff9e8;border-color:#f3dda0}
+.knowledge-slide-block.takeaway small{color:#96620b}
+.knowledge-slide-controls{position:fixed;left:max(14px,calc((100vw - 720px)/2 + 14px));right:max(14px,calc((100vw - 720px)/2 + 14px));bottom:88px;z-index:30;display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:9px;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 25px rgba(16,35,38,.14)}
+@media(max-width:430px){.academy-knowledge-feature{grid-template-columns:44px minmax(0,1fr);padding:12px;gap:10px}.academy-knowledge-feature-icon{width:44px;height:44px;border-radius:13px}.academy-knowledge-feature-action{grid-column:2;font-size:10px}.academy-knowledge-feature-copy strong{font-size:16px}.knowledge-slide-block{padding:11px 12px}.knowledge-slide-block h3{font-size:14px}.knowledge-slide-block p{font-size:12px}.knowledge-slide-controls{bottom:84px}}

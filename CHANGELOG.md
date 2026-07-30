@@ -1,3 +1,9 @@
+## V1.3.52 - Academy Knowledge Slides
+- Added a full-width Knowledge tile above Functional Skills and Trade Courses tests.
+- Built teaching slides from each MCQ scenario, correct answer, explanation and key takeaway.
+- Added progress saving, resume, completion state and revision access.
+- EPA Academy is unchanged.
+
 ## V1.3.51 — MCQ Status Width Fix
 
 - Reworked the compact MCQ card header so the assessment title uses the full tile width.
