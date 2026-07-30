@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.11.5';
+const APP_VERSION='V1.1';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -4550,15 +4550,80 @@ function currentHelp(){
  };
  if(v==='section'&&s){
   const names={photos:'Photographic Evidence',statement:'Learner Statement',discussion:'Video Walkthrough',witness:'Witness Testimony',practical:COURSE.nvqUnits?'Assessor Observation':'Practical Assessment',professionalDiscussion:'Professional Discussion',supporting:'Supporting Evidence'};
-  const extra={
-   photos:'Add clear landscape photographs, link each photograph to the criteria it demonstrates, then submit the photographic evidence.',
-   statement:'Select the criteria covered, add the linked photographs, write the required statement and submit it. The photographs and statement count together as one evidence type.',
-   discussion:'Record and save the required video explanations, then submit the walkthrough.',
-   witness:'The witness selects the criteria observed, describes what the learner did, completes their details and signature, then submits the testimony.',
-   practical:COURSE.nvqUnits?'The assessor selects achieved Learning Outcomes, adds observation photographs, completes assessor details and signature, then submits and locks the observation.':'This is completed in college. The assessor scores each criterion, adds three finished-product photographs and records the final Pass, Merit or Distinction result before submission.',
-   professionalDiscussion:'The assessor selects the criteria discussed, records a separate audio response where required, completes the discussion details and submits and locks the evidence.'
+  const sectionSteps={
+   photos:COURSE.nvqUnits?[
+    {selector:'.outcome-list',title:'Select the outcomes evidenced',html:'<p>Select only the Learning Outcomes that the photographs genuinely demonstrate.</p>'},
+    {selector:'.outcome-photo-control,.practical-photo-slot',title:'Add the photographs',html:'<p>Add one clear landscape photograph for every selected Learning Outcome. An outcome only counts when its photograph has been added.</p>'},
+    {selector:'textarea[data-field="activity"]',title:'Add photographic evidence notes',html:'<p>Briefly explain what the photographs show and where the work was completed.</p>'},
+    {selector:'.signature-pad,.signature',title:'Learner signature',html:'<p>The learner signs the completed evidence before it can be submitted.</p>'},
+    {selector:'#submitSection',title:'Submit and lock',html:'<p>Submit the completed photographic evidence. The saved attempt is locked and counts as one evidence type against each evidenced Learning Outcome.</p>'}
+   ]:[
+    {selector:'.outcome-list',title:'Select the Skill evidenced',html:'<p>Photographic Evidence can be linked to Skill KSBs only. Select only a Skill that the photographs genuinely demonstrate.</p>'},
+    {selector:'.skill-photo-row,.practical-photo-slot',title:'Add three photographs',html:'<p>Add three clear landscape photographs for every selected Skill. All three photographs are required before that Skill can be submitted.</p>'},
+    {selector:'.signature-pad,.signature',title:'Learner signature',html:'<p>The learner signs the completed photographic evidence.</p>'},
+    {selector:'#submitSection',title:'Submit and lock',html:'<p>Submit the evidence when every selected Skill has three photographs and the signature is complete. The submission gives each selected Skill one evidence credit.</p>'}
+   ],
+   statement:COURSE.nvqUnits?[
+    {selector:'.outcome-list,.statement-ksb-card',title:'Choose the outcomes covered',html:'<p>Select at least one Learning Outcome that is genuinely covered by the learner statement.</p>'},
+    {selector:'.outcome-photo-control,.camera-button',title:'Attach outcome photographs',html:'<p>Add a relevant photograph to each selected Learning Outcome. Only outcomes with an attached photograph count in this evidence.</p>'},
+    {selector:'#statementText',title:'Write the learner statement',html:'<p>Explain what was done, how it was completed, the checks made and what was learned. Meet the word requirement shown on the page.</p>'},
+    {selector:'.signature-pad,.signature',title:'Learner signature',html:'<p>The learner signs the statement before submission.</p>'},
+    {selector:'#submitSection',title:'Submit and lock',html:'<p>Submit the completed statement. The writing and linked photographs are saved together as one evidence type.</p>'}
+   ]:[
+    {selector:'.statement-ksb-card,.outcome-list',title:'Select the KSBs covered',html:'<p>Tick every Knowledge, Skill or Behaviour genuinely covered by the statement. The minimum increases by 30 words for each selected KSB.</p>'},
+    {selector:'.camera-button,.outcome-photo-control',title:'Attach relevant photographs',html:'<p>Use the camera control beside each selected KSB to add supporting photographic evidence.</p>'},
+    {selector:'#statementText',title:'Write the learner statement',html:'<p>Explain what you did, how you did it, the safety and quality checks completed and what you learned. Reach the minimum word count shown.</p>'},
+    {selector:'.signature-pad,.signature',title:'Learner signature',html:'<p>The learner signs the statement before submission.</p>'},
+    {selector:'#submitSection',title:'Submit and lock',html:'<p>Submit the completed statement. It counts as one evidence type against every selected KSB.</p>'}
+   ],
+   witness:COURSE.nvqUnits?[
+    {selector:'input[data-field="personName"],input[data-field="role"],input[data-field="organisation"]',title:'Witness details',html:'<p>The witness enters their name, job role and organisation so the testimony can be authenticated.</p>'},
+    {selector:'textarea[data-field="activity"]',title:'Activity observed',html:'<p>Describe the workplace activity the witness personally observed.</p>'},
+    {selector:'.score-list,.outcome-list',title:'Select achieved outcomes',html:'<p>Select only the Learning Outcomes the witness genuinely observed. Add the required outcome photographs where shown.</p>'},
+    {selector:'.generated-feedback-text,textarea[data-field="feedback"]',title:'Witness account',html:'<p>Record a clear first-hand account of what the learner did and how the selected outcomes were demonstrated.</p>'},
+    {selector:'.signature-pad,.signature',title:'Witness signature',html:'<p>The witness signs the testimony, then submits and locks it as a separate evidence item.</p>'}
+   ]:[
+    {selector:'input[data-field="personName"],input[data-field="role"],input[data-field="organisation"]',title:'Witness details',html:'<p>The witness enters their name, job role and organisation. This must be the person who directly observed the work.</p>'},
+    {selector:'textarea[data-field="activity"]',title:'Activity observed',html:'<p>Describe the exact workplace activity personally witnessed.</p>'},
+    {selector:'.score-list',title:'Observed Skills and Behaviours',html:'<p>Select and score only the Skills or Behaviours genuinely observed. KSB selection is optional, so do not tick anything that was not evidenced.</p>'},
+    {selector:'.generated-feedback-text,textarea[data-field="feedback"]',title:'Witness testimony',html:'<p>Use the assessment summary and comments to describe what the learner actually did, the standard achieved and any development points.</p>'},
+    {selector:'.signature-pad,.signature',title:'Witness signature',html:'<p>The witness signs the testimony, then submits and locks the evidence.</p>'}
+   ],
+   practical:COURSE.nvqUnits?[
+    {selector:'input[data-field="tutor"],textarea[data-field="activity"]',title:'Assessor and activity details',html:'<p>The assessor records their name and describes the practical activity observed.</p>'},
+    {selector:'.score-list,.outcome-list',title:'Select observed outcomes',html:'<p>Select only the Learning Outcomes directly observed during the assessment.</p>'},
+    {selector:'.outcome-photo-control,.practical-photo-row',title:'Add observation photographs',html:'<p>Add the required clear landscape photograph for every selected Learning Outcome.</p>'},
+    {selector:'.generated-feedback-text,textarea[data-field="feedback"]',title:'Observation record',html:'<p>Complete the assessor observation account, including the work seen, the standard achieved and any areas for development.</p>'},
+    {selector:'.signature-pad,.signature',title:'Assessor signature',html:'<p>The assessor signs, then submits and locks the observation as an assessor-only evidence item.</p>'}
+   ]:[
+    {selector:'input[data-field="tutor"],#practicalTaskType',title:'Assessor and practical task',html:'<p>The tutor or assessor enters their name and selects an Easy, Medium, Hard or Custom practical task.</p>'},
+    {selector:'.practical-task-details,#openPracticalSpecification',title:'Task details and specification',html:'<p>Review or edit the practical task details. Open the task specification where available before assessment begins.</p>'},
+    {selector:'.practical-photo-row',title:'Finished-work photographs',html:'<p>Add at least one clear photograph of the completed practical work. Additional photographs can also be added.</p>'},
+    {selector:'.score-list',title:'Score demonstrated Skills',html:'<p>Select only Skills actually demonstrated, then award the relevant score out of five. Unobserved Skills must remain unselected and are excluded from the result.</p>'},
+    {selector:'.generated-feedback-text,textarea[data-field="feedback"]',title:'Assessment feedback',html:'<p>Update the assessment comments and record the result, strengths and areas for development.</p>'},
+    {selector:'.signature-pad,.signature',title:'Assessor signature and submit',html:'<p>The assessor signs and submits the completed practical assessment.</p>'}
+   ],
+   professionalDiscussion:[
+    {selector:'.professional-discussion-details',title:'Discussion details',html:'<p>The assessor or discussion lead enters their name and briefly describes the work or topic discussed.</p>'},
+    {selector:'.professional-discussion-list',title:COURSE.nvqUnits?'Choose relevant outcomes':'Choose relevant Knowledge and Behaviours',html:`<p>Record only the ${COURSE.nvqUnits?'Learning Outcomes':'Knowledge or Behaviour KSBs'} genuinely evidenced during the discussion. Unevidenced items should be left without a recording.</p>`},
+    {selector:'.professional-discussion-record-button',title:'Record separate audio',html:`<p>Tap <strong>Record Audio</strong> beside each relevant ${COURSE.nvqUnits?'outcome':'KSB'} and save a clear assessor-led discussion response.</p>`},
+    {selector:'.professional-discussion-audio,.walkthrough-mini-saved',title:'Review saved evidence',html:'<p>Play back each saved recording. Replace or remove it before submission when it does not clearly evidence the selected criterion.</p>'},
+    {selector:'.signature-pad,.signature',title:'Assessor signature',html:'<p>The assessor or discussion lead signs the completed discussion.</p>'},
+    {selector:'#submitSection',title:'Submit and lock',html:'<p>Submit the discussion when the details, signature and at least one relevant recording are complete. Only criteria with saved audio appear as evidenced.</p>'}
+   ],
+   discussion:[
+    {selector:'.walkthrough-tile-list,.video-criterion',title:'Choose what the video evidences',html:'<p>Record video only against the Learning Outcomes genuinely demonstrated in the walkthrough.</p>'},
+    {selector:'.video-add,.camera-button,.walkthrough-video-button',title:'Record in landscape',html:'<p>Record a separate landscape video explaining the work, safety controls, method and quality checks for that outcome.</p>'},
+    {selector:'.video-preview,.saved-video,.walkthrough-mini-saved',title:'Review each video',html:'<p>Review the saved clip and replace or remove it when needed.</p>'},
+    {selector:'#submitSection,.save-walkthrough',title:'Submit the walkthrough',html:'<p>Submit and lock the completed video walkthrough. Only outcomes with a saved video count as evidence.</p>'}
+   ],
+   supporting:[
+    {selector:'.media-buttons,.upload-box',title:'Add supporting files',html:'<p>Add relevant certificates, RAMS, drawings, delivery notes, photographs or videos.</p>'},
+    {selector:'.support-file-name,.file-list',title:'Name every item',html:'<p>Give each uploaded item a clear evidence name so it can be identified in the portfolio.</p>'},
+    {selector:'#submitSection',title:'Submit the evidence',html:'<p>Submit only files that genuinely support the assignment criteria.</p>'}
+   ]
   };
-  return {title:names[s]||'Evidence',html:`<p>${extra[s]||''}</p><p>${common.section.html}</p>`};
+  return {title:names[s]||'Evidence',html:'',steps:sectionSteps[s]||common.section.steps};
  }
  const extraViews={
   tools:{title:'Tools',html:'<p>Tap a tool tile to open it. Enter the requested measurements or job information, review the result and use the back button to return to the Toolbox.</p>'},

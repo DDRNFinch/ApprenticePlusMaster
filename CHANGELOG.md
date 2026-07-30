@@ -570,3 +570,10 @@ Certificates - View and download certificates you have earned after completing A
 - Yellow progress ring now measures completed KSB numbers instead of evidence sections added.
 - Added a compact EPA readiness scale to the learner profile using the best EPA MCQ, Professional Discussion and Practical scores.
 - Unattempted EPA areas are clearly shown and count as 0% in the overall readiness score.
+
+
+## V1.1
+- Reset the displayed app version to V1.1. Future releases will increase sequentially as V1.2, V1.3, V1.4 and so on.
+- Rebuilt the page guides for Photographic Evidence, Learner Statement, Witness Testimony, Video Walkthrough, Assessor Observation, Practical Assessment, Professional Discussion and Supporting Evidence.
+- Guides now describe the actual evidence rules, required photographs, eligible KSB/LO types, signatures, scoring and submit-and-lock behaviour.
+- Enlarged the miniature phone used in page guides by 50% while keeping a reduced fallback for very short or narrow screens.

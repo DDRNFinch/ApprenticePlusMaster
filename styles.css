@@ -1799,3 +1799,35 @@ body.page-help-open,body.help-tour-open{overflow:hidden;touch-action:none}
 
 /* V1.11.5 compact EPA readiness profile scale */
 .epa-readiness-compact{margin:14px 0 6px;padding:12px;border:1px solid var(--line);border-radius:15px;background:#f7faf7}.epa-readiness-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}.epa-readiness-head div{display:grid;gap:1px}.epa-readiness-head small{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:900}.epa-readiness-head strong{font-size:15px}.epa-readiness-head>b{display:grid;place-items:center;min-width:49px;height:34px;padding:0 9px;border-radius:999px;background:#e8efe9;color:#173b2b;font-size:15px}.epa-readiness-row{display:grid;grid-template-columns:70px 1fr 38px;align-items:center;gap:8px;margin:7px 0;font-size:11px;font-weight:800}.epa-readiness-row>strong{text-align:right;font-size:11px}.epa-readiness-bar{height:7px;background:#e4ebe5;border-radius:999px;overflow:hidden}.epa-readiness-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#1b7f4d,#8fd22a)}.epa-readiness-compact p{margin:8px 0 0;color:var(--muted);font-size:10px;line-height:1.35}.epa-readiness-compact.ready .epa-readiness-head>b{background:#dff7cf;color:#175c2d}.epa-readiness-compact.near .epa-readiness-head>b{background:#fff1bd;color:#765600}.epa-readiness-compact.developing .epa-readiness-head>b{background:#ffe1c7;color:#8a3d00}.epa-readiness-compact.not-started .epa-readiness-head>b{background:#e9edeb;color:#53615a}
+
+/* V1.1 — larger page-guide phone preview */
+.page-help-phone{
+  width:285px!important;
+  height:570px!important;
+  border-width:8px!important;
+  border-radius:42px!important;
+  padding:18px 8px 22px!important;
+}
+.page-help-phone-scale{transform:scale(.66)!important}
+.page-help-sheet{overflow-y:auto!important}
+.page-help-body{overflow:visible!important;flex:none!important}
+@media(max-width:640px){
+  .page-help-phone{
+    width:267px!important;
+    height:477px!important;
+    border-width:8px!important;
+    border-radius:42px!important;
+    padding:15px 6px 21px!important;
+  }
+  .page-help-phone-scale{transform:scale(.6075)!important}
+  .page-help-sheet{overflow-y:auto!important}
+  .page-help-body{overflow:visible!important}
+}
+@media(max-height:760px) and (max-width:640px){
+  .page-help-phone{width:237px!important;height:417px!important}
+  .page-help-phone-scale{transform:scale(.54)!important}
+}
+@media(max-width:380px){
+  .page-help-phone{width:220px!important;height:390px!important}
+  .page-help-phone-scale{transform:scale(.50)!important}
+}
