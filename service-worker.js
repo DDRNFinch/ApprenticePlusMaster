@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.2-modern-test';
-const APP_SHELL=['./','./index.html','./styles.css?v=1.2-modern','./functional-skills-bank.js?v=1.3.66','./trade-courses-bank.js?v=1.3.66','./app.js?v=1.2-modern','./manifest.json','./pdf-generator.js','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
+const CACHE='apprentice-plus-v1.3-evidence-pill-colours';
+const APP_SHELL=['./','./index.html','./styles.css?v=1.3-pill-colours','./functional-skills-bank.js?v=1.3.66','./trade-courses-bank.js?v=1.3.66','./app.js?v=1.3-pill-colours','./manifest.json','./pdf-generator.js','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
 
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()));
