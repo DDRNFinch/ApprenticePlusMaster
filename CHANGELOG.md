@@ -1,3 +1,10 @@
+# V1.10.8
+
+- Restored the compact course progress tile height.
+- Kept the logo-inspired green gradient and subtle shadow.
+- Re-pinned the assignment search icon to the bottom-right corner.
+- Preserved the progress ring in the top-right corner.
+
 # V1.10.7
 
 - Restyled the top course progress tile with a lime-to-deep-green gradient inspired by the Apprentice+ logo.

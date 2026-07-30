@@ -1595,3 +1595,76 @@ body.page-help-open,body.help-tour-open{overflow:hidden;touch-action:none}
 .brand-title-row h1{color:#0f2f25}
 .brand-title-row .brand-plus{color:#84cc16}
 .brand-tagline{color:#65a30d!important;font-weight:750;letter-spacing:-.01em}
+
+/* V1.10.8 restore compact gradient course tile and pin search control */
+.course-card{
+  padding:14px 14px 54px;
+  min-height:0;
+  margin-bottom:18px;
+}
+.course-card .course-summary{
+  display:block;
+  min-height:0;
+}
+.course-card .course-copy{
+  padding-right:94px;
+}
+.course-card h2{
+  font-size:22px;
+  line-height:1.04;
+}
+.course-card .course-title-row + .meta{
+  margin-top:8px;
+}
+.course-card .meta{
+  gap:5px;
+  padding-right:0;
+}
+.course-card .meta .pill{
+  padding:5px 8px;
+  font-size:10px;
+}
+.course-card .progress-rings{
+  --size:81px;
+  position:absolute;
+  top:10px;
+  right:10px;
+  left:auto;
+  bottom:auto;
+  margin:0;
+}
+.course-card .course-search-launch{
+  position:absolute;
+  right:10px!important;
+  left:auto!important;
+  bottom:10px!important;
+  top:auto!important;
+  width:38px;
+  height:38px;
+  margin:0;
+  transform:none;
+}
+.course-card .course-search-launch:active{transform:scale(.95)}
+
+@media(max-width:560px){
+  .course-card{
+    padding:13px 13px 50px;
+  }
+  .course-card .course-copy{
+    padding-right:88px;
+  }
+  .course-card h2{
+    font-size:21px;
+  }
+  .course-card .progress-rings{
+    --size:78px;
+    top:9px;
+    right:9px;
+  }
+  .course-card .course-search-launch{
+    right:9px!important;
+    bottom:8px!important;
+    width:36px;
+    height:36px;
+  }
+}

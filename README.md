@@ -135,3 +135,7 @@ The course summary is now a smaller dark-green tile. The progress ring is enlarg
 
 ## V1.10.7
 The compact course progress tile now uses the Apprentice+ logo gradient with subtle depth and shadow.
+
+## V1.10.8
+
+Restores the compact gradient course tile and fixes the assignment search icon to the bottom-right corner.
