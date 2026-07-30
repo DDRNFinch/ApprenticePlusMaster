@@ -906,15 +906,13 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
  .training-certificate footer span{font-size:7.5pt!important}.training-certificate footer strong{font-size:8.5pt!important;overflow-wrap:anywhere!important}
  .certificate-details{display:none!important}
 }
-/* V1.3.67: readable six-method evidence grids */
+/* V1.3.68: compact outer status icons; 2×3 evidence grid inside packs */
 .assignment-card .icons{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
 .assignment-card .icon-state{min-width:0;padding:8px 4px;border-radius:12px;display:grid;place-items:center;gap:4px}
 .assignment-card .icon-state .app-icon{width:22px;height:22px}
-.assignment-card .icon-state-label{display:none}
-.assignment-card .nvq-six-icons{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.assignment-card .nvq-six-icons .icon-state{min-height:62px;grid-template-columns:auto 1fr auto;justify-items:start;text-align:left;padding:9px 10px}
-.assignment-card .nvq-six-icons .icon-state-label{display:block;font-size:11px;line-height:1.2;font-weight:850;color:inherit}
-.assignment-card .nvq-six-icons .state-mark{justify-self:end}
+.assignment-card .nvq-six-icons{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
+.assignment-card .nvq-six-icons .icon-state{min-height:50px;padding:7px 2px;border-radius:11px}
+.assignment-card .nvq-six-icons .icon-state .app-icon{width:21px;height:21px}
 .nvq-six-evidence.evidence-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .nvq-six-evidence .evidence-tile{min-height:138px;padding:15px;text-align:left;border-radius:18px;overflow:hidden}
 .nvq-six-evidence .evidence-tile .tile-icon{display:flex;justify-content:flex-start;margin:0}
@@ -923,9 +921,9 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
 .nvq-six-evidence .evidence-tile p{display:block;font-size:12px;line-height:1.35;color:var(--muted)}
 .nvq-six-evidence .tile-ribbon{display:block}
 @media(max-width:420px){
- .assignment-card .nvq-six-icons{gap:7px}
- .assignment-card .nvq-six-icons .icon-state{min-height:58px;padding:8px}
- .assignment-card .nvq-six-icons .icon-state-label{font-size:10px}
+ .assignment-card .nvq-six-icons{gap:4px}
+ .assignment-card .nvq-six-icons .icon-state{min-height:48px;padding:6px 1px}
+ .assignment-card .nvq-six-icons .icon-state .app-icon{width:19px;height:19px}
  .nvq-six-evidence.evidence-grid{gap:9px}
  .nvq-six-evidence .evidence-tile{min-height:132px;padding:13px}
  .nvq-six-evidence .evidence-tile h3{font-size:14px}

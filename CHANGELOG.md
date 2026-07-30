@@ -1,3 +1,9 @@
+# V1.3.68 — Compact Outer Icons + 2×3 Inner Evidence Grid
+
+- Restored the compact single-row six-icon status display on NVQ assignment and evidence-pack cards.
+- Kept the large six evidence-method tiles in a 2-column × 3-row grid inside each assignment/evidence pack.
+- No evidence logic, coverage, PDF, history, or workflow rules changed.
+
 # V1.3.67 — 2×3 Evidence Tile Grid
 
 - Replaced the cramped six-icon row for NVQ evidence packs with a clear two-column, three-row layout.
