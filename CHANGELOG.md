@@ -1,4 +1,11 @@
-## V1.9.4
+# Apprentice+ V1.9.5
+
+- Every page-level i help screen now uses Back/Next slides.
+- Existing guidance is split into short, focused slides with the relevant live page area highlighted.
+- Mobile slide layout is compact and locked to one screen so learners do not need to scroll.
+- Academy guided help remains tile-by-tile.
+
+## V1.9.5
 - Academy help now guides learners through all five Academy tiles individually.
 - The live phone preview highlights Knowledge Slides, Trade Courses, EPA Academy, Functional Skills and Certificates in sequence.
 - Added Back, Next, Finish and step progress controls to Academy help.

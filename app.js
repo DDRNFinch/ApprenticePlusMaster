@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.9.4';
+const APP_VERSION='V1.9.5';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -4520,13 +4520,70 @@ function buildPageHelpPhone(selector=''){
  source.querySelectorAll('button,input,select,textarea,a').forEach(el=>{el.tabIndex=-1;el.setAttribute('aria-hidden','true')});
  return source.innerHTML;
 }
+function pageHelpSelectors(){
+ const map={
+  home:['.progress-summary','.assignment-card,.evidence-pack-card','.evidence-icons','.submitted-badge,.status-badge','.learner-help-wrap'],
+  assignment:['.assignment-header,.evidence-pack-header','.evidence-tile,.assignment-action-card','.criteria-grid,.ksb-grid','.download-pack,.download-evidence-package','.confirm-upload'],
+  resources:['.resource-tile,.toolbox-tile','.resource-tile,.toolbox-tile','.resource-tile,.toolbox-tile','.resource-tile,.toolbox-tile'],
+  notepad:['#addNote,.notepad-add','.note-editor,.notepad-form','.note-media-actions,.media-buttons','#saveNote,.save-note','.note-search,.search-button'],
+  measuremate:['.calculator-card,.measure-tool','.calculator-inputs,input','.calculator-result,.result'],
+  materialmate:['.material-card,.calculator-card','.calculator-inputs,input','.wastage-control,.wastage','.calculator-result,.result'],
+  projectmate:['.project-card,.project-list','.project-brief,.customer-brief','.materials-section,.labour-section','.wastage-check','.save-project,.btn'],
+  walkthrough:['.video-criterion,.walkthrough-item','.video-add,.camera-button','.video-preview,.saved-video','.save-walkthrough,.btn'],
+  section:['.evidence-form,.section-card','.criteria-grid,.ksb-grid','.media-buttons,.photo-grid','.signature-pad,.signature','.submit-lock,.btn'],
+  tools:['.tool-tile,.tools-grid button'],drawingmate:['.drawing-tool,.calculator-card'],
+  'learning-support':['.support-tile,.accessibility-option'],
+  'trade-courses':['.trade-course-card,.academy-card'],library:['.trade-course-card,.academy-card'],
+  'trade-test':['.question-card','.answer-option','.test-navigation','.submit-test,.btn'],
+  'trade-result':['.result-summary','.answer-review','.retry-test,.btn'],
+  'functional-skills':['.functional-card,.academy-card'],
+  'functional-test':['.question-card','.answer-option','.test-navigation','.submit-test,.btn'],
+  'functional-result':['.result-summary','.answer-review','.retry-test,.btn'],
+  'academy-knowledge':['.knowledge-topic,.academy-card','.question-card','.submit-test,.btn'],
+  'knowledge-slides':['.knowledge-slide','.slide-navigation','.knowledge-complete,.btn'],
+  lesson:['.lesson-card,.lesson-content','.lesson-navigation,.btn'],
+  certificates:['.certificate-card','.certificate-download,.btn'],
+  epa:['.epa-tile,.academy-square-tile','.epa-tile,.academy-square-tile','.epa-tile,.academy-square-tile','.epa-tile,.academy-square-tile'],
+  'epa-results':['.epa-result-card,.attempt-card','.filter-bar,.search-bar'],
+  'epa-test':['.question-card','.answer-option','.submit-test,.btn'],
+  'epa-result':['.result-summary','.answer-review','.retry-test,.btn'],
+  'epa-discussion':['.discussion-prompt','.recording-controls','.complete-discussion,.btn'],
+  'epa-discussion-result':['.result-summary','.response-review','.retry-discussion,.btn'],
+  'epa-practical':['.practical-task','.selection-grid,.tools-materials-ppe','.timer','.assessor-marking','.submit-practical,.btn'],
+  'knowledge-test':['.question-card','.answer-option','.submit-test,.btn'],
+  'knowledge-result':['.result-summary','.answer-review','.retry-test,.btn']
+ };
+ return map[state.view]||['main section','.btn'];
+}
+function compactPageHelpSteps(h){
+ if(Array.isArray(h.steps)&&h.steps.length)return h.steps.map(step=>({selector:step.selector||'',title:step.title,html:step.html}));
+ const holder=document.createElement('div');holder.innerHTML=h.html||'';
+ const selectors=pageHelpSelectors();
+ const slides=[];
+ const intro=[...holder.children].find(el=>el.tagName==='P'&&el.textContent.trim());
+ if(intro)slides.push({selector:selectors[0]||'',title:h.title,html:`<p>${intro.innerHTML}</p>`});
+ const items=[...holder.querySelectorAll('li')];
+ items.forEach((li,index)=>{
+  const strong=li.querySelector('strong');
+  const title=strong?strong.textContent.replace(/:$/,''):items.length>1?`${h.title} · ${index+1}`:h.title;
+  slides.push({selector:selectors[Math.min(index+1,selectors.length-1)]||selectors[0]||'',title,html:`<p>${li.innerHTML}</p>`});
+ });
+ const remaining=[...holder.children].filter(el=>el.tagName==='P'&&el!==intro&&!el.closest('li'));
+ remaining.forEach((el,index)=>slides.push({selector:selectors[Math.min(slides.length,selectors.length-1)]||'',title:slides.length?`${h.title} · Finish`:h.title,html:`<p>${el.innerHTML}</p>`}));
+ if(!slides.length){
+  const text=holder.textContent.trim()||'Use the controls shown on this page, then save or submit your work.';
+  const sentences=text.match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[text];
+  sentences.forEach((sentence,index)=>slides.push({selector:selectors[Math.min(index,selectors.length-1)]||'',title:index?`${h.title} · ${index+1}`:h.title,html:`<p>${sentence.trim()}</p>`}));
+ }
+ return slides;
+}
 function openPageHelp(){
  closePageHelp();
- const h=currentHelp(),steps=Array.isArray(h.steps)?h.steps:null;
+ const h=currentHelp(),steps=compactPageHelpSteps(h);
  let helpStep=0;
- const active=steps?steps[0]:h;
+ const active=steps[0];
  const phone=buildPageHelpPhone(active.selector||'');
- const stepControls=steps?`<div class="page-help-step-controls"><button type="button" class="btn secondary" id="pageHelpPrevious" disabled>Back</button><span id="pageHelpStepCount">1 of ${steps.length}</span><button type="button" class="btn" id="pageHelpNext">Next</button></div>`:'';
+ const stepControls=`<div class="page-help-step-controls"><button type="button" class="btn secondary" id="pageHelpPrevious" disabled>Back</button><span id="pageHelpStepCount">1 of ${steps.length}</span><button type="button" class="btn" id="pageHelpNext">${steps.length===1?'Finish':'Next'}</button></div>`;
  document.body.insertAdjacentHTML('beforeend',`<div class="page-help-modal" id="pageHelpModal" role="presentation"><div class="page-help-sheet" role="dialog" aria-modal="true" aria-labelledby="pageHelpTitle"><button type="button" class="page-help-close" data-close-page-help aria-label="Close help">×</button><div class="page-help-body"><div class="page-help-phone" aria-label="Preview of this Apprentice Plus page"><div class="page-help-phone-speaker"></div><div class="page-help-phone-screen"><div class="page-help-phone-scale" id="pageHelpPhoneScale">${phone}</div></div><div class="page-help-phone-home"></div></div><div class="page-help-instructions"><div class="page-help-symbol">i</div><h2 id="pageHelpTitle">${esc(active.title||h.title)}</h2><div class="page-help-content" id="pageHelpContent">${active.html||h.html}</div>${stepControls}</div></div><div class="page-help-footer"><button type="button" class="link-button" id="pageHelpReplay">Replay quick tour</button><button type="button" class="btn" data-close-page-help>Close</button></div><div class="page-help-drag" aria-hidden="true"></div></div></div>`);
  document.body.classList.add('page-help-open');
  const modal=document.getElementById('pageHelpModal'),sheet=modal.querySelector('.page-help-sheet');
