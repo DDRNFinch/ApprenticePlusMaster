@@ -1,3 +1,20 @@
+# Apprentice+ V1.3.63
+
+## Mobile video playback compatibility
+- In-app video recording now prefers H.264/AAC MP4 where the browser supports it.
+- Falls back to VP8 WebM on browsers that do not provide MP4 recording.
+- Saved recording MIME types are normalised before storage and playback.
+- Saved videos now open in a user-controlled inline player rather than blocked autoplay.
+- Added an Open / save video fallback when a mobile browser cannot decode a selected file.
+- Supporting evidence videos now use inline mobile playback attributes.
+- Increased recording quality while retaining mobile-friendly file sizes.
+
+# Apprentice+ V1.3.62
+
+- Submitted witness testimonies are permanently read-only.
+- The witness action now creates a separate blank testimony instead of reopening the saved record.
+- Previous witness testimonies remain available in Saved attempts for viewing.
+
 # Apprentice+ V1.3.61
 
 - Added Environmental Awareness as a cumulative Trade Course.
