@@ -1,3 +1,10 @@
+## V1.11.3 – Evidenced Items Only PDF Fix
+
+- Professional Discussion PDFs now list only KSBs or learning outcomes with an attached audio recording.
+- Removed unevidenced Professional Discussion parts from PDF pages and evidence mapping.
+- Moved and reduced the evidence reference badge so its number stays fully inside the A4 page.
+- Witness Testimony PDFs continue to include every selected evidenced Knowledge, Skill and Behaviour.
+
 ## V1.11.2 – Complete One-Page Evidence PDFs
 
 - Fixed Witness Testimony PDFs so every selected Knowledge, Skill and Behaviour is listed, including ticked Behaviours.
