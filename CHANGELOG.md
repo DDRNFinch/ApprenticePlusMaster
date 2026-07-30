@@ -1,4 +1,12 @@
-# Apprentice+ V1.3.65
+# V1.3.66 — Evidence Coverage Ticks
+
+- Added live coverage markers beside every KSB and Learning Outcome inside evidence forms.
+- Items already meeting the two-piece requirement display **✓ Completed**.
+- Items with one saved evidence source display **1/2**.
+- Coverage is calculated from submitted evidence across all valid evidence methods.
+- Applied to LO evidence forms, KSB statements, practical/witness scoring and Video Walkthrough criteria.
+
+# Apprentice+ V1.3.66
 
 - Restored Photographic Evidence and Professional Discussion as separate LO evidence methods.
 - All six LO evidence methods count toward the existing 2-evidence-per-LO rule.

@@ -917,3 +917,10 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
 .nvq-six-evidence .evidence-tile .tile-icon .app-icon{width:25px;height:25px}
 .nvq-six-evidence .evidence-tile h3{font-size:10px;line-height:1.15;margin:7px 0 0;word-break:normal}
 .nvq-six-evidence .evidence-tile p,.nvq-six-evidence .tile-ribbon{display:none}
+
+/* V1.3.66 — live 2/2 coverage indicators inside evidence tabs */
+.evidence-complete-note,.evidence-progress-note{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:900;line-height:1.35;vertical-align:middle;white-space:nowrap}
+.evidence-complete-note{background:#dcfce7;color:#166534;border:1px solid #86efac}
+.evidence-progress-note{background:#fef9c3;color:#854d0e;border:1px solid #fde047}
+.discussion-copy>strong .evidence-complete-note,.discussion-copy>strong .evidence-progress-note{margin-top:4px}
+@media(max-width:480px){.evidence-complete-note,.evidence-progress-note{font-size:9px;padding:2px 5px;margin-left:4px}}
