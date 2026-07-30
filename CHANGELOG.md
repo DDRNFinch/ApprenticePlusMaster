@@ -1,4 +1,4 @@
-## V1.3.48 — Mixed MCQ Answer Positions
+## V1.3.49 — Mixed MCQ Answer Positions
 - Redistributed correct answers across A, B, C and D in every installed MCQ bank.
 - Preserved each original correct answer, explanation and scoring rule.
 - Applied balanced randomised positions across Functional Skills, Trade Courses, EPA and assignment knowledge tests.

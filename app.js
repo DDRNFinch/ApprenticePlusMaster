@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3.48';
+const APP_VERSION='V1.3.49';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -760,6 +760,35 @@ function academyLessonData(topic){
  ];
  return {style,body,points,questions};
 }
+const ACADEMY_CERTIFICATES_KEY='academyCertificates:v1';
+function academyCertificates(){const rows=state.data[ACADEMY_CERTIFICATES_KEY];return rows&&typeof rows==='object'&&!Array.isArray(rows)?rows:{}}
+function certificateKey(type,subject){return `${type}:${subject}`}
+function certificateThresholds(type,total){
+ if(type==='functional'||type==='trade')return {passScore:13,pass:'13/15',merit:'14/15',distinction:'15/15'};
+ const pass=Math.ceil(total*.70),merit=Math.ceil(total*.80),distinction=Math.ceil(total*.90);
+ return {passScore:pass,pass:`${pass}/${total} (70%)`,merit:`${merit}/${total} (80%)`,distinction:`${distinction}/${total} (90%)`};
+}
+function certificateCourseTitle(type,subject){
+ if(type==='functional')return functionalSkillsConfig(subject).title;
+ if(type==='trade')return tradeCourseConfig(subject).title;
+ if(type==='knowledge'){const a=courseAssignments().find(x=>String(x.n)===String(subject));return a?`Assignment ${a.n}: ${a.title}`:`Assignment ${subject} Knowledge Assessment`}
+ return 'Academy MCQ Assessment';
+}
+function saveAcademyCertificate(type,subject,result){
+ const limits=certificateThresholds(type,result.total);
+ if(result.score<limits.passScore)return false;
+ const key=certificateKey(type,subject),certs=academyCertificates(),existing=certs[key];
+ if(existing&&Number(existing.score)>=Number(result.score))return false;
+ certs[key]={id:existing?.id||uid(),key,type,subject:String(subject),title:certificateCourseTitle(type,subject),learner:state.profile?.fullName||'Learner',college:state.branding?.name||'College name not configured',collegeLogo:state.branding?.logo||'',apprenticeLogo:'logo-apprentice-plus.png',score:result.score,total:result.total,percentage:result.percentage,grade:result.grade,date:result.date||today(),thresholds:limits,course:COURSE.name,standard:COURSE.standard||'',updatedAt:new Date().toISOString()};
+ state.data[ACADEMY_CERTIFICATES_KEY]=certs;return true;
+}
+function certificateDocument(cert){
+ const collegeLogo=cert.collegeLogo?`<img class="cert-college-logo" src="${cert.collegeLogo}" alt="${esc(cert.college)} logo">`:`<div class="cert-college-placeholder">COLLEGE</div>`;
+ return `<article class="training-certificate"><div class="certificate-border"><header class="certificate-brand-row"><div>${collegeLogo}<strong>${esc(cert.college)}</strong></div><img class="cert-apprentice-logo" src="logo-apprentice-plus.png" alt="Apprentice+ logo"></header><div class="certificate-kicker">IN-HOUSE TRAINING CERTIFICATE</div><h1>Certificate of Achievement</h1><p class="certificate-presented">This certificate is presented to</p><h2>${esc(cert.learner)}</h2><p class="certificate-completed">for successfully completing the Apprentice+ MCQ assessment</p><h3>${esc(cert.title)}</h3><div class="certificate-award"><span>${esc(cert.grade)}</span><strong>${cert.score}/${cert.total} · ${cert.percentage}%</strong></div><div class="certificate-details"><div><span>Pass score</span><strong>${esc(cert.thresholds.pass)}</strong></div><div><span>Pass level</span><strong>${esc(cert.thresholds.pass)}</strong></div><div><span>Merit level</span><strong>${esc(cert.thresholds.merit)}</strong></div><div><span>Distinction level</span><strong>${esc(cert.thresholds.distinction)}</strong></div></div><p class="certificate-disclaimer"><strong>This is not a qualification.</strong> It is an in-house training certificate issued by ${esc(cert.college)} through Apprentice+ to recognise completion of an internal learning assessment.</p><footer><div><span>Date awarded</span><strong>${esc(cert.date)}</strong></div><div><span>Course</span><strong>${esc(cert.course)}</strong></div><div><span>Certificate ID</span><strong>${esc(cert.id)}</strong></div></footer></div></article>`;
+}
+function openCertificate(cert){
+ const wrap=document.createElement('div');wrap.className='modal certificate-modal';wrap.innerHTML=`<section class="certificate-modal-card"><div class="certificate-toolbar no-print"><button class="btn secondary" id="closeCertificate">Close</button><button class="btn" id="printCertificate">Print / save PDF</button></div>${certificateDocument(cert)}</section>`;document.body.appendChild(wrap);wrap.querySelector('#closeCertificate').onclick=()=>wrap.remove();wrap.onclick=e=>{if(e.target===wrap)wrap.remove()};wrap.querySelector('#printCertificate').onclick=()=>window.print();
+}
 function renderAcademy(){
  app.innerHTML=shell(`<section class="academy-hero"><div class="number">${esc(COURSE.name)}</div><h2>Academy</h2></section><section class="academy-grid academy-square-grid"><button class="academy-square-tile knowledge" id="openLibrary"><span class="academy-square-icon">${appIcon('library')}</span><strong>Trade Courses</strong></button><button class="academy-square-tile epa" id="openEpaMock"><span class="academy-square-icon">${appIcon('academy')}</span><strong>EPA Academy</strong></button><button class="academy-square-tile functional" id="openFunctionalSkills"><span class="academy-square-icon">${appIcon('functional')}</span><strong>Functional Skills</strong></button><button class="academy-square-tile certificates" id="openCertificates"><span class="academy-square-icon">${appIcon('certificate')}</span><strong>Certificates</strong></button></section>`);
  document.getElementById('openLibrary').onclick=()=>{state.view='trade-courses';render();window.scrollTo(0,0)};
@@ -796,7 +825,7 @@ function renderFunctionalSkillsTest(){
  document.querySelectorAll('input[name="functionalAnswer"]').forEach(r=>r.onchange=()=>{test.answers[i]=Number(r.value);renderFunctionalSkillsTest()});
  document.getElementById('functionalPrev').onclick=()=>{test.index=Math.max(0,i-1);renderFunctionalSkillsTest()};
  const next=document.getElementById('functionalNext');if(next)next.onclick=()=>{if(test.answers[i]===undefined)return toast('Select an answer');test.index=Math.min(total-1,i+1);renderFunctionalSkillsTest()};
- const submit=document.getElementById('functionalSubmit');if(submit)submit.onclick=async()=>{if(Object.keys(test.answers).length<total)return toast(`Answer all ${total} questions before submitting`);const score=test.questions.reduce((n,x,j)=>n+(test.answers[j]===x.answerIndex?1:0),0),result={id:uid(),date:today(),subject:test.subject,score,total,percentage:Math.round(score/total*100),grade:functionalSkillsGrade(score),questions:cloneData(test.questions),answers:cloneData(test.answers)};const history=functionalSkillsHistory(test.subject);history.push(result);state.data[functionalSkillsHistoryKey(test.subject)]=history;await saveData();state.functionalTest={...test,result};state.view='functional-result';render();window.scrollTo(0,0)};
+ const submit=document.getElementById('functionalSubmit');if(submit)submit.onclick=async()=>{if(Object.keys(test.answers).length<total)return toast(`Answer all ${total} questions before submitting`);const score=test.questions.reduce((n,x,j)=>n+(test.answers[j]===x.answerIndex?1:0),0),result={id:uid(),date:today(),subject:test.subject,score,total,percentage:Math.round(score/total*100),grade:functionalSkillsGrade(score),questions:cloneData(test.questions),answers:cloneData(test.answers)};const history=functionalSkillsHistory(test.subject);history.push(result);state.data[functionalSkillsHistoryKey(test.subject)]=history;saveAcademyCertificate('functional',test.subject,result);await saveData();state.functionalTest={...test,result};state.view='functional-result';render();window.scrollTo(0,0)};
 }
 function renderFunctionalSkillsResult(){
  const test=state.functionalTest,r=test?.result;if(!test||!r){state.view='functional-skills';render();return}
@@ -840,7 +869,7 @@ function renderTradeCourseTest(){
  document.querySelectorAll('input[name="tradeAnswer"]').forEach(r=>r.onchange=()=>{test.answers[i]=Number(r.value);renderTradeCourseTest()});
  document.getElementById('tradePrev').onclick=()=>{test.index=Math.max(0,i-1);renderTradeCourseTest()};
  const next=document.getElementById('tradeNext');if(next)next.onclick=()=>{if(test.answers[i]===undefined)return toast('Select an answer');test.index=Math.min(total-1,i+1);renderTradeCourseTest()};
- const submit=document.getElementById('tradeSubmit');if(submit)submit.onclick=async()=>{if(Object.keys(test.answers).length<total)return toast(`Answer all ${total} questions before submitting`);const score=test.questions.reduce((n,x,j)=>n+(test.answers[j]===x.answerIndex?1:0),0),result={id:uid(),date:today(),subject:test.subject,score,total,percentage:Math.round(score/total*100),grade:tradeCourseGrade(score),questions:cloneData(test.questions),answers:cloneData(test.answers)};const history=tradeCourseHistory(test.subject);history.push(result);state.data[tradeCourseHistoryKey(test.subject)]=history;await saveData();state.tradeTest={...test,result};state.view='trade-result';render();window.scrollTo(0,0)};
+ const submit=document.getElementById('tradeSubmit');if(submit)submit.onclick=async()=>{if(Object.keys(test.answers).length<total)return toast(`Answer all ${total} questions before submitting`);const score=test.questions.reduce((n,x,j)=>n+(test.answers[j]===x.answerIndex?1:0),0),result={id:uid(),date:today(),subject:test.subject,score,total,percentage:Math.round(score/total*100),grade:tradeCourseGrade(score),questions:cloneData(test.questions),answers:cloneData(test.answers)};const history=tradeCourseHistory(test.subject);history.push(result);state.data[tradeCourseHistoryKey(test.subject)]=history;saveAcademyCertificate('trade',test.subject,result);await saveData();state.tradeTest={...test,result};state.view='trade-result';render();window.scrollTo(0,0)};
 }
 function renderTradeCourseResult(){
  const test=state.tradeTest,r=test?.result;if(!test||!r){state.view='trade-courses';render();return}
@@ -850,8 +879,10 @@ function renderTradeCourseResult(){
  document.getElementById('tradeDone').onclick=document.getElementById('tradeResultBack').onclick=()=>{state.tradeTest=null;state.view='trade-courses';render()};
 }
 function renderCertificates(){
- app.innerHTML=shell(`<button class="back no-print" id="certificatesBack">← Academy</button><section class="academy-destination-head"><div class="academy-destination-icon">${appIcon('certificate')}</div><div><div class="number">Academy</div><h2>Certificates</h2></div></section><section class="card panel"><div class="panel-body academy-empty-state"><span>${appIcon('certificate')}</span><h3>No certificates yet</h3><p>Completed Academy certificates will be stored here.</p></div></section>`);
- document.getElementById('certificatesBack').onclick=()=>{state.view='academy';render()};
+ const certs=Object.values(academyCertificates()).sort((a,b)=>new Date(b.updatedAt||0)-new Date(a.updatedAt||0));
+ const cards=certs.map(c=>`<article class="certificate-library-card"><div class="certificate-library-head"><span>${appIcon('certificate')}</span><div><small>${esc(c.type==='functional'?'Functional Skills':c.type==='trade'?'Trade Course':'Course Knowledge')}</small><h3>${esc(c.title)}</h3></div></div><div class="certificate-library-score"><strong>${esc(c.grade)}</strong><span>${c.score}/${c.total} · ${c.percentage}%</span></div><p>${esc(c.learner)} · ${esc(c.date)}</p><button class="btn" data-open-certificate="${esc(c.key)}">View / download</button></article>`).join('');
+ app.innerHTML=shell(`<button class="back no-print" id="certificatesBack">← Academy</button><section class="academy-destination-head"><div class="academy-destination-icon">${appIcon('certificate')}</div><div><div class="number">Academy</div><h2>Certificates</h2><p class="muted">The best passing certificate for each non-EPA MCQ assessment is stored here.</p></div></section>${certs.length?`<section class="certificate-library-grid">${cards}</section>`:`<section class="card panel"><div class="panel-body academy-empty-state"><span>${appIcon('certificate')}</span><h3>No certificates yet</h3><p>Pass a Functional Skills, Trade Course or assignment knowledge MCQ to earn an in-house training certificate.</p></div></section>`}`);
+ document.getElementById('certificatesBack').onclick=()=>{state.view='academy';render()};document.querySelectorAll('[data-open-certificate]').forEach(b=>b.onclick=()=>{const cert=academyCertificates()[b.dataset.openCertificate];if(cert)openCertificate(cert)});
 }
 function renderKnowledgeLibrary(){
  const q=String(state.academySearch||'').trim().toLowerCase();
@@ -3031,7 +3062,7 @@ function renderAssignmentKnowledgeTest(){
  document.querySelectorAll('input[name="knowledgeAnswer"]').forEach(r=>r.onchange=()=>{test.answers[i]=Number(r.value);renderAssignmentKnowledgeTest()});
  document.getElementById('knowledgePrev').onclick=()=>{test.index=Math.max(0,i-1);renderAssignmentKnowledgeTest()};
  const next=document.getElementById('knowledgeNext');if(next)next.onclick=()=>{if(test.answers[i]===undefined)return toast('Select an answer');test.index=Math.min(total-1,i+1);renderAssignmentKnowledgeTest()};
- const submit=document.getElementById('knowledgeSubmit');if(submit)submit.onclick=async()=>{if(Object.keys(test.answers).length<total)return toast(`Answer all ${total} questions before submitting`);const correct=test.questions.reduce((n,x,j)=>n+(test.answers[j]===x.correct?1:0),0),percentage=Math.round(correct/total*100),grade=gradeForPercentage(percentage),attempt={id:uid(),date:today(),score:correct,total,percentage,grade,ksbCodes:[...new Set(test.questions.map(x=>x.ksb||x.code))],questionIds:test.questions.map(x=>x.id),questions:structuredClone(test.questions),answers:structuredClone(test.answers)};const attempts=knowledgeAttempts(a.n);attempts.push(attempt);state.data[knowledgeResultKey(a.n)]=attempts;await saveData();state.knowledgeTest={...test,result:attempt};state.view='knowledge-result';render();window.scrollTo(0,0)};
+ const submit=document.getElementById('knowledgeSubmit');if(submit)submit.onclick=async()=>{if(Object.keys(test.answers).length<total)return toast(`Answer all ${total} questions before submitting`);const correct=test.questions.reduce((n,x,j)=>n+(test.answers[j]===x.correct?1:0),0),percentage=Math.round(correct/total*100),grade=gradeForPercentage(percentage),attempt={id:uid(),date:today(),score:correct,total,percentage,grade,ksbCodes:[...new Set(test.questions.map(x=>x.ksb||x.code))],questionIds:test.questions.map(x=>x.id),questions:structuredClone(test.questions),answers:structuredClone(test.answers)};const attempts=knowledgeAttempts(a.n);attempts.push(attempt);state.data[knowledgeResultKey(a.n)]=attempts;saveAcademyCertificate('knowledge',a.n,attempt);await saveData();state.knowledgeTest={...test,result:attempt};state.view='knowledge-result';render();window.scrollTo(0,0)};
 }
 function renderAssignmentKnowledgeResult(){
  const test=state.knowledgeTest,a=assignment(test?.assignment),r=test?.result;if(!test||!a||!r){state.view='assignment';render();return}
