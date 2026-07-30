@@ -1,3 +1,10 @@
+# V1.1 UI Polish
+
+- Removed the Professional Discussion notes field from each audio recording card.
+- Standardised all application ribbons to purple.
+- Restored left-aligned evidence icons while keeping each SVG centred inside its green square.
+- Kept K/S/B eligibility labels immediately beside the icon for a cleaner evidence-tile layout.
+
 # V1.1 — Evidence Icon Alignment and Professional Discussion Ribbon
 
 - Centred all evidence method SVG icons within their green icon squares.

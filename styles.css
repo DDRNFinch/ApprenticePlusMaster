@@ -1021,3 +1021,31 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
   transform:rotate(35deg) scale(.82);
   transform-origin:center;
 }
+
+
+/* V1.1 UI polish — left-aligned evidence headers and unified purple ribbons */
+.evidence-tile-heading{
+  justify-content:flex-start!important;
+  width:100%;
+  text-align:left;
+}
+.evidence-tile-heading .tile-icon{
+  margin:0!important;
+}
+.evidence-tile-heading .evidence-capability{
+  margin-left:0;
+}
+.submitted-ribbon,
+.assessor-ribbon,
+.pd-assessor-ribbon,
+.witness-ribbon,
+.employer-ribbon,
+.optional-evidence-ribbon,
+.video-ribbon,
+.statement-ribbon,
+.discussion-ribbon{
+  background:#6a1b9a!important;
+  color:#fff!important;
+}
+.professional-discussion-list .discussion-note-label,
+.professional-discussion-list .discussion-note{display:none!important}
