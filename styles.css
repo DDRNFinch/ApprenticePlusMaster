@@ -731,3 +731,35 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
  .functional-test-card h3,.epa-dashboard-tile h3{font-size:12px}
  .functional-test-card .btn,.epa-dashboard-tile>.btn,.epa-dashboard-tile>button.btn{font-size:9px;padding:7px 4px;min-height:32px}
 }
+
+/* V1.3.46 — full-screen compact MCQ player with permanently visible navigation */
+.epa-test-head{margin:2px 0 7px;gap:8px}
+.epa-test-head h2{font-size:clamp(1rem,4vw,1.28rem);line-height:1.18;margin:2px 0}
+.epa-test-head .number{font-size:10px}
+.epa-test-head .status-pill{padding:5px 8px;font-size:10px;white-space:nowrap}
+.epa-progress{height:5px;margin-bottom:8px}
+.epa-question.panel{padding:12px 13px;border-radius:17px;margin-bottom:82px}
+.epa-question small{font-size:10px;line-height:1.2}
+.epa-question h3{font-size:clamp(.91rem,3.7vw,1.06rem);line-height:1.28;margin:6px 0 9px}
+.epa-options{gap:6px}
+.epa-option span{grid-template-columns:27px 1fr;gap:8px;padding:8px 9px;border-radius:11px;font-size:clamp(.76rem,3.1vw,.9rem);line-height:1.2}
+.epa-option b{width:25px;height:25px;font-size:.76rem}
+.epa-controls{position:fixed;left:50%;bottom:max(8px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(728px,calc(100% - 24px));z-index:45;margin:0;padding:8px;background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 34px rgba(15,35,40,.2);backdrop-filter:blur(12px)}
+.epa-controls .btn{flex:1;min-height:43px;padding:10px 12px;border-radius:12px}
+@media(max-height:720px){
+ .shell{padding-top:10px}
+ .epa-test-head{margin-top:0}
+ .epa-test-head h2{font-size:1rem}
+ .epa-question.panel{padding:10px 11px}
+ .epa-question h3{font-size:.88rem;line-height:1.2;margin:4px 0 7px}
+ .epa-options{gap:5px}
+ .epa-option span{padding:7px 8px;font-size:.74rem;line-height:1.14}
+ .epa-option b{width:23px;height:23px}
+}
+@media(max-height:610px){
+ .topbar{display:none}
+ .back{padding:7px 10px;font-size:.78rem}
+ .epa-test-head .status-pill{display:none}
+ .epa-question h3{font-size:.8rem}
+ .epa-option span{font-size:.68rem;padding:6px 7px}
+}

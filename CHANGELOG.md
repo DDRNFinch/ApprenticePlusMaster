@@ -1,3 +1,12 @@
+## V1.3.46 — Full-Screen MCQ Player
+
+- Redesigned every MCQ question screen to fit more comfortably within the available mobile viewport.
+- Fixed Previous, Next and Submit controls to the bottom of the screen so they are always visible.
+- Reduced question-header, option and spacing sizes without removing question content.
+- Added extra compact behaviour for short-height mobile screens.
+- Applied the redesign to Functional Skills, Trade Courses, assignment knowledge assessments and EPA knowledge practice.
+- Updated the displayed version and offline cache.
+
 ## V1.3.45 — Compact Academy Subsections
 
 - Redesigned Functional Skills, Trade Courses and EPA Academy cards into a compact two-column layout.
