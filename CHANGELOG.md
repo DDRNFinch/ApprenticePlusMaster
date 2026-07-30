@@ -1,3 +1,19 @@
+# Apprentice+ V1.3.61
+
+- Added Environmental Awareness as a cumulative Trade Course.
+- Added 15 Environmental Awareness knowledge slides under Academy > Knowledge Slides.
+- Added the matching 15-question MCQ assessment under Academy > Trade Courses.
+- Added independent progress, results, history, best-score tracking and certificate support.
+- Randomised correct-answer positions while preserving the supplied source-of-truth answers.
+
+## V1.3.60 - Safeguarding & Professional Standards Academy Module
+- Added the supplied 15-question Safeguarding & Professional Standards MCQ bank as the source of truth.
+- Added a matching 15-slide Knowledge Slides pack under Academy > Knowledge Slides.
+- Added the matching assessment under Academy > Trade Courses.
+- Included results, attempt history, best-score tracking, incorrect-answer review and certificate support.
+- Distributed correct answers across A, B, C and D while preserving every supplied correct response and explanation.
+- Updated application and offline cache versions.
+
 ## V1.3.59 - A4 Certificate Print Fix
 - Fixed blank certificate PDFs caused by conflicting print visibility rules.
 - Certificates now print as one A4 portrait page with fixed print-safe margins.

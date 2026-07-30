@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3.59';
+const APP_VERSION='V1.3.61';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -814,7 +814,7 @@ function functionalSkillsConfig(subject){
 }
 const ACADEMY_KNOWLEDGE_PROGRESS_KEY='academyKnowledgeProgress:v2';
 function academyKnowledgeProgress(){const p=state.data[ACADEMY_KNOWLEDGE_PROGRESS_KEY];return p&&typeof p==='object'?p:{}}
-function academyKnowledgeSubjects(section){return section==='functional'?['english1','maths1','english','maths']:['legislation','manualHandling','equalityDiversity','cscs','fireSafety','coshh','mentalHealth']}
+function academyKnowledgeSubjects(section){return section==='functional'?['english1','maths1','english','maths']:['legislation','manualHandling','equalityDiversity','cscs','fireSafety','coshh','mentalHealth','safeguarding','environmentalAwareness']}
 function academyKnowledgeSubjectConfig(section,subject){return section==='functional'?functionalSkillsConfig(subject):tradeCourseConfig(subject)}
 function academyKnowledgeDeck(section,subject){
  const bank=section==='functional'?FUNCTIONAL_SKILLS_BANKS?.[subject]:window.TRADE_COURSES_BANK?.[subject],cfg=academyKnowledgeSubjectConfig(section,subject);
@@ -881,7 +881,9 @@ function tradeCourseConfig(subject){
   cscs:{title:'CSCS',description:'Construction-site health, safety and environmental awareness practice.',icon:'academy'},
   fireSafety:{title:'Fire Safety',description:'Fire prevention, alarms, evacuation, extinguishers and emergency controls.',icon:'academy'},
   coshh:{title:'COSHH',description:'Hazardous substances, exposure controls, RPE, storage, spills and health protection.',icon:'academy'},
-  mentalHealth:{title:'Mental Health Awareness',description:'Recognising warning signs, managing stress, supporting colleagues and accessing professional help.',icon:'academy'}
+  mentalHealth:{title:'Mental Health Awareness',description:'Recognising warning signs, managing stress, supporting colleagues and accessing professional help.',icon:'academy'},
+  safeguarding:{title:'Safeguarding & Professional Standards',description:'Safeguarding, GDPR, conduct, whistleblowing, British values, Prevent, ethics and professional responsibilities.',icon:'academy'},
+  environmentalAwareness:{title:'Environmental Awareness',description:'Pollution prevention, protected species, sustainable sourcing, resource efficiency and environmental site controls.',icon:'academy'}
  };
  return map[subject]||{title:'Trade Course',description:'Trade knowledge test.',icon:'library'};
 }
@@ -895,7 +897,7 @@ function startTradeCourseTest(subject){
  state.view='trade-test';render();window.scrollTo(0,0);
 }
 function renderTradeCourses(){
- const subjects=['legislation','manualHandling','equalityDiversity','cscs','fireSafety','coshh','mentalHealth'];
+ const subjects=['legislation','manualHandling','equalityDiversity','cscs','fireSafety','coshh','mentalHealth','safeguarding','environmentalAwareness'];
  const cards=subjects.map(subject=>{const config=tradeCourseConfig(subject),rows=tradeCourseHistory(subject),r=bestMcqResult(rows);return `<article class="academy-destination-card functional-test-card"><span>${appIcon(config.icon)}</span><h3>${esc(config.title)}</h3><p>${esc(config.description)}</p><span class="status-pill mcq-best-status ${r?.score>=13?'done':r?'fail':''}">${esc(compactMcqStatus(r))}</span><div class="epa-tile-stat"><strong>${rows.length}</strong><span>attempt${rows.length===1?'':'s'} recorded</span></div><button class="btn" data-start-trade="${subject}">Start ${esc(config.title)} test</button></article>`}).join('');
  app.innerHTML=shell(`<button class="back no-print" id="tradeCoursesBack">← Academy</button><section class="academy-destination-head"><div class="academy-destination-icon">${appIcon('library')}</div><div><div class="number">Academy</div><h2>Trade Courses</h2><p class="muted">Each course contains 15 questions. Pass: 13/15 · Merit: 14/15 · Distinction: 15/15.</p></div></section><section class="academy-destination-grid">${cards}</section>`);
  document.getElementById('tradeCoursesBack').onclick=()=>{state.view='academy';render()};
