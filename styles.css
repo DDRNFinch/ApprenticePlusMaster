@@ -1176,3 +1176,10 @@ textarea{min-height:138px}
 .status-pill.complete{background:#EAFBF1;color:#16803C}
 .status-pill.partial{background:#FFF4D6;color:#A86A00}
 .status-pill.empty{background:#F2F4F5;color:#6B7280}
+
+
+/* Unified evidence status pills */
+.status-pill{display:inline-flex;align-items:center;justify-content:center;min-width:64px;height:28px;padding:0 12px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.02em}
+.status-pill.done,.status-pill.complete{background:#EAFBF1!important;color:#16803C!important}
+.status-pill.partial,.status-pill.incomplete{background:#FFF4D6!important;color:#A86A00!important}
+.status-pill.none,.status-pill.empty{background:#F2F4F5!important;color:#6B7280!important}
