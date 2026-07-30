@@ -1,3 +1,15 @@
+## V1.10.1
+- Moved the assignment finder from the Home page into a green magnifying-glass button on the course progress card.
+- Added a compact search pop-up headed ‘What are you working on today?’ while retaining ranked assignment matches and the evidence prompt.
+- Updated page help to point to the new search control.
+
+## V1.10
+- Added “What are you doing today?” assignment finder below the course summary.
+- Searches assignment titles and KSB/LO wording using related trade terms and synonyms.
+- Ranked result popup opens the selected assignment directly.
+- Added a two-second “Gather evidence for this assignment” prompt after opening a search result.
+- Added assignment-finder guidance to the page help slides.
+
 ## V1.9.7
 - Mini phone previews now automatically scroll to centre the green-highlighted control on every help slide.
 - Added smooth movement between highlighted areas so lower evidence tiles remain visible.
