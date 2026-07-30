@@ -1,17 +1,9 @@
-# V1.10.9
+## V1.11.0 – Logo Green Theme
+- Re-themed green UI colours to the new Apprentice+ logo palette.
+- Added light-on-dark and dark-on-light contrast rules.
+- Preserved compact course tile and fixed tour icon positions.
 
-- Fixed the Home help-tour highlight so it no longer changes positioned controls into normal-flow elements.
-- The course progress ring and assignment-search icon now remain in their real top-right and bottom-right positions while highlighted.
-- Preserved the compact gradient course tile and all V1.10.8 layout fixes.
-
-# V1.10.8
-
-- Restored the compact course progress tile height.
-- Kept the logo-inspired green gradient and subtle shadow.
-- Re-pinned the assignment search icon to the bottom-right corner.
-- Preserved the progress ring in the top-right corner.
-
-# V1.10.7
+# V1.11.0
 
 - Restyled the top course progress tile with a lime-to-deep-green gradient inspired by the Apprentice+ logo.
 - Added a restrained outer shadow and soft inset highlight for subtle depth.

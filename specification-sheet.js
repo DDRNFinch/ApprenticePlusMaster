@@ -1,6 +1,6 @@
 'use strict';
 async function generatePracticalSpecificationPDF({course,assignment,profile,data,specificationId}){
- const W=1240,H=1754,M=82,TEAL='#0f3033',GREEN='#22c55e',SPEC='#C62828',INK='#17282b',MUTED='#617174',PALE='#f1f7f4',WHITE='#ffffff';
+ const W=1240,H=1754,M=82,TEAL='#08372c',GREEN='#79d22f',SPEC='#C62828',INK='#17282b',MUTED='#617174',PALE='#f1f7f4',WHITE='#ffffff';
  const clean=v=>String(v??'').replace(/[\u2010-\u2015]/g,'-').replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"');
  const makeCanvas=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c};
  const c=makeCanvas(),x=c.getContext('2d');

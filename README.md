@@ -133,14 +133,5 @@ The Course page now uses a shorter progress summary card and single-line assignm
 The course summary is now a smaller dark-green tile. The progress ring is enlarged and fixed in the top-right, while the white assignment-search icon remains in the bottom-right.
 
 
-## V1.10.7
+## V1.11.0
 The compact course progress tile now uses the Apprentice+ logo gradient with subtle depth and shadow.
-
-## V1.10.8
-
-Restores the compact gradient course tile and fixes the assignment search icon to the bottom-right corner.
-
-
-## V1.10.9
-
-Fixed the Home help-tour preview so highlighting the progress ring or assignment finder does not move either control or alter the course-card layout.
