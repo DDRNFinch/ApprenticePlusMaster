@@ -1,3 +1,10 @@
+# V1.3.72 — Evidence-Type Reuse Locks
+
+- Removed K/S/B and LO capability labels from outer assignment and evidence-pack cards.
+- Kept capability labels inside individual evidence tabs, positioned beside the icon box.
+- Previously submitted KSBs/LOs are greyed out and disabled when creating another attempt using the same evidence type.
+- Other KSBs/LOs remain available, and the learner must use a different evidence method to increase 2/2 or 3/3 coverage.
+
 # V1.3.70 — Skill-only photographic evidence
 
 - KSB Photographic Evidence now displays Skill (S) units only.

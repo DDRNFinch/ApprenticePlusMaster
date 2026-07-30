@@ -958,3 +958,14 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
 .evidence-capability-mini{display:block;font-size:8px;font-weight:900;line-height:1;margin-top:2px;letter-spacing:.02em}
 .evidence-capability{display:block;margin-top:3px;font-size:10px;font-weight:900;letter-spacing:.04em;line-height:1;color:currentColor}
 .evidence-capability-mini{display:block;font-size:8px;font-weight:900;line-height:1;margin-top:2px;letter-spacing:.02em}
+
+
+/* V1.3.72 evidence eligibility and reuse controls */
+.evidence-tile-heading{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px}
+.evidence-tile-heading .tile-icon{margin:0}
+.evidence-capability,.section-title-capability{display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:3px 9px;border-radius:999px;background:#edf7ef;color:#183f2a;font-size:12px;font-weight:900;letter-spacing:.04em;white-space:nowrap}
+.section-title-capability{margin:0 8px 0 7px;vertical-align:middle}
+.section-title-label{vertical-align:middle}
+.evidence-type-used{opacity:.48;filter:grayscale(1);position:relative;background:#f1f2f2!important;border-color:#c9cdcf!important}
+.evidence-type-used button{cursor:not-allowed!important}
+.evidence-type-used-note{display:block;margin:8px 12px 10px;padding:6px 9px;border-radius:8px;background:#dfe2e3;color:#555;font-size:11px;font-weight:800;text-align:center}
