@@ -1,3 +1,11 @@
+## V1.8
+
+- Added a dedicated app-installation screen immediately after first-time learner setup.
+- Android uses the native browser installation prompt when available, with browser-menu fallback guidance.
+- iPhone and iPad show Safari Share > Add to Home Screen instructions.
+- Installation screen is not shown when Apprentice+ is already running as an installed app.
+- Updated the app and service-worker cache version to V1.8.
+
 ## V1.7
 
 - Simplified first sign-in so the learner only enters their full name, accepts the local-storage agreement and adds their signature.

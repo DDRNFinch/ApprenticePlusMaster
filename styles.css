@@ -1195,3 +1195,21 @@ textarea{min-height:138px}
 .pd-assessor-prompts ul{margin:0;padding-left:20px;display:grid;gap:8px;color:#4d4635;line-height:1.45}
 .recording-status-row{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:11px;margin:15px 0}
 .recording-status-row p{margin:0}
+
+
+/* V1.8 post-setup app installation screen */
+.install-app-modal{z-index:1200}
+.install-app-card{text-align:center;max-width:520px}
+.install-app-logo{width:84px;height:84px;margin:0 auto 14px;border-radius:22px;overflow:hidden;box-shadow:0 12px 30px rgba(15,35,40,.16)}
+.install-app-logo img{display:block;width:100%;height:100%;object-fit:cover}
+.install-app-card .number{margin-bottom:8px;color:#16984b;font-weight:900;letter-spacing:.08em}
+.install-app-card h2{margin:0 0 8px}
+.install-steps{display:grid;gap:10px;margin:20px 0;text-align:left}
+.install-steps>div{display:grid;grid-template-columns:38px 1fr;align-items:center;gap:12px;padding:12px 14px;border:1px solid #dce8e1;border-radius:16px;background:#f7fbf8}
+.install-steps strong{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#e2f7e9;color:#12833f;font-size:16px}
+.install-steps span{color:#304345;line-height:1.4}
+.install-benefits{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:4px 0 18px}
+.install-benefits span{padding:7px 10px;border-radius:999px;background:#eef8f1;color:#176f3c;font-size:12px;font-weight:800}
+.install-app-card .btn-row{justify-content:center}
+.install-ios-note{text-align:center;margin-top:12px}
+@media(max-width:520px){.install-app-card{width:min(92vw,520px);padding:24px 18px}.install-app-card .btn-row{display:grid}.install-app-card .btn{width:100%}}

@@ -245,7 +245,10 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.7';
+const APP_VERSION='V1.8';
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
+window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -4263,6 +4266,27 @@ function observationReady(a,d){const selected=selectedNvqOutcomes(a,d);return !!
 function canSubmit(a,s,d){if(COURSE.nvqUnits&&s==='practical')return observationReady(a,d);if(s==='practical')return !!(d.tutor&&d.activity&&d.signature&&(d.photos||[]).length>=1&&selectedPracticalSkillCodes(a,d).length>0);if(s==='photos'){if(COURSE.nvqUnits){const selected=selectedKsbCodes(a,d);return selected.length>0&&selected.every(code=>!!d.outcomePhotos?.[code]?.data)&&!!d.signature}const selected=selectedKsbCodes(a,d).filter(code=>String(code).toUpperCase().startsWith('S'));return selected.length>0&&selected.every(code=>(d.skillPhotos?.[code]||[]).filter(Boolean).length===3)&&!!d.signature;}if(s==='statement')return statementReady(a,d);if(s==='discussion'||s==='professionalDiscussion')return !!(d.assessor&&d.activity&&d.signature&&Object.keys(d.recordings||{}).length);return supportReady(a,d)}
 async function submitSection(a,s,sd,d){if(!canSubmit(a,s,d)){if(COURSE.nvqUnits&&s==='practical')return toast('Complete the assessor details, signature and at least one selected Learning Outcome with a photograph');return toast('Complete all required fields first')}d.submitted=true;d.date=today();const frozen=structuredClone(d);sd.versions.push(frozen);sd.draft=frozen;await commit(a.n,s,sd);const pack=state.data[packStatusKey(a.n)];if(pack?.uploaded){state.data[packStatusKey(a.n)]={...pack,downloaded:false,uploaded:false,changedAt:new Date().toISOString()};await saveData()}renderSection();const assessed=!COURSE.nvqUnits&&(s==='practical'||(s==='supporting'&&d.tab!=='files'));toast(assessed?`Attempt submitted: ${totalScore(a,d,s==='practical')}`:'Submitted and locked')}
 
+function appIsInstalled(){return window.matchMedia?.('(display-mode: standalone)').matches||window.navigator.standalone===true}
+function installDeviceType(){const ua=navigator.userAgent||'';if(/iphone|ipad|ipod/i.test(ua))return 'ios';if(/android/i.test(ua))return 'android';return 'other'}
+async function showInstallAppScreen(){
+ if(appIsInstalled())return;
+ const previous=await getStore('installPromptShown');
+ if(previous)return;
+ await putStore('installPromptShown',{shownAt:new Date().toISOString(),version:APP_VERSION});
+ const device=installDeviceType();
+ const iosSteps=`<div class="install-steps"><div><strong>1</strong><span>Tap the <b>Share</b> button in Safari.</span></div><div><strong>2</strong><span>Scroll down and choose <b>Add to Home Screen</b>.</span></div><div><strong>3</strong><span>Tap <b>Add</b> to install Apprentice+.</span></div></div>`;
+ const androidSteps=`<div class="install-steps"><div><strong>1</strong><span>Tap <b>Install Apprentice+</b> below.</span></div><div><strong>2</strong><span>Confirm <b>Install</b> when your browser asks.</span></div><div><strong>3</strong><span>Open Apprentice+ from your home screen.</span></div></div>`;
+ const fallbackSteps=`<div class="install-steps"><div><strong>1</strong><span>Open your browser menu.</span></div><div><strong>2</strong><span>Choose <b>Install app</b> or <b>Add to Home Screen</b>.</span></div><div><strong>3</strong><span>Confirm the installation.</span></div></div>`;
+ app.insertAdjacentHTML('beforeend',`<div class="modal install-app-modal" id="installAppModal"><div class="modal-card install-app-card"><div class="install-app-logo"><img src="icon-192.png" alt="Apprentice+ app icon"></div><div class="number">SETUP COMPLETE</div><h2>Install Apprentice+</h2><p class="muted">Add the app to this phone for quicker access, full-screen use and a more reliable evidence workflow.</p>${device==='ios'?iosSteps:device==='android'?androidSteps:fallbackSteps}<div class="install-benefits"><span>✓ Opens like an app</span><span>✓ Easy home-screen access</span><span>✓ Evidence remains on this device</span></div><div class="btn-row">${device==='ios'?'<button class="btn" id="installDone">I have installed it</button>':`<button class="btn" id="installNow">Install Apprentice+</button>`}<button class="btn secondary" id="installLater">Not now</button></div>${device==='ios'?'<p class="help install-ios-note">On iPhone or iPad, installation must be completed through Safari’s Share menu.</p>':''}</div></div>`);
+ const modal=document.getElementById('installAppModal');
+ document.getElementById('installLater').onclick=()=>modal.remove();
+ const done=document.getElementById('installDone');if(done)done.onclick=()=>modal.remove();
+ const install=document.getElementById('installNow');if(install)install.onclick=async()=>{
+  if(deferredInstallPrompt){deferredInstallPrompt.prompt();const choice=await deferredInstallPrompt.userChoice.catch(()=>null);if(choice?.outcome==='accepted')modal.remove();deferredInstallPrompt=null;return;}
+  toast(device==='android'?'Open your browser menu and choose Install app or Add to Home screen':'Use your browser menu to install Apprentice+');
+ };
+}
+
 function showOnboarding(editMode=false){
  const selectedCourse=COURSES[ACTIVE_COURSE_ID]||COURSES['site-carpentry-v1-4'];
  const title=editMode?'Learner details':'Welcome to Apprentice+';
@@ -4284,7 +4308,7 @@ function setupOnboardSig(editMode=false){
    if(portfolioUrl&&!/^https?:\/\//i.test(portfolioUrl))return toast('Enter a valid portfolio website address beginning with http:// or https://');
    if(courseStartDate&&plannedEndDate&&new Date(`${plannedEndDate}T00:00:00`)<=new Date(`${courseStartDate}T00:00:00`))return toast('Planned end date must be after the start date');
   }
-  ACTIVE_COURSE_ID=courseId;COURSE=COURSES[courseId];state.assignment=null;state.section=null;state.view='home';state.profile={...state.profile,fullName,employer,mentor,portfolioUrl,courseStartDate,plannedEndDate,signature:sig};await putStore('activeCourse',courseId);await saveProfile();document.getElementById('onboard').remove();render();toast(editMode?'Learner details updated':'Profile saved locally')
+  ACTIVE_COURSE_ID=courseId;COURSE=COURSES[courseId];state.assignment=null;state.section=null;state.view='home';state.profile={...state.profile,fullName,employer,mentor,portfolioUrl,courseStartDate,plannedEndDate,signature:sig};await putStore('activeCourse',courseId);await saveProfile();document.getElementById('onboard').remove();render();toast(editMode?'Learner details updated':'Profile saved locally');if(!editMode)setTimeout(()=>showInstallAppScreen(),250)
  };
 }
 
