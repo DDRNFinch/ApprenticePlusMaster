@@ -1670,7 +1670,7 @@ body.page-help-open,body.help-tour-open{overflow:hidden;touch-action:none}
 }
 
 
-/* V1.11.0 complete logo-inspired green theme */
+/* V1.11.1 complete logo-inspired green theme */
 :root{
   --logo-lime:#98dc25;
   --logo-bright:#79d22f;
@@ -1759,3 +1759,34 @@ body.page-help-open,body.help-tour-open{overflow:hidden;touch-action:none}
 /* Consistent logo-gradient focus and selection outlines. */
 :focus-visible{outline:3px solid rgba(152,220,37,.58);outline-offset:2px}
 .progress-rings .ring-green{filter:drop-shadow(0 2px 3px rgba(7,95,47,.18))}
+
+/* V1.11.1: keep absolutely positioned course controls fixed inside help phone previews */
+.tour-phone-scale .course-card .course-search-launch.tour-phone-focus,
+.page-help-phone-scale .course-card .course-search-launch.page-help-phone-focus{
+  position:absolute!important;
+  right:12px!important;
+  bottom:10px!important;
+  left:auto!important;
+  top:auto!important;
+  transform:none!important;
+  margin:0!important;
+  z-index:30!important;
+}
+.tour-phone-scale .course-card .progress-rings.tour-phone-focus,
+.page-help-phone-scale .course-card .progress-rings.page-help-phone-focus{
+  position:absolute!important;
+  top:12px!important;
+  right:12px!important;
+  bottom:auto!important;
+  left:auto!important;
+  transform:none!important;
+  margin:0!important;
+  z-index:30!important;
+}
+/* Highlight the controls without allowing the generic focus class to alter card layout. */
+.tour-phone-scale .course-search-launch.tour-phone-focus,
+.tour-phone-scale .progress-rings.tour-phone-focus,
+.page-help-phone-scale .course-search-launch.page-help-phone-focus,
+.page-help-phone-scale .progress-rings.page-help-phone-focus{
+  border-radius:50%!important;
+}

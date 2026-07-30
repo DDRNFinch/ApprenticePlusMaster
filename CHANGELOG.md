@@ -1,9 +1,9 @@
-## V1.11.0 – Logo Green Theme
+## V1.11.1 – Logo Green Theme
 - Re-themed green UI colours to the new Apprentice+ logo palette.
 - Added light-on-dark and dark-on-light contrast rules.
 - Preserved compact course tile and fixed tour icon positions.
 
-# V1.11.0
+# V1.11.1
 
 - Restyled the top course progress tile with a lime-to-deep-green gradient inspired by the Apprentice+ logo.
 - Added a restrained outer shadow and soft inset highlight for subtle depth.
