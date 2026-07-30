@@ -171,12 +171,14 @@ async function generateEvidencePackPDF({course, assignment, profile, sections, b
     if(course.nvqUnits)await addOutcomePhotoPages(d,'Assessor Observation',`Attempt ${v}`,d.date,'Assessor Observation',true);
   }
 
-  // Photos - exactly six landscape photos on one page per version
+  // Photographic Evidence - three photographs per selected Skill
   for(let i=0;i<(sections.photos||[]).length;i++){
-    const d=sections.photos[i],v=i+1,imgs=[];for(const ph of (d.photos||[]).slice(0,6))imgs.push(await loadImage(ph.data));
-    const p=meta(newPage(`Photographic Evidence · PE${v}`,v),v,d.date,'Photographic Evidence');const x=p.x;let y=sectionHeading(x,`6 Landscape Photos`,p.y);const gapX=22,gapY=18,cellW=(W-2*M-gapX)/2,cellH=cellW*9/16;
-    for(let j=0;j<6;j++){const col=j%2,row=Math.floor(j/2),px=M+col*(cellW+gapX),py=y+row*(cellH+gapY),img=imgs[j];x.fillStyle=PALE;x.fillRect(px,py,cellW,cellH);if(img){const scale=Math.max(cellW/img.width,cellH/img.height),iw=img.width*scale,ih=img.height*scale;x.save();x.beginPath();x.rect(px,py,cellW,cellH);x.clip();x.drawImage(img,px+(cellW-iw)/2,py+(cellH-ih)/2,iw,ih);x.restore()}x.fillStyle=TEAL;x.font='700 13px Arial';x.fillText(`Photo ${j+1}`,px+8,py+cellH-8)}
-    y+=3*(cellH+gapY)+8;const sig=await loadImage(d.signature);signature(x,sig,Math.min(y,H-225),'Learner signature');
+    const d=sections.photos[i],v=i+1;
+    const selected=(assignment.ksbs||[]).filter(([code])=>String(code).toUpperCase().startsWith('S')&&(d.ksbEvidence||[]).includes(code));
+    const entries=[];
+    for(const [code,text] of selected){for(let j=0;j<3;j++){const ph=d.skillPhotos?.[code]?.[j];if(ph?.data)entries.push({code,text,index:j+1,img:await loadImage(ph.data)})}}
+    if(!entries.length){for(let j=0;j<(d.photos||[]).length;j++){const ph=d.photos[j];if(ph?.data)entries.push({code:'PE',text:'Legacy photographic evidence',index:j+1,img:await loadImage(ph.data)})}}
+    for(let start=0;start<entries.length;start+=6){const batch=entries.slice(start,start+6),pageNo=Math.floor(start/6)+1,totalPages=Math.max(1,Math.ceil(entries.length/6));const p=meta(newPage(`Photographic Evidence · PE${v}${totalPages>1?` · ${pageNo}/${totalPages}`:''}`,v),v,d.date,'Photographic Evidence');const x=p.x;let y=sectionHeading(x,'Skill Photographs',p.y);const gapX=22,gapY=34,cellW=(W-2*M-gapX)/2,cellH=cellW*9/16;for(let j=0;j<batch.length;j++){const item=batch[j],col=j%2,row=Math.floor(j/2),px=M+col*(cellW+gapX),py=y+row*(cellH+gapY+26),img=item.img;x.fillStyle=PALE;x.fillRect(px,py,cellW,cellH);if(img){const scale=Math.max(cellW/img.width,cellH/img.height),iw=img.width*scale,ih=img.height*scale;x.save();x.beginPath();x.rect(px,py,cellW,cellH);x.clip();x.drawImage(img,px+(cellW-iw)/2,py+(cellH-ih)/2,iw,ih);x.restore()}x.fillStyle=TEAL;x.font='700 14px Arial';x.fillText(`${item.code} · Photo ${item.index}`,px,py+cellH+20);x.fillStyle=INK;x.font='400 12px Arial';fitText(x,clean(item.text),px,py+cellH+38,cellW,12)}if(start+6>=entries.length){const sig=await loadImage(d.signature);signature(x,sig,H-225,'Learner signature')}}
   }
 
   // Statements

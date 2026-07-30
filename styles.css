@@ -954,3 +954,7 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
 .assignment-card .nvq-six-icons .icon-state:nth-child(5){color:#7650a5}
 .assignment-card .nvq-six-icons .icon-state:nth-child(6){color:#c46617}
 .nvq-six-evidence .evidence-tile{min-height:150px}
+.evidence-capability{display:block;margin-top:3px;font-size:10px;font-weight:900;letter-spacing:.04em;line-height:1;color:currentColor}
+.evidence-capability-mini{display:block;font-size:8px;font-weight:900;line-height:1;margin-top:2px;letter-spacing:.02em}
+.evidence-capability{display:block;margin-top:3px;font-size:10px;font-weight:900;letter-spacing:.04em;line-height:1;color:currentColor}
+.evidence-capability-mini{display:block;font-size:8px;font-weight:900;line-height:1;margin-top:2px;letter-spacing:.02em}

@@ -1,3 +1,12 @@
+# V1.3.70 — Skill-only photographic evidence
+
+- KSB Photographic Evidence now displays Skill (S) units only.
+- Each selected Skill requires exactly three landscape photographs.
+- Separate Camera and Gallery actions are available for every photo slot.
+- No written evidence text is required.
+- A submitted photographic evidence attempt awards one evidence credit toward the Skill's 2/2 requirement.
+- LO photographic evidence remains unchanged.
+
 # V1.3.69 — Evidence order and app-styled icons
 
 - Reordered LO evidence tiles: Photographic Evidence, Learner Statement, Video Walkthrough, Witness Testimony, Assessor Observation, Professional Discussion.
@@ -315,3 +324,13 @@
 - Added Pass (13/15), Merit (14/15), and Distinction (15/15) grading.
 - Added saved attempt history, latest-result display, retakes, and incorrect-answer review with explanations and key takeaways.
 - Updated the offline cache to include the new trade-courses question bank.
+
+## v1.3.71 — Distinct Evidence-Type Coverage
+- KSBs require two different evidence methods; repeated attempts of the same method count once per KSB.
+- LOs require three different evidence methods; repeated attempts of the same method count once per LO.
+- Added method capability labels: Photos S; Statement K-S-B; Walkthrough K-S-B; Witness S-B; Practical S-B; Discussion K-B.
+
+## v1.3.71 — Distinct Evidence-Type Coverage
+- KSBs require two different evidence methods; repeated attempts of the same method count once per KSB.
+- LOs require three different evidence methods; repeated attempts of the same method count once per LO.
+- Added method capability labels: Photos S; Statement K-S-B; Walkthrough K-S-B; Witness S-B; Practical S-B; Discussion K-B.
