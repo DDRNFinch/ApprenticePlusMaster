@@ -853,3 +853,22 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
  .training-certificate footer{margin-top:6mm!important;padding-top:5mm!important;gap:3mm!important}
  .certificate-details{display:none!important}
 }
+
+/* V1.3.57 — subject-specific Academy knowledge training */
+.academy-knowledge-subsection{margin:18px 0 22px;padding:18px;border:1px solid #dbe7df;border-radius:22px;background:#f8fbf8}
+.academy-subsection-heading{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px}
+.academy-subsection-heading small{display:block;font-size:11px;font-weight:900;letter-spacing:.12em;color:#17854b;margin-bottom:4px}
+.academy-subsection-heading h3{margin:0 0 4px;font-size:22px;color:#102d2c}
+.academy-subsection-heading p{margin:0;color:#667574;font-size:14px}
+.academy-knowledge-subject-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.academy-knowledge-subject{width:100%;display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:12px;padding:15px;border:1px solid #d9e4de;border-radius:17px;background:#fff;text-align:left;box-shadow:0 5px 15px rgba(15,35,40,.05);cursor:pointer}
+.academy-knowledge-subject:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(15,35,40,.08)}
+.academy-knowledge-subject.complete{border-color:#86d3a4;background:#f1fbf4}
+.academy-knowledge-subject-icon{width:44px;height:44px;border-radius:13px;background:#e9f7ee;color:#16844a;display:grid;place-items:center}
+.academy-knowledge-subject-icon svg{width:24px;height:24px}
+.academy-knowledge-subject-copy{min-width:0;display:flex;flex-direction:column;gap:2px}
+.academy-knowledge-subject-copy small{font-size:9px;font-weight:900;letter-spacing:.08em;color:#778482}
+.academy-knowledge-subject-copy strong{font-size:15px;color:#142f2e;line-height:1.2}
+.academy-knowledge-subject-copy em{font-size:12px;font-style:normal;color:#6d7978}
+.academy-knowledge-subject-action{font-size:12px;font-weight:900;color:#16844a;white-space:nowrap}
+@media(max-width:680px){.academy-knowledge-subsection{padding:14px}.academy-knowledge-subject-grid{grid-template-columns:1fr}.academy-knowledge-subject{grid-template-columns:40px minmax(0,1fr) auto;padding:13px}.academy-knowledge-subject-icon{width:40px;height:40px}.academy-knowledge-subject-action{font-size:11px}}

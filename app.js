@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3.56';
+const APP_VERSION='V1.3.57';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -811,45 +811,43 @@ function functionalSkillsConfig(subject){
  const map={english1:{title:'English Level 1',short:'English L1',icon:'library'},maths1:{title:'Maths Level 1',short:'Maths L1',icon:'revision'},english:{title:'English Level 2',short:'English L2',icon:'library'},maths:{title:'Maths Level 2',short:'Maths L2',icon:'revision'}};
  return map[subject]||{title:'Functional Skills',short:'Functional Skills',icon:'functional'};
 }
-const ACADEMY_KNOWLEDGE_PROGRESS_KEY='academyKnowledgeProgress:v1';
+const ACADEMY_KNOWLEDGE_PROGRESS_KEY='academyKnowledgeProgress:v2';
 function academyKnowledgeProgress(){const p=state.data[ACADEMY_KNOWLEDGE_PROGRESS_KEY];return p&&typeof p==='object'?p:{}}
-function academyKnowledgeDeck(section){
- const rows=[];
- if(section==='functional'){
-  ['english1','maths1','english','maths'].forEach(subject=>{const cfg=functionalSkillsConfig(subject),bank=FUNCTIONAL_SKILLS_BANKS?.[subject]||[];bank.forEach((q,index)=>rows.push({...cloneData(q),subject,title:cfg.title,slide:index+1}))});
- }else if(section==='trade'){
-  ['legislation','manualHandling','equalityDiversity','cscs','fireSafety','coshh','mentalHealth'].forEach(subject=>{const cfg=tradeCourseConfig(subject),bank=window.TRADE_COURSES_BANK?.[subject]||[];bank.forEach((q,index)=>rows.push({...cloneData(q),subject,title:cfg.title,slide:index+1}))});
- }
- return rows;
+function academyKnowledgeSubjects(section){return section==='functional'?['english1','maths1','english','maths']:['legislation','manualHandling','equalityDiversity','cscs','fireSafety','coshh','mentalHealth']}
+function academyKnowledgeSubjectConfig(section,subject){return section==='functional'?functionalSkillsConfig(subject):tradeCourseConfig(subject)}
+function academyKnowledgeDeck(section,subject){
+ const bank=section==='functional'?FUNCTIONAL_SKILLS_BANKS?.[subject]:window.TRADE_COURSES_BANK?.[subject],cfg=academyKnowledgeSubjectConfig(section,subject);
+ return Array.isArray(bank)?bank.map((q,index)=>({...cloneData(q),subject,title:cfg.title,slide:index+1})):[];
 }
-function academyKnowledgeMeta(section){return section==='functional'?{title:'Functional Skills Knowledge',back:'Functional Skills',view:'functional-skills',icon:'functional'}:{title:'Trade Courses Knowledge',back:'Trade Courses',view:'trade-courses',icon:'library'}}
-function openAcademyKnowledge(section){
- const deck=academyKnowledgeDeck(section);if(!deck.length)return toast('Knowledge slides are not ready.');
- const progress=academyKnowledgeProgress(),saved=progress[section]||{};
- state.academyKnowledge={section,index:Math.min(Number(saved.index)||0,deck.length-1),deck};state.view='academy-knowledge';render();window.scrollTo(0,0);
+function academyKnowledgeProgressId(section,subject){return `${section}:${subject}`}
+function academyKnowledgeMeta(section,subject){const cfg=academyKnowledgeSubjectConfig(section,subject);return section==='functional'?{title:`${cfg.title} Knowledge`,back:'Functional Skills',view:'functional-skills',icon:cfg.icon}:{title:`${cfg.title} Knowledge`,back:'Trade Courses',view:'trade-courses',icon:cfg.icon}}
+function openAcademyKnowledge(section,subject){
+ const deck=academyKnowledgeDeck(section,subject);if(!deck.length)return toast('Knowledge slides are not ready.');
+ const progress=academyKnowledgeProgress(),progressId=academyKnowledgeProgressId(section,subject),saved=progress[progressId]||{};
+ state.academyKnowledge={section,subject,progressId,index:Math.min(Number(saved.index)||0,deck.length-1),deck};state.view='academy-knowledge';render();window.scrollTo(0,0);
 }
-async function saveAcademyKnowledgePosition(section,index,complete=false){
- const all=academyKnowledgeProgress(),previous=all[section]||{};all[section]={index,complete:!!(complete||previous.complete),updatedAt:new Date().toISOString()};state.data[ACADEMY_KNOWLEDGE_PROGRESS_KEY]=all;await saveData();
+async function saveAcademyKnowledgePosition(progressId,index,complete=false){
+ const all=academyKnowledgeProgress(),previous=all[progressId]||{};all[progressId]={index,complete:!!(complete||previous.complete),updatedAt:new Date().toISOString()};state.data[ACADEMY_KNOWLEDGE_PROGRESS_KEY]=all;await saveData();
 }
-function knowledgeTile(section){
- const deck=academyKnowledgeDeck(section),progress=academyKnowledgeProgress()[section]||{},complete=!!progress.complete,viewed=complete?deck.length:Math.min((Number(progress.index)||0)+1,deck.length),label=complete?'Knowledge Complete':'Knowledge';
- return `<button class="academy-knowledge-feature ${complete?'complete':''}" data-open-knowledge="${section}"><span class="academy-knowledge-feature-icon">${appIcon('library')}</span><span class="academy-knowledge-feature-copy"><small>LEARN BEFORE THE TESTS</small><strong>${label}${complete?' ✓':''}</strong><em>${deck.length} teaching slides · ${complete?'Completed':`${viewed}/${deck.length} current progress`}</em></span><span class="academy-knowledge-feature-action">${complete?'Revise again':'Continue learning'} →</span></button>`;
+function knowledgeSubjectsSection(section){
+ const progress=academyKnowledgeProgress(),cards=academyKnowledgeSubjects(section).map(subject=>{const cfg=academyKnowledgeSubjectConfig(section,subject),deck=academyKnowledgeDeck(section,subject),progressId=academyKnowledgeProgressId(section,subject),saved=progress[progressId]||{},complete=!!saved.complete,viewed=complete?deck.length:Math.min((Number(saved.index)||0)+1,deck.length);return `<button class="academy-knowledge-subject ${complete?'complete':''}" data-open-knowledge-section="${section}" data-open-knowledge-subject="${subject}"><span class="academy-knowledge-subject-icon">${appIcon(cfg.icon||'library')}</span><span class="academy-knowledge-subject-copy"><small>LEARN BEFORE THE TEST</small><strong>${esc(cfg.title)} Knowledge${complete?' ✓':''}</strong><em>${deck.length} teaching slides · ${complete?'Completed':`${viewed}/${deck.length} progress`}</em></span><span class="academy-knowledge-subject-action">${complete?'Revise':'Learn'} →</span></button>`}).join('');
+ return `<section class="academy-knowledge-subsection"><div class="academy-subsection-heading"><div><small>KNOWLEDGE TRAINING</small><h3>Learn by subject</h3><p>Choose the specific subject you want to train before taking its test.</p></div></div><div class="academy-knowledge-subject-grid">${cards}</div></section>`;
 }
 function renderAcademyKnowledge(){
  const session=state.academyKnowledge;if(!session?.deck?.length){state.view=session?.section==='trade'?'trade-courses':'functional-skills';render();return}
- const meta=academyKnowledgeMeta(session.section),deck=session.deck,i=Math.max(0,Math.min(Number(session.index)||0,deck.length-1)),q=deck[i],correct=q.options?.[q.answerIndex]||'',isLast=i===deck.length-1;
+ const meta=academyKnowledgeMeta(session.section,session.subject),deck=session.deck,i=Math.max(0,Math.min(Number(session.index)||0,deck.length-1)),q=deck[i],correct=q.options?.[q.answerIndex]||'',isLast=i===deck.length-1;
  app.innerHTML=shell(`<button class="back no-print" id="knowledgeSlidesBack">← ${esc(meta.back)}</button><section class="knowledge-slide-shell"><header class="knowledge-slide-head"><div><div class="number">${esc(q.title)} · Slide ${i+1} of ${deck.length}</div><h2>${esc(q.ksb)}</h2></div><span class="status-pill">${Math.round((i+1)/deck.length*100)}%</span></header><div class="epa-progress"><span style="width:${((i+1)/deck.length)*100}%"></span></div><article class="knowledge-teaching-slide"><section class="knowledge-slide-block scenario"><small>WORKPLACE SCENARIO</small><h3>${esc(q.scenario)}</h3></section><section class="knowledge-slide-block answer"><small>KEY LEARNING</small><h3>${esc(correct)}</h3></section><section class="knowledge-slide-block explanation"><small>WHY THIS IS CORRECT</small><p>${esc(q.explanation)}</p></section><section class="knowledge-slide-block takeaway"><small>REMEMBER</small><p>${esc(q.keyTakeaway)}</p></section></article><div class="knowledge-slide-controls"><button class="btn secondary" id="knowledgeSlidePrev" ${i===0?'disabled':''}>Previous</button>${isLast?'<button class="btn" id="knowledgeSlideComplete">Complete Knowledge</button>':'<button class="btn" id="knowledgeSlideNext">Next</button>'}</div></section>`);
- document.getElementById('knowledgeSlidesBack').onclick=async()=>{await saveAcademyKnowledgePosition(session.section,i,false);state.academyKnowledge=null;state.view=meta.view;render()};
- document.getElementById('knowledgeSlidePrev').onclick=async()=>{session.index=Math.max(0,i-1);await saveAcademyKnowledgePosition(session.section,session.index,false);renderAcademyKnowledge()};
- const next=document.getElementById('knowledgeSlideNext');if(next)next.onclick=async()=>{session.index=Math.min(deck.length-1,i+1);await saveAcademyKnowledgePosition(session.section,session.index,false);renderAcademyKnowledge()};
- const complete=document.getElementById('knowledgeSlideComplete');if(complete)complete.onclick=async()=>{await saveAcademyKnowledgePosition(session.section,i,true);toast('Knowledge slides completed');state.academyKnowledge=null;state.view=meta.view;render();window.scrollTo(0,0)};
+ document.getElementById('knowledgeSlidesBack').onclick=async()=>{await saveAcademyKnowledgePosition(session.progressId,i,false);state.academyKnowledge=null;state.view=meta.view;render()};
+ document.getElementById('knowledgeSlidePrev').onclick=async()=>{session.index=Math.max(0,i-1);await saveAcademyKnowledgePosition(session.progressId,session.index,false);renderAcademyKnowledge()};
+ const next=document.getElementById('knowledgeSlideNext');if(next)next.onclick=async()=>{session.index=Math.min(deck.length-1,i+1);await saveAcademyKnowledgePosition(session.progressId,session.index,false);renderAcademyKnowledge()};
+ const complete=document.getElementById('knowledgeSlideComplete');if(complete)complete.onclick=async()=>{await saveAcademyKnowledgePosition(session.progressId,i,true);toast('Knowledge slides completed');state.academyKnowledge=null;state.view=meta.view;render();window.scrollTo(0,0)};
 }
 function renderFunctionalSkills(){
  const subjects=['english1','maths1','english','maths'];
  const cards=subjects.map(subject=>{const cfg=functionalSkillsConfig(subject),rows=functionalSkillsHistory(subject),r=bestMcqResult(rows);return `<article class="academy-destination-card functional-test-card"><span>${appIcon(cfg.icon)}</span><h3>${esc(cfg.title)}</h3><span class="status-pill mcq-best-status ${r?.score>=13?'done':r?'fail':''}">${esc(compactMcqStatus(r))}</span><div class="epa-tile-stat"><strong>${rows.length}</strong><span>attempt${rows.length===1?'':'s'} recorded</span></div><button class="btn" data-start-functional="${subject}">Start test</button></article>`}).join('');
- app.innerHTML=shell(`<button class="back no-print" id="functionalSkillsBack">← Academy</button><section class="academy-destination-head"><div class="academy-destination-icon">${appIcon('functional')}</div><div><div class="number">Academy</div><h2>Functional Skills</h2><p class="muted">Level 1 and Level 2 tests · Pass 13/15 · Merit 14/15 · Distinction 15/15.</p></div></section>${knowledgeTile('functional')}<section class="academy-destination-grid">${cards}</section>`);
+ app.innerHTML=shell(`<button class="back no-print" id="functionalSkillsBack">← Academy</button><section class="academy-destination-head"><div class="academy-destination-icon">${appIcon('functional')}</div><div><div class="number">Academy</div><h2>Functional Skills</h2><p class="muted">Level 1 and Level 2 tests · Pass 13/15 · Merit 14/15 · Distinction 15/15.</p></div></section>${knowledgeSubjectsSection('functional')}<section class="academy-destination-grid">${cards}</section>`);
  document.getElementById('functionalSkillsBack').onclick=()=>{state.view='academy';render()};
- document.querySelectorAll('[data-open-knowledge]').forEach(b=>b.onclick=()=>openAcademyKnowledge(b.dataset.openKnowledge));
+ document.querySelectorAll('[data-open-knowledge-subject]').forEach(b=>b.onclick=()=>openAcademyKnowledge(b.dataset.openKnowledgeSection,b.dataset.openKnowledgeSubject));
  document.querySelectorAll('[data-start-functional]').forEach(b=>b.onclick=()=>startFunctionalSkillsTest(b.dataset.startFunctional));
 }
 function renderFunctionalSkillsTest(){
@@ -894,9 +892,9 @@ function startTradeCourseTest(subject){
 function renderTradeCourses(){
  const subjects=['legislation','manualHandling','equalityDiversity','cscs','fireSafety','coshh','mentalHealth'];
  const cards=subjects.map(subject=>{const config=tradeCourseConfig(subject),rows=tradeCourseHistory(subject),r=bestMcqResult(rows);return `<article class="academy-destination-card functional-test-card"><span>${appIcon(config.icon)}</span><h3>${esc(config.title)}</h3><p>${esc(config.description)}</p><span class="status-pill mcq-best-status ${r?.score>=13?'done':r?'fail':''}">${esc(compactMcqStatus(r))}</span><div class="epa-tile-stat"><strong>${rows.length}</strong><span>attempt${rows.length===1?'':'s'} recorded</span></div><button class="btn" data-start-trade="${subject}">Start ${esc(config.title)} test</button></article>`}).join('');
- app.innerHTML=shell(`<button class="back no-print" id="tradeCoursesBack">← Academy</button><section class="academy-destination-head"><div class="academy-destination-icon">${appIcon('library')}</div><div><div class="number">Academy</div><h2>Trade Courses</h2><p class="muted">Each course contains 15 questions. Pass: 13/15 · Merit: 14/15 · Distinction: 15/15.</p></div></section>${knowledgeTile('trade')}<section class="academy-destination-grid">${cards}</section>`);
+ app.innerHTML=shell(`<button class="back no-print" id="tradeCoursesBack">← Academy</button><section class="academy-destination-head"><div class="academy-destination-icon">${appIcon('library')}</div><div><div class="number">Academy</div><h2>Trade Courses</h2><p class="muted">Each course contains 15 questions. Pass: 13/15 · Merit: 14/15 · Distinction: 15/15.</p></div></section>${knowledgeSubjectsSection('trade')}<section class="academy-destination-grid">${cards}</section>`);
  document.getElementById('tradeCoursesBack').onclick=()=>{state.view='academy';render()};
- document.querySelectorAll('[data-open-knowledge]').forEach(b=>b.onclick=()=>openAcademyKnowledge(b.dataset.openKnowledge));
+ document.querySelectorAll('[data-open-knowledge-subject]').forEach(b=>b.onclick=()=>openAcademyKnowledge(b.dataset.openKnowledgeSection,b.dataset.openKnowledgeSubject));
  document.querySelectorAll('[data-start-trade]').forEach(b=>b.onclick=()=>startTradeCourseTest(b.dataset.startTrade));
 }
 function renderTradeCourseTest(){

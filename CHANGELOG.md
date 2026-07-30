@@ -1,3 +1,11 @@
+## V1.3.57 - Subject-Specific Knowledge Training
+
+- Split Academy knowledge slides into separate subject modules.
+- Learners can now train specifically in Fire Safety, COSHH, Mental Health Awareness and every other installed Trade Course.
+- Functional Skills knowledge is also separated into English and Maths at Level 1 and Level 2.
+- Each subject keeps its own slide progress, completion status and revision access.
+- All previous cumulative updates remain included.
+
 ## V1.3.56 - Mental Health Awareness Academy Module
 
 - Added a cumulative Mental Health Awareness Trade Course module.
