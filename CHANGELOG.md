@@ -1,3 +1,9 @@
+# V1.1 — Evidence Icon Alignment and Professional Discussion Ribbon
+
+- Centred all evidence method SVG icons within their green icon squares.
+- Added a purple ASSESSOR ONLY ribbon to the Professional Discussion tile and page.
+- Renamed the visible in-app version to V1.1.
+
 # V1.3.73 — Professional Discussion Voice Recorder Layout
 
 - Professional Discussion now mirrors the Video Walkthrough card layout.

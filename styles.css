@@ -983,3 +983,41 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
 .professional-discussion-list .discussion-note-label{display:block;margin-top:10px}
 .professional-discussion-list .discussion-note{width:100%;min-height:72px;margin-top:5px}
 @media(max-width:380px){.professional-discussion-mini{grid-template-columns:minmax(0,1fr) 88px}.professional-discussion-record-button{width:84px;min-height:84px}}
+
+
+/* V1.1 — centred evidence icons and Professional Discussion assessor ribbon */
+.nvq-six-evidence .evidence-tile .tile-icon,
+.evidence-tile-heading .tile-icon{
+  display:grid;
+  place-items:center;
+  justify-content:center;
+  align-items:center;
+  flex:0 0 46px;
+  width:46px;
+  height:46px;
+  padding:0;
+  margin:0;
+}
+.nvq-six-evidence .evidence-tile .tile-icon .app-icon,
+.evidence-tile-heading .tile-icon .app-icon{
+  display:block;
+  width:29px;
+  height:29px;
+  margin:auto;
+}
+.pd-assessor-ribbon{background:#6a1b9a!important;color:#fff!important}
+.assessor-only-panel .pd-assessor-ribbon,
+.page-ribbon.pd-assessor-ribbon{
+  top:14px;
+  right:-39px;
+  width:150px;
+  padding:4px 0;
+  font-size:8px;
+  font-weight:800;
+  line-height:1;
+  letter-spacing:0;
+  text-align:center;
+  white-space:nowrap;
+  transform:rotate(35deg) scale(.82);
+  transform-origin:center;
+}
