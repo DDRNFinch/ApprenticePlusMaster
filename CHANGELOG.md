@@ -387,3 +387,8 @@
 - KSBs require two different evidence methods; repeated attempts of the same method count once per KSB.
 - LOs require three different evidence methods; repeated attempts of the same method count once per LO.
 - Added method capability labels: Photos S; Statement K-S-B; Walkthrough K-S-B; Witness S-B; Practical S-B; Discussion K-B.
+
+## V1.6
+- Professional Discussion recorder now displays the selected Knowledge, Behaviour or learning-outcome description while recording.
+- Added assessor prompt questions tailored to Knowledge and Behaviour criteria.
+- Added mobile-friendly scrolling and layout for the recording guidance panel.

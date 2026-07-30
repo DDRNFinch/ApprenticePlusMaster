@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5';
+const APP_VERSION='V1.6';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -4203,8 +4203,34 @@ async function commit(n,s,sd){state.data[key(n,s)]=sd;await saveData()}
 function setupSignature(n,s,sd,d){const c=document.getElementById('signaturePad');if(!c)return;const ctx=c.getContext('2d');let draw=false;function resize(){const ratio=devicePixelRatio||1,cw=c.clientWidth,ch=c.clientHeight;c.width=cw*ratio;c.height=ch*ratio;ctx.scale(ratio,ratio);ctx.lineWidth=2.3;ctx.lineCap='round';ctx.strokeStyle='#102326'}resize();
  const pos=e=>{const r=c.getBoundingClientRect(),p=e.touches?e.touches[0]:e;return{x:p.clientX-r.left,y:p.clientY-r.top}};const start=e=>{draw=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault()};const move=e=>{if(!draw)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();e.preventDefault()};const end=async()=>{if(!draw)return;draw=false;d.signature=c.toDataURL('image/png');await commit(n,s,sd);const a=assignment(n);updateSectionSubmit(a,s,d)};c.addEventListener('pointerdown',start);c.addEventListener('pointermove',move);window.addEventListener('pointerup',end);
  const clr=document.getElementById('clearSignature');if(clr)clr.onclick=async()=>{ctx.clearRect(0,0,c.width,c.height);d.signature='';await commit(n,s,sd);const a=assignment(n);updateSectionSubmit(a,s,d)};const use=document.getElementById('useProfileSignature');if(use)use.onclick=async()=>{if(!state.profile.signature)return toast('No saved learner signature');d.signature=state.profile.signature;await commit(n,s,sd);renderSection()};}
+function professionalDiscussionPrompts(code,description){
+ const type=String(code||'').trim().toUpperCase().charAt(0);
+ if(type==='K')return [
+  'Ask the learner to explain this knowledge in their own words.',
+  'Ask for a real workplace example where this knowledge was applied.',
+  'Ask what regulations, guidance, checks or risks must be considered.',
+  'Ask what could happen if this knowledge is not followed correctly.'
+ ];
+ if(type==='B')return [
+  'Ask the learner to describe how they demonstrate this behaviour at work.',
+  'Ask for a specific example involving colleagues, customers or site conditions.',
+  'Ask how this behaviour affected safety, quality, teamwork or productivity.',
+  'Ask what they learned and how they would improve next time.'
+ ];
+ return [
+  'Ask the learner to explain what they did and why.',
+  'Ask for a specific example from the activity.',
+  'Ask what checks, decisions and standards were involved.',
+  'Ask what they learned and what they would do differently next time.'
+ ];
+}
 async function recordProfessionalDiscussionOutcome(n,s,sd,d,code){
- if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined')return toast('Audio recording is not supported on this device');let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}catch{return toast('Microphone permission is required')};const options=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t=>MediaRecorder.isTypeSupported?.(t))||'',recorder=new MediaRecorder(stream,options?{mimeType:options}:undefined),chunks=[],started=Date.now();app.insertAdjacentHTML('beforeend',`<div class="modal" id="recordingModal"><div class="modal-card recording-modal"><h2>Professional Discussion · ${esc(code)}</h2><div class="recording-pulse"></div><p class="muted">Record the discussion for this learning outcome, then press Stop recording.</p><button class="btn danger" id="stopRecording">Stop recording</button><button class="btn secondary" id="cancelRecording">Cancel</button></div></div>`);let cancelled=false;document.getElementById('cancelRecording').onclick=()=>{cancelled=true;recorder.stop()};document.getElementById('stopRecording').onclick=()=>recorder.stop();recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());document.getElementById('recordingModal')?.remove();if(cancelled)return;const type=String(recorder.mimeType||options||'audio/webm').split(';')[0],blob=new Blob(chunks,{type}),data=await blobToDataUrl(blob),seconds=Math.max(1,Math.round((Date.now()-started)/1000));d.recordings=d.recordings||{};d.recordings[code]={data,type:blob.type,date:today(),duration:formatDuration(seconds)};await commit(n,s,sd);renderSection();toast(`${code} discussion autosaved`)};recorder.start(1000)
+ if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined')return toast('Audio recording is not supported on this device');
+ const a=assignment(n),criterion=(a?.ksbs||[]).find(([itemCode])=>String(itemCode)===String(code)),description=criterion?.[1]||'No criterion description is available.',prompts=professionalDiscussionPrompts(code,description),criterionType=/^K/i.test(code)?'Knowledge':/^B/i.test(code)?'Behaviour':'Learning outcome';
+ let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}catch{return toast('Microphone permission is required')};
+ const options=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t=>MediaRecorder.isTypeSupported?.(t))||'',recorder=new MediaRecorder(stream,options?{mimeType:options}:undefined),chunks=[],started=Date.now();
+ app.insertAdjacentHTML('beforeend',`<div class="modal" id="recordingModal"><div class="modal-card recording-modal professional-discussion-recording-modal"><div class="pd-recording-heading"><span>${esc(criterionType)} · ${esc(code)}</span><h2>Professional Discussion</h2></div><section class="pd-recording-criterion"><strong>${esc(code)} description</strong><p>${esc(description)}</p></section><section class="pd-assessor-prompts"><strong>Assessor prompts</strong><ul>${prompts.map(prompt=>`<li>${esc(prompt)}</li>`).join('')}</ul></section><div class="recording-status-row"><div class="recording-pulse"></div><p class="muted">Recording in progress. Use the prompts as guidance and ask suitable follow-up questions.</p></div><button class="btn danger" id="stopRecording">Stop recording</button><button class="btn secondary" id="cancelRecording">Cancel</button></div></div>`);
+ let cancelled=false;document.getElementById('cancelRecording').onclick=()=>{cancelled=true;recorder.stop()};document.getElementById('stopRecording').onclick=()=>recorder.stop();recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());document.getElementById('recordingModal')?.remove();if(cancelled)return;const type=String(recorder.mimeType||options||'audio/webm').split(';')[0],blob=new Blob(chunks,{type}),data=await blobToDataUrl(blob),seconds=Math.max(1,Math.round((Date.now()-started)/1000));d.recordings=d.recordings||{};d.recordings[code]={data,type:blob.type,date:today(),duration:formatDuration(seconds)};await commit(n,s,sd);renderSection();toast(`${code} discussion autosaved`)};recorder.start(1000)
 }
 async function recordDiscussionOutcome(n,s,sd,d,code){
  if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined')return toast('Video recording is not supported in this browser');
