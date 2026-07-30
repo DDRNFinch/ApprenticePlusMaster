@@ -1,3 +1,28 @@
+## V1.3.56 - Mental Health Awareness Academy Module
+
+- Added a cumulative Mental Health Awareness Trade Course module.
+- Added 15 MCQs covering presenteeism, harmful coping, lone working, return-to-work support, stigma, fatigue, stress risk assessments, toolbox talks, job insecurity, industry support, micro-breaks, nutrition, warning signs, boundaries and manager responsibilities.
+- Added 15 matching Learn Before the Test knowledge slides.
+- Added assessment history, best-score status, incorrect-answer review and certificate support.
+- Preserved all previous Fire Safety, COSHH and earlier Academy updates.
+
+## V1.3.55 - COSHH Academy Module
+
+- Added a 15-question COSHH MCQ course to Trade Courses.
+- Added all 15 COSHH topics to the cumulative Learn Before the Tests knowledge slide deck.
+- Preserved all earlier updates, including the Fire Safety module and certificate system.
+- Distributed correct answers across A, B, C and D while preserving each correct response.
+- Added results, unlimited attempts, best-score status, review explanations and certificate support through the existing Trade Courses engine.
+- Updated the application and offline cache versions.
+
+## V1.3.54 - Fire Safety Academy Module
+
+- Added a 15-question Fire Safety MCQ course to Trade Courses.
+- Added all 15 Fire Safety topics to the full-width Learn Before the Tests knowledge slide deck.
+- Preserved each correct answer while distributing correct positions across A, B, C and D.
+- Added results, unlimited attempts, best-score status, review explanations and certificate support through the existing Trade Courses engine.
+- Updated the application and offline cache versions.
+
 ## V1.3.53 - A4 Certificate Print Layout
 
 - Removed the four Pass Score, Pass Level, Merit Level and Distinction Level boxes from certificates.
