@@ -832,3 +832,24 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
 .knowledge-slide-block.takeaway small{color:#96620b}
 .knowledge-slide-controls{position:fixed;left:max(14px,calc((100vw - 720px)/2 + 14px));right:max(14px,calc((100vw - 720px)/2 + 14px));bottom:88px;z-index:30;display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:9px;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 25px rgba(16,35,38,.14)}
 @media(max-width:430px){.academy-knowledge-feature{grid-template-columns:44px minmax(0,1fr);padding:12px;gap:10px}.academy-knowledge-feature-icon{width:44px;height:44px;border-radius:13px}.academy-knowledge-feature-action{grid-column:2;font-size:10px}.academy-knowledge-feature-copy strong{font-size:16px}.knowledge-slide-block{padding:11px 12px}.knowledge-slide-block h3{font-size:14px}.knowledge-slide-block p{font-size:12px}.knowledge-slide-controls{bottom:84px}}
+
+
+/* V1.3.53: single-page A4 certificate printing */
+@page{size:A4 portrait;margin:8mm}
+@media print{
+ html,body{width:210mm!important;height:297mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important}
+ .certificate-modal{display:block!important;position:static!important;inset:auto!important;width:auto!important;height:auto!important;overflow:visible!important;background:#fff!important;padding:0!important;margin:0!important}
+ .certificate-modal-card{display:block!important;width:194mm!important;max-width:194mm!important;height:281mm!important;margin:0 auto!important;padding:0!important;overflow:hidden!important}
+ .certificate-modal-card .training-certificate{display:block!important;box-sizing:border-box!important;width:194mm!important;height:281mm!important;margin:0!important;padding:0!important;background:#f7f4eb!important;overflow:hidden!important;break-inside:avoid!important;page-break-inside:avoid!important}
+ .certificate-modal-card .certificate-border{box-sizing:border-box!important;width:194mm!important;height:281mm!important;min-height:0!important;margin:0!important;padding:12mm 13mm!important;border-width:2.2mm!important;overflow:hidden!important}
+ .certificate-brand-row{padding-bottom:5mm!important}
+ .certificate-kicker{margin-top:8mm!important}
+ .training-certificate h1{font-size:34pt!important;margin:3mm 0 5mm!important}
+ .certificate-presented,.certificate-completed{font-size:12pt!important;margin:2mm!important}
+ .training-certificate h2{font-size:27pt!important;margin:3mm 0!important;padding:0 8mm 2mm!important}
+ .training-certificate h3{font-size:18pt!important;margin:3mm auto 5mm!important;max-width:155mm!important}
+ .certificate-award{padding:3mm 7mm!important;gap:5mm!important}
+ .certificate-disclaimer{font-size:9.5pt!important;line-height:1.35!important;padding:3mm!important;margin:6mm auto!important;max-width:160mm!important}
+ .training-certificate footer{margin-top:6mm!important;padding-top:5mm!important;gap:3mm!important}
+ .certificate-details{display:none!important}
+}

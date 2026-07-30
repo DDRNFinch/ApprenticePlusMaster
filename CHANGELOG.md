@@ -1,3 +1,11 @@
+## V1.3.53 - A4 Certificate Print Layout
+
+- Removed the four Pass Score, Pass Level, Merit Level and Distinction Level boxes from certificates.
+- Kept only the learner's achieved grade, score and percentage.
+- Reworked certificate print styling to fit one A4 portrait page.
+- Added fixed A4 dimensions, print margins and page-break prevention.
+- Updated the application and offline cache versions.
+
 ## V1.3.52 - Academy Knowledge Slides
 - Added a full-width Knowledge tile above Functional Skills and Trade Courses tests.
 - Built teaching slides from each MCQ scenario, correct answer, explanation and key takeaway.
