@@ -1,3 +1,11 @@
+# V1.3.69 — Evidence order and app-styled icons
+
+- Reordered LO evidence tiles: Photographic Evidence, Learner Statement, Video Walkthrough, Witness Testimony, Assessor Observation, Professional Discussion.
+- Reordered KSB evidence tiles: Photographic Evidence, Learner Statement, Video Walkthrough, Witness Testimony, Practical Assessment, Professional Discussion.
+- Added matching app-styled camera, document, video, eye, clipboard, microphone and hammer icons to outer cards, inner tiles and section headings.
+- Restored Photographic Evidence and Professional Discussion as independent KSB evidence methods and included them in 2/2 KSB coverage.
+- Kept all existing saved data and evidence keys unchanged.
+
 # V1.3.68 — Compact Outer Icons + 2×3 Inner Evidence Grid
 
 - Restored the compact single-row six-icon status display on NVQ assignment and evidence-pack cards.
