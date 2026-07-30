@@ -1,3 +1,10 @@
+## V1.3.45 — Compact Academy Subsections
+
+- Redesigned Functional Skills, Trade Courses and EPA Academy cards into a compact two-column layout.
+- Reduced header, icon, card, status, attempt and button sizes to fit more content on each page.
+- Kept all test banks, saved attempt history, grading, retakes and navigation unchanged.
+- Added the Trade Courses question bank to the offline app shell.
+
 # V1.3.43 — Functional Skills Tests
 
 - Added a 15-question English Functional Skills test.
