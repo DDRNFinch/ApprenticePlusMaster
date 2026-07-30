@@ -1,3 +1,10 @@
+## V1.7
+
+- Simplified first sign-in so the learner only enters their full name, accepts the local-storage agreement and adds their signature.
+- Employer, mentor/assessor, portfolio website and course dates can now be completed later from Learner Details.
+- Later profile editing keeps the full details form and treats those additional fields as optional.
+- Updated the app and service-worker cache version to V1.7.
+
 # V1.5
 
 - Added Professional Discussion recordings to the PDF evidence index.
