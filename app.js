@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3.46';
+const APP_VERSION='V1.3.48';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -776,18 +776,21 @@ function startFunctionalSkillsTest(subject){
  state.functionalTest={subject,questions:cloneData(bank),answers:{},index:0};
  state.view='functional-test';render();window.scrollTo(0,0);
 }
+function functionalSkillsConfig(subject){
+ const map={english1:{title:'English Level 1',short:'English L1',icon:'library'},maths1:{title:'Maths Level 1',short:'Maths L1',icon:'revision'},english:{title:'English Level 2',short:'English L2',icon:'library'},maths:{title:'Maths Level 2',short:'Maths L2',icon:'revision'}};
+ return map[subject]||{title:'Functional Skills',short:'Functional Skills',icon:'functional'};
+}
 function renderFunctionalSkills(){
- const english=functionalSkillsHistory('english'),maths=functionalSkillsHistory('maths');
- const latest=(rows)=>rows.length?rows[rows.length-1]:null;
- const resultLine=(rows)=>{const r=latest(rows);return r?`<span class="status-pill ${r.score>=13?'done':''}">${r.score}/15 · ${esc(r.grade)}</span>`:`<span class="status-pill">Not attempted</span>`};
- app.innerHTML=shell(`<button class="back no-print" id="functionalSkillsBack">← Academy</button><section class="academy-destination-head"><div class="academy-destination-icon">${appIcon('functional')}</div><div><div class="number">Academy</div><h2>Functional Skills</h2><p class="muted">Each test contains 15 questions. Pass: 13/15 · Merit: 14/15 · Distinction: 15/15.</p></div></section><section class="academy-destination-grid"><article class="academy-destination-card functional-test-card"><span>${appIcon('library')}</span><h3>English</h3><p>Reading, writing, speaking and listening in realistic workplace situations.</p>${resultLine(english)}<div class="epa-tile-stat"><strong>${english.length}</strong><span>attempt${english.length===1?'':'s'} recorded</span></div><button class="btn" id="startFunctionalEnglish">Start English test</button></article><article class="academy-destination-card functional-test-card"><span>${appIcon('revision')}</span><h3>Maths</h3><p>Number, measure, ratio, data and workplace calculations.</p>${resultLine(maths)}<div class="epa-tile-stat"><strong>${maths.length}</strong><span>attempt${maths.length===1?'':'s'} recorded</span></div><button class="btn" id="startFunctionalMaths">Start Maths test</button></article></section>`);
+ const subjects=['english1','maths1','english','maths'];
+ const latest=rows=>rows.length?rows[rows.length-1]:null;
+ const cards=subjects.map(subject=>{const cfg=functionalSkillsConfig(subject),rows=functionalSkillsHistory(subject),r=latest(rows);return `<article class="academy-destination-card functional-test-card"><span>${appIcon(cfg.icon)}</span><h3>${esc(cfg.title)}</h3>${r?`<span class="status-pill ${r.score>=13?'done':''}">${r.score}/15 · ${esc(r.grade)}</span>`:'<span class="status-pill">Not attempted</span>'}<div class="epa-tile-stat"><strong>${rows.length}</strong><span>attempt${rows.length===1?'':'s'} recorded</span></div><button class="btn" data-start-functional="${subject}">Start test</button></article>`}).join('');
+ app.innerHTML=shell(`<button class="back no-print" id="functionalSkillsBack">← Academy</button><section class="academy-destination-head"><div class="academy-destination-icon">${appIcon('functional')}</div><div><div class="number">Academy</div><h2>Functional Skills</h2><p class="muted">Level 1 and Level 2 tests · Pass 13/15 · Merit 14/15 · Distinction 15/15.</p></div></section><section class="academy-destination-grid">${cards}</section>`);
  document.getElementById('functionalSkillsBack').onclick=()=>{state.view='academy';render()};
- document.getElementById('startFunctionalEnglish').onclick=()=>startFunctionalSkillsTest('english');
- document.getElementById('startFunctionalMaths').onclick=()=>startFunctionalSkillsTest('maths');
+ document.querySelectorAll('[data-start-functional]').forEach(b=>b.onclick=()=>startFunctionalSkillsTest(b.dataset.startFunctional));
 }
 function renderFunctionalSkillsTest(){
  const test=state.functionalTest;if(!test?.questions?.length){state.view='functional-skills';render();return}
- const i=test.index,q=test.questions[i],picked=test.answers[i],total=test.questions.length,title=test.subject==='english'?'English':'Maths';
+ const i=test.index,q=test.questions[i],picked=test.answers[i],total=test.questions.length,title=functionalSkillsConfig(test.subject).title;
  app.innerHTML=shell(`<button class="back no-print" id="quitFunctional">← Functional Skills</button><section class="epa-test-head"><div><div class="number">${esc(title)} · Question ${i+1} of ${total}</div><h2>${esc(q.ksb)}</h2></div><span class="status-pill">${Object.keys(test.answers).length}/${total} answered</span></section><div class="epa-progress"><span style="width:${((i+1)/total)*100}%"></span></div><section class="card panel epa-question"><h3>${esc(q.scenario)}</h3><div class="epa-options">${q.options.map((o,n)=>`<label class="epa-option ${picked===n?'selected':''}"><input type="radio" name="functionalAnswer" value="${n}" ${picked===n?'checked':''}><span><b>${String.fromCharCode(65+n)}</b>${esc(o)}</span></label>`).join('')}</div></section><div class="epa-controls"><button class="btn secondary" id="functionalPrev" ${i===0?'disabled':''}>Previous</button>${i===total-1?'<button class="btn" id="functionalSubmit">Submit test</button>':'<button class="btn" id="functionalNext">Next</button>'}</div>`);
  document.getElementById('quitFunctional').onclick=()=>{if(Object.keys(test.answers).length&&!confirm('Leave this test? Your current answers will not be saved.'))return;state.functionalTest=null;state.view='functional-skills';render()};
  document.querySelectorAll('input[name="functionalAnswer"]').forEach(r=>r.onchange=()=>{test.answers[i]=Number(r.value);renderFunctionalSkillsTest()});
@@ -797,7 +800,7 @@ function renderFunctionalSkillsTest(){
 }
 function renderFunctionalSkillsResult(){
  const test=state.functionalTest,r=test?.result;if(!test||!r){state.view='functional-skills';render();return}
- const title=test.subject==='english'?'English':'Maths',wrong=test.questions.map((q,i)=>({q,i,picked:test.answers[i]})).filter(x=>x.picked!==x.q.answerIndex),achieved=r.score>=13;
+ const title=functionalSkillsConfig(test.subject).title,wrong=test.questions.map((q,i)=>({q,i,picked:test.answers[i]})).filter(x=>x.picked!==x.q.answerIndex),achieved=r.score>=13;
  app.innerHTML=shell(`<button class="back no-print" id="functionalResultBack">← Functional Skills</button><section class="card panel"><div class="panel-body"><div class="number">${esc(title)} Functional Skills result</div><h2>${r.score}/${r.total} · ${r.percentage}%</h2><span class="status-pill ${achieved?'done':''}">${esc(r.grade)}</span><p class="muted" style="margin-top:12px">${achieved?`You achieved ${esc(r.grade)}. This attempt has been recorded.`:'You need at least 13 correct answers to pass. This attempt has been recorded.'}</p><div class="functional-grade-scale"><span class="${r.score===13?'active':''}">Pass 13/15</span><span class="${r.score===14?'active':''}">Merit 14/15</span><span class="${r.score===15?'active':''}">Distinction 15/15</span></div></div></section>${wrong.length?`<section class="card panel"><div class="panel-body"><h3>Review incorrect answers</h3>${wrong.map(({q,i,picked})=>`<div class="functional-review-item"><strong>${i+1}. ${esc(q.scenario)}</strong><p><b>Your answer:</b> ${esc(q.options[picked]||'Not answered')}</p><p><b>Correct answer:</b> ${esc(q.options[q.answerIndex])}</p><p>${esc(q.explanation)}</p><div class="key-takeaway"><b>Key takeaway</b><span>${esc(q.keyTakeaway)}</span></div></div>`).join('')}</div></section>`:'<section class="card panel"><div class="panel-body"><h3>All answers correct</h3><p class="muted">You achieved Distinction with 15/15.</p></div></section>'}<div class="btn-row"><button class="btn" id="functionalResit">Take another attempt</button><button class="btn secondary" id="functionalDone">Return to Functional Skills</button></div>`);
  document.getElementById('functionalResit').onclick=()=>startFunctionalSkillsTest(test.subject);
  document.getElementById('functionalDone').onclick=document.getElementById('functionalResultBack').onclick=()=>{state.functionalTest=null;state.view='functional-skills';render()};
@@ -891,13 +894,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K1',
    question:'You are about to cut a chase in an old internal wall, but the refurbishment survey does not clearly cover that room. What is the best next step?',
-   options:[
-    'Use hand tools and keep the dust down while you open a small test area',
-    'Check the survey information with the supervisor before disturbing the wall',
-    'Wear suitable RPE and make the chase in short sections',
-    'Ask someone who worked in the building whether asbestos was found elsewhere'
-   ],
-   correct:1,
+   options:["Use hand tools and keep the dust down while you open a small test area","Wear suitable RPE and make the chase in short sections","Ask someone who worked in the building whether asbestos was found elsewhere","Check the survey information with the supervisor before disturbing the wall"],
+   correct:3,
    explanation:'Checking the survey first is the strongest choice because the material must be confirmed before it is disturbed. Using hand tools or RPE may reduce exposure, but neither tells you whether asbestos is present. Asking someone familiar with the job is useful background, but it is not a reliable substitute for the survey.',
    keyTakeaway:'When asbestos information is unclear, confirm it before breaking into the material.',
    id:'brick-epa-v139-k1'
@@ -905,12 +903,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K2',
    question:'While dry-cutting dense blocks outside, you are wearing a face-fit-tested mask, but the water suppression keeps stopping. What is the best way to carry on?',
-   options:[
-    'Cut in shorter bursts and step away while the dust settles',
-    'Keep the mask on and position yourself upwind of the cutter',
-    'Stop cutting until the suppression is working properly again',
-    'Swap with another bricklayer so neither person gets the full exposure'
-   ],
+   options:["Cut in shorter bursts and step away while the dust settles","Keep the mask on and position yourself upwind of the cutter","Stop cutting until the suppression is working properly again","Swap with another bricklayer so neither person gets the full exposure"],
    correct:2,
    explanation:'Stopping until the suppression works controls the dust where it is made. The mask is still important, but it should not be relied on as the main control. Short bursts, working upwind or sharing the cutting may reduce individual exposure, yet the same uncontrolled dust is still being produced.',
    keyTakeaway:'Control silica dust at the cutter first; RPE is the backup, not the whole plan.',
@@ -919,12 +912,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K3',
    question:'You arrive at a plot where the method statement covers the walling, but access has changed and materials are now being lifted over the work area. What should you do before starting?',
-   options:[
-    'Start the low-level work and review the lifting once the first course is laid',
-    'Agree a safe exclusion area with the lifting team and have the plan reviewed',
-    'Keep one person watching the lift while the rest of the gang carries on',
-    'Move the brick stacks closer so less time is spent under the lifting route'
-   ],
+   options:["Start the low-level work and review the lifting once the first course is laid","Agree a safe exclusion area with the lifting team and have the plan reviewed","Keep one person watching the lift while the rest of the gang carries on","Move the brick stacks closer so less time is spent under the lifting route"],
    correct:1,
    explanation:'The changed access and lifting route alter the risks, so the work plan needs reviewing before the gang starts. A lookout can help during an agreed lift, but it does not replace a proper exclusion area. Starting part of the task or moving materials closer still puts people into a changed setup that has not been assessed.',
    keyTakeaway:'When site conditions change, update the safe system before work begins.',
@@ -933,12 +921,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K4',
    question:'At the end of a walling job, you have clean half-bricks, hardened mortar, plastic packaging and a small amount of usable sand left. What is the best way to deal with them?',
-   options:[
-    'Keep the usable materials together and put each waste type in its proper stream',
-    'Put everything in the general skip because the quantities are small',
-    'Save the half-bricks and sand, then put the mortar and plastic together',
-    'Leave the materials by the plot so the next trade can take what they need'
-   ],
+   options:["Keep the usable materials together and put each waste type in its proper stream","Put everything in the general skip because the quantities are small","Save the half-bricks and sand, then put the mortar and plastic together","Leave the materials by the plot so the next trade can take what they need"],
    correct:0,
    explanation:'Separating reusable materials from each waste stream gives the best chance of reuse and recycling while avoiding contamination. A mixed skip is convenient but can make recovery harder. Saving only some materials is partly right, although mortar and plastic still need separating. Leaving items for others can create clutter and does not confirm they will be managed properly.',
    keyTakeaway:'Reuse what is sound, then separate the remaining waste correctly.',
@@ -947,13 +930,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K5',
    question:'A delivery of bricks arrives just as the site team is discussing a change to the opening size. You need the bricks near the scaffold without blocking access. What is the best response?',
-   options:[
-    'Unload beside the scaffold and adjust the stacks once the opening is agreed',
-    'Ask for the final detail, then agree a safe storage point with the relevant people',
-    'Put the packs where they were shown on the original logistics plan',
-    'Split the delivery between two nearby spaces so one route stays open'
-   ],
-   correct:1,
+   options:["Ask for the final detail, then agree a safe storage point with the relevant people","Unload beside the scaffold and adjust the stacks once the opening is agreed","Put the packs where they were shown on the original logistics plan","Split the delivery between two nearby spaces so one route stays open"],
+   correct:0,
    explanation:'Confirming the latest information and agreeing the storage point prevents wasted handling, blocked access and materials ending up in the wrong place. Following the old plan may normally be reasonable, but the job has changed. Splitting or temporarily placing the packs keeps work moving, although it risks extra handling and confusion.',
    keyTakeaway:'Clear, timely communication prevents small site changes becoming bigger problems.',
    id:'brick-epa-v139-k5'
@@ -961,13 +939,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K6',
    question:'You are working in an occupied area and the client asks why the doorway cannot be used for the next hour. How should you explain it?',
-   options:[
-    'Tell them the area is closed because that is how the job has been set up',
-    'Explain the work taking place, the temporary risk and the safe alternative route',
-    'Say the site manager has decided it and direct any questions to the office',
-    'Give a brief warning about falling materials and ask them to use another door'
-   ],
-   correct:1,
+   options:["Tell them the area is closed because that is how the job has been set up","Say the site manager has decided it and direct any questions to the office","Give a brief warning about falling materials and ask them to use another door","Explain the work taking place, the temporary risk and the safe alternative route"],
+   correct:3,
    explanation:'A clear explanation of the task, the temporary risk and the alternative route gives the client enough information to act safely. A brief warning may be useful, but it does not fully explain the arrangement. Referring everything elsewhere or simply stating the area is closed can sound dismissive and may leave the person unsure about what to do.',
    keyTakeaway:'Good communication tells people what is happening, why it matters and what they should do.',
    id:'brick-epa-v139-k6'
@@ -975,12 +948,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K7',
    question:'While setting out a cavity wall, the drawing dimension works, but the opening shown would leave less bearing for the lintel than the manufacturer requires. What should you do?',
-   options:[
-    'Keep the drawing dimension because it is the latest issued information',
-    'Increase the bearing equally at both ends and record the small change',
-    'Raise the conflict before building and get the opening detail confirmed',
-    'Use a stronger mortar at the bearings to make up for the short length'
-   ],
+   options:["Keep the drawing dimension because it is the latest issued information","Increase the bearing equally at both ends and record the small change","Raise the conflict before building and get the opening detail confirmed","Use a stronger mortar at the bearings to make up for the short length"],
    correct:2,
    explanation:'The drawing and lintel requirement conflict, so the detail needs confirming before masonry fixes the opening size. Following the drawing is understandable, but it could leave inadequate bearing. Changing the opening yourself may solve one issue while creating another. Stronger mortar does not replace the required lintel bearing.',
    keyTakeaway:'Do not guess when drawings and product requirements disagree; get the detail resolved first.',
@@ -989,12 +957,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K8',
    question:'While you are building, a new batch of facing bricks arrives slightly wetter and darker than the packs already in use. The wall must continue today. What is the best approach?',
-   options:[
-    'Use the new packs on a separate elevation so the colour difference is contained',
-    'Blend bricks from several packs and check the finished appearance as you go',
-    'Lay the wetter bricks with a slightly drier mortar to balance the suction',
-    'Leave the new packs open for an hour, then continue from the same pack'
-   ],
+   options:["Use the new packs on a separate elevation so the colour difference is contained","Blend bricks from several packs and check the finished appearance as you go","Lay the wetter bricks with a slightly drier mortar to balance the suction","Leave the new packs open for an hour, then continue from the same pack"],
    correct:1,
    explanation:'Blending from several packs reduces noticeable banding and lets you monitor the appearance throughout the work. Keeping one batch on a separate elevation may still create a visible change at corners. Adjusting mortar consistency to compensate can affect joint quality. Briefly opening the packs may not bring the bricks to a consistent moisture or shade.',
    keyTakeaway:'Blend facing bricks across packs and keep checking colour and consistency during the build.',
@@ -1003,13 +966,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K9',
    question:'Precast masonry panels are being installed above the area where your gang is due to build. The programme shows both tasks happening together. What is the best way to plan your work?',
-   options:[
-    'Build the opposite end first and move closer once each panel is fixed',
-    'Agree separate work zones and timings so the lifting operation stays clear',
-    'Work beneath the completed panels while the next panel is being prepared',
-    'Keep the gang mobile and pause whenever a panel passes over the workface'
-   ],
-   correct:1,
+   options:["Build the opposite end first and move closer once each panel is fixed","Work beneath the completed panels while the next panel is being prepared","Agree separate work zones and timings so the lifting operation stays clear","Keep the gang mobile and pause whenever a panel passes over the workface"],
+   correct:2,
    explanation:'Separate zones and agreed timings manage the interface between masonry work and the lifting operation. Moving around or pausing when a load approaches sounds practical, but it relies on people reacting at the right moment. Working under completed panels may still place the gang inside the lifting exclusion zone for the next installation.',
    keyTakeaway:'Modern construction methods need trades to coordinate space, sequence and lifting—not just their own task.',
    id:'brick-epa-v139-k9'
@@ -1017,13 +975,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K10',
    question:'Before starting a return wall, you notice the plan dimension and the written specification give different cavity widths. What should you use for setting out?',
-   options:[
-    'Use the plan because dimensions on drawings are normally set out first',
-    'Use the specification because written information usually carries more detail',
-    'Check the latest revision and get the conflicting information clarified',
-    'Use the cavity width already built on the next plot as the working reference'
-   ],
-   correct:2,
+   options:["Use the plan because dimensions on drawings are normally set out first","Check the latest revision and get the conflicting information clarified","Use the specification because written information usually carries more detail","Use the cavity width already built on the next plot as the working reference"],
+   correct:1,
    explanation:'Checking the revision and resolving the conflict is the only choice that confirms which requirement is current. Either the plan or specification might be correct, so choosing one by habit is risky. A neighbouring plot can offer a useful comparison, but it may have a different revision or detail.',
    keyTakeaway:'When project information conflicts, verify the current detail before setting out.',
    id:'brick-epa-v139-k10'
@@ -1031,13 +984,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K11',
    question:'The latest tablet model shows a masonry support angle in a different position from the printed drawing in your work area. What is the best way to proceed?',
-   options:[
-    'Use the tablet model because digital information is usually the newest',
-    'Use the printed drawing because it has already been issued to the gang',
-    'Check the revision details and get the position confirmed before building',
-    'Set it midway between both positions so either detail can still be adjusted'
-   ],
-   correct:2,
+   options:["Check the revision details and get the position confirmed before building","Use the tablet model because digital information is usually the newest","Use the printed drawing because it has already been issued to the gang","Set it midway between both positions so either detail can still be adjusted"],
+   correct:0,
    explanation:'The model and drawing conflict, so the revision and support position need confirming before the masonry fixes it in place. Either source could be current, which makes choosing one by format unreliable. Splitting the difference may look practical, but it creates an unapproved position that may suit neither design.',
    keyTakeaway:'Treat digital models like any other project information: check revisions and resolve conflicts before building.',
    id:'brick-epa-v139-k11'
@@ -1045,13 +993,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K12',
    question:'You calculate 1,050 facing bricks for an elevation, but the packs contain 500 and the brick has a noticeable colour variation. What is the best order quantity?',
-   options:[
-    'Order 1,050 and use any shortfall from spare bricks already on site',
-    'Order 1,100 so the exact estimate is covered with a small allowance',
-    'Order three full packs and return the unopened pack if it is not needed',
-    'Order two packs now and arrange a smaller top-up once the wall is underway'
-   ],
-   correct:1,
+   options:["Order 1,050 and use any shortfall from spare bricks already on site","Order three full packs and return the unopened pack if it is not needed","Order two packs now and arrange a smaller top-up once the wall is underway","Order 1,100 so the exact estimate is covered with a small allowance"],
+   correct:3,
    explanation:'Ordering 1,100 covers the measured quantity plus a sensible allowance while limiting excess material. Ordering exactly 1,050 leaves no room for cuts or damage. Three full packs create a large surplus and returning a matching batch may not be simple. A later top-up risks delay and a visible batch difference.',
    keyTakeaway:'Allow for realistic waste without creating unnecessary surplus or relying on a later matching delivery.',
    id:'brick-epa-v139-k12'
@@ -1059,13 +1002,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K13',
    question:'Your spirit level has taken a fall and now gives a slightly different reading when you turn it end for end. You still have several corners to build. What is the best response?',
-   options:[
-    'Use the same face of the level each time so the readings stay consistent',
-    'Check it against another level and take it out of use if it is inaccurate',
-    'Use it for short work only and check the corners later with a longer level',
-    'Adjust each reading by the amount it appears to be out'
-   ],
-   correct:1,
+   options:["Use the same face of the level each time so the readings stay consistent","Use it for short work only and check the corners later with a longer level","Adjust each reading by the amount it appears to be out","Check it against another level and take it out of use if it is inaccurate"],
+   correct:3,
    explanation:'A level that gives different reversed readings may be inaccurate, so it should be checked and removed from use if faulty. Using one face or estimating a correction can repeat the same error through the work. Checking later may reveal a problem only after several courses need rebuilding.',
    keyTakeaway:'Check suspect hand tools straight away; consistent use does not make an inaccurate tool reliable.',
    id:'brick-epa-v139-k13'
@@ -1073,13 +1011,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K14',
    question:'A block needs a narrow service notch, and the large disc cutter would remove more material than the drawing allows. What is the best approach?',
-   options:[
-    'Make two shallow cuts with the disc cutter and knock out the centre',
-    'Use a smaller suitable tool that gives better control over the notch',
-    'Cut the notch wider and fill around the service with mortar afterwards',
-    'Drill a row of holes and finish the shape with the disc cutter'
-   ],
-   correct:1,
+   options:["Make two shallow cuts with the disc cutter and knock out the centre","Cut the notch wider and fill around the service with mortar afterwards","Use a smaller suitable tool that gives better control over the notch","Drill a row of holes and finish the shape with the disc cutter"],
+   correct:2,
    explanation:'A suitable smaller tool gives the control needed to keep the notch within the required size. Shallow disc cuts or drilled holes may work in some situations, but both can still damage the unit or exceed the detail. Making the opening wider and filling it later changes the intended masonry support around the service.',
    keyTakeaway:'Choose equipment for the accuracy and limits of the task, not simply the fastest tool available.',
    id:'brick-epa-v139-k14'
@@ -1087,13 +1020,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K15',
    question:'While building a one-brick-thick wall in English bond, the corner begins to show too many straight vertical joints. What is the best way to correct it?',
-   options:[
-    'Use extra queen closers in the next course to break up the joints',
-    'Take the corner back to the point where the bond first went wrong',
-    'Change to Flemish bond at the corner and continue English bond along the wall',
-    'Use three-quarter bats in the bed joints until the lap is recovered'
-   ],
-   correct:1,
+   options:["Take the corner back to the point where the bond first went wrong","Use extra queen closers in the next course to break up the joints","Change to Flemish bond at the corner and continue English bond along the wall","Use three-quarter bats in the bed joints until the lap is recovered"],
+   correct:0,
    explanation:'Taking the corner back to the first incorrect course restores the intended bond and lap properly. Adding closers or bats later may hide some straight joints but can introduce irregular bond and small pieces. Changing bond at the corner creates a different detail rather than correcting the original setting out.',
    keyTakeaway:'When bond is lost, correct it at the first faulty course rather than trying to disguise it higher up.',
    id:'brick-epa-v139-k15'
@@ -1101,13 +1029,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K16',
    question:'You are setting out a capped garden wall and find the pier positions leave an awkward short brick at one end. What is the best adjustment?',
-   options:[
-    'Move the nearest pier slightly so the end brick becomes a half brick',
-    'Spread the small difference through the perpend joints across the wall',
-    'Recheck the overall size, bond and pier positions before fixing the layout',
-    'Keep the pier positions and cut the end brick neatly to the remaining space'
-   ],
-   correct:2,
+   options:["Move the nearest pier slightly so the end brick becomes a half brick","Recheck the overall size, bond and pier positions before fixing the layout","Spread the small difference through the perpend joints across the wall","Keep the pier positions and cut the end brick neatly to the remaining space"],
+   correct:1,
    explanation:'Rechecking the full layout shows whether the issue comes from the overall dimension, bond or pier spacing and allows an agreed adjustment before work starts. Moving one pier may affect the design, while spreading joint sizes can leave inconsistent work. A neat cut may be acceptable in some details, but it should not be the first answer to poor setting out.',
    keyTakeaway:'Set out the whole wall, bond and features together before accepting an awkward closing piece.',
    id:'brick-epa-v139-k16'
@@ -1115,13 +1038,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K17',
    question:'A freshly built wall is due to receive a weather-struck finish, but the mortar is still very soft and pulls when you test a joint. What is the best approach?',
-   options:[
-    'Finish the joints now with light pressure so the face stays clean',
-    'Wait until the mortar firms enough to hold a clean, consistent profile',
-    'Brush the joints first, then strike them once the surface has dried',
-    'Add a little dry cement to the jointing tool to stop the mortar dragging'
-   ],
-   correct:1,
+   options:["Wait until the mortar firms enough to hold a clean, consistent profile","Finish the joints now with light pressure so the face stays clean","Brush the joints first, then strike them once the surface has dried","Add a little dry cement to the jointing tool to stop the mortar dragging"],
+   correct:0,
    explanation:'Waiting for the right firmness allows the joint to compact and hold a clean weather-struck profile. Working too early can smear the face and pull mortar from the joint. Brushing first may roughen or weaken the surface, and adding dry cement changes the joint rather than solving the timing issue.',
    keyTakeaway:'Joint finish depends on timing; work the mortar when it is firm enough to shape and compact cleanly.',
    id:'brick-epa-v139-k17'
@@ -1129,12 +1047,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K18',
    question:'A decorative band is specified across a long elevation, but the contrasting bricks are a slightly different height from the main bricks. What is the best way to keep the band level?',
-   options:[
-    'Use slightly thinner bed joints in the courses below the band',
-    'Gauge the band separately and agree how the difference will be taken up',
-    'Lay the band to a line and make up the height in the course above',
-    'Sort the contrasting bricks and use only the shortest ones'
-   ],
+   options:["Use slightly thinner bed joints in the courses below the band","Gauge the band separately and agree how the difference will be taken up","Lay the band to a line and make up the height in the course above","Sort the contrasting bricks and use only the shortest ones"],
    correct:1,
    explanation:'Gauging the decorative bricks separately shows the true difference and allows it to be distributed or detailed without spoiling the line. Altering only one or two bed joints can make the variation obvious. Correcting above the band transfers the problem, and selecting only shorter units may not provide enough bricks or a consistent result.',
    keyTakeaway:'Check the gauge of decorative units before laying them and plan where any size difference will be absorbed.',
@@ -1143,13 +1056,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K19',
    question:'An expansion joint is shown close to a return, but moving it one brick would make the bond and sealant detail much neater. What is the best decision?',
-   options:[
-    'Move it one brick and keep the joint width exactly as specified',
-    'Keep it where shown and use cut bricks to maintain the bond',
-    'Check whether the designer will accept the small change before setting it out',
-    'Split the difference by widening two nearby perpends'
-   ],
-   correct:2,
+   options:["Move it one brick and keep the joint width exactly as specified","Keep it where shown and use cut bricks to maintain the bond","Split the difference by widening two nearby perpends","Check whether the designer will accept the small change before setting it out"],
+   correct:3,
    explanation:'The joint position controls movement in the wall, so even a small change should be confirmed before setting out. Leaving it as shown may be correct, but the awkward detail could indicate a coordination issue worth raising. Moving it without approval or widening ordinary joints changes how the wall accommodates movement.',
    keyTakeaway:'Expansion joints are part of the movement design; do not relocate them just to simplify the brickwork.',
    id:'brick-epa-v139-k19'
@@ -1157,12 +1065,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K20',
    question:'A silo mortar delivery feels noticeably wetter than the previous batch, although the colour and mix ticket look right. What is the best next step?',
-   options:[
-    'Use it on the inner leaf first and see how it handles over a few courses',
-    'Add a little cement and sand until it matches the previous batch',
-    'Pause its use and have the consistency checked before laying with it',
-    'Spread it on the boards for a while so some moisture can come out'
-   ],
+   options:["Use it on the inner leaf first and see how it handles over a few courses","Add a little cement and sand until it matches the previous batch","Pause its use and have the consistency checked before laying with it","Spread it on the boards for a while so some moisture can come out"],
    correct:2,
    explanation:'A noticeable change in consistency should be checked before it is built into the work. Trying it on the inner leaf still risks weak or inconsistent joints. Adding materials changes the designed mix, while leaving it exposed can make consistency vary further across the batch.',
    keyTakeaway:'Do not alter supplied mortar by guesswork; stop and check any unexpected change before use.',
@@ -1171,13 +1074,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K21',
    question:'While setting out a cavity wall with a window opening, your gauge works at one jamb but leaves a narrow cut at the other. What is the best next step?',
-   options:[
-    'Keep the first jamb fixed and adjust the perpends across the opening',
-    'Recheck the opening, bond and gauge from both ends before fixing the profiles',
-    'Make the narrow cut at the less visible jamb and keep the courses level',
-    'Move the window opening slightly so full and half bricks work at both jambs'
-   ],
-   correct:1,
+   options:["Keep the first jamb fixed and adjust the perpends across the opening","Make the narrow cut at the less visible jamb and keep the courses level","Recheck the opening, bond and gauge from both ends before fixing the profiles","Move the window opening slightly so full and half bricks work at both jambs"],
+   correct:2,
    explanation:'Rechecking the full setting out before fixing the profiles finds whether the issue comes from the opening size, bond or gauge. Adjusting perpends can make joints inconsistent, while accepting a narrow cut may weaken the detail. Moving the opening could affect the drawings and other trades, so it should not be done without agreement.',
    keyTakeaway:'Set out both jambs, the bond and the gauge together before committing to the wall position.',
    id:'brick-epa-v139-k21'
@@ -1185,13 +1083,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K22',
    question:'While building above a new window, the cavity tray is fitted but one end does not turn up as shown on the detail. What is the best response?',
-   options:[
-    'Form the stop end before carrying on with the brickwork above',
-    'Carry on and seal the end of the tray once the lintel course is complete',
-    'Add an extra weep vent near the low end to deal with any water',
-    'Lap a small piece of DPC over the end and bed it into the next joint'
-   ],
-   correct:0,
+   options:["Carry on and seal the end of the tray once the lintel course is complete","Form the stop end before carrying on with the brickwork above","Add an extra weep vent near the low end to deal with any water","Lap a small piece of DPC over the end and bed it into the next joint"],
+   correct:1,
    explanation:'The stop end needs forming correctly before it is covered because it keeps water from running off the end of the tray into the cavity. Sealing it later may leave gaps that cannot be checked. An extra weep does not control water escaping sideways, and a loose DPC patch may not form a reliable sealed end.',
    keyTakeaway:'Complete and check cavity trays, stop ends and outlets before building over them.',
    id:'brick-epa-v139-k22'
@@ -1199,13 +1092,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K23',
    question:'You are laying a soldier course over an opening and the final joint would be much wider than the others. What is the best way to deal with it?',
-   options:[
-    'Make the wider joint at the centre so it looks balanced from both sides',
-    'Re-gauge the soldiers and share the difference evenly across the opening',
-    'Cut the last soldier narrower and keep all the joints the same size',
-    'Use slightly thicker joints near each end and normal joints through the middle'
-   ],
-   correct:1,
+   options:["Re-gauge the soldiers and share the difference evenly across the opening","Make the wider joint at the centre so it looks balanced from both sides","Cut the last soldier narrower and keep all the joints the same size","Use slightly thicker joints near each end and normal joints through the middle"],
+   correct:0,
    explanation:'Re-gauging and sharing the difference evenly gives a balanced soldier course without one obvious closing joint. A single wide joint stands out, while narrowing one soldier changes the unit width and appearance. Altering only the end joints can still make the spacing look uneven.',
    keyTakeaway:'Gauge decorative courses across the full length so any difference is shared evenly.',
    id:'brick-epa-v139-k23'
@@ -1213,13 +1101,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K24',
    question:'While replacing a spalled brick, the bricks around it look sound but the joint above is cracked. What is the best approach before fitting the replacement?',
-   options:[
-    'Replace the damaged brick and repoint the cracked joint once the mortar firms',
-    'Open the area enough to check what caused the damage before completing the repair',
-    'Use a stronger mortar around the new brick to stop the crack returning',
-    'Fit the replacement slightly loose so any further movement is taken in the joints'
-   ],
-   correct:1,
+   options:["Replace the damaged brick and repoint the cracked joint once the mortar firms","Use a stronger mortar around the new brick to stop the crack returning","Fit the replacement slightly loose so any further movement is taken in the joints","Open the area enough to check what caused the damage before completing the repair"],
+   correct:3,
    explanation:'Checking the cause before finishing the repair reduces the chance of replacing the brick while leaving the original problem behind. Repointing alone may hide continuing movement or moisture. Stronger mortar can push damage into the masonry, while deliberately loose work will not provide a sound repair.',
    keyTakeaway:'A lasting repair deals with the cause as well as the visible damage.',
    id:'brick-epa-v139-k24'
@@ -1227,13 +1110,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K25',
    question:'A newly built wall is finished late in the day and a sharp frost is forecast overnight. The mortar has started to firm but is not fully set. What is the best protection?',
-   options:[
-    'Cover the wall securely with insulated protection without trapping it against the fresh work',
-    'Lay plastic sheeting directly over the top courses and weight it down with bricks',
-    'Brush the joints firm, then leave the wall open so the mortar can dry naturally',
-    'Build one extra sacrificial course and remove it after the cold weather passes'
-   ],
-   correct:0,
+   options:["Lay plastic sheeting directly over the top courses and weight it down with bricks","Cover the wall securely with insulated protection without trapping it against the fresh work","Brush the joints firm, then leave the wall open so the mortar can dry naturally","Build one extra sacrificial course and remove it after the cold weather passes"],
+   correct:1,
    explanation:'Secure insulated protection helps retain heat and keeps frost and rain off without marking the fresh face. Plastic laid directly on the wall can smear joints and hold water against the masonry. Leaving it exposed risks frost damage, while a sacrificial course does not protect the mortar already laid.',
    keyTakeaway:'Protect fresh masonry from frost and water without letting the covering damage the work.',
    id:'brick-epa-v139-k25'
@@ -1241,13 +1119,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K26',
    question:'A telehandler driver asks where to place the next brick delivery, but the usual storage area is being used for drainage work. What is the best reply?',
-   options:[
-    'Put it beside the nearest scaffold and leave enough room for the gang to pass',
-    'Hold the delivery while you agree a safe location with the supervisor and driver',
-    'Split the packs between several open plots so no single route is blocked',
-    'Use the original drop point and ask the drainage gang to work around the packs'
-   ],
-   correct:1,
+   options:["Put it beside the nearest scaffold and leave enough room for the gang to pass","Split the packs between several open plots so no single route is blocked","Hold the delivery while you agree a safe location with the supervisor and driver","Use the original drop point and ask the drainage gang to work around the packs"],
+   correct:2,
    explanation:'Agreeing a safe location with the people coordinating the site avoids blocked access, unstable ground and repeated handling. The nearest scaffold may not have enough capacity or safe access. Splitting packs can create several obstructions, while using the original area ignores the changed site conditions.',
    keyTakeaway:'Clear site communication means confirming changes before materials are moved or unloaded.',
    id:'brick-epa-v139-k26'
@@ -1255,12 +1128,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K27',
    question:'Your gang is ready to start the outer leaf, but the insulation team has not finished the section ahead and everyone is under programme pressure. What is the best team decision?',
-   options:[
-    'Start where the insulation is complete and agree a sequence that keeps both teams moving',
-    'Build the outer leaf first and leave access points for the insulation to be fitted later',
-    'Move the bricklayers to another plot and let the insulation team finish the whole elevation',
-    'Help fit the remaining insulation so the brickwork can start at the planned position'
-   ],
+   options:["Start where the insulation is complete and agree a sequence that keeps both teams moving","Build the outer leaf first and leave access points for the insulation to be fitted later","Move the bricklayers to another plot and let the insulation team finish the whole elevation","Help fit the remaining insulation so the brickwork can start at the planned position"],
    correct:0,
    explanation:'Agreeing a workable sequence uses the completed area and keeps both teams productive without covering unfinished work. Leaving access points can compromise continuity and quality. Moving the whole gang may lose time unnecessarily, while carrying out another trade’s task may create competence and responsibility issues.',
    keyTakeaway:'Good teamwork coordinates the sequence so progress does not come at the cost of finished quality.',
@@ -1269,13 +1137,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K28',
    question:'A new labourer on the gang is quiet during the briefing and later says they did not understand some of the site terms. What is the best response?',
-   options:[
-    'Explain the terms privately and check they are comfortable asking again',
-    'Give them simpler jobs until they pick up the language from the rest of the gang',
-    'Ask the supervisor to repeat future briefings more slowly for everyone',
-    'Pair them with the most experienced bricklayer and let them learn by watching'
-   ],
-   correct:0,
+   options:["Give them simpler jobs until they pick up the language from the rest of the gang","Ask the supervisor to repeat future briefings more slowly for everyone","Pair them with the most experienced bricklayer and let them learn by watching","Explain the terms privately and check they are comfortable asking again"],
+   correct:3,
    explanation:'A private explanation and an open invitation to ask questions helps the person understand without putting them on the spot. Simpler work or observation may help them settle in but does not confirm they understand safety and task information. Slowing every briefing may not address the specific terms they missed.',
    keyTakeaway:'An inclusive gang checks that everyone understands and makes it easy to speak up.',
    id:'brick-epa-v139-k28'
@@ -1283,13 +1146,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K29',
    question:'You need several half bricks for a tight repair where a disc cutter cannot be used. The first brick splits unevenly with the bolster. What is the best adjustment?',
-   options:[
-    'Score the cut line around the brick, support it properly and use controlled blows',
-    'Use a heavier hammer so the brick breaks cleanly with one firm strike',
-    'Cut each brick slightly oversize and trim the face after it is bedded',
-    'Soak the bricks first so they are less likely to shatter during cutting'
-   ],
-   correct:0,
+   options:["Use a heavier hammer so the brick breaks cleanly with one firm strike","Cut each brick slightly oversize and trim the face after it is bedded","Soak the bricks first so they are less likely to shatter during cutting","Score the cut line around the brick, support it properly and use controlled blows"],
+   correct:3,
    explanation:'Scoring the line, supporting the unit and using controlled blows gives the best chance of an accurate hand cut. A heavier strike can make the break less predictable. Trimming after laying risks disturbing the repair, while soaking does not provide reliable control of the cut.',
    keyTakeaway:'Accurate hand cutting comes from good marking, support and controlled blows rather than extra force.',
    id:'brick-epa-v139-k29'
@@ -1297,12 +1155,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K30',
    question:'While setting out a raking garden wall, the line of the slope meets the bond with several small triangular cuts near the top. What is the best next step?',
-   options:[
-    'Keep the slope and use the small cuts because the coping will cover most of them',
-    'Adjust the starting height slightly and recheck the rake against the bond',
-    'Change to stack bond through the last few courses to reduce the cutting',
-    'Make the cuts from full bricks and use a stronger mortar around the narrow ends'
-   ],
+   options:["Keep the slope and use the small cuts because the coping will cover most of them","Adjust the starting height slightly and recheck the rake against the bond","Change to stack bond through the last few courses to reduce the cutting","Make the cuts from full bricks and use a stronger mortar around the narrow ends"],
    correct:1,
    explanation:'A small agreed adjustment to the starting height can improve the bond and remove weak slivers while keeping the intended rake. Accepting tiny cuts may leave fragile pieces. Changing the bond alters the appearance and strength, while stronger mortar does not make poor-shaped cuts sound.',
    keyTakeaway:'Set out the rake and the bond together so the wall finishes without weak sliver cuts.',
@@ -1311,12 +1164,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'K31',
    question:'A normally reliable bricklayer has become withdrawn, is making unusual mistakes and says they are barely sleeping. What is the best way to respond?',
-   options:[
-    'Have a quiet word, listen without judging and point them towards suitable support',
-    'Reduce their workload for the day and see whether they seem better tomorrow',
-    'Tell the supervisor straight away so the problem is formally recorded',
-    'Keep them on straightforward tasks and let close workmates watch out for them'
-   ],
+   options:["Have a quiet word, listen without judging and point them towards suitable support","Reduce their workload for the day and see whether they seem better tomorrow","Tell the supervisor straight away so the problem is formally recorded","Keep them on straightforward tasks and let close workmates watch out for them"],
    correct:0,
    explanation:'A private, supportive conversation gives the person a chance to explain what is happening and helps them reach suitable support. Reducing work may help briefly but does not address the underlying issue. Escalating immediately can be necessary where there is an urgent safety concern, but otherwise it may discourage them from opening up. Quietly monitoring them is caring, yet it still leaves the person without direct support.',
    keyTakeaway:'Notice changes, speak privately and help the person reach the right support.',
@@ -1325,12 +1173,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'S1',
    question:'You are ready to start a small return wall, but the scaffold inspection tag shows yesterday’s date and a guardrail has been moved for a delivery. What is the best action?',
-   options:[
-    'Refit the guardrail, check it feels secure and then start the low-level work',
-    'Use the scaffold only for loading until the next formal inspection is completed',
-    'Stop and get the scaffold checked before using it for the brickwork',
-    'Work from the inside edge and keep materials away from the missing guardrail'
-   ],
+   options:["Refit the guardrail, check it feels secure and then start the low-level work","Use the scaffold only for loading until the next formal inspection is completed","Stop and get the scaffold checked before using it for the brickwork","Work from the inside edge and keep materials away from the missing guardrail"],
    correct:2,
    explanation:'The altered scaffold should be checked by the right person before it is used. Replacing the rail yourself does not confirm the whole scaffold remains safe. Restricting its use or working away from the edge still means using a scaffold whose condition has changed since inspection.',
    keyTakeaway:'When access equipment has been altered, get it checked before carrying on.',
@@ -1339,13 +1182,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'S2',
    question:'You need to rake out several mortar joints with a grinder in a partly enclosed area. The extraction is working, but fine dust is still hanging in the air. What is the best adjustment?',
-   options:[
-    'Use the extraction with suitable face-fit-tested RPE and improve the airflow',
-    'Keep the extraction running and take a short break after every few joints',
-    'Change to safety goggles and work closer to the joint so the cut is quicker',
-    'Move the extraction nozzle slightly back so it catches a wider spread of dust'
-   ],
-   correct:0,
+   options:["Keep the extraction running and take a short break after every few joints","Use the extraction with suitable face-fit-tested RPE and improve the airflow","Change to safety goggles and work closer to the joint so the cut is quicker","Move the extraction nozzle slightly back so it catches a wider spread of dust"],
+   correct:1,
    explanation:'Using effective extraction, suitable RPE and better ventilation tackles the remaining dust through more than one control. Breaks reduce individual time in the area but do not improve the air. Goggles protect the eyes rather than the lungs, and moving the nozzle away usually captures less dust at source.',
    keyTakeaway:'Match PPE and dust controls to the actual exposure, not just the tool being used.',
    id:'brick-epa-v1316-s2'
@@ -1353,13 +1191,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'S3',
    question:'At the end of a repair job, you have sound reclaimed bricks, broken clean brick, mortar rubble and plastic wrapping. Space in the skip area is tight. What is the best way to clear it?',
-   options:[
-    'Stack the reusable bricks and separate the remaining materials into the correct waste streams',
-    'Keep the full bricks and put the broken brick, mortar and wrapping into one mixed skip',
-    'Leave all masonry together for crushing and put the wrapping in the general waste',
-    'Use the broken brick as temporary hardstanding and clear everything else together'
-   ],
-   correct:0,
+   options:["Keep the full bricks and put the broken brick, mortar and wrapping into one mixed skip","Leave all masonry together for crushing and put the wrapping in the general waste","Use the broken brick as temporary hardstanding and clear everything else together","Stack the reusable bricks and separate the remaining materials into the correct waste streams"],
+   correct:3,
    explanation:'Keeping sound bricks for reuse and separating the waste preserves value and avoids contaminating recyclable material. Mixing clean masonry with plastic reduces recovery options. Sending reusable units for crushing wastes a usable resource, while using rubble as temporary hardstanding may create housekeeping and removal problems unless it has been agreed.',
    keyTakeaway:'Reuse first, then keep waste streams clean enough to recycle properly.',
    id:'brick-epa-v1316-s3'
@@ -1367,13 +1200,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'S4',
    question:'A drawing shows wall ties at the usual spacing, but the site detail beside a movement joint requires extra ties. The gang normally follows the drawing. What is the best approach?',
-   options:[
-    'Use the usual spacing and add one extra tie at the top of the joint',
-    'Follow the specific joint detail and confirm any conflict before building past it',
-    'Split the difference between the usual spacing and the joint detail',
-    'Match the ties on the previous plot because it has already passed inspection'
-   ],
-   correct:1,
+   options:["Follow the specific joint detail and confirm any conflict before building past it","Use the usual spacing and add one extra tie at the top of the joint","Split the difference between the usual spacing and the joint detail","Match the ties on the previous plot because it has already passed inspection"],
+   correct:0,
    explanation:'The specific detail governs the work at that location, and any conflict should be resolved before it is covered. Adding a token extra tie or averaging the spacing is not a designed solution. Copying another plot may repeat a different detail or an unnoticed error.',
    keyTakeaway:'Use the detail that applies to the exact location and resolve clashes before covering the work.',
    id:'brick-epa-v1316-s4'
@@ -1381,12 +1209,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'S5',
    question:'The latest drawing changes an opening by 50 mm, but the printed copy on the plot still shows the old size. The lintel delivery matches the new schedule. What should you do?',
-   options:[
-    'Set out from the new schedule because the lintel confirms the change',
-    'Keep the old opening until a revised paper drawing reaches the plot',
-    'Check the current drawing revision and confirm the opening before setting out',
-    'Mark both sizes and let the supervisor choose when they next visit the plot'
-   ],
+   options:["Set out from the new schedule because the lintel confirms the change","Keep the old opening until a revised paper drawing reaches the plot","Check the current drawing revision and confirm the opening before setting out","Mark both sizes and let the supervisor choose when they next visit the plot"],
    correct:2,
    explanation:'Checking the current revision and confirming the dimension prevents the wall being built from mixed information. The lintel schedule supports the change but does not replace the drawing check. Waiting for paper may delay work unnecessarily, while marking both sizes leaves the key decision unresolved.',
    keyTakeaway:'Before setting out, make sure every dimension comes from the latest confirmed information.',
@@ -1395,12 +1218,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'S6',
    question:'You are ordering materials for a short cavity wall with one window. Your first calculation gives exactly the number of bricks, blocks and ties shown by the dimensions. What is the best next step?',
-   options:[
-    'Order the exact quantities and use offcuts from nearby plots for any shortage',
-    'Add the same percentage to every item so the order has a simple allowance',
-    'Allow separately for cuts, breakage, returns and the actual tie arrangement',
-    'Round each quantity up to the nearest full pack and keep all surplus on the plot'
-   ],
+   options:["Order the exact quantities and use offcuts from nearby plots for any shortage","Add the same percentage to every item so the order has a simple allowance","Allow separately for cuts, breakage, returns and the actual tie arrangement","Round each quantity up to the nearest full pack and keep all surplus on the plot"],
    correct:2,
    explanation:'Different materials need different allowances based on how they will be used. A single blanket percentage can over-order some items and leave others short. Exact quantities ignore normal losses, while rounding everything to full packs may create unnecessary surplus and congestion.',
    keyTakeaway:'Estimate each resource from the design, pack sizes and realistic job-specific waste.',
@@ -1409,13 +1227,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'S7',
    question:'During the morning, another trade starts storing pipe bundles beside your mortar spot and narrows the route to the scaffold. What is the best response?',
-   options:[
-    'Shift your mortar spot closer to the wall so the route remains usable',
-    'Agree a clear storage area with the other trade and restore the access route',
-    'Leave a narrow pedestrian gap and ask the labourer to guide deliveries through',
-    'Move the pipe bundles to the nearest open area while the other trade is away'
-   ],
-   correct:1,
+   options:["Shift your mortar spot closer to the wall so the route remains usable","Leave a narrow pedestrian gap and ask the labourer to guide deliveries through","Move the pipe bundles to the nearest open area while the other trade is away","Agree a clear storage area with the other trade and restore the access route"],
+   correct:3,
    explanation:'Speaking to the other trade and restoring an agreed route deals with the shared-workspace problem without creating a new one. Moving the mortar spot may crowd the workface. A narrow guided route is still poor access, while moving another trade’s materials without agreement can damage them or create conflict.',
    keyTakeaway:'Maintain the work area by coordinating changes, not by passing the obstruction elsewhere.',
    id:'brick-epa-v1316-s7'
@@ -1423,12 +1236,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'S8',
    question:'You are trimming a small number of bricks by hand for a repair. The bolster is sound, but the club hammer has a slightly loose head. What is the best choice?',
-   options:[
-    'Use lighter blows and check the head again after each brick',
-    'Swap to a sound hammer before making the cuts',
-    'Hold the hammer lower down the handle so the head moves less',
-    'Use the brick hammer instead and make several smaller cuts'
-   ],
+   options:["Use lighter blows and check the head again after each brick","Swap to a sound hammer before making the cuts","Hold the hammer lower down the handle so the head moves less","Use the brick hammer instead and make several smaller cuts"],
    correct:1,
    explanation:'A loose hammer head can worsen or detach during use, so a sound tool is the right choice. Lighter blows and a lower grip do not remove the defect. A brick hammer may suit some trimming, but changing the method only to avoid replacing an unsafe tool is not the best judgement.',
    keyTakeaway:'Select a tool that suits the task and is in safe condition before you start.',
@@ -1437,12 +1245,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:'S9',
    question:'After washing down at the end of the shift, your levels and trowels are clean but still damp, and the lock-up is cold. What is the best way to leave them?',
-   options:[
-    'Dry them, protect the metal surfaces and store them where they will not be damaged',
-    'Put them straight into the toolbox so they are secure before the site closes',
-    'Leave the toolbox lid open overnight so the moisture can escape naturally',
-    'Wrap the metal parts in a dry cloth and stack the tools beside the mortar mixer'
-   ],
+   options:["Dry them, protect the metal surfaces and store them where they will not be damaged","Put them straight into the toolbox so they are secure before the site closes","Leave the toolbox lid open overnight so the moisture can escape naturally","Wrap the metal parts in a dry cloth and stack the tools beside the mortar mixer"],
    correct:0,
    explanation:'Drying, protecting and storing the tools properly prevents rust, damaged edges and inaccurate equipment. Locking damp tools away traps moisture. Leaving the box open reduces security, while cloth can hold damp against the metal and the mixer area is not controlled storage.',
    keyTakeaway:'Clean tools are not finished until they are dry, protected and stored safely.',
@@ -1452,13 +1255,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S10",
    question:"You are setting out the first course of a blockwork inner skin for a cavity wall. The detailed drawings call for a clear internal room length of 4,000mm between block faces. How should you establish the corner block positions before laying the rest of the course?",
-   options:[
-    "Dry lay the first course without mortar to check the bond and measure the overall length, adjusting joint thickness slightly if needed to keep cuts to a minimum.",
-    "Set the two end blocks in mortar using exact tape measurements, then immediately lay the full course through to line to keep up production speed.",
-    "Lay the corner blocks using a string line set to 4,005mm to leave an extra gap for plastering later.",
-    "Lay one corner block in mortar, line out the course, and chop the final block to fit whatever gap remains at the far corner."
-   ],
-   correct:0,
+   options:["Set the two end blocks in mortar using exact tape measurements, then immediately lay the full course through to line to keep up production speed.","Lay the corner blocks using a string line set to 4,005mm to leave an extra gap for plastering later.","Lay one corner block in mortar, line out the course, and chop the final block to fit whatever gap remains at the far corner.","Dry lay the first course without mortar to check the bond and measure the overall length, adjusting joint thickness slightly if needed to keep cuts to a minimum."],
+   correct:3,
    explanation:"Dry laying the initial course allows you to verify brick or block bond, check overall measurements, and ensure opening sizes and tolerances match the drawings before applying mortar. Setting blocks directly in mortar without dry-checking risks improper bond or uneven cuts.",
    keyTakeaway:"Always dry lay and check gauge and bond on setting-out courses before laying in mortar.",
    id:"brick-epa-v1317-s10"
@@ -1466,13 +1264,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S11",
    question:"You are constructing a cavity wall section that includes a 900mm window opening. You are placing the cavity tray over the opening. How should the cavity tray be positioned and finished to ensure proper moisture management?",
-   options:[
-    "Slope the tray downwards towards the outer leaf, ensuring it steps over the lintel with turned-up end dams and weep holes installed directly above.",
-    "Keep the tray completely level across the cavity and seal both ends flat against the cavity insulation without weep holes.",
-    "Angle the tray backwards towards the inner blockwork leaf so water drains down into the internal cavity insulation.",
-    "Tuck the tray behind the lintel without end dams, relying on standard mortar joints to absorb any water ingress."
-   ],
-   correct:0,
+   options:["Keep the tray completely level across the cavity and seal both ends flat against the cavity insulation without weep holes.","Slope the tray downwards towards the outer leaf, ensuring it steps over the lintel with turned-up end dams and weep holes installed directly above.","Angle the tray backwards towards the inner blockwork leaf so water drains down into the internal cavity insulation.","Tuck the tray behind the lintel without end dams, relying on standard mortar joints to absorb any water ingress."],
+   correct:1,
    explanation:"Cavity trays must shed water to the outer leaf, feature end dams to prevent water spilling off the edges into the cavity, and use weep holes to drain water outside. Angling backwards or leaving ends open directs water inside the building fabric.",
    keyTakeaway:"Cavity trays must shed outwards with end dams and weep holes for reliable water discharge.",
    id:"brick-epa-v1317-s11"
@@ -1480,13 +1273,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S12",
    question:"You are completing the external brickwork joints on a house build where the specification calls for a weather struck and cut joint finish. How should this joint be profiled to meet trade quality standards?",
-   options:[
-    "Strike the horizontal joint so the top edge is recessed slightly into the wall and the bottom edge is flush with the lower brick, then cut the bottom edge crisp with a trowel.",
-    "Recess the bottom edge of the horizontal joint into the wall while keeping the top edge flush, creating an upward slope.",
-    "Press a curved jointer iron deeply into the mortar joint to create a smooth, concave half-round profile.",
-    "Rake out the mortar to a depth of 10mm leaving a square, flat recessed channel with sharp interior corners."
-   ],
-   correct:0,
+   options:["Recess the bottom edge of the horizontal joint into the wall while keeping the top edge flush, creating an upward slope.","Press a curved jointer iron deeply into the mortar joint to create a smooth, concave half-round profile.","Strike the horizontal joint so the top edge is recessed slightly into the wall and the bottom edge is flush with the lower brick, then cut the bottom edge crisp with a trowel.","Rake out the mortar to a depth of 10mm leaving a square, flat recessed channel with sharp interior corners."],
+   correct:2,
    explanation:"A weather struck and cut joint slopes inward at the top edge so water sheds off the face of the upper brick down to the lower brick, with a clean cut line along the bottom edge. Inverting the slope catches water, while rounded or raked joints are different profile types.",
    keyTakeaway:"Weather struck joints slope inward at the top to shed rainwater away from the mortar line.",
    id:"brick-epa-v1317-s12"
@@ -1494,12 +1282,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S13",
    question:"You are building a 225mm one-brick-thick solid garden wall in English bond and capping it with a brick-on-edge coping. How should the capping course be constructed to prevent water penetration and finish cleanly?",
-   options:[
-    "Lay a continuous damp proof course under the brick-on-edge, bedding bricks on a rich mortar with neat, solid perpends, overhangs, and creasing tiles if specified.",
-    "Lay the brick-on-edge directly onto dry brickwork without DPC to allow the capping mortar to key strongly into the wall below.",
-    "Set the capping bricks horizontally on their flat face using standard mortar, leaving perpends open to allow ventilation.",
-    "Pour a thin liquid grout over flat bricks laid on top of the wall to seal the top course quickly."
-   ],
+   options:["Lay a continuous damp proof course under the brick-on-edge, bedding bricks on a rich mortar with neat, solid perpends, overhangs, and creasing tiles if specified.","Lay the brick-on-edge directly onto dry brickwork without DPC to allow the capping mortar to key strongly into the wall below.","Set the capping bricks horizontally on their flat face using standard mortar, leaving perpends open to allow ventilation.","Pour a thin liquid grout over flat bricks laid on top of the wall to seal the top course quickly."],
    correct:0,
    explanation:"Brick-on-edge cappings require a sound bedding mortar, full perpends, and a DPC beneath, or engineering bricks and tile creasing where specified, to stop water driving down through the top of a solid wall. Omitting the water barrier or leaving perpends open leads to frost damage and water ingress.",
    keyTakeaway:"Solid wall cappings require proper water barriers and fully filled joints to resist weathering.",
@@ -1508,13 +1291,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S14",
    question:"You are mixing a 1:1:6 cement, lime and sand mortar mix by hand on a mixing board for external facing brickwork. What is the correct method to ensure an even mix throughout?",
-   options:[
-    "Measure dry ingredients accurately using gauge boxes or buckets, heap and turn the dry materials together at least twice until uniform in colour, then add water gradually while turning.",
-    "Add all the water onto the board first, shovel in the sand, and mix in cement and lime at the end to prevent dust.",
-    "Shovel loose heaps of sand, cement and lime straight onto the board and splash water on top without dry mixing to save time.",
-    "Mix cement and water into a liquid slurry first, then throw sand on top and stir until thick."
-   ],
-   correct:0,
+   options:["Add all the water onto the board first, shovel in the sand, and mix in cement and lime at the end to prevent dust.","Shovel loose heaps of sand, cement and lime straight onto the board and splash water on top without dry mixing to save time.","Mix cement and water into a liquid slurry first, then throw sand on top and stir until thick.","Measure dry ingredients accurately using gauge boxes or buckets, heap and turn the dry materials together at least twice until uniform in colour, then add water gradually while turning."],
+   correct:3,
    explanation:"Hand mixing requires batching with consistent containers and thoroughly mixing dry ingredients to a uniform colour before adding water. Adding water first or guessing shovel counts leads to weak, patchy or inconsistent mortar.",
    keyTakeaway:"Always dry-blend batched mortar ingredients thoroughly before adding water.",
    id:"brick-epa-v1317-s14"
@@ -1522,13 +1300,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S15",
    question:"You need to cut several facing bricks to form queen closers for a corner detail. Which tool and technique will produce the cleanest cut to accurate tolerances?",
-   options:[
-    "Mark the cut line around all four faces with a pencil and square, score along the line using a bolster chisel and club hammer, then split with a sharp, firm strike.",
-    "Mark the top face only and hit the brick hard with the blade of a brick hammer without scoring.",
-    "Use a hand saw designed for lightweight thermal blocks to slowly saw through the facing brick.",
-    "Grip the brick in a vice and snap it over a sharp timber edge by hitting the overhang with a mallet."
-   ],
-   correct:0,
+   options:["Mark the top face only and hit the brick hard with the blade of a brick hammer without scoring.","Use a hand saw designed for lightweight thermal blocks to slowly saw through the facing brick.","Mark the cut line around all four faces with a pencil and square, score along the line using a bolster chisel and club hammer, then split with a sharp, firm strike.","Grip the brick in a vice and snap it over a sharp timber edge by hitting the overhang with a mallet."],
+   correct:2,
    explanation:"Scoring around all four sides of a brick with a bolster chisel creates a stress line that helps produce a clean, accurate split when struck firmly. Hitting without scoring or snapping over timber is more likely to cause jagged, unusable fractures.",
    keyTakeaway:"Score all sides of a brick with a bolster chisel before striking for a clean split.",
    id:"brick-epa-v1317-s15"
@@ -1536,13 +1309,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S16",
    question:"You are replacing three spalling bricks in an existing facing brick wall. How should you remove the damaged bricks without loosening or damaging the surrounding sound brickwork?",
-   options:[
-    "Stitch-drill small holes into the mortar joints around the damaged bricks, chisel out the joints carefully with a narrow plugging chisel, then ease the damaged bricks out.",
-    "Hit the centre of the damaged bricks forcefully with a sledgehammer until they shatter out of the wall.",
-    "Lever a large crowbar into the bed joint above the damaged bricks and pry upwards until the course lifts.",
-    "Use a wide bolster chisel straight into the brick face to break it apart while leaving mortar joints intact."
-   ],
-   correct:0,
+   options:["Hit the centre of the damaged bricks forcefully with a sledgehammer until they shatter out of the wall.","Stitch-drill small holes into the mortar joints around the damaged bricks, chisel out the joints carefully with a narrow plugging chisel, then ease the damaged bricks out.","Lever a large crowbar into the bed joint above the damaged bricks and pry upwards until the course lifts.","Use a wide bolster chisel straight into the brick face to break it apart while leaving mortar joints intact."],
+   correct:1,
    explanation:"Drilling out and chiselling the mortar joints frees the damaged brick from the surrounding masonry, allowing it to be removed without transferring heavy impact forces that could crack surrounding bricks. Heavy hammering or prying risks damaging adjacent units.",
    keyTakeaway:"Isolate damaged bricks by removing surrounding mortar joints before extraction.",
    id:"brick-epa-v1317-s16"
@@ -1550,12 +1318,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S18",
    question:"You are reporting progress and material requirements to the site manager for an upcoming gable end build. Which statement uses correct construction terminology?",
-   options:[
-    "“We have finished setting out the inner leaf blockwork to damp level and will need two packs of engineering bricks for the DPC course tomorrow.”",
-    "“We’ve done the bottom row of concrete blocks inside and need some dark hard bricks for the waterproof layer tomorrow.”",
-    "“The inside wall is up to the floor line, so send up some heavy grey bricks to stop the damp getting through.”",
-    "“We finished the lower part of the wall and just need some proper bricks for the ground line before we crack on.”"
-   ],
+   options:["“We have finished setting out the inner leaf blockwork to damp level and will need two packs of engineering bricks for the DPC course tomorrow.”","“We’ve done the bottom row of concrete blocks inside and need some dark hard bricks for the waterproof layer tomorrow.”","“The inside wall is up to the floor line, so send up some heavy grey bricks to stop the damp getting through.”","“We finished the lower part of the wall and just need some proper bricks for the ground line before we crack on.”"],
    correct:0,
    explanation:"Professional site communication relies on precise trade terminology such as inner leaf blockwork, damp level, engineering bricks and DPC course. Informal descriptions can cause confusion or lead to the wrong materials being ordered.",
    keyTakeaway:"Use precise trade terms when ordering materials or reporting site progress.",
@@ -1564,13 +1327,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S20",
    question:"You are working as part of a four-person bricklaying team raising a high cavity wall section. The hod carrier is struggling to keep both bricks and mortar topped up for all masons. How should the team adapt?",
-   options:[
-    "Pause laying briefly to help stock up boards and split tasks effectively so the line rises evenly without overburdening one person.",
-    "Carry on laying at maximum speed so the site manager can see the bricklayers are not slowing down.",
-    "Tell the hod carrier to work faster and skip cleaning mortar boards between batches.",
-    "Stop work completely and wait in the canteen until additional labourers arrive on site."
-   ],
-   correct:0,
+   options:["Carry on laying at maximum speed so the site manager can see the bricklayers are not slowing down.","Tell the hod carrier to work faster and skip cleaning mortar boards between batches.","Stop work completely and wait in the canteen until additional labourers arrive on site.","Pause laying briefly to help stock up boards and split tasks effectively so the line rises evenly without overburdening one person."],
+   correct:3,
    explanation:"Good teamwork involves supporting colleagues and adapting the workflow to maintain safety, quality and momentum across the build team. Ignoring the bottleneck can lead to poor mortar quality, safety risks or team friction.",
    keyTakeaway:"Collaborate and support team members to maintain workflow, safety and build quality.",
    id:"brick-epa-v1317-s20"
@@ -1578,13 +1336,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S22",
    question:"You are building a brick gable end wall that requires a raking cut along the roof pitch line. How should you establish and execute the raking cuts accurately?",
-   options:[
-    "Set up a string line along the exact roof pitch angle, mark each brick individually across its face, and cut precisely using a masonry saw or bolster.",
-    "Lay full bricks past the pitch line, then chop off the overhanging corners with a brick hammer after the mortar hardens.",
-    "Estimate the angle by eye and cut several bricks at once on a bench before laying the course.",
-    "Step the bricks back in full headers along the gable without cutting to let the roofers cover the gaps."
-   ],
-   correct:0,
+   options:["Lay full bricks past the pitch line, then chop off the overhanging corners with a brick hammer after the mortar hardens.","Set up a string line along the exact roof pitch angle, mark each brick individually across its face, and cut precisely using a masonry saw or bolster.","Estimate the angle by eye and cut several bricks at once on a bench before laying the course.","Step the bricks back in full headers along the gable without cutting to let the roofers cover the gaps."],
+   correct:1,
    explanation:"Raking cuts require marking the pitch line accurately with a line or bevel and cutting units individually to fit tightly against the raking angle within tolerance. Cutting hardened bricks in place or guessing angles results in uneven joints and weak edges.",
    keyTakeaway:"Mark raking cuts directly from a precise pitch line to maintain accurate tolerances.",
    id:"brick-epa-v1317-s22"
@@ -1594,12 +1347,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K1",
    question:"You are preparing to cut timber in a confined area on site where dust accumulation is high. Under PUWER and CoSHH guidelines, what essential safety step must be taken regarding equipment and health protection?",
-   options:[
-    "Ensure power tools have valid safety inspections and combine local dust extraction (LEV) with a fitted FFP3 respirator.",
-    "Open a far window and use a standard dust mask while disabling the saw guard for faster cutting.",
-    "Sweep up the timber dust with a dry broom after finishing all the cuts for the day.",
-    "Use cordless tools only, as respiratory protection is not required for natural timber dust."
-   ],
+   options:["Ensure power tools have valid safety inspections and combine local dust extraction (LEV) with a fitted FFP3 respirator.","Open a far window and use a standard dust mask while disabling the saw guard for faster cutting.","Sweep up the timber dust with a dry broom after finishing all the cuts for the day.","Use cordless tools only, as respiratory protection is not required for natural timber dust."],
    correct:0,
    explanation:"PUWER requires safe, inspected equipment, while CoSHH requires controlling hazardous wood dust at source using LEV and appropriate RPE (FFP3 mask).",
    keyTakeaway:"Always combine inspected tools with effective LEV and RPE to control timber dust exposure.",
@@ -1608,13 +1356,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K2",
    question:"When operating a portable circular saw to rip down sheet materials, how should local exhaust ventilation (LEV) and personal protective equipment (PPE) be used together?",
-   options:[
-    "Attach an extraction vacuum directly to the saw's dust port and wear eye protection and ear defenders.",
-    "Rely solely on safety glasses, as LEV is only needed when working with solid hardwoods.",
-    "Set the LEV hose next to the work bench without connecting it to the tool shroud.",
-    "Wear heavy leather gloves while feeding sheet material quickly past the unguarded blade."
-   ],
-   correct:0,
+   options:["Rely solely on safety glasses, as LEV is only needed when working with solid hardwoods.","Set the LEV hose next to the work bench without connecting it to the tool shroud.","Attach an extraction vacuum directly to the saw's dust port and wear eye protection and ear defenders.","Wear heavy leather gloves while feeding sheet material quickly past the unguarded blade."],
+   correct:2,
    explanation:"Connecting LEV directly to the tool removes dust at the point of creation, while eye and hearing protection guard against flying particles and high noise levels.",
    keyTakeaway:"Directly connect extraction to power tools and wear eye and hearing protection.",
    id:"site-carp-epa-v1318-k2"
@@ -1622,13 +1365,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K3",
    question:"Before starting a first-fix roofing task on a busy site, where do you find the specific safe working sequence and control measures established for that task?",
-   options:[
-    "In the site-specific Method Statement and Risk Assessment (RAMS) reviewed during the toolbox talk.",
-    "On the delivery note attached to the roof truss timber pack.",
-    "In the general health and safety poster displayed inside the site canteen.",
-    "By asking a colleague how they installed rafters on their previous project."
-   ],
-   correct:0,
+   options:["On the delivery note attached to the roof truss timber pack.","In the general health and safety poster displayed inside the site canteen.","By asking a colleague how they installed rafters on their previous project.","In the site-specific Method Statement and Risk Assessment (RAMS) reviewed during the toolbox talk."],
+   correct:3,
    explanation:"RAMS and site toolbox talks provide the task-specific safe systems of work and control measures for high-risk operations like roofing.",
    keyTakeaway:"Review task RAMS and attend safety briefings before starting structural tasks.",
    id:"site-carp-epa-v1318-k3"
@@ -1636,13 +1374,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K4",
    question:"When sourcing timber for a commercial build committed to sustainable practices, what certification ensures the wood comes from sustainably managed forests?",
-   options:[
-    "FSC (Forest Stewardship Council) or PEFC certification.",
-    "CE / UKCA structural grading stamp only.",
-    "ISO 9001 quality management stamp.",
-    "Local sawmill delivery receipt."
-   ],
-   correct:0,
+   options:["CE / UKCA structural grading stamp only.","FSC (Forest Stewardship Council) or PEFC certification.","ISO 9001 quality management stamp.","Local sawmill delivery receipt."],
+   correct:1,
    explanation:"FSC and PEFC chain-of-custody schemes verify that timber products originate from responsibly managed, sustainable forests.",
    keyTakeaway:"Look for FSC or PEFC certification to verify sustainable timber sourcing.",
    id:"site-carp-epa-v1318-k4"
@@ -1650,12 +1383,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K5",
    question:"Why is an airtightness membrane installed on the warm side of insulation in a modern timber-frame wall construction?",
-   options:[
-    "To prevent warm, moist internal air from entering the wall cavity and causing interstitial condensation.",
-    "To provide a rigid structural backing for fixing heavy external timber cladding.",
-    "To allow external rainwater to drain quickly down into the foundation footing.",
-    "To increase the fire resistance rating of the external plasterboard lining."
-   ],
+   options:["To prevent warm, moist internal air from entering the wall cavity and causing interstitial condensation.","To provide a rigid structural backing for fixing heavy external timber cladding.","To allow external rainwater to drain quickly down into the foundation footing.","To increase the fire resistance rating of the external plasterboard lining."],
    correct:0,
    explanation:"Vapour control layers placed on the warm side stop moist room air from migrating into cold insulation layers where it would condense and rot timber frames.",
    keyTakeaway:"Vapour control layers prevent internal moisture from condensing inside the structural frame.",
@@ -1664,13 +1392,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K6",
    question:"In a digital 3D BIM (Building Information Modelling) environment, how do digital models assist site carpenters before structural floor joists are installed?",
-   options:[
-    "By identifying spatial clashes where service pipes or ductwork cross joist locations before physical installation.",
-    "By automatically sharpening hand chisels and saw blades prior to site delivery.",
-    "By replacing the need to use mechanical fixings or joist hangers during assembly.",
-    "By calculating the exact moisture content of timber delivered to site."
-   ],
-   correct:0,
+   options:["By automatically sharpening hand chisels and saw blades prior to site delivery.","By replacing the need to use mechanical fixings or joist hangers during assembly.","By identifying spatial clashes where service pipes or ductwork cross joist locations before physical installation.","By calculating the exact moisture content of timber delivered to site."],
+   correct:2,
    explanation:"3D digital design models allow trade teams to spot spatial clashes between structural timber elements and mechanical or electrical services before work begins.",
    keyTakeaway:"BIM models identify clash locations between structural members and service runs early.",
    id:"site-carp-epa-v1318-k6"
@@ -1678,13 +1401,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K7",
    question:"Which regulatory standard dictates structural safety, fire separation, and thermal insulation requirements for carpentry work in residential buildings in England?",
-   options:[
-    "The Building Regulations (Approved Documents A, B, and L).",
-    "The Highways Act regulatory manual.",
-    "The CDM 2015 client appointment duty register.",
-    "The Consumer Rights Act standard documentation."
-   ],
-   correct:0,
+   options:["The Highways Act regulatory manual.","The CDM 2015 client appointment duty register.","The Consumer Rights Act standard documentation.","The Building Regulations (Approved Documents A, B, and L)."],
+   correct:3,
    explanation:"Building Regulations Part A, Part B and Part L set mandatory performance standards for building works.",
    keyTakeaway:"Carpentry installations must meet the relevant Building Regulations Approved Documents.",
    id:"site-carp-epa-v1318-k7"
@@ -1692,13 +1410,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K8",
    question:"On a working architectural drawing, what does a dashed line running through a floor plan view typically represent?",
-   options:[
-    "Hidden structural elements, such as floor joists or steel beams overhead.",
-    "The boundary line for site material waste skips.",
-    "An area where timber sanding is strictly prohibited.",
-    "A wall that must be constructed using non-standard metric timber."
-   ],
-   correct:0,
+   options:["The boundary line for site material waste skips.","Hidden structural elements, such as floor joists or steel beams overhead.","An area where timber sanding is strictly prohibited.","A wall that must be constructed using non-standard metric timber."],
+   correct:1,
    explanation:"In technical drawing standards, dashed lines indicate hidden details or structural members located above or below the immediate section plane.",
    keyTakeaway:"Dashed lines on structural plans denote overhead or hidden structural members.",
    id:"site-carp-epa-v1318-k8"
@@ -1706,13 +1419,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K9",
    question:"Why is manufactured Birch Plywood preferred over standard OSB/3 for constructing rigid site jigs and high-load structural gussets?",
-   options:[
-    "Its cross-laminated veneer construction offers superior dimensional stability, smooth faces, and high shear strength.",
-    "It is significantly cheaper and lighter than low-density fibreboards.",
-    "It does not require cutting tools and can be scored and snapped by hand.",
-    "It completely absorbs water without expanding or delaminating over time."
-   ],
-   correct:0,
+   options:["It is significantly cheaper and lighter than low-density fibreboards.","It does not require cutting tools and can be scored and snapped by hand.","Its cross-laminated veneer construction offers superior dimensional stability, smooth faces, and high shear strength.","It completely absorbs water without expanding or delaminating over time."],
+   correct:2,
    explanation:"Plywood's cross-grained thin wood veneers provide multi-directional strength, high screw-holding power, and resistance to warping under load.",
    keyTakeaway:"Plywood provides multi-directional strength and stability due to cross-laminated veneers.",
    id:"site-carp-epa-v1318-k9"
@@ -1720,12 +1428,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K10",
    question:"What maximum moisture content threshold should structural timber typically not exceed before being enclosed within a modern building envelope?",
-   options:[
-    "20% (ideally 12-16% for internal finish timber).",
-    "35% moisture content.",
-    "5% moisture content.",
-    "50% moisture content."
-   ],
+   options:["20% (ideally 12-16% for internal finish timber).","35% moisture content.","5% moisture content.","50% moisture content."],
    correct:0,
    explanation:"Timber enclosed at over 20% moisture content is at risk of fungal decay and severe dimensional shrinkage as it dries in service.",
    keyTakeaway:"Keep timber moisture below 20% to prevent fungal attack and shrinkage.",
@@ -1734,12 +1437,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K11",
    question:"Which ironmongery component is specifically designed to allow an internal fire door to self-close fully into its frame rebate against a latch?",
-   options:[
-    "An overhead hydraulic door closer compliant with BS EN 1154.",
-    "A surface-mounted straight barrel bolt.",
-    "A pair of unrated brass decorative butt hinges.",
-    "A magnetic cabinet catch set into the door head."
-   ],
+   options:["An overhead hydraulic door closer compliant with BS EN 1154.","A surface-mounted straight barrel bolt.","A pair of unrated brass decorative butt hinges.","A magnetic cabinet catch set into the door head."],
    correct:0,
    explanation:"Fire doors require certified self-closing devices to ensure the leaf shuts automatically and maintains fire compartmentation.",
    keyTakeaway:"Fire doors require certified self-closing hardware to maintain fire seals.",
@@ -1748,13 +1446,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K12",
    question:"You are calculating stud lengths for a 12-metre long stud wall with studs placed at 600mm centres. How do you calculate the total number of vertical studs required, excluding openings?",
-   options:[
-    "Divide the wall length by the spacing (12m / 0.6m = 20) and add 1 for the starting end stud (21 studs total).",
-    "Multiply 12 metres by 0.6mm to get 7.2 studs.",
-    "Divide 12 metres by 2 and subtract 1 stud.",
-    "Multiply 12 studs by 4 corners to equal 48 studs."
-   ],
-   correct:0,
+   options:["Multiply 12 metres by 0.6mm to get 7.2 studs.","Divide 12 metres by 2 and subtract 1 stud.","Divide the wall length by the spacing (12m / 0.6m = 20) and add 1 for the starting end stud (21 studs total).","Multiply 12 studs by 4 corners to equal 48 studs."],
+   correct:2,
    explanation:"To calculate vertical studs for a run, divide the total length by the centre spacing distance and add one stud to cap the starting end.",
    keyTakeaway:"Number of studs equals total length divided by spacing, plus one end stud.",
    id:"site-carp-epa-v1318-k12"
@@ -1762,13 +1455,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K13",
    question:"When explaining a stair installation to a site supervisor, which term correctly describes the vertical height from top of one tread to the top of the next?",
-   options:[
-    "The rise.",
-    "The going.",
-    "The margin.",
-    "The pitch line."
-   ],
-   correct:0,
+   options:["The going.","The rise.","The margin.","The pitch line."],
+   correct:1,
    explanation:"Rise is the vertical distance between consecutive treads, whereas going is the horizontal depth from nosing to nosing.",
    keyTakeaway:"Rise measures vertical step height; going measures horizontal step depth.",
    id:"site-carp-epa-v1318-k13"
@@ -1776,13 +1464,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K14",
    question:"Which hand tool is designed specifically for laying out precise 90-degree lines across timber faces prior to sawing?",
-   options:[
-    "Try square.",
-    "Sliding bevel.",
-    "Mortise gauge.",
-    "Chalk line reel."
-   ],
-   correct:0,
+   options:["Sliding bevel.","Mortise gauge.","Chalk line reel.","Try square."],
+   correct:3,
    explanation:"A try square has a fixed 90-degree stock and blade used to mark and check right-angled cuts on timber.",
    keyTakeaway:"Use a try square to mark and verify precise 90-degree angles.",
    id:"site-carp-epa-v1318-k14"
@@ -1790,13 +1473,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K15",
    question:"When sharpening a bevel-edged woodworking chisel using an oilstone or whetstone, what is the ideal primary bevel grinding angle?",
-   options:[
-    "25 degrees, with a secondary honing angle of approximately 30 degrees.",
-    "45 degrees primary and 60 degrees secondary.",
-    "10 degrees primary and 15 degrees secondary.",
-    "90 degrees square to the chisel back."
-   ],
-   correct:0,
+   options:["45 degrees primary and 60 degrees secondary.","10 degrees primary and 15 degrees secondary.","25 degrees, with a secondary honing angle of approximately 30 degrees.","90 degrees square to the chisel back."],
+   correct:2,
    explanation:"Standard chisels are ground to a 25-degree primary angle and honed at around 30 degrees to create a durable cutting edge.",
    keyTakeaway:"Grind chisels to 25 degrees and hone a secondary micro-bevel at around 30 degrees.",
    id:"site-carp-epa-v1318-k15"
@@ -1804,13 +1482,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K16",
    question:"Why are custom router jigs constructed with dedicated guide bush collars when routing multiple identical door hinge recesses?",
-   options:[
-    "To ensure exact repeatability and prevent the cutter from wandering outside the hinge footprint.",
-    "To lubricate the router bit continuously during cutting.",
-    "To eliminate the need for clamping the jig to the door edge.",
-    "To automatically adjust the routing depth between passes."
-   ],
-   correct:0,
+   options:["To lubricate the router bit continuously during cutting.","To ensure exact repeatability and prevent the cutter from wandering outside the hinge footprint.","To eliminate the need for clamping the jig to the door edge.","To automatically adjust the routing depth between passes."],
+   correct:1,
    explanation:"Jigs used with router guide bushes ensure identical, repeatable cuts across multiple workpieces without measuring each recess individually.",
    keyTakeaway:"Router jigs ensure fast, identical and repeatable cuts.",
    id:"site-carp-epa-v1318-k16"
@@ -1818,13 +1491,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K17",
    question:"When using a portable plunge saw with a guide rail to trim doors to length, what safety mechanism prevents the saw from kicking back along the track?",
-   options:[
-    "An anti-kickback cam or cleat fitted to the saw base and an integrated riving knife.",
-    "Wrapping electrical tape around the rail track ends.",
-    "Increasing plunge speed as fast as possible through thick wood.",
-    "Removing the lower guard from the blade housing."
-   ],
-   correct:0,
+   options:["Wrapping electrical tape around the rail track ends.","Increasing plunge speed as fast as possible through thick wood.","Removing the lower guard from the blade housing.","An anti-kickback cam or cleat fitted to the saw base and an integrated riving knife."],
+   correct:3,
    explanation:"Anti-kickback devices and riving knives prevent the saw blade from binding in the cut and pinching back toward the operator.",
    keyTakeaway:"Anti-kickback features stop track saws binding or kicking back toward the user.",
    id:"site-carp-epa-v1318-k17"
@@ -1832,12 +1500,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K18",
    question:"How does effective communication between carpenters and dryliners improve site progress during first-fix framing?",
-   options:[
-    "It ensures timber noggins are installed at correct height locations for fixing plasterboard edges and heavy wall items.",
-    "It allows dryliners to alter structural timber roof trusses without engineering approval.",
-    "It eliminates the need for site managers to inspect work quality.",
-    "It ensures all timber walls are left uninsulated until second fix."
-   ],
+   options:["It ensures timber noggins are installed at correct height locations for fixing plasterboard edges and heavy wall items.","It allows dryliners to alter structural timber roof trusses without engineering approval.","It eliminates the need for site managers to inspect work quality.","It ensures all timber walls are left uninsulated until second fix."],
    correct:0,
    explanation:"Clear inter-trade communication ensures backing timber is placed where dryliners and other follow-on trades require solid fixings later.",
    keyTakeaway:"Coordinate with follow-on trades to ensure backing support is placed correctly.",
@@ -1846,13 +1509,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K19",
    question:"What is the primary goal of applying inclusion, equity, and diversity principles within a site construction team?",
-   options:[
-    "To create a respectful environment where every worker feels valued, safe, and able to contribute.",
-    "To assign the heaviest physical labour strictly to new apprentices.",
-    "To restrict specialised tool usage to senior workers only.",
-    "To eliminate the need for site toolbox talks and safety inductions."
-   ],
-   correct:0,
+   options:["To assign the heaviest physical labour strictly to new apprentices.","To restrict specialised tool usage to senior workers only.","To create a respectful environment where every worker feels valued, safe, and able to contribute.","To eliminate the need for site toolbox talks and safety inductions."],
+   correct:2,
    explanation:"EDI principles foster an environment of fairness, mutual respect, and psychological safety, improving overall safety and productivity.",
    keyTakeaway:"EDI creates a fair, respectful and high-performing workplace environment.",
    id:"site-carp-epa-v1318-k19"
@@ -1860,13 +1518,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K20",
    question:"If you notice a team member showing signs of severe physical exhaustion and emotional distress on site, what is the best immediate supportive response?",
-   options:[
-    "Speak to them privately, express care, and signpost them to site Mental Health First Aiders or confidential helpline resources.",
-    "Tell them to work faster to distract themselves from their personal worries.",
-    "Assign them high-risk scaffold work to raise their energy levels.",
-    "Ignore their situation as mental health is unrelated to construction safety."
-   ],
-   correct:0,
+   options:["Tell them to work faster to distract themselves from their personal worries.","Assign them high-risk scaffold work to raise their energy levels.","Ignore their situation as mental health is unrelated to construction safety.","Speak to them privately, express care, and signpost them to site Mental Health First Aiders or confidential helpline resources."],
+   correct:3,
    explanation:"Recognising early signs of mental or physical distress and directing colleagues to trained welfare resources promotes early intervention.",
    keyTakeaway:"Identify signs of distress early and signpost available support services.",
    id:"site-carp-epa-v1318-k20"
@@ -1874,12 +1527,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K21",
    question:"When fitting architrave around a door lining, why is a mitre joint cut at 45 degrees used at the top corners instead of a butt joint?",
-   options:[
-    "It neatly joins two decorative end profiles together while hiding end grain across the corner junction.",
-    "It increases the fire resistance rating of the timber door frame.",
-    "It allows architrave mouldings to expand up to 50mm during humid weather.",
-    "It eliminates the need for wood adhesive or pin fixings."
-   ],
+   options:["It neatly joins two decorative end profiles together while hiding end grain across the corner junction.","It increases the fire resistance rating of the timber door frame.","It allows architrave mouldings to expand up to 50mm during humid weather.","It eliminates the need for wood adhesive or pin fixings."],
    correct:0,
    explanation:"Mitre joints meet at half the overall angle to align matching moulding profiles continuously.",
    keyTakeaway:"Mitring aligns decorative profiles seamlessly across corner intersections.",
@@ -1888,13 +1536,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K22",
    question:"When sizing floor joists for a residential building using standard span tables, which two main factors determine the required timber depth?",
-   options:[
-    "The clear span distance between supports and the design load, including dead and imposed loads.",
-    "The colour of the timber grain and the blade speed of the mitre saw.",
-    "The brand of wood glue used on the joist ends.",
-    "The height of the skirting boards in the room below."
-   ],
-   correct:0,
+   options:["The colour of the timber grain and the blade speed of the mitre saw.","The clear span distance between supports and the design load, including dead and imposed loads.","The brand of wood glue used on the joist ends.","The height of the skirting boards in the room below."],
+   correct:1,
    explanation:"Span tables cross-reference clear span length against design loading to specify the minimum timber cross-section required for structural stability.",
    keyTakeaway:"Timber spans are determined by clear span length and imposed loading requirements.",
    id:"site-carp-epa-v1318-k22"
@@ -1902,13 +1545,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K24",
    question:"When joining two structural timber members end-to-end over a support using a spliced joint, what requirement must be met?",
-   options:[
-    "The splice must be structurally engineered and fixed with the specified bolts or timber connectors.",
-    "The splice can be held together using standard PVA glue and masking tape.",
-    "The joint cut must be positioned in the middle of the longest unsupported span.",
-    "The end grain must be left unsealed with an open 10mm gap between timbers."
-   ],
-   correct:0,
+   options:["The splice can be held together using standard PVA glue and masking tape.","The joint cut must be positioned in the middle of the longest unsupported span.","The splice must be structurally engineered and fixed with the specified bolts or timber connectors.","The end grain must be left unsealed with an open 10mm gap between timbers."],
+   correct:2,
    explanation:"Structural timber splices must transfer shear and tensile loads safely through engineered joint geometry and specified mechanical connectors.",
    keyTakeaway:"Structural timber splices require specified mechanical fixings to transfer load safely.",
    id:"site-carp-epa-v1318-k24"
@@ -1916,13 +1554,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K25",
    question:"In traditional cut roofing, what structural member connects the feet of opposing rafters to prevent outward spread on external walls?",
-   options:[
-    "Ceiling joists or suitable rafter ties.",
-    "Bargeboards.",
-    "Tilting fillets.",
-    "Fascia boards."
-   ],
-   correct:0,
+   options:["Bargeboards.","Ceiling joists or suitable rafter ties.","Tilting fillets.","Fascia boards."],
+   correct:1,
    explanation:"Ceiling joists or suitable ties act at the base of opposing rafters, preventing side walls from being pushed outward by roof loads.",
    keyTakeaway:"Ceiling joists or rafter ties prevent the roof from spreading the walls.",
    id:"site-carp-epa-v1318-k25"
@@ -1930,12 +1563,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K26",
    question:"In a warm flat roof design, where is the main thermal insulation layer positioned relative to the structural timber deck?",
-   options:[
-    "Above the timber roof deck, keeping the deck and structure at internal warm temperatures.",
-    "Directly below the ceiling plasterboard only, leaving an unventilated cavity above.",
-    "Underneath the ground floor concrete slab.",
-    "Loosely packed between joists with continuous cross-ventilation above."
-   ],
+   options:["Above the timber roof deck, keeping the deck and structure at internal warm temperatures.","Directly below the ceiling plasterboard only, leaving an unventilated cavity above.","Underneath the ground floor concrete slab.","Loosely packed between joists with continuous cross-ventilation above."],
    correct:0,
    explanation:"Warm flat roofs place insulation on top of the deck, reducing condensation risk by keeping the deck timber inside the warm zone.",
    keyTakeaway:"Warm flat roofs place insulation above the structural roof deck.",
@@ -1944,13 +1572,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K27",
    question:"When constructing a load-bearing timber stud partition, what structural component is installed directly above a door opening to transfer loads around the opening?",
-   options:[
-    "A structural header or lintel supported by jack studs.",
-    "A single 12mm plasterboard strip screwed to the head plate.",
-    "A softwood skirting board nailed flat across the opening.",
-    "A diagonal softwood noggin placed centrally in the doorway."
-   ],
-   correct:0,
+   options:["A single 12mm plasterboard strip screwed to the head plate.","A softwood skirting board nailed flat across the opening.","A diagonal softwood noggin placed centrally in the doorway.","A structural header or lintel supported by jack studs."],
+   correct:3,
    explanation:"Headers transfer vertical loads from above around wall openings down through the supporting studs.",
    keyTakeaway:"Headers carry loads over partition openings and transfer them to supporting studs.",
    id:"site-carp-epa-v1318-k27"
@@ -1958,13 +1581,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K28",
    question:"When fitting timber skirting boards along a wall with an internal 90-degree corner, which joint technique prevents gaps from opening up if timber shrinks?",
-   options:[
-    "A scribed joint, cutting the profile of one board over the face of the other.",
-    "A square butt joint without glue or fixings.",
-    "A half-lap edge joint held with carpet tape.",
-    "A straight 45-degree bevel cut along the top edge only."
-   ],
-   correct:0,
+   options:["A square butt joint without glue or fixings.","A half-lap edge joint held with carpet tape.","A straight 45-degree bevel cut along the top edge only.","A scribed joint, cutting the profile of one board over the face of the other."],
+   correct:3,
    explanation:"Internal skirting corners are scribed to match the face profile, maintaining a tight visual joint even if timber shrinks in width later.",
    keyTakeaway:"Use scribed joints on internal skirting corners to absorb timber movement cleanly.",
    id:"site-carp-epa-v1318-k28"
@@ -1972,13 +1590,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K29",
    question:"Before using a self-levelling cross-line laser to mark datum lines for joist hangers across a large room, what calibration check should be performed?",
-   options:[
-    "Check the laser line against a known datum and rotate the unit 180 degrees to confirm line-height consistency.",
-    "Wipe the glass lens with heavy lubricating oil.",
-    "Place the unit on an uneven pile of loose timber cut-offs without locking the pendulum.",
-    "Charge the battery until it reaches maximum heat."
-   ],
-   correct:0,
+   options:["Wipe the glass lens with heavy lubricating oil.","Place the unit on an uneven pile of loose timber cut-offs without locking the pendulum.","Check the laser line against a known datum and rotate the unit 180 degrees to confirm line-height consistency.","Charge the battery until it reaches maximum heat."],
+   correct:2,
    explanation:"Verifying a laser level requires projecting a mark, rotating the level 180 degrees, and checking that the beam returns to the same height.",
    keyTakeaway:"Verify laser accuracy over distance by performing a 180-degree rotation check.",
    id:"site-carp-epa-v1318-k29"
@@ -1986,12 +1599,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K40",
    question:"What is a key tax obligation for a self-employed site carpenter working under the UK Construction Industry Scheme (CIS)?",
-   options:[
-    "Registering with HMRC for CIS so contractors can deduct tax at source, typically 20%, from labour payments.",
-    "Paying no income tax as long as tool costs exceed income.",
-    "Filing VAT returns weekly regardless of turnover level.",
-    "Paying employee National Insurance directly through the site main contractor's payroll."
-   ],
+   options:["Registering with HMRC for CIS so contractors can deduct tax at source, typically 20%, from labour payments.","Paying no income tax as long as tool costs exceed income.","Filing VAT returns weekly regardless of turnover level.","Paying employee National Insurance directly through the site main contractor's payroll."],
    correct:0,
    explanation:"Under CIS, contractors deduct advance tax directly from subcontractor labour payments and submit it to HMRC on their behalf.",
    keyTakeaway:"CIS requires contractors to deduct advance tax at source from subcontractor labour.",
@@ -2000,13 +1608,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S1",
    question:"You notice an unguarded floor opening on the first-floor joist deck where someone could fall. How do you demonstrate compliance with safety regulations?",
-   options:[
-    "Stop work, secure a temporary guardrail or solid cover over the opening immediately, and label it clearly.",
-    "Step over the gap carefully while carrying heavy timber lengths.",
-    "Cover the hole loosely with a sheet of thin cardboard.",
-    "Ignore it until floor boarding starts next week."
-   ],
-   correct:0,
+   options:["Step over the gap carefully while carrying heavy timber lengths.","Stop work, secure a temporary guardrail or solid cover over the opening immediately, and label it clearly.","Cover the hole loosely with a sheet of thin cardboard.","Ignore it until floor boarding starts next week."],
+   correct:1,
    explanation:"Work at height controls require effective edge protection or a secured rigid cover over floor openings.",
    keyTakeaway:"Securely cover or guard all floor voids and edges before working near them.",
    id:"site-carp-epa-v1318-s1"
@@ -2014,13 +1617,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S2",
    question:"You need to sand filled timber joints on installed window boards inside a completed room. How do you correctly apply safety control equipment?",
-   options:[
-    "Connect an M-Class dust extraction vacuum to the sander and wear suitable FFP2 or FFP3 respiratory protection.",
-    "Blow dust off the boards using an airline hose toward the doorway.",
-    "Wear eye protection only while keeping all windows tightly shut without extraction.",
-    "Use a wire brush by hand without any respiratory protection."
-   ],
-   correct:0,
+   options:["Blow dust off the boards using an airline hose toward the doorway.","Connect an M-Class dust extraction vacuum to the sander and wear suitable FFP2 or FFP3 respiratory protection.","Wear eye protection only while keeping all windows tightly shut without extraction.","Use a wire brush by hand without any respiratory protection."],
+   correct:1,
    explanation:"Fine timber and filler dust require suitable extraction attached to the tool along with suitable RPE.",
    keyTakeaway:"Use tool extraction combined with RPE when sanding timber.",
    id:"site-carp-epa-v1318-s2"
@@ -2028,13 +1626,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S3",
    question:"At the end of a first-fix framing shift, you have clean timber offcuts, treated wood scraps, and metal joist hanger offcuts. How should you process these waste materials?",
-   options:[
-    "Segregate untreated wood, treated wood, and scrap metal into their designated site recycling bins.",
-    "Throw all wood and metal waste together into the general landfill skip.",
-    "Burn treated timber scraps on site to heat the working area.",
-    "Bury metal fixings underneath the floor insulation boards."
-   ],
-   correct:0,
+   options:["Throw all wood and metal waste together into the general landfill skip.","Burn treated timber scraps on site to heat the working area.","Segregate untreated wood, treated wood, and scrap metal into their designated site recycling bins.","Bury metal fixings underneath the floor insulation boards."],
+   correct:2,
    explanation:"Environmental guidance requires sorting site waste by material type so metals and suitable timber can be reclaimed or recycled.",
    keyTakeaway:"Sort and segregate waste streams to support site material recycling.",
    id:"site-carp-epa-v1318-s3"
@@ -2042,12 +1635,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S4",
    question:"When installing structural floor joists, the manufacturer's guidance states joist hangers must be fully nailed into solid backing using specified square twist nails. How do you ensure compliance?",
-   options:[
-    "Fill every designated nail hole in the hanger flange with the specified square twist nails.",
-    "Put two drywall screws through the top holes only to hold the hanger in place.",
-    "Use smooth oval wire nails in every second hole to save time.",
-    "Weld the galvanised hanger to the timber plate using a spot torch."
-   ],
+   options:["Fill every designated nail hole in the hanger flange with the specified square twist nails.","Put two drywall screws through the top holes only to hold the hanger in place.","Use smooth oval wire nails in every second hole to save time.","Weld the galvanised hanger to the timber plate using a spot torch."],
    correct:0,
    explanation:"Structural fixings must follow the manufacturer's specification, using the correct nails in all designated holes to achieve the rated capacity.",
    keyTakeaway:"Install specified fixings in all designated fixing holes to achieve the structural rating.",
@@ -2056,13 +1644,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S5",
    question:"Before setting up a chop saw station inside a room under construction, how do you prepare a safe working area?",
-   options:[
-    "Ensure adequate lighting, clear trip hazards, manage power cables, and set up a stable work stand with dust extraction.",
-    "Set the saw directly on the floor surrounded by loose timber offcuts.",
-    "Block the main exit doorway with timber racks so materials stay close by.",
-    "Run extension leads through standing surface water across the access path."
-   ],
-   correct:0,
+   options:["Set the saw directly on the floor surrounded by loose timber offcuts.","Block the main exit doorway with timber racks so materials stay close by.","Run extension leads through standing surface water across the access path.","Ensure adequate lighting, clear trip hazards, manage power cables, and set up a stable work stand with dust extraction."],
+   correct:3,
    explanation:"Safe work area preparation requires clear access routes, stable equipment stands, good lighting, managed cables and suitable dust control.",
    keyTakeaway:"Maintain clean, well-lit and uncluttered work zones around power tool stations.",
    id:"site-carp-epa-v1318-s5"
@@ -2070,13 +1653,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S6",
    question:"You are reading a structural floor drawing and notice the joist spacing is specified as 400mm centres, but the site layout pencil mark shows 600mm centres. What should you do?",
-   options:[
-    "Halt joist layout, check the specification drawing, and correct the layout marks before fixing.",
-    "Lay the joists at 600mm centres because it uses fewer materials.",
-    "Split the difference and lay joists at 500mm centres.",
-    "Ignore the drawing and lay joists wherever existing wall ties are located."
-   ],
-   correct:0,
+   options:["Lay the joists at 600mm centres because it uses fewer materials.","Split the difference and lay joists at 500mm centres.","Halt joist layout, check the specification drawing, and correct the layout marks before fixing.","Ignore the drawing and lay joists wherever existing wall ties are located."],
+   correct:2,
    explanation:"Structural drawings must be followed. If site marks contradict the drawing, stop and verify before fixing structural elements.",
    keyTakeaway:"Verify layout marks against structural drawings before installing components.",
    id:"site-carp-epa-v1318-s6"
@@ -2084,13 +1662,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S7",
    question:"You are tasked with framing a stud partition wall measuring 6m long by 2.4m high. How do you produce an accurate timber cutting list?",
-   options:[
-    "Calculate top and bottom plates, studs at the specified centres, opening members and noggins, adding an appropriate waste allowance.",
-    "Order 50 identical timber lengths without measuring the wall run.",
-    "Guess the required timber count by looking at a nearby completed room.",
-    "Order studs only and cut top plates out of spare floorboards."
-   ],
-   correct:0,
+   options:["Order 50 identical timber lengths without measuring the wall run.","Guess the required timber count by looking at a nearby completed room.","Order studs only and cut top plates out of spare floorboards.","Calculate top and bottom plates, studs at the specified centres, opening members and noggins, adding an appropriate waste allowance."],
+   correct:3,
    explanation:"An accurate cutting list calculates plates, studs, noggins and opening components systematically from the actual dimensions, with a reasonable waste allowance.",
    keyTakeaway:"Calculate all framing components systematically when compiling timber cutting lists.",
    id:"site-carp-epa-v1318-s7"
@@ -2098,12 +1671,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S8",
    question:"You need to ask the site supervisor for additional ceiling joist timber. How do you communicate this using correct construction terminology?",
-   options:[
-    "We require twenty 47x145mm C24 graded timber lengths at 4.2 metres for the ceiling joists.",
-    "We need a bunch of medium-sized wood planks for the top floor ceiling.",
-    "Send up twenty long sticks of brown wood so we can finish the roof floor.",
-    "We need some structural timber cut to whatever size is available in the yard."
-   ],
+   options:["We require twenty 47x145mm C24 graded timber lengths at 4.2 metres for the ceiling joists.","We need a bunch of medium-sized wood planks for the top floor ceiling.","Send up twenty long sticks of brown wood so we can finish the roof floor.","We need some structural timber cut to whatever size is available in the yard."],
    correct:0,
    explanation:"Clear professional communication requires exact dimensions, structural grade, intended use and required lengths.",
    keyTakeaway:"Specify exact structural grade, dimensions and lengths when ordering materials.",
@@ -2112,13 +1680,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S9",
    question:"How should sharp bevel-edged chisels be safely carried and stored when moving around a busy construction site?",
-   options:[
-    "Stored inside a protective tool roll or box with edge guards fitted over the blades.",
-    "Carried loose in trouser side pockets with blades facing upwards.",
-    "Tucked blade-first into a high-visibility vest chest pocket.",
-    "Balanced on top of an open stepladder while moving between rooms."
-   ],
-   correct:0,
+   options:["Carried loose in trouser side pockets with blades facing upwards.","Stored inside a protective tool roll or box with edge guards fitted over the blades.","Tucked blade-first into a high-visibility vest chest pocket.","Balanced on top of an open stepladder while moving between rooms."],
+   correct:1,
    explanation:"Protecting sharp edges in guards or tool rolls prevents edge damage and protects workers from puncture injuries.",
    keyTakeaway:"Keep sharp hand tools sheathed or stored securely when moving around site.",
    id:"site-carp-epa-v1318-s9"
@@ -2126,13 +1689,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S10",
    question:"When using a 110V plunge router to trim laminate edges, what operational step ensures tool control and user safety?",
-   options:[
-    "Feed the router against the cutter rotation with both hands on the handles, allowing the bit to reach full speed before engaging.",
-    "Climb-cut rapidly by pulling the router in the same direction as cutter rotation.",
-    "Hold the workpiece with one hand and operate the router with the other.",
-    "Adjust bit depth while the motor cable is plugged in and powered."
-   ],
-   correct:0,
+   options:["Climb-cut rapidly by pulling the router in the same direction as cutter rotation.","Hold the workpiece with one hand and operate the router with the other.","Adjust bit depth while the motor cable is plugged in and powered.","Feed the router against the cutter rotation with both hands on the handles, allowing the bit to reach full speed before engaging."],
+   correct:3,
    explanation:"Feeding against cutter rotation helps prevent the tool grabbing and running out of control. Both hands should remain on the handles.",
    keyTakeaway:"Maintain two-handed control on routers and feed against cutter rotation.",
    id:"site-carp-epa-v1318-s10"
@@ -2140,12 +1698,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S11",
    question:"While planing a hardwood door edge, your hand plane blade begins to tear the timber grain and skip. How do you return the blade to good working condition?",
-   options:[
-    "Remove the iron, hone the secondary bevel on a fine stone, remove the wire burr from the back, and reset the plane correctly.",
-    "Hit the iron with a claw hammer to force it further through the sole opening.",
-    "Grind the iron on a high-speed dry bench grinder until the metal turns blue.",
-    "File the cutting edge rounded using a coarse rasp."
-   ],
+   options:["Remove the iron, hone the secondary bevel on a fine stone, remove the wire burr from the back, and reset the plane correctly.","Hit the iron with a claw hammer to force it further through the sole opening.","Grind the iron on a high-speed dry bench grinder until the metal turns blue.","File the cutting edge rounded using a coarse rasp."],
    correct:0,
    explanation:"Proper sharpening requires honing a refined edge, removing the wire burr from the flat back, and resetting the plane correctly.",
    keyTakeaway:"Hone blade edges on sharpening stones and remove burrs to maintain clean cuts.",
@@ -2154,13 +1707,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S12",
    question:"You need to cut twenty identical timber wedge fillets for a flat roof firring installation. How do you produce a jig to ensure fast, safe and accurate repeatable cuts?",
-   options:[
-    "Construct a secure plywood fence jig that holds stock at the correct angle against a suitable saw stop.",
-    "Mark each wedge individually by hand and cut every one freehand.",
-    "Hold short timber blocks against a bare circular saw blade with your fingers.",
-    "Judge the angle by eye on each cut without using end stops or clamps."
-   ],
-   correct:0,
+   options:["Mark each wedge individually by hand and cut every one freehand.","Construct a secure plywood fence jig that holds stock at the correct angle against a suitable saw stop.","Hold short timber blocks against a bare circular saw blade with your fingers.","Judge the angle by eye on each cut without using end stops or clamps."],
+   correct:1,
    explanation:"A fixed jig with stops and a secure holding method produces repeatable cuts while keeping hands away from the blade.",
    keyTakeaway:"Use custom guide jigs with end stops for accurate, safe repeatable cuts.",
    id:"site-carp-epa-v1318-s12"
@@ -2168,13 +1716,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S13",
    question:"A colleague mentions feeling overwhelmed by financial pressure and personal stress. What practical action demonstrates identifying wellbeing support?",
-   options:[
-    "Provide details for the Construction Industry Helpline or Employee Assistance Programme and encourage them to speak to a trained site representative.",
-    "Advise them to work extra night shifts to double their pay.",
-    "Tell them feeling stressed is standard for site trades so they should ignore it.",
-    "Discuss their personal situation publicly with the rest of the site workforce."
-   ],
-   correct:0,
+   options:["Advise them to work extra night shifts to double their pay.","Tell them feeling stressed is standard for site trades so they should ignore it.","Provide details for the Construction Industry Helpline or Employee Assistance Programme and encourage them to speak to a trained site representative.","Discuss their personal situation publicly with the rest of the site workforce."],
+   correct:2,
    explanation:"Supporting a colleague involves connecting them with confidential industry support services and trained welfare staff.",
    keyTakeaway:"Direct colleagues to confidential industry wellbeing services and trained advisers.",
    id:"site-carp-epa-v1318-s13"
@@ -2182,13 +1725,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S14",
    question:"You are installing a straight flight of timber stairs between two structural floors. How do you ensure the stair stringers are secured accurately?",
-   options:[
-    "Fix the stair head securely to the floor trimmer using the specified structural connection, ensuring top and bottom risers suit finished floor levels.",
-    "Rest the stair stringer loosely against the plasterboard wall and nail it through the floorboards.",
-    "Support the middle of the stair flight on temporary loose brick stacks.",
-    "Screw the bottom step into carpet underlay without fixing the stair head."
-   ],
-   correct:0,
+   options:["Rest the stair stringer loosely against the plasterboard wall and nail it through the floorboards.","Support the middle of the stair flight on temporary loose brick stacks.","Fix the stair head securely to the floor trimmer using the specified structural connection, ensuring top and bottom risers suit finished floor levels.","Screw the bottom step into carpet underlay without fixing the stair head."],
+   correct:2,
    explanation:"Stair flights must be structurally tied to the floor trimmer at the top and anchored securely at the base, while maintaining consistent riser heights between finished floors.",
    keyTakeaway:"Fix stair flights securely to floor trimmers, accounting for finished floor levels.",
    id:"site-carp-epa-v1318-s14"
@@ -2196,13 +1734,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S15",
    question:"When securing a heavy timber sole plate down into a concrete floor slab, which structural fixing method should be applied?",
-   options:[
-    "Drill and anchor using specified heavy-duty expansion bolts or concrete screws at the required centres.",
-    "Use 40mm panel pins driven into plastic wall plugs every 2 metres.",
-    "Apply a thin bead of PVA wood glue along the damp proof membrane.",
-    "Weight the timber down with loose concrete blocks until framed walls are built on top."
-   ],
-   correct:0,
+   options:["Use 40mm panel pins driven into plastic wall plugs every 2 metres.","Drill and anchor using specified heavy-duty expansion bolts or concrete screws at the required centres.","Apply a thin bead of PVA wood glue along the damp proof membrane.","Weight the timber down with loose concrete blocks until framed walls are built on top."],
+   correct:1,
    explanation:"Sole plates require rated mechanical anchors into the concrete slab to resist uplift and lateral loads.",
    keyTakeaway:"Use rated mechanical masonry anchors to secure structural sole plates to concrete.",
    id:"site-carp-epa-v1318-s15"
@@ -2210,12 +1743,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S16",
    question:"You need to select timber joists for a clear floor span of 3.8 metres. How do you size the timber correctly using standard sizing tables?",
-   options:[
-    "Use the relevant span table for the 3.8m clear span and expected loading to identify the required grade and section size.",
-    "Pick any timber depth as long as the wood looks clean and free of large knots.",
-    "Measure the wall thickness and choose a timber length that matches wall height.",
-    "Use 38x89mm studding timber doubled up with wood glue."
-   ],
+   options:["Use the relevant span table for the 3.8m clear span and expected loading to identify the required grade and section size.","Pick any timber depth as long as the wood looks clean and free of large knots.","Measure the wall thickness and choose a timber length that matches wall height.","Use 38x89mm studding timber doubled up with wood glue."],
    correct:0,
    explanation:"Timber span tables specify the minimum grade and section required for a particular clear span, spacing and loading condition.",
    keyTakeaway:"Cross-reference span and loading against approved timber span tables to select joist sizes.",
@@ -2224,13 +1752,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S17",
    question:"You are installing internal timber window boards above radiators during second-fix operations. How should these be fitted and secured?",
-   options:[
-    "Cut the ends accurately to fit the reveals, pack the board level, and secure it with the specified adhesive or concealed mechanical fixings.",
-    "Nail window boards loosely through window frame glazing beads using 100mm wire nails.",
-    "Rely on expanding foam alone without mechanical fixings or level checks.",
-    "Leave a 25mm forward slope so the board slides away from the wall line."
-   ],
-   correct:0,
+   options:["Nail window boards loosely through window frame glazing beads using 100mm wire nails.","Rely on expanding foam alone without mechanical fixings or level checks.","Leave a 25mm forward slope so the board slides away from the wall line.","Cut the ends accurately to fit the reveals, pack the board level, and secure it with the specified adhesive or concealed mechanical fixings."],
+   correct:3,
    explanation:"Window boards must fit the reveals neatly, be packed level and be secured using a suitable approved fixing method.",
    keyTakeaway:"Fit window boards neatly to reveals, pack them level and fix them securely.",
    id:"site-carp-epa-v1318-s17"
@@ -2238,13 +1761,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S18",
    question:"When framing a traditional cut rafter roof on site, how do you mark and cut the birdsmouth joint where rafters meet the timber wall plate?",
-   options:[
-    "Mark the plumb and seat cuts from the roof pitch, keeping the notch within the permitted rafter depth, then cut neatly to bear on the plate.",
-    "Chop a square notch halfway through the wall plate so the rafter sits flat.",
-    "Cut the rafter completely flat on the end and butt-nail it to the side of the wall plate.",
-    "Saw through the entire rafter and reconnect the pieces with nail plates over the wall plate."
-   ],
-   correct:0,
+   options:["Chop a square notch halfway through the wall plate so the rafter sits flat.","Cut the rafter completely flat on the end and butt-nail it to the side of the wall plate.","Mark the plumb and seat cuts from the roof pitch, keeping the notch within the permitted rafter depth, then cut neatly to bear on the plate.","Saw through the entire rafter and reconnect the pieces with nail plates over the wall plate."],
+   correct:2,
    explanation:"A birdsmouth combines a plumb cut and a level seat cut so the rafter bears correctly on the wall plate without excessive loss of section.",
    keyTakeaway:"Mark birdsmouth cuts from the roof pitch and keep the notch within the permitted rafter depth.",
    id:"site-carp-epa-v1318-s18"
@@ -2252,13 +1770,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S19",
    question:"You are transferring a finished floor datum level across four rooms using a self-levelling cross-line laser. How do you ensure accuracy and protect the instrument?",
-   options:[
-    "Mount the laser securely, allow it to self-level, mark points precisely, and lock the pendulum before moving it.",
-    "Balance the laser loosely on an inverted bucket and tilt it by hand to reach high marks.",
-    "Leave the self-levelling lock disengaged while transporting the tool across rough ground.",
-    "Mark datum points using the wide outer edge of the laser beam."
-   ],
-   correct:0,
+   options:["Balance the laser loosely on an inverted bucket and tilt it by hand to reach high marks.","Mount the laser securely, allow it to self-level, mark points precisely, and lock the pendulum before moving it.","Leave the self-levelling lock disengaged while transporting the tool across rough ground.","Mark datum points using the wide outer edge of the laser beam."],
+   correct:1,
    explanation:"Laser levels need a stable setup to self-level accurately, and the pendulum should be locked during transport to protect the mechanism.",
    keyTakeaway:"Mount laser levels securely and lock the pendulum before transport.",
    id:"site-carp-epa-v1318-s19"
@@ -2266,12 +1779,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S20",
    question:"When installing timber wall cladding outdoors, what fixing method prevents moisture from corroding nails and staining timber faces?",
-   options:[
-    "Use the specified stainless steel or hot-dip galvanised ring-shank nails, driven to the required finish.",
-    "Use untreated black mild steel wire nails.",
-    "Use indoor drywall screws driven flush into timber faces.",
-    "Glue cladding panels directly to masonry walls using PVA adhesive."
-   ],
+   options:["Use the specified stainless steel or hot-dip galvanised ring-shank nails, driven to the required finish.","Use untreated black mild steel wire nails.","Use indoor drywall screws driven flush into timber faces.","Glue cladding panels directly to masonry walls using PVA adhesive."],
    correct:0,
    explanation:"External timber cladding requires corrosion-resistant fixings to prevent rust staining and premature fixing failure.",
    keyTakeaway:"Use stainless steel or suitably galvanised fixings for external timber cladding.",
@@ -2280,13 +1788,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S21",
    question:"You are hanging a solid softwood internal door into a newly installed timber lining. How do you mark out and cut the hinge recesses?",
-   options:[
-    "Mark hinge positions accurately, gauge the hinge-leaf depth, cut the recess cleanly, and fix the hinges flush with suitable screws.",
-    "Chisel a slot twice as deep as the hinge leaf so the hinge drops below the timber face.",
-    "Screw hinges directly onto the unrecessed face of the door edge.",
-    "Cut hinge recesses using a handsaw angled at 45 degrees into the door edge."
-   ],
-   correct:0,
+   options:["Chisel a slot twice as deep as the hinge leaf so the hinge drops below the timber face.","Screw hinges directly onto the unrecessed face of the door edge.","Cut hinge recesses using a handsaw angled at 45 degrees into the door edge.","Mark hinge positions accurately, gauge the hinge-leaf depth, cut the recess cleanly, and fix the hinges flush with suitable screws."],
+   correct:3,
    explanation:"Hinge recesses must be marked accurately and cut to the exact leaf thickness so the hinge sits flush and the door operates correctly.",
    keyTakeaway:"Cut hinge recesses to the exact leaf depth so the hardware sits flush.",
    id:"site-carp-epa-v1318-s21"
@@ -2294,13 +1797,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S22",
    question:"When fitting dado rails along an uneven wall face, how do you execute a scribed joint on an internal corner?",
-   options:[
-    "Fit the first moulding square into the corner, mitre the second to expose the profile, then cope along that profile for a tight fit.",
-    "Cut two opposing 45-degree mitres and pack any gap behind with folded paper.",
-    "Butt both pieces together and fill the front voids with dark wood filler.",
-    "Bevel both timber ends to 30 degrees and overlap them across the corner."
-   ],
-   correct:0,
+   options:["Cut two opposing 45-degree mitres and pack any gap behind with folded paper.","Butt both pieces together and fill the front voids with dark wood filler.","Fit the first moulding square into the corner, mitre the second to expose the profile, then cope along that profile for a tight fit.","Bevel both timber ends to 30 degrees and overlap them across the corner."],
+   correct:2,
    explanation:"Scribing exposes the moulding profile with a mitre and then removes the waste behind it so the second piece fits tightly over the first.",
    keyTakeaway:"Use a coping saw along the exposed profile to create tight internal scribed joints.",
    id:"site-carp-epa-v1318-s22"
@@ -2308,13 +1806,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B1",
    question:"You notice that the main guardrail on a mobile scaffold tower has been unclipped and left hanging loose by another team. How do you demonstrate putting safety and wellbeing first?",
-   options:[
-    "Stop work on or near the tower, prevent access, and report the defect so the tower can be made safe by a competent person.",
-    "Climb the tower quickly to grab a tool, taking care not to lean against the open side.",
-    "Wait until the end of the shift to mention the loose guardrail.",
-    "Ignore the scaffold because your immediate carpentry task is on ground level."
-   ],
-   correct:0,
+   options:["Climb the tower quickly to grab a tool, taking care not to lean against the open side.","Stop work on or near the tower, prevent access, and report the defect so the tower can be made safe by a competent person.","Wait until the end of the shift to mention the loose guardrail.","Ignore the scaffold because your immediate carpentry task is on ground level."],
+   correct:1,
    explanation:"Putting safety first means stopping exposure to the hazard and ensuring the equipment is made safe before use.",
    keyTakeaway:"Take immediate ownership of safety hazards, regardless of who caused them.",
    id:"site-carp-epa-v1318-b1"
@@ -2322,12 +1815,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B2",
    question:"When cutting short joist noggins out of 4.8m timber lengths, how do you demonstrate environmental consideration during work processes?",
-   options:[
-    "Plan the cutting sequence and use suitable existing offcuts before opening new full-length timber packs.",
-    "Cut every short noggin from fresh full-length timber and discard the remaining pieces.",
-    "Throw all timber offcuts under 2 metres into the general waste skip.",
-    "Order custom short noggins regardless of suitable stock already on site."
-   ],
+   options:["Plan the cutting sequence and use suitable existing offcuts before opening new full-length timber packs.","Cut every short noggin from fresh full-length timber and discard the remaining pieces.","Throw all timber offcuts under 2 metres into the general waste skip.","Order custom short noggins regardless of suitable stock already on site."],
    correct:0,
    explanation:"Environmental responsibility includes planning cuts to reduce waste and using suitable offcuts before opening new stock.",
    keyTakeaway:"Use material offcuts productively to reduce site timber waste.",
@@ -2336,13 +1824,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B3",
    question:"A female apprentice carpenter joins your first-fix team. How do you actively contribute to an inclusive and diverse culture on site?",
-   options:[
-    "Treat her with equal respect, involve her fully in skilled framing tasks, and challenge non-inclusive behaviour.",
-    "Assign her light cleaning duties only so she avoids physical framing work.",
-    "Expect her to prove her skills before giving her access to power tools.",
-    "Avoid speaking to her so you do not accidentally say something wrong."
-   ],
-   correct:0,
+   options:["Assign her light cleaning duties only so she avoids physical framing work.","Expect her to prove her skills before giving her access to power tools.","Avoid speaking to her so you do not accidentally say something wrong.","Treat her with equal respect, involve her fully in skilled framing tasks, and challenge non-inclusive behaviour."],
+   correct:3,
    explanation:"An inclusive culture gives every team member equal respect, learning opportunities and access to skilled work.",
    keyTakeaway:"Treat all colleagues equally and ensure everyone can participate in skilled work.",
    id:"site-carp-epa-v1318-b3"
@@ -2350,13 +1833,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B4",
    question:"A specialist subcontractor is using a high-precision CNC timber routing system on site for prefabricated roof components. How do you demonstrate seeking learning and development opportunities?",
-   options:[
-    "Ask permission to observe the setup, ask relevant technical questions, and read the component fabrication information.",
-    "Dismiss the technology as unnecessary compared with traditional hand sawing.",
-    "Assume you will never need to understand automated machinery in your career.",
-    "Complain that automated machinery reduces traditional site hours."
-   ],
-   correct:0,
+   options:["Dismiss the technology as unnecessary compared with traditional hand sawing.","Ask permission to observe the setup, ask relevant technical questions, and read the component fabrication information.","Assume you will never need to understand automated machinery in your career.","Complain that automated machinery reduces traditional site hours."],
+   correct:1,
    explanation:"Seeking development means showing initiative and learning about modern methods, equipment and processes.",
    keyTakeaway:"Take initiative to learn modern methods and equipment from specialist trades.",
    id:"site-carp-epa-v1318-b4"
@@ -2364,12 +1842,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B5",
    question:"Your carpentry team is tasked with boarding a floor deck before dryliners arrive to erect internal partitions. How do you demonstrate a team focus to meet goals?",
-   options:[
-    "Coordinate the floor layout and handover sequence with the drylining team so priority partition areas are ready on time.",
-    "Board floors randomly without discussing room priorities with follow-on trades.",
-    "Focus only on your own daily output regardless of whether partition areas are accessible.",
-    "Leave floor boarding incomplete around doorways so another trade can finish it later."
-   ],
+   options:["Coordinate the floor layout and handover sequence with the drylining team so priority partition areas are ready on time.","Board floors randomly without discussing room priorities with follow-on trades.","Focus only on your own daily output regardless of whether partition areas are accessible.","Leave floor boarding incomplete around doorways so another trade can finish it later."],
    correct:0,
    explanation:"Team focus means coordinating with adjoining trades and considering the wider programme rather than only individual output.",
    keyTakeaway:"Coordinate actively with adjoining trades to achieve project-wide milestones.",
@@ -2380,13 +1853,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K1",
    question:"You are preparing to cut timber in a workshop where fine wood dust accumulates quickly. Under PUWER and CoSHH regulations, what is the mandatory safety step regarding equipment and personal health protection?",
-   options:[
-    "Ensure the saw has valid safety inspections and combine localized dust extraction (LEV) with a fitted FFP3 respirator.",
-    "Open a far window and wear a standard paper dust mask while disabling the saw guard for speed.",
-    "Sweep up all fine timber dust with a dry yard broom once at the end of every shift.",
-    "Use cordless hand tools only, as respiratory protection is not required for natural softwoods."
-   ],
-   correct:0,
+   options:["Open a far window and wear a standard paper dust mask while disabling the saw guard for speed.","Sweep up all fine timber dust with a dry yard broom once at the end of every shift.","Ensure the saw has valid safety inspections and combine localized dust extraction (LEV) with a fitted FFP3 respirator.","Use cordless hand tools only, as respiratory protection is not required for natural softwoods."],
+   correct:2,
    explanation:"PUWER requires safe, inspected machinery, while CoSHH mandates controlling hazardous wood dust at the point of creation using LEV paired with appropriate RPE (FFP3 mask).",
    keyTakeaway:"Always combine inspected equipment with effective LEV and RPE to control timber dust exposure.",
    id:"arch-epa-v1319-k1-1"
@@ -2394,13 +1862,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K2",
    question:"When operating a portable circular saw or router to process MDF sheet materials, how should local exhaust ventilation (LEV) and personal protective equipment (PPE) be configured?",
-   options:[
-    "Connect continuous extraction directly to the tool dust shroud and wear eye protection along with ear defenders.",
-    "Rely on safety glasses alone, as extraction systems are only required when machining solid oak.",
-    "Position an extraction hose nearby on the bench without physically connecting it to the tool shroud.",
-    "Wear heavy leather rigging gloves while feeding sheet material past an unguarded blade."
-   ],
-   correct:0,
+   options:["Rely on safety glasses alone, as extraction systems are only required when machining solid oak.","Position an extraction hose nearby on the bench without physically connecting it to the tool shroud.","Wear heavy leather rigging gloves while feeding sheet material past an unguarded blade.","Connect continuous extraction directly to the tool dust shroud and wear eye protection along with ear defenders."],
+   correct:3,
    explanation:"Directly connecting LEV removes toxic fine particulate at the source, while eye and hearing protection shield against projectile chips and high acoustic levels.",
    keyTakeaway:"Directly attach extraction hoses to power tool shrouds and wear suitable PPE.",
    id:"arch-epa-v1319-k2-2"
@@ -2408,12 +1871,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K3",
    question:"Before commencing high-risk machining or assembly work in a busy workshop, where do you find the precise safety sequence and control measures designed for that operation?",
-   options:[
-    "In the task-specific Method Statement and Risk Assessment (RAMS) reviewed during the safety induction or toolbox talk.",
-    "On the delivery advice note attached to the raw timber bundle.",
-    "In the general health and safety poster mounted inside the staff breakroom.",
-    "By asking a fellow apprentice how they performed the same task on a previous job."
-   ],
+   options:["In the task-specific Method Statement and Risk Assessment (RAMS) reviewed during the safety induction or toolbox talk.","On the delivery advice note attached to the raw timber bundle.","In the general health and safety poster mounted inside the staff breakroom.","By asking a fellow apprentice how they performed the same task on a previous job."],
    correct:0,
    explanation:"RAMS documents and safety briefings set out the legally binding, safe systems of work and control measures required for workshop tasks.",
    keyTakeaway:"Always review task RAMS and attend safety briefings prior to starting complex work.",
@@ -2422,13 +1880,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K4",
    question:"When ordering timber stock for a sustainable build project, which international certification guarantees the raw material originated from responsibly managed forests?",
-   options:[
-    "FSC (Forest Stewardship Council) or PEFC certification.",
-    "CE / UKCA structural grading stamps only.",
-    "ISO 9001 quality assurance approval stamps.",
-    "Local saw mill weight delivery dockets."
-   ],
-   correct:0,
+   options:["CE / UKCA structural grading stamps only.","ISO 9001 quality assurance approval stamps.","FSC (Forest Stewardship Council) or PEFC certification.","Local saw mill weight delivery dockets."],
+   correct:2,
    explanation:"FSC and PEFC chain-of-custody schemes verify that timber products originate from sustainably managed, environmentally sound forests.",
    keyTakeaway:"Look for FSC or PEFC certification to verify sustainable timber sourcing.",
    id:"arch-epa-v1319-k4-4"
@@ -2436,13 +1889,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K5",
    question:"Why is an airtightness membrane installed on the warm interior side of insulation in a modern timber-frame wall assembly?",
-   options:[
-    "To stop warm, moist room air from migrating into the timber frame cavity and creating interstitial condensation.",
-    "To provide a rigid backing layer for attaching heavy decorative timber cladding.",
-    "To facilitate external rainwater drainage down into the concrete foundation slab.",
-    "To increase the structural load-bearing capacity of interior plasterboard linings."
-   ],
-   correct:0,
+   options:["To provide a rigid backing layer for attaching heavy decorative timber cladding.","To facilitate external rainwater drainage down into the concrete foundation slab.","To increase the structural load-bearing capacity of interior plasterboard linings.","To stop warm, moist room air from migrating into the timber frame cavity and creating interstitial condensation."],
+   correct:3,
    explanation:"Vapour control layers placed on the warm interior side prevent moist indoor air from penetrating cold outer insulation zones where it would condense and rot structural timber.",
    keyTakeaway:"Vapour control layers prevent internal moisture from condensing inside structural wall cavities.",
    id:"arch-epa-v1319-k5-5"
@@ -2450,13 +1898,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K6",
    question:"In a 3D digital design environment (such as BIM or CAD), how do digital models support an architectural joiner prior to manufacturing bespoke staircase components?",
-   options:[
-    "By identifying spatial geometry clashes and component layout errors before cutting physical timber.",
-    "By automatically setting the fence depth on workshop planer and thicknessing machinery.",
-    "By eliminating the need to use mechanical jointing fixings or adhesives during assembly.",
-    "By calculating the exact moisture percentage contained inside incoming raw timber lots."
-   ],
-   correct:0,
+   options:["By automatically setting the fence depth on workshop planer and thicknessing machinery.","By identifying spatial geometry clashes and component layout errors before cutting physical timber.","By eliminating the need to use mechanical jointing fixings or adhesives during assembly.","By calculating the exact moisture percentage contained inside incoming raw timber lots."],
+   correct:1,
    explanation:"3D CAD/BIM digital models allow joiners and designers to spot geometrical clashes, headroom clearances, and assembly misalignments before physical production starts.",
    keyTakeaway:"Digital 3D models highlight layout errors and spatial clashes before timber is cut.",
    id:"arch-epa-v1319-k6-6"
@@ -2464,13 +1907,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K7",
    question:"Which mandatory regulatory framework dictates timber door fire ratings, staircase pitch angles, and structural safety parameters across England?",
-   options:[
-    "The Building Regulations (such as Approved Documents B, K, and M).",
-    "The Highways Act regulatory standard manual.",
-    "The Construction (Design and Management) client appointment register.",
-    "The Consumer Rights Act standard commercial template."
-   ],
-   correct:0,
+   options:["The Highways Act regulatory standard manual.","The Building Regulations (such as Approved Documents B, K, and M).","The Construction (Design and Management) client appointment register.","The Consumer Rights Act standard commercial template."],
+   correct:1,
    explanation:"Building Regulations set mandatory minimum standards for fire safety (Part B), stair safety and guarding (Part K), and accessibility (Part M).",
    keyTakeaway:"Joinery installations must strictly satisfy the relevant Approved Building Regulations.",
    id:"arch-epa-v1319-k7-7"
@@ -2478,13 +1916,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K8",
    question:"On an architectural joinery elevation drawing, what does a dashed hidden line running across a cabinet door opening indicate?",
-   options:[
-    "The direction of swing and hinge pivot locations for the door leaf.",
-    "The position where timber must be split and spliced together.",
-    "An area where surface sanding and clear finishing are prohibited.",
-    "The location of internal moisture barrier membranes."
-   ],
-   correct:0,
+   options:["The position where timber must be split and spliced together.","An area where surface sanding and clear finishing are prohibited.","The direction of swing and hinge pivot locations for the door leaf.","The location of internal moisture barrier membranes."],
+   correct:2,
    explanation:"On elevation drawings, dashed or triangular lines pointing toward a frame edge indicate hinge placement and door swing direction.",
    keyTakeaway:"Dashed swing lines on elevation drawings denote hinge positions and leaf opening directions.",
    id:"arch-epa-v1319-k8-8"
@@ -2492,12 +1925,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K9",
    question:"Why is manufactured Birch Plywood preferred over standard chipboard for constructing rigid workshop jigs and curved joinery formers?",
-   options:[
-    "Its cross-laminated veneer construction offers superior dimensional stability, strong screw retention, and high shear resistance.",
-    "It is significantly cheaper and softer than low-density fibreboard products.",
-    "It can be scored with a utility knife and snapped cleanly by hand without power saws.",
-    "It absorbs water without expanding, swelling, or delaminating over prolonged outdoor exposure."
-   ],
+   options:["Its cross-laminated veneer construction offers superior dimensional stability, strong screw retention, and high shear resistance.","It is significantly cheaper and softer than low-density fibreboard products.","It can be scored with a utility knife and snapped cleanly by hand without power saws.","It absorbs water without expanding, swelling, or delaminating over prolonged outdoor exposure."],
    correct:0,
    explanation:"Plywood's cross-laminated wood veneers offer multi-directional strength, high structural rigidity, excellent screw holding, and resistance to warping.",
    keyTakeaway:"Plywood provides exceptional structural stability and fix holding due to cross-laminated veneers.",
@@ -2506,13 +1934,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K10",
    question:"What maximum timber moisture content range is recommended for indoor furniture and architectural joinery before processing to prevent warping?",
-   options:[
-    "8% to 12% moisture content.",
-    "22% to 28% moisture content.",
-    "35% to 40% moisture content.",
-    "0% to 2% moisture content."
-   ],
-   correct:0,
+   options:["22% to 28% moisture content.","35% to 40% moisture content.","0% to 2% moisture content.","8% to 12% moisture content."],
+   correct:3,
    explanation:"Internal timber joinery should be conditioned to 8–12% moisture content to match heated internal environments and prevent severe shrinkage or timber movement.",
    keyTakeaway:"Internal joinery timber must be kiln-dried to 8–12% moisture content before processing.",
    id:"arch-epa-v1319-k10-10"
@@ -2520,13 +1943,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K11",
    question:"Which chemical formulation is recommended for filling pin holes and slight joint gaps in internal hardwood joinery prior to clear lacquering?",
-   options:[
-    "A color-matched solvent or acrylic timber filler blended with fine sanding dust from the same wood species.",
-    "Standard exterior masonry gap sealant.",
-    "Unmixed expandable polyurethane gap foam.",
-    "Hydrated lime mortar mixed with PVA adhesive."
-   ],
-   correct:0,
+   options:["Standard exterior masonry gap sealant.","Unmixed expandable polyurethane gap foam.","Hydrated lime mortar mixed with PVA adhesive.","A color-matched solvent or acrylic timber filler blended with fine sanding dust from the same wood species."],
+   correct:3,
    explanation:"Mixing fine sanding dust from the project's hardwood with a compatible binder creates an exact grain-matched filler that accepts clear finishes smoothly.",
    keyTakeaway:"Blend project sanding dust with clear binders to create seamless, grain-matched wood fillers.",
    id:"arch-epa-v1319-k11-11"
@@ -2534,13 +1952,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K12",
    question:"You are producing a cutting list for ten identical timber window frames. What essential allowance must be added to the raw timber stick lengths before machining?",
-   options:[
-    "An allowance for cross-cutting square ends, tenon horns, and machine planing timber margins (typically 50mm extra per piece).",
-    "Subtract 100mm per component to account for timber thermal expansion.",
-    "No allowance is required; order exact finished component sizes.",
-    "Multiply total cubic meters by four to cover glue line compression."
-   ],
-   correct:0,
+   options:["Subtract 100mm per component to account for timber thermal expansion.","An allowance for cross-cutting square ends, tenon horns, and machine planing timber margins (typically 50mm extra per piece).","No allowance is required; order exact finished component sizes.","Multiply total cubic meters by four to cover glue line compression."],
+   correct:1,
    explanation:"Cutting lists must incorporate machining allowances (over-length stock for horns, breakout, squaring, and cross-cutting trim).",
    keyTakeaway:"Always include machining allowances and horn lengths on raw material cutting lists.",
    id:"arch-epa-v1319-k12-12"
@@ -2548,12 +1961,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K13",
    question:"When discussing staircase manufacturing with a workshop manager, what trade term defines the total horizontal distance covered by a flight of stairs from first to last riser?",
-   options:[
-    "The total going.",
-    "The total rise.",
-    "The margin line.",
-    "The pitch line height."
-   ],
+   options:["The total going.","The total rise.","The margin line.","The pitch line height."],
    correct:0,
    explanation:"The 'total going' is the complete horizontal measurement from the face of the first riser to the face of the top riser.",
    keyTakeaway:"Total going measures the horizontal span; total rise measures total vertical elevation.",
@@ -2562,13 +1970,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K14",
    question:"Which marking hand tool features two parallel spur pins adjusted by a thumbscrew to lay out double lines for mortise and tenon joints simultaneously?",
-   options:[
-    "Mortise gauge.",
-    "Marking gauge.",
-    "Sliding bevel.",
-    "Try square."
-   ],
-   correct:0,
+   options:["Marking gauge.","Sliding bevel.","Mortise gauge.","Try square."],
+   correct:2,
    explanation:"A mortise gauge features two pins (one fixed, one adjustable) to score both sides of a mortise or tenon in a single pass.",
    keyTakeaway:"Mortise gauges score twin parallel lines for precise mortise and tenon layouts.",
    id:"arch-epa-v1319-k14-14"
@@ -2576,13 +1979,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K15",
    question:"When re-sharpening a bevel-edged chisel on a sharpening stone, what critical step ensures a true cutting edge after honing the 30-degree secondary micro-bevel?",
-   options:[
-    "Laying the flat back of the chisel completely flush on the fine stone to stroke away the remaining wire burr.",
-    "Grinding the back face at a 45-degree angle to create a double wedge.",
-    "Cooling the steel tip rapidly in cold oil without wiping away stone slurry.",
-    "Filing the flat back in circular patterns using a coarse cabinet rasp."
-   ],
-   correct:0,
+   options:["Grinding the back face at a 45-degree angle to create a double wedge.","Cooling the steel tip rapidly in cold oil without wiping away stone slurry.","Filing the flat back in circular patterns using a coarse cabinet rasp.","Laying the flat back of the chisel completely flush on the fine stone to stroke away the remaining wire burr."],
+   correct:3,
    explanation:"Removing the wire burr flat from the polished back face is essential to achieve a razor-sharp, mirror-smooth cutting edge.",
    keyTakeaway:"Keep the back of the chisel perfectly flat on fine stones to lap away wire burrs.",
    id:"arch-epa-v1319-k15-15"
@@ -2590,13 +1988,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K16",
    question:"Why are dedicated wooden routing jigs built with toggle clamps and guide fence stops when manufacturing multiple identical curved door heads?",
-   options:[
-    "They ensure precise component repeatability, secure workpiece stability, and eliminate hand positioning near cutters.",
-    "They reduce the electrical power consumed by overhead router motors.",
-    "They allow joiners to use unsharpened router bits safely.",
-    "They eliminate the need to apply finish sanding to routed timber curves."
-   ],
-   correct:0,
+   options:["They reduce the electrical power consumed by overhead router motors.","They ensure precise component repeatability, secure workpiece stability, and eliminate hand positioning near cutters.","They allow joiners to use unsharpened router bits safely.","They eliminate the need to apply finish sanding to routed timber curves."],
+   correct:1,
    explanation:"Routing jigs lock stock in place, guarantee identical dimensions across large batch runs, and keep hands safely away from high-speed cutters.",
    keyTakeaway:"Jigs guarantee identical repeatability while improving operator workholding safety.",
    id:"arch-epa-v1319-k16-16"
@@ -2604,13 +1997,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K17",
    question:"When setting up a biscuit jointer or plunge router to cut slot recesses in timber panels, what safety check must be performed before plugging into power?",
-   options:[
-    "Verify cutter sharpness, ensure the plunge spring returns smoothly, check fence depth locks, and confirm correct fence angle adjustment.",
-    "Remove all lower blade guards to allow chips to clear freely.",
-    "Lubricate the cutting carbide tips with mineral engine oil.",
-    "Lock the plunge trigger in the 'ON' position before connecting to power."
-   ],
-   correct:0,
+   options:["Remove all lower blade guards to allow chips to clear freely.","Lubricate the cutting carbide tips with mineral engine oil.","Verify cutter sharpness, ensure the plunge spring returns smoothly, check fence depth locks, and confirm correct fence angle adjustment.","Lock the plunge trigger in the 'ON' position before connecting to power."],
+   correct:2,
    explanation:"Always inspect cutter integrity, guard return springs, depth stops, and locking handles before connecting machinery to power.",
    keyTakeaway:"Inspect guards, depth stops, and blade integrity prior to connecting tools to power.",
    id:"arch-epa-v1319-k17-17"
@@ -2618,12 +2006,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K18",
    question:"How does clear communication between an architectural joiner and the finishing team improve productivity when producing batch cabinetry?",
-   options:[
-    "It ensures components are sanded to the correct grit level, labeled logically, and kept free of glue squeeze-out before stain application.",
-    "It allows finish sprayers to change drawer runner specifications without notice.",
-    "It eliminates the need for quality inspection checks prior to delivery.",
-    "It ensures timber joinery is shipped wet with un-cured adhesive."
-   ],
+   options:["It ensures components are sanded to the correct grit level, labeled logically, and kept free of glue squeeze-out before stain application.","It allows finish sprayers to change drawer runner specifications without notice.","It eliminates the need for quality inspection checks prior to delivery.","It ensures timber joinery is shipped wet with un-cured adhesive."],
    correct:0,
    explanation:"Clear inter-departmental communication ensures machining tolerances, surface prep (sanding grit), and assembly sequences suit the final finish process.",
    keyTakeaway:"Collaborate across teams to align surface preparations with final finishing requirements.",
@@ -2632,12 +2015,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K19",
    question:"How do principles of equity and inclusion benefit a joinery workshop production environment?",
-   options:[
-    "By establishing a culture where every worker feels respected, supported, and empowered to contribute ideas and report safety concerns.",
-    "By ensuring heavy timber handling is restricted exclusively to younger workers.",
-    "By limiting high-precision machinery access to senior staff members only.",
-    "By removing standardized trade assessment criteria for new apprentices."
-   ],
+   options:["By establishing a culture where every worker feels respected, supported, and empowered to contribute ideas and report safety concerns.","By ensuring heavy timber handling is restricted exclusively to younger workers.","By limiting high-precision machinery access to senior staff members only.","By removing standardized trade assessment criteria for new apprentices."],
    correct:0,
    explanation:"Inclusive environments promote mutual respect, fair opportunities, diverse perspectives, and strong team communication.",
    keyTakeaway:"Inclusion creates a fair, supportive environment that drives safety and quality.",
@@ -2646,13 +2024,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K20",
    question:"If a workshop team member exhibits signs of acute physical fatigue or emotional burnout while operating machinery, what is the appropriate immediate action?",
-   options:[
-    "Encourage them to take a break, offer supportive listening, and signpost them to designated Mental Health First Aiders or EAP resources.",
-    "Tell them to operate high-speed machinery faster to maintain production quotas.",
-    "Assign them to operate an unguarded spindle moulder to re-focus their attention.",
-    "Ignore their condition as mental health considerations do not apply in manufacturing environments."
-   ],
-   correct:0,
+   options:["Tell them to operate high-speed machinery faster to maintain production quotas.","Encourage them to take a break, offer supportive listening, and signpost them to designated Mental Health First Aiders or EAP resources.","Assign them to operate an unguarded spindle moulder to re-focus their attention.","Ignore their condition as mental health considerations do not apply in manufacturing environments."],
+   correct:1,
    explanation:"Recognizing signs of distress, offering immediate support, and signposting to trained welfare resources protects worker wellbeing and workshop safety.",
    keyTakeaway:"Address signs of fatigue or distress immediately and direct staff to professional support resources.",
    id:"arch-epa-v1319-k20-20"
@@ -2660,13 +2033,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K29",
    question:"Before using a self-levelling cross-line laser to set out height datums for fitted cabinetry across a room, how do you verify its accuracy?",
-   options:[
-    "Project a beam line onto a wall, mark it, rotate the laser unit 180 degrees at the same distance, and verify the line aligns with the mark.",
-    "Clean the front glass lens using solvent thinners while the laser is running.",
-    "Set the unit on a sloping surface without unlocking the self-levelling pendulum.",
-    "Increase room lighting to maximum brightness to sharpen the laser line beam."
-   ],
-   correct:0,
+   options:["Clean the front glass lens using solvent thinners while the laser is running.","Set the unit on a sloping surface without unlocking the self-levelling pendulum.","Increase room lighting to maximum brightness to sharpen the laser line beam.","Project a beam line onto a wall, mark it, rotate the laser unit 180 degrees at the same distance, and verify the line aligns with the mark."],
+   correct:3,
    explanation:"Checking laser calibration involves projecting a level mark, rotating the instrument 180 degrees, and checking that the beam hits the same mark.",
    keyTakeaway:"Verify laser levels regularly using 180-degree benchmark checks.",
    id:"arch-epa-v1319-k29-21"
@@ -2674,13 +2042,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K30",
    question:"What is a mandatory requirement when assembling an FD30 rated timber fire door frame assembly?",
-   options:[
-    "Installing approved intumescent seals into frame grooves and using fire-rated hinges installed with specified screw lengths.",
-    "Fitting lightweight hollow core panels using standard plastic hinges.",
-    "Leaving a 15mm open air gap around the door perimeter without seals.",
-    "Securing door linings with standard expanding foam without mechanical frame anchors."
-   ],
-   correct:0,
+   options:["Fitting lightweight hollow core panels using standard plastic hinges.","Leaving a 15mm open air gap around the door perimeter without seals.","Installing approved intumescent seals into frame grooves and using fire-rated hinges installed with specified screw lengths.","Securing door linings with standard expanding foam without mechanical frame anchors."],
+   correct:2,
    explanation:"Certified fire door assemblies require tested intumescent strip combinations, solid timber frame densities, and certified fire-rated ironmongery.",
    keyTakeaway:"Fire doors require certified intumescent seals, solid frames, and tested hardware.",
    id:"arch-epa-v1319-k30-22"
@@ -2688,13 +2051,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K31",
    question:"When setting up a workshop surface planer (joiner), where should the bridge guard be positioned relative to the timber stock?",
-   options:[
-    "Adjusted down close to the table surface leaving only enough clearance for the timber to slide under, or set close to the fence during edge planing.",
-    "Raised 100mm above the timber cutter block so the knives are clearly visible.",
-    "Removed completely from the machine table during short production runs.",
-    "Swung back behind the machine frame out of the way of the operator."
-   ],
-   correct:0,
+   options:["Raised 100mm above the timber cutter block so the knives are clearly visible.","Removed completely from the machine table during short production runs.","Adjusted down close to the table surface leaving only enough clearance for the timber to slide under, or set close to the fence during edge planing.","Swung back behind the machine frame out of the way of the operator."],
+   correct:2,
    explanation:"Bridge guards must cover the exposed cutter block as much as possible, positioned directly over the cutter block close to the timber or fence.",
    keyTakeaway:"Bridge guards must shield the cutter block, leaving minimum operational clearance.",
    id:"arch-epa-v1319-k31-23"
@@ -2702,13 +2060,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K32",
    question:"What is the primary purpose of creating a full-size 1:1 scale setting-out rod before manufacturing complex architectural joinery?",
-   options:[
-    "To establish exact full-size lengths, joint details, section profiles, and hardware locations to prevent cumulative layout errors.",
-    "To serve as a disposable packing board when shipping finished joinery products.",
-    "To calculate the total electrical consumption of workshop machinery.",
-    "To display final paint color options to the client on site."
-   ],
-   correct:0,
+   options:["To serve as a disposable packing board when shipping finished joinery products.","To establish exact full-size lengths, joint details, section profiles, and hardware locations to prevent cumulative layout errors.","To calculate the total electrical consumption of workshop machinery.","To display final paint color options to the client on site."],
+   correct:1,
    explanation:"Setting-out rods show 1:1 true dimensions, timber sections, and joint geometry, providing an accurate reference that eliminates measuring mistakes.",
    keyTakeaway:"Setting-out rods establish exact 1:1 dimensions and joint alignments before cutting.",
    id:"arch-epa-v1319-k32-24"
@@ -2716,13 +2069,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K33",
    question:"Which traditional joinery joint provides high resistance to tensile pull-out forces, making it ideal for connecting drawer sides to drawer fronts?",
-   options:[
-    "Dovetail joint.",
-    "Half-lap corner joint.",
-    "Square butt joint.",
-    "Biscuit joint."
-   ],
-   correct:0,
+   options:["Half-lap corner joint.","Square butt joint.","Biscuit joint.","Dovetail joint."],
+   correct:3,
    explanation:"Dovetail joints interlock pins and tails, creating high mechanical strength against forward tensile pulling forces.",
    keyTakeaway:"Dovetail joints provide mechanical interlock against pulling forces.",
    id:"arch-epa-v1319-k33-25"
@@ -2730,12 +2078,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K34",
    question:"When manufacturing a traditional stormproof timber casement window frame, what design feature prevents driving rain from penetrating the frame joints?",
-   options:[
-    "Machining drip grooves, weatherseal rebates, and stepped drained sills into the timber sections.",
-    "Applying clear interior PVA glue over outer frame faces.",
-    "Assembling all perimeter frame components using simple un-rebated butt joints.",
-    "Omitting lower sill slope angles so glass sits flat against timber."
-   ],
+   options:["Machining drip grooves, weatherseal rebates, and stepped drained sills into the timber sections.","Applying clear interior PVA glue over outer frame faces.","Assembling all perimeter frame components using simple un-rebated butt joints.","Omitting lower sill slope angles so glass sits flat against timber."],
    correct:0,
    explanation:"Weatherproof timber windows rely on sloped sills, capillary drip grooves, gasket rebates, and rebate offsets to shed water outwards.",
    keyTakeaway:"Weatherproof timber windows require sloped sills, drip channels, and compression seals.",
@@ -2744,13 +2087,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K35",
    question:"When aligning and joining wide hardwood timber panels to form a tabletop, why are compressed beechwood biscuits used with PVA glue?",
-   options:[
-    "They align panel surface faces flush and expand when absorbing moisture from glue to form a strong mechanical bond.",
-    "They eliminate the need to apply sash clamps during glue curing time.",
-    "They allow panels to slide freely back and forth across joints after assembly.",
-    "They make timber edges completely fireproof along seam lines."
-   ],
-   correct:0,
+   options:["They eliminate the need to apply sash clamps during glue curing time.","They align panel surface faces flush and expand when absorbing moisture from glue to form a strong mechanical bond.","They allow panels to slide freely back and forth across joints after assembly.","They make timber edges completely fireproof along seam lines."],
+   correct:1,
    explanation:"Compressed wood biscuits register faces flush and swell inside cut slots upon absorbing water-based glue, locking the joint firmly.",
    keyTakeaway:"Biscuits align joint faces precisely and expand in water-based glue for a tight lock.",
    id:"arch-epa-v1319-k35-27"
@@ -2758,13 +2096,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K36",
    question:"In timber staircase assembly, what component fits underneath the front edge of a tread to support the front nosing into the riser?",
-   options:[
-    "Glue blocks (glue blocks fitted into internal tread-to-riser corners).",
-    "Bargeboards.",
-    "Architrave mouldings.",
-    "Wall cover fillets."
-   ],
-   correct:0,
+   options:["Bargeboards.","Architrave mouldings.","Wall cover fillets.","Glue blocks (glue blocks fitted into internal tread-to-riser corners)."],
+   correct:3,
    explanation:"Triangular timber glue blocks are glued and screwed into the internal angles between treads and risers to eliminate squeaks and reinforce joints.",
    keyTakeaway:"Tread-to-riser glue blocks stiffen stair assemblies and prevent squeaking.",
    id:"arch-epa-v1319-k36-28"
@@ -2772,12 +2105,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K37",
    question:"When assembling a solid timber raised-and-fielded door panel inside a framed stiles-and-rails structure, how should the center panel be fitted?",
-   options:[
-    "Fitted loosely into frame grooves with expansion gaps and left unglued to allow for seasonal timber movement.",
-    "Glued continuously around all four edges with epoxy resin to lock it solid.",
-    "Nailed rigidly through the front face of stiles using heavy wire nails.",
-    "Screwed tightly to rails from behind without allowance for clearance gaps."
-   ],
+   options:["Fitted loosely into frame grooves with expansion gaps and left unglued to allow for seasonal timber movement.","Glued continuously around all four edges with epoxy resin to lock it solid.","Nailed rigidly through the front face of stiles using heavy wire nails.","Screwed tightly to rails from behind without allowance for clearance gaps."],
    correct:0,
    explanation:"Floating solid wood panels must be left unglued within frame grooves so they can expand and contract across the grain without splitting.",
    keyTakeaway:"Solid door panels must float within frame grooves to allow natural movement.",
@@ -2786,13 +2114,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K38",
    question:"Before applying a polyurethane clear varnish to manufactured oak door linings, how should timber faces be prepared?",
-   options:[
-    "Sanded progressively along the grain with fine abrasives, dusted clean, and checked for glue squeeze-out or defects.",
-    "Washed down with heavy soap and water leaving the surface saturated.",
-    "Scuffed across the grain using coarse 40-grit steel rasp files.",
-    "Coated with oil-based engine grease to seal wood pores."
-   ],
-   correct:0,
+   options:["Washed down with heavy soap and water leaving the surface saturated.","Scuffed across the grain using coarse 40-grit steel rasp files.","Sanded progressively along the grain with fine abrasives, dusted clean, and checked for glue squeeze-out or defects.","Coated with oil-based engine grease to seal wood pores."],
+   correct:2,
    explanation:"Quality timber finishing requires systematic sanding along the grain direction, removing excess glue, and thoroughly dusting timber faces.",
    keyTakeaway:"Sand timber along the grain and remove all surface dust and excess glue before sealing.",
    id:"arch-epa-v1319-k38-30"
@@ -2800,13 +2123,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K39",
    question:"When installing mortise locks into solid timber door stiles, what tool combination ensures an accurate mortise box cavity without splitting stile faces?",
-   options:[
-    "A dedicated chain or auger mortiser (or drill jig) followed by sharp hand chisels to square corners.",
-    "A handheld circular saw plunged repeatedly into stile edges.",
-    "A coarse rasp and claw hammer driven through stile faces.",
-    "An un-guided spade bit driven through the door face panels."
-   ],
-   correct:0,
+   options:["A handheld circular saw plunged repeatedly into stile edges.","A coarse rasp and claw hammer driven through stile faces.","An un-guided spade bit driven through the door face panels.","A dedicated chain or auger mortiser (or drill jig) followed by sharp hand chisels to square corners."],
+   correct:3,
    explanation:"Mortising jigs or auger bits bore out internal core waste cleanly, allowing sharp chisels to square sides without stress cracking timber grain.",
    keyTakeaway:"Bore out core waste cleanly before chiselling mortise pocket walls square.",
    id:"arch-epa-v1319-k39-31"
@@ -2814,13 +2132,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K40",
    question:"What is a basic tax obligation for a self-employed architectural joiner running an independent workshop in the UK?",
-   options:[
-    "Registering for Self Assessment with HMRC, maintaining accurate income/expense records, and filing annual tax returns.",
-    "Filing weekly PAYE returns through an external main contractor.",
-    "Paying no income tax provided machinery tool purchases exceed material costs.",
-    "Submitting corporate accounts to Companies House every fortnight."
-   ],
-   correct:0,
+   options:["Filing weekly PAYE returns through an external main contractor.","Registering for Self Assessment with HMRC, maintaining accurate income/expense records, and filing annual tax returns.","Paying no income tax provided machinery tool purchases exceed material costs.","Submitting corporate accounts to Companies House every fortnight."],
+   correct:1,
    explanation:"Self-employed sole traders must register with HMRC for Self Assessment, track business revenue/expenses, and submit yearly tax returns.",
    keyTakeaway:"Self-employed joiners must keep business records and file Self Assessment tax returns.",
    id:"arch-epa-v1319-k40-32"
@@ -2828,13 +2141,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S1",
    question:"You notice that a workshop spindle moulder guard has been removed and left off by a previous operator. How do you demonstrate compliance with safety regulations?",
-   options:[
-    "Re-install and adjust all guards and pressure pads correctly, testing safety stops before turning on the machine.",
-    "Operate the machine carefully without guards as long as wood feed speeds are kept slow.",
-    "Place a paper sign on the machine saying 'Take Care' and proceed with cutting timber.",
-    "Ignore the missing guard because another worker removed it."
-   ],
-   correct:0,
+   options:["Operate the machine carefully without guards as long as wood feed speeds are kept slow.","Place a paper sign on the machine saying 'Take Care' and proceed with cutting timber.","Re-install and adjust all guards and pressure pads correctly, testing safety stops before turning on the machine.","Ignore the missing guard because another worker removed it."],
+   correct:2,
    explanation:"Complying with PUWER regulations requires ensuring all guards, fences, and safety holding devices are correctly fitted before operating power machinery.",
    keyTakeaway:"Never operate machinery without verifying all safety guards are correctly fitted.",
    id:"arch-epa-v1319-s1-33"
@@ -2842,12 +2150,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S2",
    question:"You are preparing to cut multiple hardwood components on a band saw. How do you correctly apply safety control equipment?",
-   options:[
-    "Lower the adjustable blade guard to leave only the required cutting depth exposed, attach dust extraction, and use push sticks.",
-    "Raise the blade guard fully up to improve line-of-sight visibility.",
-    "Guide short timber blocks past the blade using your fingers directly behind the cut.",
-    "Disconnect dust extraction hoses to reduce noise levels in the workshop."
-   ],
+   options:["Lower the adjustable blade guard to leave only the required cutting depth exposed, attach dust extraction, and use push sticks.","Raise the blade guard fully up to improve line-of-sight visibility.","Guide short timber blocks past the blade using your fingers directly behind the cut.","Disconnect dust extraction hoses to reduce noise levels in the workshop."],
    correct:0,
    explanation:"Safety controls on bandsaws require lowering blade guards close to workpieces, running extraction, and employing push sticks for narrow cuts.",
    keyTakeaway:"Set blade guards close to stock and use push sticks on bandsaw operations.",
@@ -2856,12 +2159,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S3",
    question:"At the conclusion of a joinery production run, you have clean timber cutoffs, laminate offcuts, and empty solvent glue tins. How should these be processed?",
-   options:[
-    "Segregate solid untreated wood, synthetic laminates, and hazardous chemical tins into designated disposal/recycling bins.",
-    "Throw all wood, laminate, and chemical containers into one general waste skip.",
-    "Burn synthetic laminate offcuts in an open outdoor shop barrel.",
-    "Pour leftover liquid solvent adhesives down workshop sink drains."
-   ],
+   options:["Segregate solid untreated wood, synthetic laminates, and hazardous chemical tins into designated disposal/recycling bins.","Throw all wood, laminate, and chemical containers into one general waste skip.","Burn synthetic laminate offcuts in an open outdoor shop barrel.","Pour leftover liquid solvent adhesives down workshop sink drains."],
    correct:0,
    explanation:"Environmental management requires sorting site waste by classification so clean wood can be recycled and hazardous waste processed safely.",
    keyTakeaway:"Segregate waste materials into clean timber, synthetic, and hazardous waste streams.",
@@ -2870,13 +2168,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S4",
    question:"When building a bespoke timber staircase, Building Regulations stipulate maximum pitch angles (42 degrees) and maximum open riser gaps (under 100mm). How do you ensure compliance?",
-   options:[
-    "Calculate rise and going dimensions to maintain a pitch under 42 degrees, and fit riser lips or partial risers to keep gaps below 100mm.",
-    "Construct open riser gaps at 150mm to save timber material.",
-    "Increase stair pitch to 50 degrees to save horizontal floor space.",
-    "Ignore pitch regulations as long as handrails are fitted to both sides."
-   ],
-   correct:0,
+   options:["Construct open riser gaps at 150mm to save timber material.","Increase stair pitch to 50 degrees to save horizontal floor space.","Ignore pitch regulations as long as handrails are fitted to both sides.","Calculate rise and going dimensions to maintain a pitch under 42 degrees, and fit riser lips or partial risers to keep gaps below 100mm."],
+   correct:3,
    explanation:"Staircase construction must comply with Approved Document K: maximum 42-degree pitch for domestic stairs and maximum 100mm sphere test gaps between open treads.",
    keyTakeaway:"Ensure stair designs satisfy pitch limits and child-safety gap regulations.",
    id:"arch-epa-v1319-s4-36"
@@ -2884,13 +2177,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S5",
    question:"Before setting up a portable router table inside a joinery assembly bay, how do you prepare and maintain a safe working area?",
-   options:[
-    "Clear floor trip hazards, secure trailing power leads overhead, ensure adequate lighting, and keep offcut waste clear of foot zones.",
-    "Position the router table in a dark corner surrounded by loose timber offcuts.",
-    "Block main workshop emergency exit doors with long timber material racks.",
-    "Run extension leads through wet floor areas near water sinks."
-   ],
-   correct:0,
+   options:["Position the router table in a dark corner surrounded by loose timber offcuts.","Block main workshop emergency exit doors with long timber material racks.","Clear floor trip hazards, secure trailing power leads overhead, ensure adequate lighting, and keep offcut waste clear of foot zones.","Run extension leads through wet floor areas near water sinks."],
+   correct:2,
    explanation:"Safe working areas require clear access routes, managed power cables, clean floor spaces, and effective lighting around machinery.",
    keyTakeaway:"Keep machinery setup zones well-lit, clean, uncluttered, and hazard-free.",
    id:"arch-epa-v1319-s5-37"
@@ -2898,13 +2186,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S6",
    question:"You are interpreting an architectural window detail sheet and note a drawing scale contradiction between the written dimension (1200mm) and scaled measurement (1100mm). What action should you take?",
-   options:[
-    "Halt machining, refer to written specifications over scaled dimensions, and confirm true dimensions with the designer before cutting.",
-    "Scale the drawing using a ruler and ignore the written dimension.",
-    "Split the difference and machine the frame to 1150mm.",
-    "Machine the unit to whatever timber size is currently available."
-   ],
-   correct:0,
+   options:["Scale the drawing using a ruler and ignore the written dimension.","Halt machining, refer to written specifications over scaled dimensions, and confirm true dimensions with the designer before cutting.","Split the difference and machine the frame to 1150mm.","Machine the unit to whatever timber size is currently available."],
+   correct:1,
    explanation:"In technical drawing interpretation, written dimensions always take precedence over scaled measurements. Discrepancies must be clarified prior to cutting.",
    keyTakeaway:"Never scale directly off detail drawings when written dimensions are provided; clarify discrepancies first.",
    id:"arch-epa-v1319-s6-38"
@@ -2912,12 +2195,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S7",
    question:"You are tasked with producing six panelled hardwood doors. How do you produce an efficient timber cutting list?",
-   options:[
-    "Break down all components into finished sizes, add machining allowances for length/width, and group identical sections to minimize offcut waste.",
-    "Order random timber lengths without checking door specification sizes.",
-    "Guess total timber requirements based on looking at a completed door sample.",
-    "Order stiles and rails without adding machining or tenon horn length allowances."
-   ],
+   options:["Break down all components into finished sizes, add machining allowances for length/width, and group identical sections to minimize offcut waste.","Order random timber lengths without checking door specification sizes.","Guess total timber requirements based on looking at a completed door sample.","Order stiles and rails without adding machining or tenon horn length allowances."],
    correct:0,
    explanation:"Efficient cutting lists calculate exact finished component dimensions plus machining allowances, organizing profiles to optimize yield.",
    keyTakeaway:"Group identical component sections and include machining allowances on cutting lists.",
@@ -2926,13 +2204,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S8",
    question:"You need to explain a complex door frame manufacturing issue to your workshop manager. How do you communicate using correct joinery terminology?",
-   options:[
-    "“The rebate depth on the hinge stile is undersized by 3mm, preventing the door leaf from sitting flush against the stop.”",
-    "“The long wooden side stick isn't deep enough so the big door thing doesn't shut right.”",
-    "“The vertical upright board is crooked and the frame margin looks bad.”",
-    "“We need more wood lengths because the front doorway timber piece is wrong.”"
-   ],
-   correct:0,
+   options:["“The long wooden side stick isn't deep enough so the big door thing doesn't shut right.”","“The rebate depth on the hinge stile is undersized by 3mm, preventing the door leaf from sitting flush against the stop.”","“The vertical upright board is crooked and the frame margin looks bad.”","“We need more wood lengths because the front doorway timber piece is wrong.”"],
+   correct:1,
    explanation:"Professional joinery communication uses precise terms (rebate depth, hinge stile, door leaf, frame stop) to describe technical defects clearly.",
    keyTakeaway:"Use exact trade terms to convey technical information clearly.",
    id:"arch-epa-v1319-s8-40"
@@ -2940,13 +2213,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S9",
    question:"How should sharp hand chisels, wooden hand planes, and saws be safely stored on a joinery workbench during active use?",
-   options:[
-    "Laid flat in designated tool wells or wooden racks with cutting edges pointing away from edge perimeters.",
-    "Piled on top of one another near the front bench edge.",
-    "Stored loose inside trouser side pockets with blades exposed.",
-    "Balanced on top of stepladders near workspace walkways."
-   ],
-   correct:0,
+   options:["Piled on top of one another near the front bench edge.","Stored loose inside trouser side pockets with blades exposed.","Laid flat in designated tool wells or wooden racks with cutting edges pointing away from edge perimeters.","Balanced on top of stepladders near workspace walkways."],
+   correct:2,
    explanation:"Storing hand tools neatly in bench wells or edge-guarded racks prevents accidental contact injuries and shields fine cutting edges from dulling.",
    keyTakeaway:"Store sharp hand tools securely in tool wells or edge guards on the bench.",
    id:"arch-epa-v1319-s9-41"
@@ -2954,13 +2222,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S10",
    question:"When using a portable circular saw to cut hardwood sheet materials, what operation ensures safe control and prevents kickback?",
-   options:[
-    "Support the sheet fully on rigid workbench supports, adjust blade depth 3-5mm past material thickness, and maintain steady forward pressure with both hands.",
-    "Hold the sheet material up with one hand while operating the saw with the other.",
-    "Remove the lower spring guard to prevent timber dust clogging.",
-    "Plunge the saw backward toward your body along the cut line."
-   ],
-   correct:0,
+   options:["Hold the sheet material up with one hand while operating the saw with the other.","Remove the lower spring guard to prevent timber dust clogging.","Plunge the saw backward toward your body along the cut line.","Support the sheet fully on rigid workbench supports, adjust blade depth 3-5mm past material thickness, and maintain steady forward pressure with both hands."],
+   correct:3,
    explanation:"Proper sheet cutting requires solid material support, setting blade depth slightly past material thickness, and keeping both hands on tool handles.",
    keyTakeaway:"Support work fully, set correct blade depth, and maintain two-handed tool control.",
    id:"arch-epa-v1319-s10-42"
@@ -2968,12 +2231,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S11",
    question:"While using a wooden smoothing plane, the blade begins tearing grain and producing thick uneven shavings. How do you maintain and re-set the tool?",
-   options:[
-    "Remove the iron, hone the edge on fine sharpening stones, reset the cap iron close to the cutting edge, and adjust the mouth depth fine.",
-    "Strike the wooden plane sole with a steel claw hammer to force the blade out.",
-    "Grind the plane iron dry on a bench grinder until metal turns deep blue.",
-    "File the cutting edge round using a rough steel file."
-   ],
+   options:["Remove the iron, hone the edge on fine sharpening stones, reset the cap iron close to the cutting edge, and adjust the mouth depth fine.","Strike the wooden plane sole with a steel claw hammer to force the blade out.","Grind the plane iron dry on a bench grinder until metal turns deep blue.","File the cutting edge round using a rough steel file."],
    correct:0,
    explanation:"Proper hand plane maintenance involves honing a razor edge, setting the chipbreaker (cap iron) close to the edge (approx. 1mm), and setting fine blade projection.",
    keyTakeaway:"Hone plane irons finely and set chipbreakers close to the edge to prevent grain tearout.",
@@ -2982,13 +2240,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S12",
    question:"You need to rout fifty identical archway frame curves. How do you produce a jig to carry out this operation safely and accurately?",
-   options:[
-    "Construct a sturdy plywood template jig with toggle clamps, guide collar tracks, and smooth reference edges.",
-    "Mark each curve individually with a pencil and cut freehand using a jigsaw.",
-    "Hold short curved blocks against a bare shaper cutter with your fingers.",
-    "Eye up the routing line without guide collars or holding fences."
-   ],
-   correct:0,
+   options:["Mark each curve individually with a pencil and cut freehand using a jigsaw.","Hold short curved blocks against a bare shaper cutter with your fingers.","Construct a sturdy plywood template jig with toggle clamps, guide collar tracks, and smooth reference edges.","Eye up the routing line without guide collars or holding fences."],
+   correct:2,
    explanation:"Production jigs made from stable plywood with clear guide faces and toggle clamps allow fast, repeatable, safe routing.",
    keyTakeaway:"Build stable template jigs with toggle clamps for safe, accurate curved work.",
    id:"arch-epa-v1319-s12-44"
@@ -2996,13 +2249,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S13",
    question:"A colleague appears distressed and mentions struggle with personal isolation and financial worries. How do you identify well-being support for them?",
-   options:[
-    "Listen empathetically, keep details confidential, and signpost them to industry EAP services or site Mental Health First Aiders.",
-    "Advise them to work weekend shifts continuously to clear their debts.",
-    "Tell them that feeling stressed is standard so they should ignore it.",
-    "Broadcast their personal situation to the entire workshop team."
-   ],
-   correct:0,
+   options:["Advise them to work weekend shifts continuously to clear their debts.","Listen empathetically, keep details confidential, and signpost them to industry EAP services or site Mental Health First Aiders.","Tell them that feeling stressed is standard so they should ignore it.","Broadcast their personal situation to the entire workshop team."],
+   correct:1,
    explanation:"Supporting colleague well-being involves offering non-judgmental support and connecting them to trained, confidential assistance programs.",
    keyTakeaway:"Listen non-judgmentally and signpost colleagues to confidential support services.",
    id:"arch-epa-v1319-s13-45"
@@ -3010,13 +2258,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S23",
    question:"You are setting out a timber rod for a door lining and frame assembly. How do you transfer section dimensions onto the rod accurately?",
-   options:[
-    "Draw full-size 1:1 cross-sections directly onto a clean, flat timber rod showing door thickness, rebate depths, frame dimensions, and clearance gaps.",
-    "Sketch a quick rough 1:10 scale outline on a scrap timber offcut.",
-    "Measure timber profiles using a flexible soft tape measure and write numbers down without marking lines.",
-    "Set out vertical height lines only, leaving horizontal width details off the rod."
-   ],
-   correct:0,
+   options:["Sketch a quick rough 1:10 scale outline on a scrap timber offcut.","Measure timber profiles using a flexible soft tape measure and write numbers down without marking lines.","Set out vertical height lines only, leaving horizontal width details off the rod.","Draw full-size 1:1 cross-sections directly onto a clean, flat timber rod showing door thickness, rebate depths, frame dimensions, and clearance gaps."],
+   correct:3,
    explanation:"Setting-out rods require true 1:1 scale drawings of horizontal and vertical sections detailing exact profiles, joint intersections, and clearances.",
    keyTakeaway:"Produce clear 1:1 scale setting-out rods depicting exact component profiles and clearance gaps.",
    id:"arch-epa-v1319-s23-46"
@@ -3024,12 +2267,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S24",
    question:"You are manufacturing a traditional hardwood corner cabinet frame requiring high joint strength. How do you cut and fit a bridle joint accurately?",
-   options:[
-    "Mark shoulder lines square, saw the open mortise slot and matching tenon tongue neatly, and pare faces to a snug push-fit.",
-    "Cut shoulders at 45 degrees and pin them together using thin panel pins.",
-    "Overlap square un-cut ends and join with PVA glue and staples.",
-    "Chisel out an oversized loose slot and fill gaps with wood filler."
-   ],
+   options:["Mark shoulder lines square, saw the open mortise slot and matching tenon tongue neatly, and pare faces to a snug push-fit.","Cut shoulders at 45 degrees and pin them together using thin panel pins.","Overlap square un-cut ends and join with PVA glue and staples.","Chisel out an oversized loose slot and fill gaps with wood filler."],
    correct:0,
    explanation:"Bridle joints require precise layout marking, accurate sawing along kerf lines, and light paring to achieve a firm hand-push mechanical fit.",
    keyTakeaway:"Saw and pare bridle joint components to achieve a snug, accurate mechanical fit.",
@@ -3038,13 +2276,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S25",
    question:"When joining two thick hardwood frames using dowel connections, what technique ensures dowels do not hydro-lock or split the joint upon assembly?",
-   options:[
-    "Using fluted dowel pegs with chamfered ends and applying glue evenly into bored holes.",
-    "Using smooth, square steel rods driven in without glue.",
-    "Filling dowel holes completely with dry expansion foam before inserting pins.",
-    "Drilling dowel holes 10mm shallower than dowel pin lengths."
-   ],
-   correct:0,
+   options:["Using smooth, square steel rods driven in without glue.","Using fluted dowel pegs with chamfered ends and applying glue evenly into bored holes.","Filling dowel holes completely with dry expansion foam before inserting pins.","Drilling dowel holes 10mm shallower than dowel pin lengths."],
+   correct:1,
    explanation:"Fluted dowels feature longitudinal grooves that allow air and excess liquid glue to escape, preventing hydraulic splitting when pressed.",
    keyTakeaway:"Use fluted dowels to allow excess glue relief during joint assembly.",
    id:"arch-epa-v1319-s25-48"
@@ -3052,13 +2285,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S26",
    question:"You are assembling a right-angled timber casement window frame. How do you ensure the assembled frame is square before glue sets?",
-   options:[
-    "Measure diagonal dimensions from corner to corner until equal, and check internal corners with a large try square.",
-    "Check one corner using a small sliding bevel set to 45 degrees.",
-    "Eyeball the outer stiles against a workshop wall line.",
-    "Clamp one side tightly while leaving the opposing side loose."
-   ],
-   correct:0,
+   options:["Check one corner using a small sliding bevel set to 45 degrees.","Eyeball the outer stiles against a workshop wall line.","Measure diagonal dimensions from corner to corner until equal, and check internal corners with a large try square.","Clamp one side tightly while leaving the opposing side loose."],
+   correct:2,
    explanation:"Equal diagonal cross-measurements confirm that a rectangular joinery frame is perfectly square.",
    keyTakeaway:"Verify frame squareness by confirming equal corner-to-corner diagonal measurements.",
    id:"arch-epa-v1319-s26-49"
@@ -3066,13 +2294,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S27",
    question:"When manufacturing a straight timber staircase in the workshop, how are treads and risers secured into stringer housing slots?",
-   options:[
-    "Spread glue in housing grooves, drive treads and risers home, and knock tight wooden wedges behind them glued into place.",
-    "Nail treads loosely through stringer outer faces without wedges or adhesive.",
-    "Support treads on loose metal shelf brackets screwed to stringer faces.",
-    "Fill housing slots with expansion foam and push treads into place."
-   ],
-   correct:0,
+   options:["Nail treads loosely through stringer outer faces without wedges or adhesive.","Support treads on loose metal shelf brackets screwed to stringer faces.","Fill housing slots with expansion foam and push treads into place.","Spread glue in housing grooves, drive treads and risers home, and knock tight wooden wedges behind them glued into place."],
+   correct:3,
    explanation:"Stair treads and risers are housed into stringer grooves and locked rigid using glued hardwood wedges driven tightly behind them.",
    keyTakeaway:"Lock housed stair treads and risers tightly using glued timber wedges.",
    id:"arch-epa-v1319-s27-50"
@@ -3080,13 +2303,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S28",
    question:"You are assembling a paneled timber door with decorative mouldings. How do you prepare moulding mitres at frame intersections?",
-   options:[
-    "Bisect corner angles accurately, cut 45-degree mitres using a fine-toothed mitre saw, and pare joints for tight light-tight seams.",
-    "Butt decorative mouldings square against each other without mitring.",
-    "Cut mitres at 30 degrees and fill corner gaps with plaster filler.",
-    "Overlap moulding ends and nail them down flat."
-   ],
-   correct:0,
+   options:["Butt decorative mouldings square against each other without mitring.","Bisect corner angles accurately, cut 45-degree mitres using a fine-toothed mitre saw, and pare joints for tight light-tight seams.","Cut mitres at 30 degrees and fill corner gaps with plaster filler.","Overlap moulding ends and nail them down flat."],
+   correct:1,
    explanation:"Precise decorative moulding work requires bisecting corner angles accurately (45 degrees for right angles) to form seamless, light-tight joints.",
    keyTakeaway:"Cut moulding mitres accurately to form tight, seamless profile intersections.",
    id:"arch-epa-v1319-s28-51"
@@ -3094,12 +2312,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S29",
    question:"You are recessing and fitting butt hinges into a solid hardwood door leaf edge. How do you ensure the door hangs correctly without binding?",
-   options:[
-    "Chisel hinge gains to exact leaf depth, keep screw pilot holes centered, and ensure hinge pins sit parallel to the door edge line.",
-    "Chisel gains twice as deep as hinge leaf thickness so hardware buries below wood faces.",
-    "Drive screws in at steep angles without drilling pilot holes.",
-    "Mount hinges onto un-recessed door edge faces using drywall screws."
-   ],
+   options:["Chisel hinge gains to exact leaf depth, keep screw pilot holes centered, and ensure hinge pins sit parallel to the door edge line.","Chisel gains twice as deep as hinge leaf thickness so hardware buries below wood faces.","Drive screws in at steep angles without drilling pilot holes.","Mount hinges onto un-recessed door edge faces using drywall screws."],
    correct:0,
    explanation:"Hinge gains must match leaf thickness precisely, with screws centered, to align hinge pins true and prevent door binding against frames.",
    keyTakeaway:"Recess hinges flush and center pilot holes to ensure smooth, unhindered swing action.",
@@ -3108,13 +2321,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S30",
    question:"Before turning on a fixed workshop planer/thicknesser machine to process a batch of timber, what pre-use inspection checks must be carried out?",
-   options:[
-    "Verify cutter block guard function, inspect blade condition, check table height locks, test emergency stop controls, and confirm dust extraction operation.",
-    "Wipe down cutter blades with engine lubricant while the machine is running.",
-    "Remove top safety guards to view cutter block spinning speed.",
-    "Turn on power before checking if loose tools are lying on machine tables."
-   ],
-   correct:0,
+   options:["Wipe down cutter blades with engine lubricant while the machine is running.","Remove top safety guards to view cutter block spinning speed.","Verify cutter block guard function, inspect blade condition, check table height locks, test emergency stop controls, and confirm dust extraction operation.","Turn on power before checking if loose tools are lying on machine tables."],
+   correct:2,
    explanation:"Pre-use checks on fixed woodworking machinery require inspecting guards, blade sharpness, safety stops, worktable clamps, and dust extraction systems.",
    keyTakeaway:"Perform systematic safety checks on guards, blades, and emergency stops before powering fixed machinery.",
    id:"arch-epa-v1319-s30-53"
@@ -3122,13 +2330,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B1",
    question:"You notice that the safety guard on a fixed crosscut saw in the workshop is cracked and sticking open. How do you demonstrate putting safety first?",
-   options:[
-    "Isolate/lockout the machine immediately, place a warning tag on it, and report the fault to the supervisor before anyone uses it.",
-    "Continue using the saw carefully, making sure to keep your hands away from the blade.",
-    "Tape the cracked guard in the open position so it doesn't jam during your cuts.",
-    "Mention the issue to a colleague at the end of the shift."
-   ],
-   correct:0,
+   options:["Continue using the saw carefully, making sure to keep your hands away from the blade.","Tape the cracked guard in the open position so it doesn't jam during your cuts.","Mention the issue to a colleague at the end of the shift.","Isolate/lockout the machine immediately, place a warning tag on it, and report the fault to the supervisor before anyone uses it."],
+   correct:3,
    explanation:"Putting health and safety first requires taking immediate action to isolate unsafe machinery and report hazards before injuries occur.",
    keyTakeaway:"Isolate damaged machinery immediately and report safety defects.",
    id:"arch-epa-v1319-b1-54"
@@ -3136,13 +2339,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B2",
    question:"When cutting components for timber window frames, how do you demonstrate environmental consideration in your daily work?",
-   options:[
-    "Plan cutting layouts using setting-out rods to maximize timber yield and utilize suitable offcuts for smaller frame parts before cutting fresh stock.",
-    "Throw all timber pieces under one metre long directly into the landfill skip to keep the bench clean.",
-    "Always cut short components from new full-length timber boards for convenience.",
-    "Burn treated timber offcuts in the workshop stove to provide space heating."
-   ],
-   correct:0,
+   options:["Throw all timber pieces under one metre long directly into the landfill skip to keep the bench clean.","Plan cutting layouts using setting-out rods to maximize timber yield and utilize suitable offcuts for smaller frame parts before cutting fresh stock.","Always cut short components from new full-length timber boards for convenience.","Burn treated timber offcuts in the workshop stove to provide space heating."],
+   correct:1,
    explanation:"Environmental consideration involves planning cuts efficiently to optimize timber yield and re-using offcuts to minimize raw material waste.",
    keyTakeaway:"Optimize material yield and re-use offcuts to reduce timber waste.",
    id:"arch-epa-v1319-b2-55"
@@ -3150,13 +2348,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B3",
    question:"A new trainee joiner from an underrepresented group joins your workshop team. How do you contribute to an inclusive culture?",
-   options:[
-    "Welcome them, share trade knowledge willingly, treat them with equal respect, and challenge non-inclusive behavior in the workshop.",
-    "Assign them all shop cleaning tasks so they prove their dedication before learning machining skills.",
-    "Leave them to work things out entirely on their own so they adapt faster.",
-    "Avoid talking to them to prevent any misunderstandings."
-   ],
-   correct:0,
+   options:["Assign them all shop cleaning tasks so they prove their dedication before learning machining skills.","Leave them to work things out entirely on their own so they adapt faster.","Welcome them, share trade knowledge willingly, treat them with equal respect, and challenge non-inclusive behavior in the workshop.","Avoid talking to them to prevent any misunderstandings."],
+   correct:2,
    explanation:"Contributing to an inclusive culture means actively welcoming new colleagues, offering equitable support, and upholding a respectful workplace.",
    keyTakeaway:"Support all team members equally and foster a fair, welcoming environment.",
    id:"arch-epa-v1319-b3-56"
@@ -3164,13 +2357,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B4",
    question:"A new computer-controlled 5-axis CNC timber router is installed in your workshop. How do you show initiative in seeking learning and development opportunities?",
-   options:[
-    "Ask the lead machinist if you can observe setups, request user manual access, and express interest in attending official operator training.",
-    "Ignore the machine because traditional hand-crafting techniques are superior.",
-    "Attempt to operate the machine immediately without reading safety manuals or receiving instruction.",
-    "Complain that automated machinery will reduce traditional joinery hours."
-   ],
-   correct:0,
+   options:["Ignore the machine because traditional hand-crafting techniques are superior.","Attempt to operate the machine immediately without reading safety manuals or receiving instruction.","Complain that automated machinery will reduce traditional joinery hours.","Ask the lead machinist if you can observe setups, request user manual access, and express interest in attending official operator training."],
+   correct:3,
    explanation:"Demonstrating a growth mindset involves actively seeking opportunities to learn new technologies, machinery, and modern methods of construction.",
    keyTakeaway:"Proactively seek opportunities to learn modern technologies and machinery techniques.",
    id:"arch-epa-v1319-b4-57"
@@ -3178,12 +2366,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B5",
    question:"Your joinery workshop team is facing a tight deadline to complete a commercial door package. How do you demonstrate a strong team focus?",
-   options:[
-    "Coordinate your machining schedule with the assembly bench team, assist colleagues once your tasks are finished, and keep workflow moving smoothly.",
-    "Finish your assigned doors and leave immediately without checking if team members need support.",
-    "Work at a slow pace regardless of team targets as long as your personal work quality is fine.",
-    "Refuse to assist with sanding or packing duties because you specialize in cutting only."
-   ],
+   options:["Coordinate your machining schedule with the assembly bench team, assist colleagues once your tasks are finished, and keep workflow moving smoothly.","Finish your assigned doors and leave immediately without checking if team members need support.","Work at a slow pace regardless of team targets as long as your personal work quality is fine.","Refuse to assist with sanding or packing duties because you specialize in cutting only."],
    correct:0,
    explanation:"A team focus means working collaboratively across manufacturing stages to achieve shared production targets and support team members.",
    keyTakeaway:"Collaborate across production stages to support team goals and meet deadlines.",
@@ -3194,12 +2377,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K1",
    question:"You are managing maintenance schedules for a commercial facility. How do you distinguish between Planned Preventative Maintenance (PPM) and reactive maintenance when allocating resources?",
-   options:[
-    "PPM involves scheduled servicing and inspections to prevent asset failure, whereas reactive maintenance repairs equipment after an unexpected breakdown occurs.",
-    "PPM is only carried out after a complete system shutdown, while reactive maintenance occurs on a fixed monthly calendar.",
-    "PPM applies exclusively to minor cosmetic paint repairs, whereas reactive maintenance applies strictly to fire alarms.",
-    "PPM is performed by external contractors, while reactive maintenance is managed exclusively by apprentices."
-   ],
+   options:["PPM involves scheduled servicing and inspections to prevent asset failure, whereas reactive maintenance repairs equipment after an unexpected breakdown occurs.","PPM is only carried out after a complete system shutdown, while reactive maintenance occurs on a fixed monthly calendar.","PPM applies exclusively to minor cosmetic paint repairs, whereas reactive maintenance applies strictly to fire alarms.","PPM is performed by external contractors, while reactive maintenance is managed exclusively by apprentices."],
    correct:0,
    explanation:"PPM consists of pre-scheduled tasks designed to keep equipment running efficiently and avoid failures, whereas reactive maintenance responds to unforeseen breakdowns or defects.",
    keyTakeaway:"PPM prevents failures through scheduled servicing; reactive maintenance repairs active breakdowns.",
@@ -3208,13 +2386,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K2",
    question:"While inspecting a traditional solid-wall Victorian property compared to a modern timber-frame residential block, what typical structural defect are you most likely to encounter in the solid-wall structure?",
-   options:[
-    "Penetrating damp and mortar degradation due to the lack of a continuous cavity wall and modern damp-proof course.",
-    "Rotten engineered I-joists inside sealed external wall cavity trays.",
-    "Complete failure of lightweight structural insulated panels (SIPs) from internal condensation.",
-    "Corrosion of galvanized wall ties within the 50mm clear air cavity."
-   ],
-   correct:0,
+   options:["Rotten engineered I-joists inside sealed external wall cavity trays.","Complete failure of lightweight structural insulated panels (SIPs) from internal condensation.","Penetrating damp and mortar degradation due to the lack of a continuous cavity wall and modern damp-proof course.","Corrosion of galvanized wall ties within the 50mm clear air cavity."],
+   correct:2,
    explanation:"Solid-wall Victorian properties lack cavity wall insulation gaps and modern DPCs, making them far more vulnerable to penetrating damp and mortar deterioration over time.",
    keyTakeaway:"Solid masonry walls lack cavities, making them prone to damp penetration and mortar decay.",
    id:"pmo-epa-v1320-k2-2"
@@ -3222,13 +2395,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K3",
    question:"When preparing to remove loose asbestos-containing textured ceiling coating (Artex) during a lighting refit, what is your primary legal obligation under COSHH and asbestos regulations?",
-   options:[
-    "Stop work immediately, verify whether a licensed or non-licensed specialist procedure/survey is required, and use appropriate RPE/PPE.",
-    "Scrape the coating off wet using a standard hand trowel while wearing a paper nuisance dust mask.",
-    "Dry sand the surface using an orbital sander attached to a standard workshop vacuum cleaner.",
-    "Cover the area with emulsion paint to seal the loose fibres without reporting the finding."
-   ],
-   correct:0,
+   options:["Scrape the coating off wet using a standard hand trowel while wearing a paper nuisance dust mask.","Dry sand the surface using an orbital sander attached to a standard workshop vacuum cleaner.","Cover the area with emulsion paint to seal the loose fibres without reporting the finding.","Stop work immediately, verify whether a licensed or non-licensed specialist procedure/survey is required, and use appropriate RPE/PPE."],
+   correct:3,
    explanation:"Disturbing asbestos requires strict adherence to regulations: stop, check the asbestos register or survey, follow controlled non-licensed work procedures or hire licensed contractors, and wear correct respiratory protection.",
    keyTakeaway:"Never disturb suspected asbestos without checking surveys and using appropriate controls or specialists.",
    id:"pmo-epa-v1320-k3-3"
@@ -3236,13 +2404,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K4",
    question:"You are tasked with replacing an external floodlight located 5 metres high on a building wall. How does a formal Risk Assessment mitigate the hazards associated with this task?",
-   options:[
-    "It identifies fall hazards and specifies control measures such as using an inspected MEWP or tower scaffold, harness checks, and ground exclusion zones.",
-    "It transfers all legal liability to the manufacturer of the LED light fitting.",
-    "It allows you to bypass electrical isolation steps if the work takes less than 15 minutes.",
-    "It eliminates the need to wear safety helmets or eye protection at ground level."
-   ],
-   correct:0,
+   options:["It transfers all legal liability to the manufacturer of the LED light fitting.","It identifies fall hazards and specifies control measures such as using an inspected MEWP or tower scaffold, harness checks, and ground exclusion zones.","It allows you to bypass electrical isolation steps if the work takes less than 15 minutes.","It eliminates the need to wear safety helmets or eye protection at ground level."],
+   correct:1,
    explanation:"Risk assessments evaluate specific hazards such as working at height and specify suitable control equipment to reduce risk to an acceptable level.",
    keyTakeaway:"Risk assessments identify specific hazards and define control measures to keep workers safe.",
    id:"pmo-epa-v1320-k4-4"
@@ -3250,13 +2413,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K5",
    question:"Under the Building Safety Act and BSI Flex 8670, what key responsibility rests on a Property Maintenance Operative working in a Higher-Risk Residential Building (HRRB)?",
-   options:[
-    "Maintaining the 'golden thread' of building information by accurately recording all structural or fire-safety maintenance alterations.",
-    "Re-certifying main structural foundation calculations every 12 months.",
-    "Ignoring minor alterations to fire doors if requested directly by a tenant.",
-    "Issuing statutory Building Control completion certificates for external wall cladding."
-   ],
-   correct:0,
+   options:["Re-certifying main structural foundation calculations every 12 months.","Ignoring minor alterations to fire doors if requested directly by a tenant.","Maintaining the 'golden thread' of building information by accurately recording all structural or fire-safety maintenance alterations.","Issuing statutory Building Control completion certificates for external wall cladding."],
+   correct:2,
    explanation:"The Building Safety Act and BSI Flex 8670 emphasize competence and maintaining the 'golden thread' of accurate safety information, particularly concerning fire and structural safety in HRRBs.",
    keyTakeaway:"Operatives must maintain fire and structural safety integrity and record changes for the golden thread.",
    id:"pmo-epa-v1320-k5-5"
@@ -3264,12 +2422,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K6",
    question:"When setting up to repair a floor joist in a busy communal corridor of a care home, what is the correct approach to establishing your work area?",
-   options:[
-    "Erect physical safety barriers, place warning signage, protect surrounding floor coverings with dust sheets, and ensure a clear escape route remains open.",
-    "Leave tools across the corridor floor provided you plan to finish the job before lunchtime.",
-    "Prop emergency exit doors open to allow dust to escape out into main stairwells.",
-    "Perform the repair without barriers, relying on verbal warnings to passing residents."
-   ],
+   options:["Erect physical safety barriers, place warning signage, protect surrounding floor coverings with dust sheets, and ensure a clear escape route remains open.","Leave tools across the corridor floor provided you plan to finish the job before lunchtime.","Prop emergency exit doors open to allow dust to escape out into main stairwells.","Perform the repair without barriers, relying on verbal warnings to passing residents."],
    correct:0,
    explanation:"Creating a safe, tidy work environment requires physical segregation, floor protection, clear access and egress routes, and protecting vulnerable site users.",
    keyTakeaway:"Secure work zones with barriers, protect surroundings, and maintain clear escape routes.",
@@ -3278,13 +2431,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K7",
    question:"Which pre-use safety check must be performed before using a 110V portable angle grinder to cut steel fence posts?",
-   options:[
-    "Inspect the guard position, check the disc rating matches the tool RPM, inspect the trailing lead, and confirm the PAT test date is valid.",
-    "Remove the side handle and wheel guard to cut closer into narrow wall corners.",
-    "Run the grinder at maximum speed against a concrete floor to check disc balance.",
-    "Replace the grinding disc with a wood-cutting saw blade to complete two jobs at once."
-   ],
-   correct:0,
+   options:["Remove the side handle and wheel guard to cut closer into narrow wall corners.","Run the grinder at maximum speed against a concrete floor to check disc balance.","Replace the grinding disc with a wood-cutting saw blade to complete two jobs at once.","Inspect the guard position, check the disc rating matches the tool RPM, inspect the trailing lead, and confirm the PAT test date is valid."],
+   correct:3,
    explanation:"Safe power tool usage requires checking guard placement, disc speed ratings, cable condition, and up-to-date electrical safety testing.",
    keyTakeaway:"Verify guards, disc ratings, lead condition, and PAT inspection status before operating power tools.",
    id:"pmo-epa-v1320-k7-7"
@@ -3292,13 +2440,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K8",
    question:"What is the mandatory procedure for safe isolation of an electrical circuit before replacing a fused spur in an office bay?",
-   options:[
-    "Isolate the supply at the distribution board, lock off the MCB with a padlock, retain the key, and verify dead with a proved voltage indicator.",
-    "Switch off the wall switch and place a piece of masking tape over the switch rocker.",
-    "Unscrew the faceplate carefully with insulated screwdrivers while the circuit remains live.",
-    "Turn off the main isolator, perform the repair immediately, and turn it back on without testing."
-   ],
-   correct:0,
+   options:["Switch off the wall switch and place a piece of masking tape over the switch rocker.","Isolate the supply at the distribution board, lock off the MCB with a padlock, retain the key, and verify dead with a proved voltage indicator.","Unscrew the faceplate carefully with insulated screwdrivers while the circuit remains live.","Turn off the main isolator, perform the repair immediately, and turn it back on without testing."],
+   correct:1,
    explanation:"Safe isolation requires identifying the supply, isolating, locking off with a unique lock and key, posting warning notices, and proving dead with an approved voltage indicator tested against a proving unit.",
    keyTakeaway:"Always isolate, lock off, retain the key, and test dead using a proved voltage indicator.",
    id:"pmo-epa-v1320-k8-8"
@@ -3306,13 +2449,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K9",
    question:"During a routine monthly inspection of emergency lighting and fire exit signage, what preventative maintenance check is required?",
-   options:[
-    "Simulate a mains failure using a test key to ensure luminaires remain illuminated for their rated duration and check sign visibility.",
-    "Disconnect all backup batteries permanently to lower electrical consumption.",
-    "Replace emergency light bulbs annually regardless of whether they are functional or LED units.",
-    "Paint over discolored escape route signs to match adjacent wall finishes."
-   ],
-   correct:0,
+   options:["Disconnect all backup batteries permanently to lower electrical consumption.","Replace emergency light bulbs annually regardless of whether they are functional or LED units.","Paint over discolored escape route signs to match adjacent wall finishes.","Simulate a mains failure using a test key to ensure luminaires remain illuminated for their rated duration and check sign visibility."],
+   correct:3,
    explanation:"Preventative maintenance of emergency systems requires functional testing to ensure batteries activate luminaires and escape signs remain unobstructed and readable.",
    keyTakeaway:"Test emergency light functionality via test switches and ensure escape signs remain clearly visible.",
    id:"pmo-epa-v1320-k9-9"
@@ -3320,13 +2458,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K10",
    question:"You need to drain down a localized section of a domestic direct hot water pipework system to replace a leaking gate valve. What is the correct sequence?",
-   options:[
-    "Isolate the cold feed supply, turn off the water heater, open the lowest drain cock, and open high-level taps to vent air.",
-    "Cut the copper pipe directly with an angle grinder while the system is under full pressure.",
-    "Open all low-level taps while keeping the main incoming stopcock fully open.",
-    "Close all internal drainage taps and heat the pipework with a blowtorch to evaporate residual water."
-   ],
-   correct:0,
+   options:["Cut the copper pipe directly with an angle grinder while the system is under full pressure.","Open all low-level taps while keeping the main incoming stopcock fully open.","Isolate the cold feed supply, turn off the water heater, open the lowest drain cock, and open high-level taps to vent air.","Close all internal drainage taps and heat the pipework with a blowtorch to evaporate residual water."],
+   correct:2,
    explanation:"Safe draining requires isolating the incoming water supply, switching off heat sources, opening low drain valves, and opening high taps to break the vacuum.",
    keyTakeaway:"Isolate supply and heat sources, then open drain cocks and high-level taps to drain water safely.",
    id:"pmo-epa-v1320-k10-10"
@@ -3334,12 +2467,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K11",
    question:"A ground-floor commercial toilet is backing up due to a blockage in the external underground drainage system. How do you locate and clear the fault safely?",
-   options:[
-    "Inspect downstream inspection chambers (manholes) to locate the blocked section, then clear using drain rods or high-pressure water jetting directed upstream.",
-    "Pour concentrated sulfuric acid directly into the indoor toilet bowl and flush repeatedly.",
-    "Strike the underground PVC drain pipes with a sledgehammer through the lawn to break up solids.",
-    "Cap off the external vent pipe to force water pressure to clear the obstruction."
-   ],
+   options:["Inspect downstream inspection chambers (manholes) to locate the blocked section, then clear using drain rods or high-pressure water jetting directed upstream.","Pour concentrated sulfuric acid directly into the indoor toilet bowl and flush repeatedly.","Strike the underground PVC drain pipes with a sledgehammer through the lawn to break up solids.","Cap off the external vent pipe to force water pressure to clear the obstruction."],
    correct:0,
    explanation:"Fault diagnosis involves checking manholes to locate standing water, then inserting rods or jetting equipment from the clean downstream side working back toward the blockage.",
    keyTakeaway:"Locate blockages via manholes and clear from downstream using rods or water jetting.",
@@ -3348,13 +2476,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K12",
    question:"To comply with L8 Legionella control guidelines in a commercial building water system, what temperature parameter must be maintained at hot water storage calorifiers?",
-   options:[
-    "Stored at a minimum of 60°C and distributed so hot water reaches at least 50°C at outlets within one minute.",
-    "Stored at 30°C to save heating energy and reduce scalding risks.",
-    "Stored at 40°C continuously without monitoring distribution temperatures.",
-    "Boiled to 100°C every hour continuously using secondary immersion heaters."
-   ],
-   correct:0,
+   options:["Stored at 30°C to save heating energy and reduce scalding risks.","Stored at a minimum of 60°C and distributed so hot water reaches at least 50°C at outlets within one minute.","Stored at 40°C continuously without monitoring distribution temperatures.","Boiled to 100°C every hour continuously using secondary immersion heaters."],
+   correct:1,
    explanation:"Legionella bacteria proliferate between 20°C and 45°C. Storing hot water at 60°C or above and delivering it at 50°C or above helps control the bacteria and supports L8 compliance.",
    keyTakeaway:"Store hot water at 60°C or above and ensure outlets reach 50°C within 60 seconds.",
    id:"pmo-epa-v1320-k12-12"
@@ -3362,12 +2485,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K13",
    question:"How does a solar photovoltaic (PV) array integration interact with a building's energy management system (EMS)?",
-   options:[
-    "The PV system converts solar radiation into DC power, inverted to AC power, which the EMS prioritizes over grid electricity to lower building operational emissions.",
-    "The PV array stores hot water directly inside central heating radiators during winter months.",
-    "The PV panel generates natural gas to feed backup boiler systems during peak demand periods.",
-    "The EMS converts PV electricity into compressed air to operate pneumatic ventilation dampers."
-   ],
+   options:["The PV system converts solar radiation into DC power, inverted to AC power, which the EMS prioritizes over grid electricity to lower building operational emissions.","The PV array stores hot water directly inside central heating radiators during winter months.","The PV panel generates natural gas to feed backup boiler systems during peak demand periods.","The EMS converts PV electricity into compressed air to operate pneumatic ventilation dampers."],
    correct:0,
    explanation:"Solar PV generates DC power converted to AC via an inverter. An EMS monitors and prioritizes this green energy for immediate building loads over grid import.",
    keyTakeaway:"PV systems supply renewable AC electricity that EMS networks prioritize over grid power.",
@@ -3376,13 +2494,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K14",
    question:"A double-glazed UPVC window unit exhibits internal condensation (misting) between the two glass panes. What is the root defect and correct repair method?",
-   options:[
-    "The peripheral edge seal of the sealed double-glazed unit (IGU) has failed; the complete glass unit must be replaced.",
-    "The UPVC frame has expanded; drill drainage holes through the front glass face to release moisture.",
-    "The friction stay hinges are loose; tighten the hinge screws to clear the internal glass misting.",
-    "The window handle seal is missing; inject silicone sealant into the trickle vent slot."
-   ],
-   correct:0,
+   options:["The UPVC frame has expanded; drill drainage holes through the front glass face to release moisture.","The friction stay hinges are loose; tighten the hinge screws to clear the internal glass misting.","The peripheral edge seal of the sealed double-glazed unit (IGU) has failed; the complete glass unit must be replaced.","The window handle seal is missing; inject silicone sealant into the trickle vent slot."],
+   correct:2,
    explanation:"Misting between panes indicates a broken hermetic seal around the Insulated Glass Unit, letting moist air inside. The entire IGU panel must be replaced.",
    keyTakeaway:"Internal window misting signifies IGU seal failure, requiring complete glass unit replacement.",
    id:"pmo-epa-v1320-k14-14"
@@ -3390,13 +2503,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K15",
    question:"When repairing a deep hole (50mm depth) in an internal masonry plaster wall, why should you use a backing plaster such as bonding coat before applying finishing plaster?",
-   options:[
-    "Backing plaster builds up depth quickly, provides good adhesion, and minimizes shrinkage cracks before applying a thin 2mm smooth finish coat.",
-    "Finish coat plaster expands when applied thick, causing wall structural collapse.",
-    "Backing plaster is completely waterproof and acts as a primary damp-proof membrane.",
-    "Finish coat plaster cannot be sanded or painted under any circumstances."
-   ],
-   correct:0,
+   options:["Finish coat plaster expands when applied thick, causing wall structural collapse.","Backing plaster builds up depth quickly, provides good adhesion, and minimizes shrinkage cracks before applying a thin 2mm smooth finish coat.","Backing plaster is completely waterproof and acts as a primary damp-proof membrane.","Finish coat plaster cannot be sanded or painted under any circumstances."],
+   correct:1,
    explanation:"Deep repairs require a coarse backing plaster to fill depth stably without excessive shrinkage, followed by a thin skim coat for a smooth finish.",
    keyTakeaway:"Fill deep wall damage with backing plaster first to prevent shrinkage, then skim finish.",
    id:"pmo-epa-v1320-k15-15"
@@ -3404,13 +2512,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K16",
    question:"Flaking and peeling paintwork is observed on an exterior wooden window sill. What is the primary cause and proper safe disposal method for scraped paint waste?",
-   options:[
-    "Poor surface preparation or moisture ingress behind the paint film; collect lead or chemical paint scrapings and dispose as hazardous waste via licensed routes.",
-    "Excessive paint thickness; wash scrapings down storm water drains using cold water.",
-    "Using oil-based primer under gloss paint; burn scraped paint waste in an open yard incinerator.",
-    "Natural wood expansion; mix paint scrapings into garden soil to act as organic compost."
-   ],
-   correct:0,
+   options:["Excessive paint thickness; wash scrapings down storm water drains using cold water.","Using oil-based primer under gloss paint; burn scraped paint waste in an open yard incinerator.","Natural wood expansion; mix paint scrapings into garden soil to act as organic compost.","Poor surface preparation or moisture ingress behind the paint film; collect lead or chemical paint scrapings and dispose as hazardous waste via licensed routes."],
+   correct:3,
    explanation:"Peeling results from trapped moisture or inadequate keying or priming. Scrapings, especially older paints potentially containing lead or VOCs, must be collected and disposed of safely.",
    keyTakeaway:"Paint peels due to moisture or poor preparation; waste scrapings must be safely disposed of without polluting drains.",
    id:"pmo-epa-v1320-k16-16"
@@ -3418,13 +2521,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K17",
    question:"Several wall tiles in a public shower room have debonded from the substrate. What is the most likely cause of this failure?",
-   options:[
-    "Inappropriate adhesive selection for wet environments or tiling directly onto an unprimed, dusty, or water-damaged substrate.",
-    "Using flexible grout instead of solid sand and cement mortar between tile joints.",
-    "Applying tiles in a staggered brick-bond pattern rather than a straight grid layout.",
-    "Soaking porcelain tiles in cold water for 24 hours prior to installation."
-   ],
-   correct:0,
+   options:["Using flexible grout instead of solid sand and cement mortar between tile joints.","Inappropriate adhesive selection for wet environments or tiling directly onto an unprimed, dusty, or water-damaged substrate.","Applying tiles in a staggered brick-bond pattern rather than a straight grid layout.","Soaking porcelain tiles in cold water for 24 hours prior to installation."],
+   correct:1,
    explanation:"Tile debonding in wet areas is usually caused by using non-water-resistant adhesive, failing to tank or waterproof the substrate, or poor surface priming.",
    keyTakeaway:"Ensure water-resistant adhesive is used and substrates are properly primed and waterproofed in wet areas.",
    id:"pmo-epa-v1320-k17-17"
@@ -3432,12 +2530,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K18",
    question:"Commercial vinyl safety flooring in a kitchen is lifting along a seam line. What repair process prevents liquid from penetrating underneath?",
-   options:[
-    "Clean and re-adhere the vinyl edge using contact adhesive, then hot-weld the joint seam using matching vinyl weld rod.",
-    "Secure the lifted vinyl edge with open steel staples every 50mm along the seam.",
-    "Fill the open joint gap with standard decorating caulk and press flat with a hand roller.",
-    "Cut away a 300mm strip of flooring and leave the bare concrete subfloor exposed."
-   ],
+   options:["Clean and re-adhere the vinyl edge using contact adhesive, then hot-weld the joint seam using matching vinyl weld rod.","Secure the lifted vinyl edge with open steel staples every 50mm along the seam.","Fill the open joint gap with standard decorating caulk and press flat with a hand roller.","Cut away a 300mm strip of flooring and leave the bare concrete subfloor exposed."],
    correct:0,
    explanation:"Repairing commercial vinyl requires full adhesive re-bonding to the subfloor followed by hot-grooving and hot-rod welding to create an airtight, waterproof seal.",
    keyTakeaway:"Re-bond lifted vinyl with suitable adhesive and hot-weld seams to restore water-tight integrity.",
@@ -3446,13 +2539,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K19",
    question:"You are repointing a damaged section of external brickwork on a 1930s property showing signs of spalling brick faces. What mortar mix should be used?",
-   options:[
-    "A soft, vapor-permeable sand and lime mortar mix that allows the masonry to breathe and prevents further frost damage to bricks.",
-    "A dense, high-strength 1:1 OPC and sharp sand mix.",
-    "Pure plaster of Paris mixed with PVA bonding agent.",
-    "Expandable polyurethane foam coated with clear silicone sealant."
-   ],
-   correct:0,
+   options:["A dense, high-strength 1:1 OPC and sharp sand mix.","Pure plaster of Paris mixed with PVA bonding agent.","Expandable polyurethane foam coated with clear silicone sealant.","A soft, vapor-permeable sand and lime mortar mix that allows the masonry to breathe and prevents further frost damage to bricks."],
+   correct:3,
    explanation:"Mortar must be softer and more permeable than the surrounding bricks. Modern hard cement traps moisture in historic bricks, causing spalling during freeze-thaw cycles.",
    keyTakeaway:"Repoint with breathable mortar softer than the brickwork to prevent frost spalling.",
    id:"pmo-epa-v1320-k19-19"
@@ -3460,13 +2548,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K20",
    question:"After a storm, water is leaking through a flat roof covered with bituminous felt. What temporary emergency repair method should be applied while waiting for full renewal?",
-   options:[
-    "Clean away debris, dry the surface around the tear, and apply a fiber-reinforced bitumen emergency repair compound or patch coat.",
-    "Cover the entire roof area with loose dry sand to absorb water.",
-    "Flame-torch a new three-layer felt system directly over wet, standing water puddles.",
-    "Puncture additional holes in lower ceiling plaster to let water drain faster into buckets."
-   ],
-   correct:0,
+   options:["Cover the entire roof area with loose dry sand to absorb water.","Flame-torch a new three-layer felt system directly over wet, standing water puddles.","Clean away debris, dry the surface around the tear, and apply a fiber-reinforced bitumen emergency repair compound or patch coat.","Puncture additional holes in lower ceiling plaster to let water drain faster into buckets."],
+   correct:2,
    explanation:"Emergency flat roof repairs require clearing loose gravel and dirt and applying an all-weather, fiber-reinforced bituminous roof mastic or emergency acrylic compound.",
    keyTakeaway:"Clean the area and apply fiber-reinforced bituminous compound for temporary flat roof seal repairs.",
    id:"pmo-epa-v1320-k20-20"
@@ -3474,13 +2557,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K21",
    question:"A timber closeboard fence post has rotted at ground level, causing the fence line to lean. What is the most cost-effective, durable repair method?",
-   options:[
-    "Install a concrete repair spur set in Postcrete alongside the post and bolt it securely to the sound upper timber section.",
-    "Wrap gaffer tape around the rotted ground-level timber joint.",
-    "Mound garden soil 300mm higher around the timber base to hold it upright.",
-    "Screw a wooden panel directly to adjacent tree branches for support."
-   ],
-   correct:0,
+   options:["Wrap gaffer tape around the rotted ground-level timber joint.","Mound garden soil 300mm higher around the timber base to hold it upright.","Install a concrete repair spur set in Postcrete alongside the post and bolt it securely to the sound upper timber section.","Screw a wooden panel directly to adjacent tree branches for support."],
+   correct:2,
    explanation:"Concrete repair spurs set in concrete extend the life of fence posts rotted at ground level without requiring full fence dismantle and post replacement.",
    keyTakeaway:"Use concrete repair spurs set in Postcrete to repair timber posts rotted at ground level.",
    id:"pmo-epa-v1320-k21-21"
@@ -3488,13 +2566,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K22",
    question:"A sunken concrete block paving area near a building entrance presents a trip hazard. What remediation process restores a safe, level walkway?",
-   options:[
-    "Lift the sunken pavers, excavate degraded sub-base, compact fresh sharp sand or aggregate, re-lay pavers level, and sweep in jointing sand.",
-    "Pour liquid asphalt directly over the sunken pavers without lifting them.",
-    "Grind down surrounding high pavers using a diamond wheel until level with the dip.",
-    "Place a rubber doormat over the sunken area to hide the drop."
-   ],
-   correct:0,
+   options:["Pour liquid asphalt directly over the sunken pavers without lifting them.","Lift the sunken pavers, excavate degraded sub-base, compact fresh sharp sand or aggregate, re-lay pavers level, and sweep in jointing sand.","Grind down surrounding high pavers using a diamond wheel until level with the dip.","Place a rubber doormat over the sunken area to hide the drop."],
+   correct:1,
    explanation:"Repairing block paving requires lifting blocks, correcting and compacting the underlying bedding sand or sub-base, re-laying blocks flush, and re-sanding joints.",
    keyTakeaway:"Lift pavers, level and compact the sub-base and sand bed, re-lay blocks flush, and sand joints.",
    id:"pmo-epa-v1320-k22-22"
@@ -3502,13 +2575,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K23",
    question:"Where can a Property Maintenance Operative find authoritative technical specifications regarding maximum allowable clear distances between stair balusters?",
-   options:[
-    "UK Building Regulations Approved Document K (Protection from falling, collision and impact).",
-    "COSHH essential safety data sheet section 4.",
-    "The delivery docket supplied with raw timber lengths.",
-    "The manufacturer's instruction leaflet for hand-held circular saws."
-   ],
-   correct:0,
+   options:["COSHH essential safety data sheet section 4.","The delivery docket supplied with raw timber lengths.","The manufacturer's instruction leaflet for hand-held circular saws.","UK Building Regulations Approved Document K (Protection from falling, collision and impact)."],
+   correct:3,
    explanation:"Approved Document K of the UK Building Regulations defines structural geometry rules, including the requirement that a 100mm sphere cannot pass through stair guarding gaps.",
    keyTakeaway:"Building Regulations Approved Documents provide technical compliance criteria for building works.",
    id:"pmo-epa-v1320-k23-23"
@@ -3516,12 +2584,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K24",
    question:"When logging completed job details and tenant information into a mobile maintenance management app, what GDPR and Data Protection requirement must you follow?",
-   options:[
-    "Ensure device passwords or biometrics are active, lock screens when unattended, and record only necessary job information without sharing personal data inappropriately.",
-    "Store tenant contact telephone numbers in a publicly readable notebook left on your van dashboard.",
-    "Share tenant door access codes on public social media channels to coordinate sub-contractor entry.",
-    "Email full tenant medical and financial history to material supply merchants."
-   ],
+   options:["Ensure device passwords or biometrics are active, lock screens when unattended, and record only necessary job information without sharing personal data inappropriately.","Store tenant contact telephone numbers in a publicly readable notebook left on your van dashboard.","Share tenant door access codes on public social media channels to coordinate sub-contractor entry.","Email full tenant medical and financial history to material supply merchants."],
    correct:0,
    explanation:"Data protection legislation requires keeping personal data secure, using encrypted or password-protected devices, and limiting recorded data strictly to job operational needs.",
    keyTakeaway:"Protect digital maintenance devices with passwords and handle personal data confidentially.",
@@ -3530,13 +2593,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K25",
    question:"A maintenance department notes recurring hot-water circulation pump failures across multiple sites. How does continuous quality improvement resolve this issue?",
-   options:[
-    "Analyze root causes, identify improper system balancing or strainer debris, update the PPM checklist procedure, and re-train staff.",
-    "Order cheaper replacement pumps in bulk to replace failed units faster.",
-    "Ignore the pattern as long as replacement pumps arrive within 48 hours.",
-    "Instruct tenants to run hot water taps continuously to prevent pump overload."
-   ],
-   correct:0,
+   options:["Order cheaper replacement pumps in bulk to replace failed units faster.","Ignore the pattern as long as replacement pumps arrive within 48 hours.","Instruct tenants to run hot water taps continuously to prevent pump overload.","Analyze root causes, identify improper system balancing or strainer debris, update the PPM checklist procedure, and re-train staff."],
+   correct:3,
    explanation:"Quality assurance and continuous improvement use root-cause analysis on repeated faults to modify procedures, preventing future occurrences and improving efficiency.",
    keyTakeaway:"Investigate recurring defects to address root causes and improve standard PPM procedures.",
    id:"pmo-epa-v1320-k25-25"
@@ -3544,13 +2602,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K26",
    question:"Under the Environmental Protection Act Duty of Care, what document must you obtain when transferring mixed construction waste from a job site to an external disposal company?",
-   options:[
-    "A controlled Waste Transfer Note (WTN) signed by both parties, detailing waste types and verifying the carrier's license number.",
-    "A verbal confirmation from the truck driver that the waste will be buried.",
-    "A standard store purchase receipt for new timber materials.",
-    "An internal site risk assessment form covering working at height."
-   ],
-   correct:0,
+   options:["A verbal confirmation from the truck driver that the waste will be buried.","A standard store purchase receipt for new timber materials.","A controlled Waste Transfer Note (WTN) signed by both parties, detailing waste types and verifying the carrier's license number.","An internal site risk assessment form covering working at height."],
+   correct:2,
    explanation:"Duty of Care laws mandate that taking waste off-site requires a signed Waste Transfer Note and checking that the waste carrier holds a valid Environment Agency permit.",
    keyTakeaway:"Always issue and retain Waste Transfer Notes when transferring waste to licensed carriers.",
    id:"pmo-epa-v1320-k26-26"
@@ -3558,13 +2611,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K27",
    question:"You are reporting a severe roof truss failure to a non-technical building owner versus a structural engineer. How should your communication style adapt?",
-   options:[
-    "Explain the safety risk and required access restrictions simply to the owner, while providing exact technical terminology and structural span dimensions to the engineer.",
-    "Use complex engineering formulas when speaking to the owner to demonstrate technical authority.",
-    "Avoid informing the building owner about the collapse risk to prevent alarming them.",
-    "Use informal slang terminology when sending formal reports to the structural engineer."
-   ],
-   correct:0,
+   options:["Use complex engineering formulas when speaking to the owner to demonstrate technical authority.","Explain the safety risk and required access restrictions simply to the owner, while providing exact technical terminology and structural span dimensions to the engineer.","Avoid informing the building owner about the collapse risk to prevent alarming them.","Use informal slang terminology when sending formal reports to the structural engineer."],
+   correct:1,
    explanation:"Effective communication requires tailoring technical language: plain, clear, non-jargon explanations for clients and occupants, and precise technical terms for engineering professionals.",
    keyTakeaway:"Adapt technical language to match the understanding of non-technical stakeholders versus trade peers.",
    id:"pmo-epa-v1320-k27-27"
@@ -3572,12 +2620,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K28",
    question:"A tenant is frustrated because a replacement radiator part is delayed by two days. How do you maintain professional customer service?",
-   options:[
-    "Contact the tenant proactively, explain the reason for the delay calmly, provide an updated arrival time, and ensure temporary heating is offered if needed.",
-    "Avoid answering the tenant's phone calls until the radiator part arrives at the depot.",
-    "Blame the supplier using aggressive language and tell the tenant to call the manufacturer directly.",
-    "Arrive at the property unannounced late at night to explain the situation in person."
-   ],
+   options:["Contact the tenant proactively, explain the reason for the delay calmly, provide an updated arrival time, and ensure temporary heating is offered if needed.","Avoid answering the tenant's phone calls until the radiator part arrives at the depot.","Blame the supplier using aggressive language and tell the tenant to call the manufacturer directly.","Arrive at the property unannounced late at night to explain the situation in person."],
    correct:0,
    explanation:"Good customer service relies on proactive communication, setting realistic expectations, demonstrating empathy, and offering practical interim solutions when delays occur.",
    keyTakeaway:"Communicate delays proactively, remain polite, and provide practical interim solutions.",
@@ -3586,13 +2629,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K29",
    question:"You are coordinating a washroom refurbishment involving plumbing, tiling, and electrical works. How do trade inter-dependencies dictate task sequencing?",
-   options:[
-    "First-fix plumbing and electrical, complete plastering and wall tiling, then second-fix electrical and plumbing fittings after decoration.",
-    "Complete final wall painting and floor tiling before installing internal concealed pipework.",
-    "Mount light switches and washbasins onto bare studs before carpenters erect wall frames.",
-    "Fit second-fix electrical sockets while plumbers are pressure testing open water pipes directly overhead."
-   ],
-   correct:0,
+   options:["Complete final wall painting and floor tiling before installing internal concealed pipework.","Mount light switches and washbasins onto bare studs before carpenters erect wall frames.","First-fix plumbing and electrical, complete plastering and wall tiling, then second-fix electrical and plumbing fittings after decoration.","Fit second-fix electrical sockets while plumbers are pressure testing open water pipes directly overhead."],
+   correct:2,
    explanation:"Property maintenance depends on logical sequencing: first-fix services first, followed by wet trades and board linings, then decorative finishes, and finally second-fix fit-outs.",
    keyTakeaway:"Sequence works logically: first-fix services, substrates and finishes, then second-fix fit-out.",
    id:"pmo-epa-v1320-k29-29"
@@ -3600,12 +2638,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K30",
    question:"While working in a public sector facility, you notice a vulnerable resident displaying signs of unexplained physical injury and distress. What is your responsibility under Safeguarding policy?",
-   options:[
-    "Report your observations immediately to the designated Safeguarding Lead following the organization's reporting procedure.",
-    "Confront other residents aggressively to investigate who caused the injury.",
-    "Promise the resident you will keep their situation completely secret from management.",
-    "Ignore the situation as safeguarding concerns lie outside a maintenance operative's role."
-   ],
+   options:["Report your observations immediately to the designated Safeguarding Lead following the organization's reporting procedure.","Confront other residents aggressively to investigate who caused the injury.","Promise the resident you will keep their situation completely secret from management.","Ignore the situation as safeguarding concerns lie outside a maintenance operative's role."],
    correct:0,
    explanation:"All operatives working in public and residential environments have a duty of care under Safeguarding and Prevent policies to promptly report concerns to designated safeguarding leads.",
    keyTakeaway:"Report all safeguarding or welfare concerns immediately to designated organizational leads.",
@@ -3614,13 +2647,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"K31",
    question:"A client asks you to perform a complex gas boiler combustion test. You are qualified in property maintenance but do not hold Gas Safe registration. What should you do?",
-   options:[
-    "Decline the task, explaining that it exceeds your legal authority and competence, and escalate it to a registered Gas Safe engineer.",
-    "Attempt the test using online videos while working carefully.",
-    "Perform the combustion check as long as a supervisor is present on site.",
-    "Isolate the gas valve permanently without informing the customer or recording the action."
-   ],
-   correct:0,
+   options:["Attempt the test using online videos while working carefully.","Decline the task, explaining that it exceeds your legal authority and competence, and escalate it to a registered Gas Safe engineer.","Perform the combustion check as long as a supervisor is present on site.","Isolate the gas valve permanently without informing the customer or recording the action."],
+   correct:1,
    explanation:"Recognizing personal limits of competence is critical for safety and legal compliance. Unregistered personnel must never carry out gas work.",
    keyTakeaway:"Never exceed your legal authority; refer specialized tasks like gas fitting to certified specialists.",
    id:"pmo-epa-v1320-k31-31"
@@ -3628,13 +2656,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S1",
    question:"You have a daily work list containing four tasks: an emergency water leak, a scheduled emergency light test, replacing a blown lamp, and repairing a door latch. How do you plan your sequence?",
-   options:[
-    "Isolate and repair the emergency water leak first, then perform scheduled emergency light tests, and finally complete minor repairs.",
-    "Replace the blown lamp first, leave the water leak until the end of the shift, and ignore the light test.",
-    "Complete tasks in strict alphabetical order based on location room names.",
-    "Carry out the easiest job first regardless of emergency risk to finish early."
-   ],
-   correct:0,
+   options:["Replace the blown lamp first, leave the water leak until the end of the shift, and ignore the light test.","Complete tasks in strict alphabetical order based on location room names.","Carry out the easiest job first regardless of emergency risk to finish early.","Isolate and repair the emergency water leak first, then perform scheduled emergency light tests, and finally complete minor repairs."],
+   correct:3,
    explanation:"Sequencing routine work requires prioritizing active hazards and emergencies before PPM tasks and low-priority cosmetic repairs.",
    keyTakeaway:"Prioritize active leaks and critical safety risks before scheduled PPM and minor repairs.",
    id:"pmo-epa-v1320-s1-32"
@@ -3642,13 +2665,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S2",
    question:"You need to replace damaged fire-door intumescent seals during maintenance. How do you ensure the replacement components comply with regulations?",
-   options:[
-    "Check the fire door manufacturer's specification matrix and select identical, certified intumescent seal dimensions and fire rating such as FD30 or FD60.",
-    "Fit generic rubber draft excluder strips from a local DIY shop.",
-    "Fill the rebate gap with standard silicone sealant.",
-    "Use undersized intumescent strips and fill gaps with wooden wedges."
-   ],
-   correct:0,
+   options:["Fit generic rubber draft excluder strips from a local DIY shop.","Check the fire door manufacturer's specification matrix and select identical, certified intumescent seal dimensions and fire rating such as FD30 or FD60.","Fill the rebate gap with standard silicone sealant.","Use undersized intumescent strips and fill gaps with wooden wedges."],
+   correct:1,
    explanation:"Fire safety components must strictly match the fire door test evidence and manufacturer specifications to maintain compliance and fire resistance.",
    keyTakeaway:"Match fire door seals strictly to tested manufacturer specifications and ratings.",
    id:"pmo-epa-v1320-s2-33"
@@ -3656,12 +2674,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S3",
    question:"When preparing to work inside a shallow ceiling void where overhead electrical cables are present, how do you comply with statutory health and safety rules?",
-   options:[
-    "Carry out a risk assessment, safely isolate nearby electrical circuits, use low-voltage lighting, and wear a bump cap and safety glasses.",
-    "Reach into the void using uninsulated metal tools without isolating power.",
-    "Pull trailing cables out of the way using wet leather gloves.",
-    "Work in the dark to avoid touching electrical components."
-   ],
+   options:["Carry out a risk assessment, safely isolate nearby electrical circuits, use low-voltage lighting, and wear a bump cap and safety glasses.","Reach into the void using uninsulated metal tools without isolating power.","Pull trailing cables out of the way using wet leather gloves.","Work in the dark to avoid touching electrical components."],
    correct:0,
    explanation:"Compliance requires risk assessment, isolating hazards such as live cables, utilizing suitable head and eye PPE, and ensuring safe working conditions.",
    keyTakeaway:"Assess risks, isolate electrical hazards, and wear appropriate protective gear in ceiling voids.",
@@ -3670,13 +2683,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S4",
    question:"You are clearing a blocked outdoor drain gulley on a public footpath. How do you organize the workplace to satisfy your risk assessment?",
-   options:[
-    "Set up safety cones and pedestrian barrier tape around the gulley, wear hi-vis clothing and heavy nitrile gloves, and keep tools within the barrier zone.",
-    "Leave the manhole cover wide open while walking away to fetch tools from the van.",
-    "Bucket drain sludge directly across the active public footway without warning signs.",
-    "Perform the work at night in unlit conditions without high-visibility clothing."
-   ],
-   correct:0,
+   options:["Leave the manhole cover wide open while walking away to fetch tools from the van.","Bucket drain sludge directly across the active public footway without warning signs.","Set up safety cones and pedestrian barrier tape around the gulley, wear hi-vis clothing and heavy nitrile gloves, and keep tools within the barrier zone.","Perform the work at night in unlit conditions without high-visibility clothing."],
+   correct:2,
    explanation:"Organizing a workplace safely involves setting up physical barriers, warning signs, wearing appropriate PPE, and preventing hazards to the public.",
    keyTakeaway:"Erect barrier zones around open excavations and manholes and wear high-visibility PPE.",
    id:"pmo-epa-v1320-s4-35"
@@ -3684,13 +2692,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S5",
    question:"When installing a replacement extract fan in a domestic bathroom, how do you comply with Building Regulations Approved Documents F and P?",
-   options:[
-    "Ensure minimum extraction airflow rates are achieved, ducting exhausts directly outside, and electrical connections meet Part P zone requirements.",
-    "Vent the moist exhaust air directly into an unventilated attic space.",
-    "Connect the fan to a lighting circuit using uninsulated bell wire.",
-    "Reduce ducting diameter down to 25mm to avoid drilling standard core holes."
-   ],
-   correct:0,
+   options:["Vent the moist exhaust air directly into an unventilated attic space.","Connect the fan to a lighting circuit using uninsulated bell wire.","Reduce ducting diameter down to 25mm to avoid drilling standard core holes.","Ensure minimum extraction airflow rates are achieved, ducting exhausts directly outside, and electrical connections meet Part P zone requirements."],
+   correct:3,
    explanation:"Approved Document F mandates correct extraction rates routed to outside air; Approved Document P mandates safe electrical installation in wet zones.",
    keyTakeaway:"Route ventilation ductwork directly outside and observe electrical zone rules.",
    id:"pmo-epa-v1320-s5-36"
@@ -3698,13 +2701,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S6",
    question:"You are replacing broken roof slates from a lean-to roof structure. How do you implement safe working practices for access?",
-   options:[
-    "Use a correctly tied-off ladder to access a properly erected roof ladder, setting up ground warning barriers below the eaves line.",
-    "Climb directly onto fragile roof slates wearing smooth-soled trainers.",
-    "Stand on top of a wheelbarrow positioned on uneven garden soil.",
-    "Throw broken slate pieces down onto the access path without checking below."
-   ],
-   correct:0,
+   options:["Climb directly onto fragile roof slates wearing smooth-soled trainers.","Stand on top of a wheelbarrow positioned on uneven garden soil.","Use a correctly tied-off ladder to access a properly erected roof ladder, setting up ground warning barriers below the eaves line.","Throw broken slate pieces down onto the access path without checking below."],
+   correct:2,
    explanation:"Safe access to pitched roofs requires secured access ladders combined with specialized roof ladders to distribute weight, plus ground drop-zone protection.",
    keyTakeaway:"Use secured access equipment, specialized roof ladders, and establish drop zones below.",
    id:"pmo-epa-v1320-s6-37"
@@ -3712,13 +2710,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S7",
    question:"You need to cut a sheet of 18mm plywood using a portable circular saw. How do you verify correct tool functioning before starting?",
-   options:[
-    "Check that the lower blade guard snaps back automatically, inspect the blade for missing teeth, check cable integrity, and test the off-switch trigger.",
-    "Lock the retractable lower guard open using a wooden wedge.",
-    "Use a grinding disc fitted onto the circular saw arbor.",
-    "Bypass the safety dead-man trigger switch with electrical tape."
-   ],
-   correct:0,
+   options:["Lock the retractable lower guard open using a wooden wedge.","Use a grinding disc fitted onto the circular saw arbor.","Bypass the safety dead-man trigger switch with electrical tape.","Check that the lower blade guard snaps back automatically, inspect the blade for missing teeth, check cable integrity, and test the off-switch trigger."],
+   correct:3,
    explanation:"Safe tool operation requires verifying safety guards move freely and return automatically, blades are intact, and switch controls function correctly.",
    keyTakeaway:"Confirm automatic guard operation, blade integrity, and switch controls before cutting.",
    id:"pmo-epa-v1320-s7-38"
@@ -3726,12 +2719,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S8",
    question:"Before replacing a faulty 230V immersion heater element, how do you execute safe electrical isolation?",
-   options:[
-    "Isolate at the DP switch or MCB, lock off with a padlock, tag out, test your voltage indicator on a proving unit, verify dead at the element terminals, and re-prove the indicator.",
-    "Turn off the wall switch and proceed directly without testing voltage.",
-    "Switch off the main stopcock and start unscrewing wires immediately.",
-    "Cut electrical cables with insulated pliers while keeping the breaker energized."
-   ],
+   options:["Isolate at the DP switch or MCB, lock off with a padlock, tag out, test your voltage indicator on a proving unit, verify dead at the element terminals, and re-prove the indicator.","Turn off the wall switch and proceed directly without testing voltage.","Switch off the main stopcock and start unscrewing wires immediately.","Cut electrical cables with insulated pliers while keeping the breaker energized."],
    correct:0,
    explanation:"The standard safe isolation procedure requires isolate, lock off, tag, prove the voltage tester, test circuits for dead, and re-test the voltage tester.",
    keyTakeaway:"Follow the full Safe Isolation Procedure: isolate, lock, prove tester, test dead, and re-prove.",
@@ -3740,13 +2728,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S9",
    question:"During routine testing of a commercial fire alarm system via a manual call point, the alarm fails to activate the sounders or signal the panel. What action must you take?",
-   options:[
-    "Log the failure immediately in the fire logbook, notify the responsible person or building manager, and escalate for urgent specialist repair.",
-    "Ignore the failure and re-test the system in six months.",
-    "Silence the main panel power supply permanently to clear fault lights.",
-    "Melt the call point glass reset key inside the housing to hold the contact down."
-   ],
-   correct:0,
+   options:["Ignore the failure and re-test the system in six months.","Log the failure immediately in the fire logbook, notify the responsible person or building manager, and escalate for urgent specialist repair.","Silence the main panel power supply permanently to clear fault lights.","Melt the call point glass reset key inside the housing to hold the contact down."],
+   correct:1,
    explanation:"Emergency system failures require immediate documentation in statutory logbooks and prompt escalation to ensure safety life-systems are restored without delay.",
    keyTakeaway:"Document emergency system failures immediately in safety logs and escalate for repair.",
    id:"pmo-epa-v1320-s9-40"
@@ -3754,13 +2737,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S10",
    question:"A kitchen mixer tap is leaking profusely from the spindle head. How do you perform the repair cleanly?",
-   options:[
-    "Isolate local service valves under the sink, open tap handles to relieve residual water pressure, disassemble the tap valve, and replace internal O-rings or cartridge.",
-    "Wrap string tightly around the exterior of the tap spout while the supply remains under pressure.",
-    "Hit the brass body with a steel hammer to tighten internal threads.",
-    "Solder the tap spout closed completely using lead-free solder."
-   ],
-   correct:0,
+   options:["Wrap string tightly around the exterior of the tap spout while the supply remains under pressure.","Isolate local service valves under the sink, open tap handles to relieve residual water pressure, disassemble the tap valve, and replace internal O-rings or cartridge.","Hit the brass body with a steel hammer to tighten internal threads.","Solder the tap spout closed completely using lead-free solder."],
+   correct:1,
    explanation:"Plumbing repairs require isolating water, venting system pressure, dismantling components safely, and renewing worn internal seals or cartridges.",
    keyTakeaway:"Isolate supply, depressurize, dismantle tap assembly, and renew worn cartridges or seals.",
    id:"pmo-epa-v1320-s10-41"
@@ -3768,13 +2746,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S11",
    question:"An external rainwater downpipe has snapped at a socket joint, causing rainwater to saturate the masonry wall. How do you repair it?",
-   options:[
-    "Cut out the damaged pipe section, clean pipe ends, and install a replacement plastic downpipe section using a pipe connector and pipe clip assembly.",
-    "Wrap the cracked joint with cloth duct tape.",
-    "Divert the gutter outlet into an open top-floor window.",
-    "Fill the interior of the downpipe with expanding foam to block water entry."
-   ],
-   correct:0,
+   options:["Wrap the cracked joint with cloth duct tape.","Divert the gutter outlet into an open top-floor window.","Fill the interior of the downpipe with expanding foam to block water entry.","Cut out the damaged pipe section, clean pipe ends, and install a replacement plastic downpipe section using a pipe connector and pipe clip assembly."],
+   correct:3,
    explanation:"External drainage repairs involve removing damaged sections and fitting correct matching replacement components secured with purpose-made socket couplers.",
    keyTakeaway:"Cut out broken sections cleanly and fit purpose-made replacement pipe fittings.",
    id:"pmo-epa-v1320-s11-42"
@@ -3782,13 +2755,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S12",
    question:"A mechanical ventilation heat recovery (MVHR) unit filter indicator shows a clogged warning light. What maintenance step is required?",
-   options:[
-    "Isolate electrical power to the unit, remove dirty filters, clean or install new manufacturer-specified filter inserts, reset the indicator, and restore power.",
-    "Remove dirty filters permanently and operate the system without filtration.",
-    "Spray liquid oil directly onto dirty filter media while the fan operates.",
-    "Bypass the MVHR control board using jump wires to eliminate warning lights."
-   ],
-   correct:0,
+   options:["Remove dirty filters permanently and operate the system without filtration.","Spray liquid oil directly onto dirty filter media while the fan operates.","Isolate electrical power to the unit, remove dirty filters, clean or install new manufacturer-specified filter inserts, reset the indicator, and restore power.","Bypass the MVHR control board using jump wires to eliminate warning lights."],
+   correct:2,
    explanation:"MVHR maintenance requires safe power isolation, clearing or replacing filter media with correct parts, and clearing system maintenance alerts.",
    keyTakeaway:"Isolate power, replace dirty MVHR filters with specified parts, and reset system monitors.",
    id:"pmo-epa-v1320-s12-43"
@@ -3796,12 +2764,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S13",
    question:"A wooden sash window frame is binding and refusing to slide smoothly. How do you restore functional operation using joinery skills?",
-   options:[
-    "Remove staff beads, ease sticking sash edges using a hand plane, lubricate pulley tracks with paraffin wax, and re-hang with correct balance weights.",
-    "Force the window open using a heavy crowbar and nail it shut permanently.",
-    "Cut away lower window sills completely with an electric chainsaw.",
-    "Apply thick gloss paint over dirty pulley wheels and sash cords."
-   ],
+   options:["Remove staff beads, ease sticking sash edges using a hand plane, lubricate pulley tracks with paraffin wax, and re-hang with correct balance weights.","Force the window open using a heavy crowbar and nail it shut permanently.","Cut away lower window sills completely with an electric chainsaw.","Apply thick gloss paint over dirty pulley wheels and sash cords."],
    correct:0,
    explanation:"Repairing sash windows involves dismantling perimeter beads, easing high spots on meeting rails or stiles with joinery hand tools, and maintaining pulley mechanisms.",
    keyTakeaway:"Remove retaining beads, plane down sticking timber edges, and service balance mechanisms.",
@@ -3810,13 +2773,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S14",
    question:"You are repairing a damaged plasterboard section where a door handle has punched a 100mm hole. How do you prepare and fill the repair?",
-   options:[
-    "Square off the damaged area, fix a timber backing batten or plasterboard patch, apply jointing tape over seams, and apply filler flushed smooth.",
-    "Stuff loose newspaper into the cavity and paint over it immediately.",
-    "Fill the entire wall cavity solid with mixed masonry sand and cement mortar.",
-    "Glue a sheet of cardboard over the hole using PVA adhesive."
-   ],
-   correct:0,
+   options:["Stuff loose newspaper into the cavity and paint over it immediately.","Square off the damaged area, fix a timber backing batten or plasterboard patch, apply jointing tape over seams, and apply filler flushed smooth.","Fill the entire wall cavity solid with mixed masonry sand and cement mortar.","Glue a sheet of cardboard over the hole using PVA adhesive."],
+   correct:1,
    explanation:"Plasterboard repairs require cutting out damaged material square, installing solid backing supports, scrim taping joints to prevent cracking, and feathering joint compound.",
    keyTakeaway:"Square off damage, install backing or patches, tape joints, and apply smooth joint compound.",
    id:"pmo-epa-v1320-s14-45"
@@ -3824,13 +2782,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S15",
    question:"You are decorating a newly plastered office room. How do you prepare the fresh plaster surface before applying contract emulsion?",
-   options:[
-    "Ensure plaster is fully dry, lightly sand imperfections, apply a mist coat of diluted emulsion to seal suction, then apply full coats.",
-    "Apply two coats of full-strength solvent gloss paint directly onto damp plaster.",
-    "Coat the wall with engine oil before applying emulsion paint.",
-    "Apply un-diluted heavy vinyl wallpaper paste directly onto powdery dry plaster."
-   ],
-   correct:0,
+   options:["Apply two coats of full-strength solvent gloss paint directly onto damp plaster.","Coat the wall with engine oil before applying emulsion paint.","Apply un-diluted heavy vinyl wallpaper paste directly onto powdery dry plaster.","Ensure plaster is fully dry, lightly sand imperfections, apply a mist coat of diluted emulsion to seal suction, then apply full coats."],
+   correct:3,
    explanation:"Fresh plaster requires drying time, light sanding, and a breathable mist coat to penetrate and seal surface suction before finishing coats.",
    keyTakeaway:"Apply a diluted mist coat to fresh dry plaster to seal high suction before full paint coats.",
    id:"pmo-epa-v1320-s15-46"
@@ -3838,13 +2791,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S16",
    question:"You are replacing three cracked ceramic tiles on a splashback. How do you prepare the substrate before placing new tiles?",
-   options:[
-    "Rake out surrounding grout, carefully rake or chisel away old tiles and hard adhesive down to a clean flat substrate, and prime before re-tiling.",
-    "Stick new tiles directly on top of loose cracked tiles using mastic tape.",
-    "Fill cracks with oil paint and skip tile replacement.",
-    "Hammer new tiles into place over high ridges of old adhesive."
-   ],
-   correct:0,
+   options:["Stick new tiles directly on top of loose cracked tiles using mastic tape.","Fill cracks with oil paint and skip tile replacement.","Rake out surrounding grout, carefully rake or chisel away old tiles and hard adhesive down to a clean flat substrate, and prime before re-tiling.","Hammer new tiles into place over high ridges of old adhesive."],
+   correct:2,
    explanation:"Successful tile replacement requires isolating broken tiles by scoring grout lines, removing tiles safely, chipping old adhesive flat, and priming the substrate.",
    keyTakeaway:"Isolate damaged tiles, clear old adhesive back to a flat clean substrate, and prime before re-laying.",
    id:"pmo-epa-v1320-s16-47"
@@ -3852,12 +2800,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S17",
    question:"You need to replace a damaged 300mm carpet tile in an office corridor floor layout. How do you execute the repair?",
-   options:[
-    "Peel up the damaged tile, scrape clean old adhesive bed, apply tackifier adhesive, cut matching new tile to size using a utility knife, and press flush.",
-    "Cut out a circle in the damaged carpet tile and fill the gap with silicone.",
-    "Staple a piece of loose household rug over the damaged carpet tile.",
-    "Glue the new carpet tile upside down using polyurethane wood glue."
-   ],
+   options:["Peel up the damaged tile, scrape clean old adhesive bed, apply tackifier adhesive, cut matching new tile to size using a utility knife, and press flush.","Cut out a circle in the damaged carpet tile and fill the gap with silicone.","Staple a piece of loose household rug over the damaged carpet tile.","Glue the new carpet tile upside down using polyurethane wood glue."],
    correct:0,
    explanation:"Carpet tile repairs involve lifting damaged units, preparing subfloors, applying non-permanent tackifier adhesive, and accurately cutting and fitting replacement tiles.",
    keyTakeaway:"Remove damaged tiles, re-apply carpet tackifier adhesive, and cut replacement tiles to a tight fit.",
@@ -3866,13 +2809,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S18",
    question:"A wooden post on a timber boundary garden railing is loose due to decayed timber ground fixings. How do you carry out a responsive repair?",
-   options:[
-    "Excavate around the loose post base, cut away rotten timber, support rails, set a new pressure-treated timber post in rapid-setting concrete, and re-fix rails.",
-    "Tie the railing to a nearby drainage downpipe using plastic cable ties.",
-    "Lean timber offcuts against the railing without setting fixings in ground.",
-    "Mound loose topsoil around the base without compacting."
-   ],
-   correct:0,
+   options:["Tie the railing to a nearby drainage downpipe using plastic cable ties.","Lean timber offcuts against the railing without setting fixings in ground.","Mound loose topsoil around the base without compacting.","Excavate around the loose post base, cut away rotten timber, support rails, set a new pressure-treated timber post in rapid-setting concrete, and re-fix rails."],
+   correct:3,
    explanation:"Responsive repairs to ground structures require excavating degraded foundations, renewing structural posts with treated timber and concrete, and re-attaching rails securely.",
    keyTakeaway:"Dig out failed post foundations, install treated posts set in concrete, and re-secure rails.",
    id:"pmo-epa-v1320-s18-49"
@@ -3880,12 +2818,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S19",
    question:"You are servicing an unfamiliar commercial thermostatic mixing valve (TMV). How do you use technical literature to guide your maintenance procedure?",
-   options:[
-    "Consult the manufacturer's technical manual for exploded parts diagrams, strainer cleaning sequences, and specific calibration temperature settings.",
-    "Guess internal component arrangements by forcing internal springs out with pliers.",
-    "Discard technical datasheets and adjust temperature settings to maximum.",
-    "Replace internal seals with non-standard rubber O-rings cut from hosepipe."
-   ],
+   options:["Consult the manufacturer's technical manual for exploded parts diagrams, strainer cleaning sequences, and specific calibration temperature settings.","Guess internal component arrangements by forcing internal springs out with pliers.","Discard technical datasheets and adjust temperature settings to maximum.","Replace internal seals with non-standard rubber O-rings cut from hosepipe."],
    correct:0,
    explanation:"Technical literature provides precise instructions for servicing complex components like TMVs, detailing maintenance steps, filter cleaning, and safe temperature calibration.",
    keyTakeaway:"Use manufacturer datasheets for step-by-step disassembly, strainer maintenance, and thermal setting.",
@@ -3894,13 +2827,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S20",
    question:"Upon completing a water hygiene temperature inspection across twenty outlet points, how should test data be formally recorded?",
-   options:[
-    "Enter exact temperature readings, outlet locations, date, and technician name into the digital facilities compliance logbook or paper log sheets.",
-    "Jot down pass or fail notes on a scrap cardboard box and dispose of it after your shift.",
-    "Record temperature readings only if they fail to meet compliance criteria.",
-    "Memorize the numbers without writing them down."
-   ],
-   correct:0,
+   options:["Jot down pass or fail notes on a scrap cardboard box and dispose of it after your shift.","Enter exact temperature readings, outlet locations, date, and technician name into the digital facilities compliance logbook or paper log sheets.","Record temperature readings only if they fail to meet compliance criteria.","Memorize the numbers without writing them down."],
+   correct:1,
    explanation:"Compliance tracking requires structured, accurate recording of statutory data including location, date, values, and inspector details.",
    keyTakeaway:"Log compliance inspection readings accurately on approved digital or written maintenance records.",
    id:"pmo-epa-v1320-s20-51"
@@ -3908,13 +2836,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S21",
    question:"How do you perform a quality self-inspection after fitting a replacement timber fire door leaf?",
-   options:[
-    "Check door gaps stay between 2mm and 4mm using a feeler gauge, verify latch operation, test intumescent seal contact, and confirm the door closer shuts the leaf fully.",
-    "Verify that the door opens halfway and leave without testing latching function.",
-    "Ensure the gap under the door exceeds 25mm to avoid trimming bottom timber edges.",
-    "Paint over non-compliant 10mm frame gaps using thick intumescent paint."
-   ],
-   correct:0,
+   options:["Verify that the door opens halfway and leave without testing latching function.","Ensure the gap under the door exceeds 25mm to avoid trimming bottom timber edges.","Check door gaps stay between 2mm and 4mm using a feeler gauge, verify latch operation, test intumescent seal contact, and confirm the door closer shuts the leaf fully.","Paint over non-compliant 10mm frame gaps using thick intumescent paint."],
+   correct:2,
    explanation:"Inspecting fire door installations against specification requires checking perimeter gaps, drop seals or threshold gaps, self-closing hardware, and latching engagement.",
    keyTakeaway:"Inspect completed work using feeler gauges to confirm compliance with regulatory gap limits.",
    id:"pmo-epa-v1320-s21-52"
@@ -3922,12 +2845,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S22",
    question:"You are clearing waste following a plumbing and radiator replacement job. How do you comply with environmental waste segregation rules?",
-   options:[
-    "Separate scrap copper and brass metal for recycling, drain residual chemical inhibitor into sealable containers, and segregate general packaging.",
-    "Throw old copper pipes, packaging, and liquid chemical waste together into an open skip.",
-    "Pour system chemical sludge down an external storm water drain.",
-    "Burn cardboard packaging and old plastic radiator valves on site."
-   ],
+   options:["Separate scrap copper and brass metal for recycling, drain residual chemical inhibitor into sealable containers, and segregate general packaging.","Throw old copper pipes, packaging, and liquid chemical waste together into an open skip.","Pour system chemical sludge down an external storm water drain.","Burn cardboard packaging and old plastic radiator valves on site."],
    correct:0,
    explanation:"Proper waste segregation requires separating recyclable metals, collecting hazardous chemical fluids separately, and managing packaging waste responsibly.",
    keyTakeaway:"Segregate scrap metals, chemicals, and packaging into distinct recycling and waste streams.",
@@ -3936,13 +2854,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S23",
    question:"You are explaining a complex boiler system fault to a building manager and a heating engineer simultaneously. How do you adapt your communication?",
-   options:[
-    "Provide the manager with a high-level operational impact summary and timeline, while discussing specific pressure differential values and fault codes with the engineer.",
-    "Use heavy technical jargon exclusively so the manager feels excluded.",
-    "Refuse to talk to the heating engineer directly.",
-    "Blame the building manager in front of sub-contractors for system failures."
-   ],
-   correct:0,
+   options:["Use heavy technical jargon exclusively so the manager feels excluded.","Refuse to talk to the heating engineer directly.","Blame the building manager in front of sub-contractors for system failures.","Provide the manager with a high-level operational impact summary and timeline, while discussing specific pressure differential values and fault codes with the engineer."],
+   correct:3,
    explanation:"Adapting communication requires providing high-level operational summaries to management while using detailed technical terms when briefing trade specialists.",
    keyTakeaway:"Tailor details: clear operational impact for managers, technical codes and metrics for specialists.",
    id:"pmo-epa-v1320-s23-54"
@@ -3950,13 +2863,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S24",
    question:"While repairing a light fitting inside an occupied office, an employee complains about noise levels. How do you handle customer service effectively?",
-   options:[
-    "Acknowledge their concern politely, explain the quick timeframe required to complete noisy steps, and offer to reschedule loud tasks during lunch breaks.",
-    "Tell the employee to leave the office immediately if they dislike noise.",
-    "Increase power tool usage speed to intentionally create more noise.",
-    "Ignore the employee and refuse to answer their questions."
-   ],
-   correct:0,
+   options:["Tell the employee to leave the office immediately if they dislike noise.","Increase power tool usage speed to intentionally create more noise.","Acknowledge their concern politely, explain the quick timeframe required to complete noisy steps, and offer to reschedule loud tasks during lunch breaks.","Ignore the employee and refuse to answer their questions."],
+   correct:2,
    explanation:"Effective customer service involves active listening, courteous explanation, and offering practical adjustments to minimize disturbance to building occupants.",
    keyTakeaway:"Acknowledge occupant concerns courteously and adjust noisy schedules where practical.",
    id:"pmo-epa-v1320-s24-55"
@@ -3964,13 +2872,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"S25",
    question:"While carrying out routine maintenance, you discover severely degraded electrical main busbars exhibiting signs of arcing inside a primary distribution panel. What is the correct action?",
-   options:[
-    "Recognize the hazard exceeds your authority, immediately isolate and secure the area, report the emergency fault, and escalate to a qualified industrial electrician.",
-    "Attempt to file away burn marks on live busbars using a metal hand file.",
-    "Wrap plastic insulation tape around live primary busbars.",
-    "Close the panel door and leave site without informing anyone."
-   ],
-   correct:0,
+   options:["Attempt to file away burn marks on live busbars using a metal hand file.","Recognize the hazard exceeds your authority, immediately isolate and secure the area, report the emergency fault, and escalate to a qualified industrial electrician.","Wrap plastic insulation tape around live primary busbars.","Close the panel door and leave site without informing anyone."],
+   correct:1,
    explanation:"When encountering severe hazards beyond your competence level, you must secure the immediate danger zone, report the emergency, and escalate to authorized specialists.",
    keyTakeaway:"Isolate high-risk hazards beyond your competence and escalate immediately to qualified specialists.",
    id:"pmo-epa-v1320-s25-56"
@@ -3978,13 +2881,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B1",
    question:"You are replacing old fluorescent light fittings across a 3-story office building. How do you demonstrate a commitment to promoting sustainable working practices?",
-   options:[
-    "Upgrade fittings to high-efficiency LED units, install presence sensors, and send old mercury tubes to dedicated hazardous recycling facilities.",
-    "Replace old fluorescent tubes with higher-wattage incandescent lamps.",
-    "Dispose of all old fluorescent tubes inside standard general refuse bins.",
-    "Leave lights running 24/7 during installation without installing energy controls."
-   ],
-   correct:0,
+   options:["Replace old fluorescent tubes with higher-wattage incandescent lamps.","Dispose of all old fluorescent tubes inside standard general refuse bins.","Upgrade fittings to high-efficiency LED units, install presence sensors, and send old mercury tubes to dedicated hazardous recycling facilities.","Leave lights running 24/7 during installation without installing energy controls."],
+   correct:2,
    explanation:"Promoting sustainability involves installing energy-efficient systems and ensuring hazardous waste such as mercury tubes is recycled responsibly.",
    keyTakeaway:"Prioritize energy-efficient components and route hazardous waste to specialized recycling facilities.",
    id:"pmo-epa-v1320-b1-57"
@@ -3992,13 +2890,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B2",
    question:"You notice a contractor working on a mobile scaffold tower with unlocked caster wheels and missing guardrails. How do you demonstrate prioritizing health and safety?",
-   options:[
-    "Stop the unsafe work activity immediately, explain the hazard to the contractor, and report the safety breach to the site manager.",
-    "Walk past quickly to avoid getting involved in a disagreement.",
-    "Borrow tools from the contractor while they balance on the unsafe tower.",
-    "Take photographs from a distance and post them online without taking corrective action."
-   ],
-   correct:0,
+   options:["Walk past quickly to avoid getting involved in a disagreement.","Borrow tools from the contractor while they balance on the unsafe tower.","Take photographs from a distance and post them online without taking corrective action.","Stop the unsafe work activity immediately, explain the hazard to the contractor, and report the safety breach to the site manager."],
+   correct:3,
    explanation:"Prioritizing health and safety requires intervention when observing unsafe acts, stopping dangerous work, and escalating safety breaches immediately.",
    keyTakeaway:"Intervene and stop unsafe work practices immediately to protect site safety.",
    id:"pmo-epa-v1320-b2-58"
@@ -4006,12 +2899,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B3",
    question:"You are assigned a list of ten responsive maintenance work orders for the day. How do you demonstrate taking responsibility for completing your work?",
-   options:[
-    "Manage your time effectively, complete repairs to required standards, re-stock your van at the end of the shift, and ensure all job tickets are closed out accurately.",
-    "Complete three quick jobs and mark the remaining complex jobs as access denied without visiting them.",
-    "Leave incomplete job sites dirty for night cleaning staff to resolve.",
-    "Pass your assigned work tickets to another operative without checking their availability."
-   ],
+   options:["Manage your time effectively, complete repairs to required standards, re-stock your van at the end of the shift, and ensure all job tickets are closed out accurately.","Complete three quick jobs and mark the remaining complex jobs as access denied without visiting them.","Leave incomplete job sites dirty for night cleaning staff to resolve.","Pass your assigned work tickets to another operative without checking their availability."],
    correct:0,
    explanation:"Taking personal responsibility means taking ownership of tasks from start to finish, maintaining quality standards, managing time, and completing documentation.",
    keyTakeaway:"Take full ownership of task completion, work quality, time management, and job reporting.",
@@ -4020,13 +2908,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B4",
    question:"Your maintenance team must prepare a facility for a major compliance audit in two days. How do you demonstrate a strong team focus?",
-   options:[
-    "Coordinate with colleagues, offer assistance on lagging tasks outside your usual remit, and share tools to ensure the team meets the audit deadline.",
-    "Refuse to help team members once your individual daily job tasks are finished.",
-    "Criticize colleagues publicly for taking longer on complex repair tasks.",
-    "Hide shared specialist testing equipment inside your personal locker."
-   ],
-   correct:0,
+   options:["Refuse to help team members once your individual daily job tasks are finished.","Coordinate with colleagues, offer assistance on lagging tasks outside your usual remit, and share tools to ensure the team meets the audit deadline.","Criticize colleagues publicly for taking longer on complex repair tasks.","Hide shared specialist testing equipment inside your personal locker."],
+   correct:1,
    explanation:"Team focus means collaborating proactively, supporting colleagues under pressure, sharing resources, and prioritizing overall team targets over individual preferences.",
    keyTakeaway:"Collaborate, assist colleagues, and align personal efforts with overall team goals.",
    id:"pmo-epa-v1320-b4-60"
@@ -4034,12 +2917,7 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B5",
    question:"How can you actively contribute to an inclusive workplace culture within your property maintenance team?",
-   options:[
-    "Treat all colleagues, contractors, and building occupants with dignity and respect, value diverse perspectives, and challenge discriminatory language.",
-    "Use exclusionary trade slang designed to confuse new trainees.",
-    "Avoid communicating with building users who speak English as a second language.",
-    "Assign unpleasant tasks exclusively to junior or apprentice workers."
-   ],
+   options:["Treat all colleagues, contractors, and building occupants with dignity and respect, value diverse perspectives, and challenge discriminatory language.","Use exclusionary trade slang designed to confuse new trainees.","Avoid communicating with building users who speak English as a second language.","Assign unpleasant tasks exclusively to junior or apprentice workers."],
    correct:0,
    explanation:"Contributing to an inclusive culture requires demonstrating respect, treating everyone fairly, encouraging diverse contributions, and challenging bias or discrimination.",
    keyTakeaway:"Promote equity, show respect to all stakeholders, and challenge non-inclusive behavior.",
@@ -4048,13 +2926,8 @@ const EPA_KNOWLEDGE_PRACTICE_BANKS={
   {
    code:"B6",
    question:"A new smart-building management system (BMS) is being installed across your site portfolio. How do you demonstrate seeking learning and development opportunities?",
-   options:[
-    "Request to shadow commissioning engineers, ask for system user guides, and sign up for technical BMS operator training modules.",
-    "Complain that smart technology makes maintenance work unnecessarily complicated.",
-    "Ignore training sessions and continue attempting repairs using obsolete methods.",
-    "Refuse to use digital BMS control interfaces."
-   ],
-   correct:0,
+   options:["Complain that smart technology makes maintenance work unnecessarily complicated.","Ignore training sessions and continue attempting repairs using obsolete methods.","Refuse to use digital BMS control interfaces.","Request to shadow commissioning engineers, ask for system user guides, and sign up for technical BMS operator training modules."],
+   correct:3,
    explanation:"Seeking development opportunities involves taking initiative to learn new skills, embracing modern technology, and seeking formal training to enhance capability.",
    keyTakeaway:"Proactively engage with new systems, request technical training, and expand professional skills.",
    id:"pmo-epa-v1320-b6-62"

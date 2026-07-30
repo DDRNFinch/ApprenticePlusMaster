@@ -1,3 +1,16 @@
+## V1.3.48 — Mixed MCQ Answer Positions
+- Redistributed correct answers across A, B, C and D in every installed MCQ bank.
+- Preserved each original correct answer, explanation and scoring rule.
+- Applied balanced randomised positions across Functional Skills, Trade Courses, EPA and assignment knowledge tests.
+- Updated application and offline cache versions.
+
+## V1.3.47 — Functional Skills Level 1
+
+- Added English Level 1 with 15 workplace MCQs.
+- Added Maths Level 1 with 15 workplace MCQs.
+- Retained separate English and Maths Level 2 tests.
+- All four tests use the full-screen MCQ player, saved history, review, retakes and 13/15–15/15 grading.
+
 ## V1.3.46 — Full-Screen MCQ Player
 
 - Redesigned every MCQ question screen to fit more comfortably within the available mobile viewport.
