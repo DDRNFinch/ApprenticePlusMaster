@@ -1,3 +1,9 @@
+## V1.9.6
+- Restored the page-help layout with the live phone preview above the instructions.
+- Added exact Home and Assignment slides with correct highlights for every major area.
+- Improved repeated-tile highlighting across other help screens.
+- Kept each slide compact enough to fit without scrolling on mobile.
+
 # Apprentice+ V1.9.5
 
 - Every page-level i help screen now uses Back/Next slides.

@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.9.5';
+const APP_VERSION='V1.9.6';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -4450,8 +4450,27 @@ function helpCourseRule(){return COURSE.nvqUnits?'Each Learning Outcome needs th
 function currentHelp(){
  const v=state.view,s=state.section;
  const common={
-  home:{title:COURSE.nvqUnits?'Evidence Packs':'Assignments',html:`<p>This page lists all work for your course.</p><ol><li>Tap a card to open it.</li><li>Grey criteria have no evidence, amber criteria have some evidence and green criteria have enough evidence.</li><li>The six icons show the evidence types saved inside each card.</li><li><strong>SUBMITTED</strong> means the latest package has been confirmed as uploaded.</li><li>Tap the progress rings at the top to see completed, started and expected progress. Tap the learner name area to view your profile details.</li></ol><p><strong>${helpCourseRule()}</strong></p>`},
-  assignment:{title:COURSE.nvqUnits?'Complete this Evidence Pack':'Complete this Assignment',html:`<p>Open the evidence tiles and save work against the criteria shown.</p><ol><li><strong>Photographic evidence:</strong> add clear landscape photographs and link them to the relevant criteria.</li><li><strong>Learner statement:</strong> select the criteria, add the requested photographs and write the statement. The photos and writing are saved together.</li><li><strong>Video Walkthrough:</strong> record a separate explanation for the relevant criteria and save it.</li><li><strong>Witness testimony:</strong> a workplace supervisor or experienced colleague records what they observed.</li><li><strong>${COURSE.nvqUnits?'Assessor observation':'Practical assessment'}:</strong> ${COURSE.nvqUnits?'completed and signed by the assessor while observing practical work.':'completed in college. The assessor marks the practical against the score sheet and records Pass, Merit or Distinction.'}</li><li><strong>Professional discussion:</strong> the assessor records discussion evidence against selected criteria.</li></ol><p><strong>${helpCourseRule()}</strong></p><p>When every criterion has enough evidence, press <strong>Download Evidence Package</strong>. Upload the package to your portfolio, then return and press <strong>Confirm Upload</strong>.</p>`},
+  home:{title:COURSE.nvqUnits?'Evidence Packs':'Assignments',html:'',steps:[
+   {selector:'.course-card',title:'Your course',html:`<p>This card shows your course name, standard, version, level and total number of ${COURSE.nvqUnits?'evidence packs':'assignments'}.</p>`},
+   {selector:'#courseProgressBtn',title:'Course progress',html:'<p>Tap the progress rings to compare submitted work, evidence started and time elapsed. The percentage updates automatically.</p>'},
+   {selector:'.assignment-card',focusIndex:0,title:COURSE.nvqUnits?'Open an evidence pack':'Open an assignment',html:`<p>Tap a card to open it. Each card shows its title, current status, saved evidence and criterion coverage.</p>`},
+   {selector:'.assignment-card .icons',focusIndex:0,title:'Evidence icons',html:'<p>The six icons show the evidence types available. A tick means that evidence has been saved; an amber warning means it has been started but is not complete.</p>'},
+   {selector:'.assignment-card .ksb-row',focusIndex:0,title:COURSE.nvqUnits?'Learning Outcome coverage':'KSB coverage',html:`<p>Grey means no evidence, amber means some evidence and green means enough different evidence types have been collected.</p><p><strong>${helpCourseRule()}</strong></p>`},
+   {selector:'.assignment-card .status-pill',focusIndex:0,title:'Assignment status',html:'<p><strong>In progress</strong> means work is still needed. <strong>Evidence ready</strong> means the evidence requirements are met. <strong>Submitted</strong> means the latest package was confirmed as uploaded.</p>'},
+   {selector:'.entire-portfolio-card',title:'Download Entire Portfolio',html:'<p>Use this button to download every saved evidence item across the course. Blank and unsaved sections are excluded.</p>'},
+   {selector:'.learner-help-wrap',title:'Learner profile and help',html:'<p>Tap your name to view your learner details. Tap the green <strong>i</strong> button to open instructions for the current page.</p>'}
+  ]},
+  assignment:{title:COURSE.nvqUnits?'Complete this Evidence Pack':'Complete this Assignment',html:'',steps:[
+   {selector:'.assignment-title',title:COURSE.nvqUnits?'Evidence pack details':'Assignment details',html:`<p>This area shows the assignment title and every ${COURSE.nvqUnits?'Learning Outcome':'Knowledge, Skill and Behaviour'} included in it.</p>`},
+   {selector:'.assignment-title .ksb-row',title:COURSE.nvqUnits?'Learning Outcome progress':'KSB progress',html:`<p>Each criterion changes from grey to amber and then green as different evidence types are saved.</p><p><strong>${helpCourseRule()}</strong></p>`},
+   {selector:'[data-section="photos"]',title:'Photographic Evidence',html:'<p>Add clear landscape photographs and link each one to the criteria it proves.</p>'},
+   {selector:'[data-section="statement"]',title:'Learner Statement',html:'<p>Select the criteria, add the requested photographs and write the statement. The photographs and writing are saved together as one evidence type.</p>'},
+   {selector:'[data-section="walkthrough"], [data-section="discussion"]',title:'Video Walkthrough',html:'<p>Record a separate explanation for the relevant criteria. Explain what you did, how you worked safely and how you checked quality.</p>'},
+   {selector:'[data-section="witness"]',title:'Witness Testimony',html:'<p>A workplace supervisor or experienced colleague selects the criteria and records what they personally observed.</p>'},
+   {selector:'[data-section="practical"]',title:COURSE.nvqUnits?'Assessor Observation':'Practical Assessment',html:`<p>${COURSE.nvqUnits?'The assessor records observed practical work, selects achieved Learning Outcomes and signs the evidence.':'This is completed in college. The assessor marks the score sheet, adds finished-product photographs and records Pass, Merit or Distinction.'}</p>`},
+   {selector:'[data-section="professionalDiscussion"]',title:'Professional Discussion',html:'<p>The assessor records discussion evidence against the selected criteria and submits it as a separate evidence type.</p>'},
+   {selector:'.download-card',title:'Download and upload',html:'<p>When every criterion has enough evidence, download the evidence package. Upload it to your portfolio, then return and press <strong>Confirm Upload</strong>.</p>'}
+  ]},
   academy:{title:'Academy',html:`<p>The Academy contains five learning areas. Use the Back and Next buttons below to see each tile highlighted and learn exactly what it does.</p>`,steps:[
    {selector:'#openKnowledgeSlides',title:'Knowledge Slides',html:'<p>Tap <strong>Knowledge Slides</strong> to study short teaching packs before attempting tests.</p><ol><li>Choose a trade, English or maths subject.</li><li>Read all 15 slides in order.</li><li>Your position is saved automatically.</li><li>Complete the final slide to record the pack as finished.</li></ol>'},
    {selector:'#openLibrary',title:'Trade Courses',html:'<p>Tap <strong>Trade Courses</strong> for course-specific learning and assessment practice.</p><ol><li>Select a course or topic.</li><li>Read the learning content.</li><li>Complete every question in the test.</li><li>Submit to save the score and feedback.</li></ol>'},
@@ -4512,10 +4531,10 @@ function closePageHelp(){
  document.body.classList.remove('page-help-open');
  setTimeout(()=>modal.remove(),180);
 }
-function buildPageHelpPhone(selector=''){
+function buildPageHelpPhone(selector='',focusIndex=0){
  const source=app.cloneNode(true);
  source.querySelectorAll('script,style,.page-help-modal,.help-tour-overlay').forEach(x=>x.remove());
- if(selector){const target=source.querySelector(selector);if(target)target.classList.add('page-help-phone-focus')}
+ if(selector){const targets=[...source.querySelectorAll(selector)];const target=targets[Math.min(Math.max(0,focusIndex||0),Math.max(0,targets.length-1))];if(target)target.classList.add('page-help-phone-focus')}
  source.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
  source.querySelectorAll('button,input,select,textarea,a').forEach(el=>{el.tabIndex=-1;el.setAttribute('aria-hidden','true')});
  return source.innerHTML;
@@ -4556,24 +4575,25 @@ function pageHelpSelectors(){
  return map[state.view]||['main section','.btn'];
 }
 function compactPageHelpSteps(h){
- if(Array.isArray(h.steps)&&h.steps.length)return h.steps.map(step=>({selector:step.selector||'',title:step.title,html:step.html}));
+ if(Array.isArray(h.steps)&&h.steps.length)return h.steps.map(step=>({selector:step.selector||'',focusIndex:step.focusIndex||0,title:step.title,html:step.html}));
  const holder=document.createElement('div');holder.innerHTML=h.html||'';
  const selectors=pageHelpSelectors();
- const slides=[];
+ const slides=[];const selectorUses={};
+ const withFocus=(selector)=>{const key=selector||'';const focusIndex=selectorUses[key]||0;selectorUses[key]=focusIndex+1;return {selector:key,focusIndex};};
  const intro=[...holder.children].find(el=>el.tagName==='P'&&el.textContent.trim());
- if(intro)slides.push({selector:selectors[0]||'',title:h.title,html:`<p>${intro.innerHTML}</p>`});
+ if(intro)slides.push({...withFocus(selectors[0]||''),title:h.title,html:`<p>${intro.innerHTML}</p>`});
  const items=[...holder.querySelectorAll('li')];
  items.forEach((li,index)=>{
   const strong=li.querySelector('strong');
   const title=strong?strong.textContent.replace(/:$/,''):items.length>1?`${h.title} · ${index+1}`:h.title;
-  slides.push({selector:selectors[Math.min(index+1,selectors.length-1)]||selectors[0]||'',title,html:`<p>${li.innerHTML}</p>`});
+  slides.push({...withFocus(selectors[Math.min(index+1,selectors.length-1)]||selectors[0]||''),title,html:`<p>${li.innerHTML}</p>`});
  });
  const remaining=[...holder.children].filter(el=>el.tagName==='P'&&el!==intro&&!el.closest('li'));
- remaining.forEach((el,index)=>slides.push({selector:selectors[Math.min(slides.length,selectors.length-1)]||'',title:slides.length?`${h.title} · Finish`:h.title,html:`<p>${el.innerHTML}</p>`}));
+ remaining.forEach((el,index)=>slides.push({...withFocus(selectors[Math.min(slides.length,selectors.length-1)]||''),title:slides.length?`${h.title} · Finish`:h.title,html:`<p>${el.innerHTML}</p>`}));
  if(!slides.length){
   const text=holder.textContent.trim()||'Use the controls shown on this page, then save or submit your work.';
   const sentences=text.match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[text];
-  sentences.forEach((sentence,index)=>slides.push({selector:selectors[Math.min(index,selectors.length-1)]||'',title:index?`${h.title} · ${index+1}`:h.title,html:`<p>${sentence.trim()}</p>`}));
+  sentences.forEach((sentence,index)=>slides.push({...withFocus(selectors[Math.min(index,selectors.length-1)]||''),title:index?`${h.title} · ${index+1}`:h.title,html:`<p>${sentence.trim()}</p>`}));
  }
  return slides;
 }
@@ -4582,13 +4602,13 @@ function openPageHelp(){
  const h=currentHelp(),steps=compactPageHelpSteps(h);
  let helpStep=0;
  const active=steps[0];
- const phone=buildPageHelpPhone(active.selector||'');
+ const phone=buildPageHelpPhone(active.selector||'',active.focusIndex||0);
  const stepControls=`<div class="page-help-step-controls"><button type="button" class="btn secondary" id="pageHelpPrevious" disabled>Back</button><span id="pageHelpStepCount">1 of ${steps.length}</span><button type="button" class="btn" id="pageHelpNext">${steps.length===1?'Finish':'Next'}</button></div>`;
  document.body.insertAdjacentHTML('beforeend',`<div class="page-help-modal" id="pageHelpModal" role="presentation"><div class="page-help-sheet" role="dialog" aria-modal="true" aria-labelledby="pageHelpTitle"><button type="button" class="page-help-close" data-close-page-help aria-label="Close help">×</button><div class="page-help-body"><div class="page-help-phone" aria-label="Preview of this Apprentice Plus page"><div class="page-help-phone-speaker"></div><div class="page-help-phone-screen"><div class="page-help-phone-scale" id="pageHelpPhoneScale">${phone}</div></div><div class="page-help-phone-home"></div></div><div class="page-help-instructions"><div class="page-help-symbol">i</div><h2 id="pageHelpTitle">${esc(active.title||h.title)}</h2><div class="page-help-content" id="pageHelpContent">${active.html||h.html}</div>${stepControls}</div></div><div class="page-help-footer"><button type="button" class="link-button" id="pageHelpReplay">Replay quick tour</button><button type="button" class="btn" data-close-page-help>Close</button></div><div class="page-help-drag" aria-hidden="true"></div></div></div>`);
  document.body.classList.add('page-help-open');
  const modal=document.getElementById('pageHelpModal'),sheet=modal.querySelector('.page-help-sheet');
  if(steps){
-  const renderHelpStep=()=>{const step=steps[helpStep];document.getElementById('pageHelpTitle').textContent=step.title;document.getElementById('pageHelpContent').innerHTML=step.html;document.getElementById('pageHelpPhoneScale').innerHTML=buildPageHelpPhone(step.selector);document.getElementById('pageHelpStepCount').textContent=`${helpStep+1} of ${steps.length}`;const prev=document.getElementById('pageHelpPrevious'),next=document.getElementById('pageHelpNext');prev.disabled=helpStep===0;next.textContent=helpStep===steps.length-1?'Finish':'Next'};
+  const renderHelpStep=()=>{const step=steps[helpStep];document.getElementById('pageHelpTitle').textContent=step.title;document.getElementById('pageHelpContent').innerHTML=step.html;document.getElementById('pageHelpPhoneScale').innerHTML=buildPageHelpPhone(step.selector,step.focusIndex||0);document.getElementById('pageHelpStepCount').textContent=`${helpStep+1} of ${steps.length}`;const prev=document.getElementById('pageHelpPrevious'),next=document.getElementById('pageHelpNext');prev.disabled=helpStep===0;next.textContent=helpStep===steps.length-1?'Finish':'Next'};
   document.getElementById('pageHelpPrevious').onclick=()=>{if(helpStep>0){helpStep--;renderHelpStep()}};
   document.getElementById('pageHelpNext').onclick=()=>{if(helpStep<steps.length-1){helpStep++;renderHelpStep()}else closePageHelp()};
  }
