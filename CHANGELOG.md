@@ -1,3 +1,11 @@
+## V1.3.51 — MCQ Status Width Fix
+
+- Reworked the compact MCQ card header so the assessment title uses the full tile width.
+- Kept the icon and single-line result status aligned beneath the title.
+- Made Not Started, Fail x/15, Pass 13/15, Merit 14/15 and Distinction 15/15 fit without clipping.
+- Added extra sizing protection for very narrow phones.
+- No changes to scores, histories, certificates or grading.
+
 ## V1.3.50 — Single-Line MCQ Status
 
 - Replaced the two-line assessment status with one compact best-result line.
