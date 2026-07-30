@@ -1,3 +1,19 @@
+## v1.3.42 – Academy 2x2 Tile Redesign
+
+- Rebuilt the Academy landing page as four equal square tiles in a 2x2 grid.
+- Reduced every Academy tile to an Apprentice+-style icon and title only.
+- Added Knowledge Library, EPA Academy, Functional Skills and Certificates tiles.
+- Added matching Functional Skills and Certificates destination screens.
+- Updated the displayed app version and service-worker cache to v1.3.42.
+
+## v1.3.42 – Academy 2x2 Tile Redesign
+
+- Rebuilt the Academy landing page as four equal square tiles in a 2x2 grid.
+- Reduced every Academy tile to an Apprentice+-style icon and title only.
+- Added Knowledge Library, EPA Academy, Functional Skills and Certificates tiles.
+- Added matching Functional Skills and Certificates destination screens.
+- Updated the displayed app version and service-worker cache to v1.3.42.
+
 ## v1.3.41 – EPA Practical Missing Renderer Fix
 
 - Restored the missing practical preparation-list renderer used by EPA Practical.
