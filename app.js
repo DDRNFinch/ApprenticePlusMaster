@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.9.1';
+const APP_VERSION='V1.9.2';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -4506,10 +4506,18 @@ function closePageHelp(){
  document.body.classList.remove('page-help-open');
  setTimeout(()=>modal.remove(),180);
 }
+function buildPageHelpPhone(){
+ const source=app.cloneNode(true);
+ source.querySelectorAll('script,style,.page-help-modal,.help-tour-overlay').forEach(x=>x.remove());
+ source.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+ source.querySelectorAll('button,input,select,textarea,a').forEach(el=>{el.tabIndex=-1;el.setAttribute('aria-hidden','true')});
+ return source.innerHTML;
+}
 function openPageHelp(){
  closePageHelp();
  const h=currentHelp();
- document.body.insertAdjacentHTML('beforeend',`<div class="page-help-modal" id="pageHelpModal" role="presentation"><div class="page-help-sheet" role="dialog" aria-modal="true" aria-labelledby="pageHelpTitle"><button type="button" class="page-help-close" data-close-page-help aria-label="Close help">×</button><div class="page-help-symbol">i</div><h2 id="pageHelpTitle">${esc(h.title)}</h2><div class="page-help-content">${h.html}</div><div class="page-help-footer"><button type="button" class="link-button" id="pageHelpReplay">Replay quick tour</button><button type="button" class="btn" data-close-page-help>Close</button></div><div class="page-help-drag" aria-hidden="true"></div></div></div>`);
+ const phone=buildPageHelpPhone();
+ document.body.insertAdjacentHTML('beforeend',`<div class="page-help-modal" id="pageHelpModal" role="presentation"><div class="page-help-sheet" role="dialog" aria-modal="true" aria-labelledby="pageHelpTitle"><button type="button" class="page-help-close" data-close-page-help aria-label="Close help">×</button><div class="page-help-body"><div class="page-help-phone" aria-label="Preview of this Apprentice Plus page"><div class="page-help-phone-speaker"></div><div class="page-help-phone-screen"><div class="page-help-phone-scale">${phone}</div></div><div class="page-help-phone-home"></div></div><div class="page-help-instructions"><div class="page-help-symbol">i</div><h2 id="pageHelpTitle">${esc(h.title)}</h2><div class="page-help-content">${h.html}</div></div></div><div class="page-help-footer"><button type="button" class="link-button" id="pageHelpReplay">Replay quick tour</button><button type="button" class="btn" data-close-page-help>Close</button></div><div class="page-help-drag" aria-hidden="true"></div></div></div>`);
  document.body.classList.add('page-help-open');
  const modal=document.getElementById('pageHelpModal'),sheet=modal.querySelector('.page-help-sheet');
  modal.addEventListener('click',e=>{if(e.target===modal||e.target.closest('[data-close-page-help]')){e.preventDefault();e.stopPropagation();closePageHelp()}});
@@ -4530,8 +4538,8 @@ const HELP_TOUR_STEPS=[
  {view:'resources',selector:'.tools-grid, .resource-grid, .tool-app-grid',title:'Use the Toolbox',text:'Open NoteMate, MeasureMate, MaterialMate or ProjectMate for practical workplace support.'},
  {view:'home',selector:'.page-help-button',title:'Help on every page',text:'Tap i at any time for short, exact instructions about the current screen.'}
 ];
-let helpTourIndex=0,helpTourRunning=false,helpTourOriginalView=null;
-function maybeStartHelpTour(){if(helpTourRunning||!state.profile||localStorage.getItem(HELP_TOUR_KEY)==='1'||state.view!=='home')return;setTimeout(()=>startHelpTour(),500)}
+let helpTourIndex=0,helpTourRunning=false,helpTourOriginalView=null,helpTourStartTimer=null;
+function maybeStartHelpTour(){if(helpTourRunning||helpTourStartTimer||!state.profile||localStorage.getItem(HELP_TOUR_KEY)==='1'||state.view!=='home')return;helpTourStartTimer=setTimeout(()=>{helpTourStartTimer=null;startHelpTour()},500)}
 function renderTourView(step){
  state.view=step.view;
  state.section=null;
@@ -4549,6 +4557,7 @@ function buildTourPhone(step){
  return source.innerHTML;
 }
 function startHelpTour(){
+ if(helpTourStartTimer){clearTimeout(helpTourStartTimer);helpTourStartTimer=null}
  if(!state.profile||helpTourRunning)return;
  closePageHelp();
  helpTourRunning=true;helpTourIndex=0;helpTourOriginalView={view:state.view,assignment:state.assignment,section:state.section};
@@ -4557,7 +4566,8 @@ function startHelpTour(){
 }
 function finishHelpTour(completed=true){
  helpTourRunning=false;
- if(completed)localStorage.setItem(HELP_TOUR_KEY,'1');
+ if(helpTourStartTimer){clearTimeout(helpTourStartTimer);helpTourStartTimer=null}
+ localStorage.setItem(HELP_TOUR_KEY,'1');
  document.getElementById('helpTourOverlay')?.remove();
  document.body.classList.remove('help-tour-open');
  state.view='home';state.assignment=null;state.section=null;render();window.scrollTo(0,0);

@@ -420,3 +420,8 @@
 - Added Close, backdrop tap, swipe-down, Escape and Android Back dismissal handling.
 - Rebuilt the first-run tour with a mini mobile-phone preview of the actual Apprentice+ screen for every step.
 - Added Back, Next, Skip, Finish, progress dots and replay support.
+
+## V1.9.2
+- Fixed the quick tour reopening immediately after it was closed.
+- Added the live miniature phone preview to the help panel on every page.
+- Changed every page information button to solid Apprentice+ green.
