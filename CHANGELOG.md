@@ -1,3 +1,10 @@
+# V1.2 — Guide Phone Auto-Scroll Fix
+
+- Restored automatic scrolling inside the enlarged guide phone preview.
+- The cloned phone screen now follows each moving green guide marker while the outer phone frame remains fixed.
+- Kept the 50% larger guide phone introduced in V1.1.
+- Updated the app and offline cache version to V1.2.
+
 # V1.11.4 — Advanced Assignment Finder
 
 - Added pre-search activity pills generated from the current course assignments and criteria.

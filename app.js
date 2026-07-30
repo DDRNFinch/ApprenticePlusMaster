@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.1';
+const APP_VERSION='V1.2';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -4692,8 +4692,11 @@ function scrollPageHelpPhoneToFocus(instant=false){
   const maximumScroll=Math.max(0,contentHeight-visibleHeight);
   const desired=Math.min(maximumScroll,Math.max(0,targetTop-(visibleHeight-targetHeight)/2));
   const screenPixels=desired*zoom;
-  scale.style.transition=instant?'none':'transform .32s cubic-bezier(.2,.75,.25,1)';
-  scale.style.transform=`translate3d(0, ${-screenPixels}px, 0) scale(${zoom})`;
+  scale.style.setProperty('transition',instant?'none':'transform .32s cubic-bezier(.2,.75,.25,1)','important');
+  // The enlarged guide phone uses an !important scale rule, so the scrolling
+  // transform must also be applied with !important or the marker moves while
+  // the cloned page remains fixed at the top.
+  scale.style.setProperty('transform',`translate3d(0, ${-screenPixels}px, 0) scale(${zoom})`,'important');
   screen.scrollTop=0;
   screen.scrollLeft=0;
  });
