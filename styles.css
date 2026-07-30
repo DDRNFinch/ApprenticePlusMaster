@@ -1169,13 +1169,3 @@ textarea{min-height:138px}
   .bottom-nav{width:calc(100% - 18px);bottom:max(8px,env(safe-area-inset-bottom))}
 }
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
-
-
-/* V1.3 — evidence capability pills use the colour assigned to each evidence section */
-.evidence-capability-photos,.section-title-capability-photos{background:#e8f8ee;color:#17824b}
-.evidence-capability-statement,.section-title-capability-statement{background:#eaf2ff;color:#1f63b5}
-.evidence-capability-walkthrough,.section-title-capability-walkthrough,
-.evidence-capability-discussion,.section-title-capability-discussion{background:#f1eafa;color:#6d45a8}
-.evidence-capability-witness,.section-title-capability-witness{background:#e5f7f6;color:#087c7a}
-.evidence-capability-practical,.section-title-capability-practical{background:#fff3dc;color:#9a6412}
-.evidence-capability-professionalDiscussion,.section-title-capability-professionalDiscussion{background:#fff0e3;color:#c46617}
