@@ -1,3 +1,10 @@
+# V1.5
+
+- Added Professional Discussion recordings to the PDF evidence index.
+- Mapped Professional Discussion evidence to the KSB and LO matrices using PD references.
+- Added a dedicated Professional Discussion page and attached-audio-file page, matching Video Walkthrough.
+- Included Professional Discussion audio files in the downloaded evidence package.
+
 # V1.4
 
 - Removed obsolete Supporting Evidence references and pages from generated PDFs.
