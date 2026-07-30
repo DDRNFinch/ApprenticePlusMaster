@@ -1369,3 +1369,91 @@ body.page-help-open,body.help-tour-open{overflow:hidden;touch-action:none}
 .work-search-pill:hover,.work-search-pill:focus-visible{background:#e3e9e5;border-color:#b8c5bd;outline:none}
 .work-search-pill:active{transform:scale(.97)}
 @media(max-width:560px){.work-search-suggestions{margin-top:11px}.work-search-pill-row{gap:7px}.work-search-pill{padding:8px 10px;font-size:12px}}
+
+
+/* V1.10.3 compact course summary and single-line assignment status */
+.course-card{
+  padding:18px 18px 16px;
+  margin-bottom:18px;
+}
+.course-summary{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 78px;
+  align-items:center;
+  gap:12px;
+}
+.course-copy{min-width:0}
+.course-card h2{
+  font-size:25px;
+  line-height:1.08;
+  margin:0;
+}
+.course-title-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.course-title-row+.meta{margin-top:9px}
+.target-status{
+  margin:0;
+  padding:5px 9px;
+  font-size:10px;
+  line-height:1;
+  white-space:nowrap;
+}
+.meta{gap:6px}
+.meta .pill{
+  padding:6px 9px;
+  font-size:10px;
+  line-height:1;
+}
+.progress-rings{--size:76px}
+.ring-yellow{inset:9px!important}
+.ring-red{inset:18px!important}
+.progress-rings strong{font-size:14px}
+.course-search-launch{
+  right:12px;
+  bottom:12px;
+  width:42px;
+  height:42px;
+}
+.course-search-launch svg{width:21px;height:21px}
+.status-pill{
+  flex:0 0 auto;
+  white-space:nowrap;
+  word-break:normal;
+  overflow-wrap:normal;
+  line-height:1;
+  padding:7px 11px;
+}
+.assignment-head>div:first-child{min-width:0}
+.assignment-head{align-items:flex-start}
+
+@media(max-width:560px){
+  .course-card{
+    padding:17px 16px 58px;
+  }
+  .course-summary{
+    grid-template-columns:minmax(0,1fr) 70px;
+    gap:10px;
+  }
+  .course-card h2{font-size:23px}
+  .progress-rings{--size:70px}
+  .ring-yellow{inset:8px!important}
+  .ring-red{inset:16px!important}
+  .course-title-row{display:flex}
+  .target-status{margin-top:0}
+  .meta .pill{padding:6px 8px}
+  .course-search-launch{
+    width:40px;
+    height:40px;
+    right:12px;
+    bottom:10px;
+  }
+  .assignment-head{gap:8px}
+  .status-pill{
+    font-size:10px;
+    padding:7px 10px;
+  }
+}

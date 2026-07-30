@@ -121,3 +121,8 @@ Tap the learner name in the header to open course progress, review submitted wor
 - Added three predictive grey suggestion pills below the assignment search field.
 - Suggestions respond to the learner's wording and use trade-specific synonyms.
 - Tapping a suggestion immediately opens ranked assignment matches.
+
+
+## V1.10.3 — Compact Course Tab
+
+The Course page now uses a shorter progress summary card and single-line assignment status pills for a cleaner mobile layout.

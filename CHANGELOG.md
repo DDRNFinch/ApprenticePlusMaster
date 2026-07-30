@@ -503,3 +503,12 @@ Certificates - View and download certificates you have earned after completing A
 - Added three predictive grey suggestion pills below the assignment search field.
 - Suggestions respond to the learner's wording and use trade-specific synonyms.
 - Tapping a suggestion immediately opens ranked assignment matches.
+
+
+## V1.10.3 — Compact Course Tab
+
+- Reduced the height and padding of the course progress card.
+- Made the progress rings smaller while keeping all three progress indicators visible.
+- Tightened the course metadata pills and spacing.
+- Kept the assignment-finder button in the lower-right corner without using unnecessary space.
+- Forced assignment status pills such as “In progress” to remain on one line.
