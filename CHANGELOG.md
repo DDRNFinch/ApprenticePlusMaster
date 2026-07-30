@@ -1,3 +1,12 @@
+## V1.10.4 — Dark Compact Course Tile
+
+- Reduced the course summary tile height again.
+- Moved the enlarged progress ring to the tile's top-right corner.
+- Increased the progress ring by approximately 15%.
+- Changed the course tile to dark green with high-contrast course details.
+- Kept the assignment finder in the bottom-right corner.
+- Replaced the finder icon with a solid white magnifying-glass silhouette.
+
 ## V1.10.1
 - Moved the assignment finder from the Home page into a green magnifying-glass button on the course progress card.
 - Added a compact search pop-up headed ‘What are you working on today?’ while retaining ranked assignment matches and the evidence prompt.
