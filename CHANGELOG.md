@@ -1,3 +1,8 @@
+## V1.9.7
+- Mini phone previews now automatically scroll to centre the green-highlighted control on every help slide.
+- Added smooth movement between highlighted areas so lower evidence tiles remain visible.
+- Updated app version and service-worker cache.
+
 ## V1.9.6
 - Restored the page-help layout with the live phone preview above the instructions.
 - Added exact Home and Assignment slides with correct highlights for every major area.

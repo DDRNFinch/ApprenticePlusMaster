@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.9.6';
+const APP_VERSION='V1.9.7';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -4539,6 +4539,25 @@ function buildPageHelpPhone(selector='',focusIndex=0){
  source.querySelectorAll('button,input,select,textarea,a').forEach(el=>{el.tabIndex=-1;el.setAttribute('aria-hidden','true')});
  return source.innerHTML;
 }
+function scrollPageHelpPhoneToFocus(instant=false){
+ const screen=document.querySelector('#pageHelpModal .page-help-phone-screen');
+ const scale=document.getElementById('pageHelpPhoneScale');
+ const target=scale?.querySelector('.page-help-phone-focus');
+ if(!screen||!scale||!target)return;
+ requestAnimationFrame(()=>{
+  const transform=getComputedStyle(scale).transform;
+  let zoom=1;
+  if(transform&&transform!=='none'){
+   const match=transform.match(/^matrix\(([^)]+)\)$/);
+   if(match){const values=match[1].split(',').map(Number);zoom=Math.abs(values[0])||1}
+  }
+  const visibleHeight=screen.clientHeight/zoom;
+  const visibleWidth=screen.clientWidth/zoom;
+  const top=Math.max(0,target.offsetTop-(visibleHeight-target.offsetHeight)/2);
+  const left=Math.max(0,target.offsetLeft-(visibleWidth-target.offsetWidth)/2);
+  screen.scrollTo({top,left,behavior:instant?'auto':'smooth'});
+ });
+}
 function pageHelpSelectors(){
  const map={
   home:['.progress-summary','.assignment-card,.evidence-pack-card','.evidence-icons','.submitted-badge,.status-badge','.learner-help-wrap'],
@@ -4607,8 +4626,9 @@ function openPageHelp(){
  document.body.insertAdjacentHTML('beforeend',`<div class="page-help-modal" id="pageHelpModal" role="presentation"><div class="page-help-sheet" role="dialog" aria-modal="true" aria-labelledby="pageHelpTitle"><button type="button" class="page-help-close" data-close-page-help aria-label="Close help">×</button><div class="page-help-body"><div class="page-help-phone" aria-label="Preview of this Apprentice Plus page"><div class="page-help-phone-speaker"></div><div class="page-help-phone-screen"><div class="page-help-phone-scale" id="pageHelpPhoneScale">${phone}</div></div><div class="page-help-phone-home"></div></div><div class="page-help-instructions"><div class="page-help-symbol">i</div><h2 id="pageHelpTitle">${esc(active.title||h.title)}</h2><div class="page-help-content" id="pageHelpContent">${active.html||h.html}</div>${stepControls}</div></div><div class="page-help-footer"><button type="button" class="link-button" id="pageHelpReplay">Replay quick tour</button><button type="button" class="btn" data-close-page-help>Close</button></div><div class="page-help-drag" aria-hidden="true"></div></div></div>`);
  document.body.classList.add('page-help-open');
  const modal=document.getElementById('pageHelpModal'),sheet=modal.querySelector('.page-help-sheet');
+ scrollPageHelpPhoneToFocus(true);
  if(steps){
-  const renderHelpStep=()=>{const step=steps[helpStep];document.getElementById('pageHelpTitle').textContent=step.title;document.getElementById('pageHelpContent').innerHTML=step.html;document.getElementById('pageHelpPhoneScale').innerHTML=buildPageHelpPhone(step.selector,step.focusIndex||0);document.getElementById('pageHelpStepCount').textContent=`${helpStep+1} of ${steps.length}`;const prev=document.getElementById('pageHelpPrevious'),next=document.getElementById('pageHelpNext');prev.disabled=helpStep===0;next.textContent=helpStep===steps.length-1?'Finish':'Next'};
+  const renderHelpStep=()=>{const step=steps[helpStep];document.getElementById('pageHelpTitle').textContent=step.title;document.getElementById('pageHelpContent').innerHTML=step.html;document.getElementById('pageHelpPhoneScale').innerHTML=buildPageHelpPhone(step.selector,step.focusIndex||0);document.getElementById('pageHelpStepCount').textContent=`${helpStep+1} of ${steps.length}`;const prev=document.getElementById('pageHelpPrevious'),next=document.getElementById('pageHelpNext');prev.disabled=helpStep===0;next.textContent=helpStep===steps.length-1?'Finish':'Next';scrollPageHelpPhoneToFocus(false)};
   document.getElementById('pageHelpPrevious').onclick=()=>{if(helpStep>0){helpStep--;renderHelpStep()}};
   document.getElementById('pageHelpNext').onclick=()=>{if(helpStep<steps.length-1){helpStep++;renderHelpStep()}else closePageHelp()};
  }
