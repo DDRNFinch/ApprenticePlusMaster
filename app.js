@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3.49';
+const APP_VERSION='V1.3.50';
 let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
 let COURSE=COURSES[ACTIVE_COURSE_ID];
 
@@ -798,6 +798,8 @@ function renderAcademy(){
 }
 function functionalSkillsHistoryKey(subject){return `functionalSkills:${subject}:history:v1`}
 function functionalSkillsHistory(subject){const rows=state.data[functionalSkillsHistoryKey(subject)];return Array.isArray(rows)?rows:[]}
+function bestMcqResult(rows){return Array.isArray(rows)&&rows.length?rows.reduce((best,row)=>Number(row?.score)>Number(best?.score)?row:best,rows[0]):null}
+function compactMcqStatus(result,total=15){if(!result)return 'Not Started';const score=Number(result.score)||0;const grade=score>=15?'Distinction':score===14?'Merit':score===13?'Pass':'Fail';return `${grade} ${score}/${Number(result.total)||total}`}
 function functionalSkillsGrade(score){return score===15?'Distinction':score===14?'Merit':score===13?'Pass':'Not achieved'}
 function startFunctionalSkillsTest(subject){
  const bank=FUNCTIONAL_SKILLS_BANKS?.[subject];
@@ -811,8 +813,7 @@ function functionalSkillsConfig(subject){
 }
 function renderFunctionalSkills(){
  const subjects=['english1','maths1','english','maths'];
- const latest=rows=>rows.length?rows[rows.length-1]:null;
- const cards=subjects.map(subject=>{const cfg=functionalSkillsConfig(subject),rows=functionalSkillsHistory(subject),r=latest(rows);return `<article class="academy-destination-card functional-test-card"><span>${appIcon(cfg.icon)}</span><h3>${esc(cfg.title)}</h3>${r?`<span class="status-pill ${r.score>=13?'done':''}">${r.score}/15 · ${esc(r.grade)}</span>`:'<span class="status-pill">Not attempted</span>'}<div class="epa-tile-stat"><strong>${rows.length}</strong><span>attempt${rows.length===1?'':'s'} recorded</span></div><button class="btn" data-start-functional="${subject}">Start test</button></article>`}).join('');
+ const cards=subjects.map(subject=>{const cfg=functionalSkillsConfig(subject),rows=functionalSkillsHistory(subject),r=bestMcqResult(rows);return `<article class="academy-destination-card functional-test-card"><span>${appIcon(cfg.icon)}</span><h3>${esc(cfg.title)}</h3><span class="status-pill mcq-best-status ${r?.score>=13?'done':r?'fail':''}">${esc(compactMcqStatus(r))}</span><div class="epa-tile-stat"><strong>${rows.length}</strong><span>attempt${rows.length===1?'':'s'} recorded</span></div><button class="btn" data-start-functional="${subject}">Start test</button></article>`}).join('');
  app.innerHTML=shell(`<button class="back no-print" id="functionalSkillsBack">← Academy</button><section class="academy-destination-head"><div class="academy-destination-icon">${appIcon('functional')}</div><div><div class="number">Academy</div><h2>Functional Skills</h2><p class="muted">Level 1 and Level 2 tests · Pass 13/15 · Merit 14/15 · Distinction 15/15.</p></div></section><section class="academy-destination-grid">${cards}</section>`);
  document.getElementById('functionalSkillsBack').onclick=()=>{state.view='academy';render()};
  document.querySelectorAll('[data-start-functional]').forEach(b=>b.onclick=()=>startFunctionalSkillsTest(b.dataset.startFunctional));
@@ -855,8 +856,7 @@ function startTradeCourseTest(subject){
 }
 function renderTradeCourses(){
  const subjects=['legislation','manualHandling','equalityDiversity','cscs'];
- const latest=rows=>rows.length?rows[rows.length-1]:null;
- const cards=subjects.map(subject=>{const config=tradeCourseConfig(subject),rows=tradeCourseHistory(subject),r=latest(rows);return `<article class="academy-destination-card functional-test-card"><span>${appIcon(config.icon)}</span><h3>${esc(config.title)}</h3><p>${esc(config.description)}</p>${r?`<span class="status-pill ${r.score>=13?'done':''}">${r.score}/15 · ${esc(r.grade)}</span>`:'<span class="status-pill">Not attempted</span>'}<div class="epa-tile-stat"><strong>${rows.length}</strong><span>attempt${rows.length===1?'':'s'} recorded</span></div><button class="btn" data-start-trade="${subject}">Start ${esc(config.title)} test</button></article>`}).join('');
+ const cards=subjects.map(subject=>{const config=tradeCourseConfig(subject),rows=tradeCourseHistory(subject),r=bestMcqResult(rows);return `<article class="academy-destination-card functional-test-card"><span>${appIcon(config.icon)}</span><h3>${esc(config.title)}</h3><p>${esc(config.description)}</p><span class="status-pill mcq-best-status ${r?.score>=13?'done':r?'fail':''}">${esc(compactMcqStatus(r))}</span><div class="epa-tile-stat"><strong>${rows.length}</strong><span>attempt${rows.length===1?'':'s'} recorded</span></div><button class="btn" data-start-trade="${subject}">Start ${esc(config.title)} test</button></article>`}).join('');
  app.innerHTML=shell(`<button class="back no-print" id="tradeCoursesBack">← Academy</button><section class="academy-destination-head"><div class="academy-destination-icon">${appIcon('library')}</div><div><div class="number">Academy</div><h2>Trade Courses</h2><p class="muted">Each course contains 15 questions. Pass: 13/15 · Merit: 14/15 · Distinction: 15/15.</p></div></section><section class="academy-destination-grid">${cards}</section>`);
  document.getElementById('tradeCoursesBack').onclick=()=>{state.view='academy';render()};
  document.querySelectorAll('[data-start-trade]').forEach(b=>b.onclick=()=>startTradeCourseTest(b.dataset.startTrade));

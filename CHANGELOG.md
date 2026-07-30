@@ -1,3 +1,10 @@
+## V1.3.50 — Single-Line MCQ Status
+
+- Replaced the two-line assessment status with one compact best-result line.
+- New states: Not Started, Fail x/15, Pass 13/15, Merit 14/15, Distinction 15/15.
+- Functional Skills and Trade Courses now show the learner's highest recorded score rather than only the latest attempt.
+- Removed the duplicated pass requirement from individual MCQ cards.
+
 ## V1.3.49 — Mixed MCQ Answer Positions
 - Redistributed correct answers across A, B, C and D in every installed MCQ bank.
 - Preserved each original correct answer, explanation and scoring rule.
