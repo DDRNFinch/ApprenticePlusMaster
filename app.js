@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.9';
+const APP_VERSION='V1.9.1';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -4499,22 +4499,82 @@ function currentHelp(){
   'knowledge-result':{title:'Assignment Knowledge Result',html:'<p>Review the score and answer feedback. Retry where needed or return to the assignment.</p>'}
  };return common[v]||extraViews[v]||{title:'How to use this page',html:'<p>Complete the fields and controls shown, save or submit at the bottom, then use Back to return to the previous page.</p>'};
 }
-function closePageHelp(){document.getElementById('pageHelpModal')?.remove()}
-function openPageHelp(){const h=currentHelp();document.body.insertAdjacentHTML('beforeend',`<div class="page-help-modal" id="pageHelpModal"><div class="page-help-sheet" role="dialog" aria-modal="true" aria-labelledby="pageHelpTitle"><button class="page-help-close" id="pageHelpClose" aria-label="Close help">×</button><div class="page-help-symbol">i</div><h2 id="pageHelpTitle">${esc(h.title)}</h2><div class="page-help-content">${h.html}</div><div class="page-help-footer"><button class="link-button" id="pageHelpReplay">Replay quick tour</button><button class="btn" id="pageHelpDone">Close</button></div></div></div>`);document.getElementById('pageHelpClose').onclick=closePageHelp;document.getElementById('pageHelpDone').onclick=closePageHelp;document.getElementById('pageHelpReplay').onclick=()=>{closePageHelp();localStorage.removeItem(HELP_TOUR_KEY);startHelpTour()};document.getElementById('pageHelpModal').onclick=e=>{if(e.target.id==='pageHelpModal')closePageHelp()}}
-function attachPageHelp(){const b=document.getElementById('pageHelpButton');if(b)b.onclick=openPageHelp;maybeStartHelpTour()}
+function closePageHelp(){
+ const modal=document.getElementById('pageHelpModal');
+ if(!modal)return;
+ modal.classList.add('closing');
+ document.body.classList.remove('page-help-open');
+ setTimeout(()=>modal.remove(),180);
+}
+function openPageHelp(){
+ closePageHelp();
+ const h=currentHelp();
+ document.body.insertAdjacentHTML('beforeend',`<div class="page-help-modal" id="pageHelpModal" role="presentation"><div class="page-help-sheet" role="dialog" aria-modal="true" aria-labelledby="pageHelpTitle"><button type="button" class="page-help-close" data-close-page-help aria-label="Close help">×</button><div class="page-help-symbol">i</div><h2 id="pageHelpTitle">${esc(h.title)}</h2><div class="page-help-content">${h.html}</div><div class="page-help-footer"><button type="button" class="link-button" id="pageHelpReplay">Replay quick tour</button><button type="button" class="btn" data-close-page-help>Close</button></div><div class="page-help-drag" aria-hidden="true"></div></div></div>`);
+ document.body.classList.add('page-help-open');
+ const modal=document.getElementById('pageHelpModal'),sheet=modal.querySelector('.page-help-sheet');
+ modal.addEventListener('click',e=>{if(e.target===modal||e.target.closest('[data-close-page-help]')){e.preventDefault();e.stopPropagation();closePageHelp()}});
+ document.getElementById('pageHelpReplay').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();closePageHelp();localStorage.removeItem(HELP_TOUR_KEY);setTimeout(startHelpTour,220)});
+ let startY=0,currentY=0,dragging=false;
+ sheet.addEventListener('touchstart',e=>{if(sheet.scrollTop>0)return;startY=e.touches[0].clientY;currentY=startY;dragging=true},{passive:true});
+ sheet.addEventListener('touchmove',e=>{if(!dragging)return;currentY=e.touches[0].clientY;const dy=Math.max(0,currentY-startY);sheet.style.transform=`translateY(${Math.min(dy,160)}px)`},{passive:true});
+ sheet.addEventListener('touchend',()=>{if(!dragging)return;dragging=false;const dy=currentY-startY;sheet.style.transform='';if(dy>90)closePageHelp()},{passive:true});
+ setTimeout(()=>modal.querySelector('.page-help-close')?.focus(),20);
+}
+function attachPageHelp(){maybeStartHelpTour()}
 const HELP_TOUR_STEPS=[
- {view:'home',selector:'.learner-help-wrap',title:'Your profile and help',text:'Tap your learner name area to view your details. Tap the i on any page for exact instructions.'},
- {view:'home',selector:'#courseProgressBtn',title:'Course progress',text:'Tap the rings for details. Green is completed evidence, amber is started evidence and red is expected progress from your course dates.'},
- {view:'home',selector:'.assignment-card',title:COURSE.nvqUnits?'Evidence packs':'Assignments',text:'Open a card, complete evidence against every criterion, then download and upload the finished package.'},
- {view:'home',selector:'.bottom-nav [data-nav="academy"]',title:'Academy',text:'Use Academy for knowledge practice, professional discussion, EPA practical work and saved results.'},
- {view:'home',selector:'.bottom-nav [data-nav="resources"]',title:'Toolbox',text:'Use the workplace mini apps for notes, measurements, material estimates and project planning.'},
- {view:'home',selector:'.page-help-button',title:'Help on every page',text:'Tap i whenever you need concise instructions for the page you are using.'}
+ {view:'home',selector:'.learner-help-wrap',title:'Your learner profile',text:'Tap your name at the top to view or edit your learner details. The i button beside it opens instructions for the page you are using.'},
+ {view:'home',selector:'#courseProgressBtn',title:'Your course progress',text:'Tap the progress rings to see completed, started and expected progress. The colours update automatically as evidence is saved.'},
+ {view:'home',selector:'.assignment-card',title:COURSE.nvqUnits?'Open an evidence pack':'Open an assignment',text:'Tap a card to open it. Grey means not started, amber means in progress and green means the evidence requirement has been met.'},
+ {view:'assignment',selector:'.evidence-grid, [data-section]',title:'Add your evidence',text:COURSE.nvqUnits?'Open an evidence tile and save work against the Learning Outcomes. Each Learning Outcome needs three different evidence types.':'Open an evidence tile and save work against the KSBs. Each KSB needs two different evidence types.'},
+ {view:'academy',selector:'.academy-grid, .academy-home-grid, [data-academy]',title:'Use the Academy',text:'Open Knowledge Practice, Professional Discussion, EPA Practical or Scores & Results. Completed attempts are saved for review.'},
+ {view:'resources',selector:'.tools-grid, .resource-grid, .tool-app-grid',title:'Use the Toolbox',text:'Open NoteMate, MeasureMate, MaterialMate or ProjectMate for practical workplace support.'},
+ {view:'home',selector:'.page-help-button',title:'Help on every page',text:'Tap i at any time for short, exact instructions about the current screen.'}
 ];
-let helpTourIndex=0,helpTourRunning=false;
+let helpTourIndex=0,helpTourRunning=false,helpTourOriginalView=null;
 function maybeStartHelpTour(){if(helpTourRunning||!state.profile||localStorage.getItem(HELP_TOUR_KEY)==='1'||state.view!=='home')return;setTimeout(()=>startHelpTour(),500)}
-function startHelpTour(){if(!state.profile)return;helpTourRunning=true;helpTourIndex=0;state.view='home';render();setTimeout(showHelpTourStep,120)}
-function finishHelpTour(){helpTourRunning=false;localStorage.setItem(HELP_TOUR_KEY,'1');document.getElementById('helpTourOverlay')?.remove();document.querySelectorAll('.tour-highlight').forEach(e=>e.classList.remove('tour-highlight'))}
-function showHelpTourStep(){document.getElementById('helpTourOverlay')?.remove();document.querySelectorAll('.tour-highlight').forEach(e=>e.classList.remove('tour-highlight'));const step=HELP_TOUR_STEPS[helpTourIndex],target=document.querySelector(step.selector);if(!target){helpTourIndex++;if(helpTourIndex>=HELP_TOUR_STEPS.length)return finishHelpTour();return showHelpTourStep()}target.classList.add('tour-highlight');target.scrollIntoView({block:'center',behavior:'smooth'});document.body.insertAdjacentHTML('beforeend',`<div class="help-tour-overlay" id="helpTourOverlay"><div class="help-tour-card"><div class="help-tour-count">${helpTourIndex+1} of ${HELP_TOUR_STEPS.length}</div><h2>${esc(step.title)}</h2><p>${esc(step.text)}</p><div class="help-tour-actions"><button class="link-button" id="helpTourSkip">Skip</button><button class="btn" id="helpTourNext">${helpTourIndex===HELP_TOUR_STEPS.length-1?'Finish':'Next'}</button></div></div></div>`);document.getElementById('helpTourSkip').onclick=finishHelpTour;document.getElementById('helpTourNext').onclick=()=>{helpTourIndex++;if(helpTourIndex>=HELP_TOUR_STEPS.length)finishHelpTour();else showHelpTourStep()}}
+function renderTourView(step){
+ state.view=step.view;
+ state.section=null;
+ if(step.view==='assignment')state.assignment=state.assignment||1;
+ render();
+ window.scrollTo(0,0);
+}
+function buildTourPhone(step){
+ const source=app.cloneNode(true);
+ source.querySelectorAll('script,style,.page-help-modal,.help-tour-overlay').forEach(x=>x.remove());
+ const target=source.querySelector(step.selector);
+ if(target){target.classList.add('tour-phone-focus');target.scrollIntoView?.({block:'center'})}
+ source.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+ source.querySelectorAll('button,input,select,textarea,a').forEach(el=>{el.tabIndex=-1;el.setAttribute('aria-hidden','true')});
+ return source.innerHTML;
+}
+function startHelpTour(){
+ if(!state.profile||helpTourRunning)return;
+ closePageHelp();
+ helpTourRunning=true;helpTourIndex=0;helpTourOriginalView={view:state.view,assignment:state.assignment,section:state.section};
+ document.body.classList.add('help-tour-open');
+ showHelpTourStep();
+}
+function finishHelpTour(completed=true){
+ helpTourRunning=false;
+ if(completed)localStorage.setItem(HELP_TOUR_KEY,'1');
+ document.getElementById('helpTourOverlay')?.remove();
+ document.body.classList.remove('help-tour-open');
+ state.view='home';state.assignment=null;state.section=null;render();window.scrollTo(0,0);
+}
+function showHelpTourStep(){
+ document.getElementById('helpTourOverlay')?.remove();
+ const step=HELP_TOUR_STEPS[helpTourIndex];
+ if(!step)return finishHelpTour();
+ renderTourView(step);
+ const phone=buildTourPhone(step);
+ document.body.insertAdjacentHTML('beforeend',`<div class="help-tour-overlay" id="helpTourOverlay" role="dialog" aria-modal="true" aria-labelledby="helpTourTitle"><div class="help-tour-layout"><div class="tour-phone" aria-label="Preview of the Apprentice Plus screen"><div class="tour-phone-speaker"></div><div class="tour-phone-screen"><div class="tour-phone-scale">${phone}</div></div><div class="tour-phone-home"></div></div><div class="help-tour-card"><div class="help-tour-top"><div class="help-tour-count">Step ${helpTourIndex+1} of ${HELP_TOUR_STEPS.length}</div><button type="button" class="help-tour-x" id="helpTourClose" aria-label="Close tour">×</button></div><h2 id="helpTourTitle">${esc(step.title)}</h2><p>${esc(step.text)}</p><div class="help-tour-dots">${HELP_TOUR_STEPS.map((_,i)=>`<span class="${i===helpTourIndex?'active':''}"></span>`).join('')}</div><div class="help-tour-actions"><button type="button" class="link-button" id="helpTourSkip">Skip tour</button><div class="help-tour-nav">${helpTourIndex?'<button type="button" class="btn secondary" id="helpTourPrevious">Back</button>':''}<button type="button" class="btn" id="helpTourNext">${helpTourIndex===HELP_TOUR_STEPS.length-1?'Finish':'Next'}</button></div></div></div></div></div>`);
+ const overlay=document.getElementById('helpTourOverlay');
+ overlay.querySelector('#helpTourClose').onclick=()=>finishHelpTour(false);
+ overlay.querySelector('#helpTourSkip').onclick=()=>finishHelpTour(true);
+ const prev=overlay.querySelector('#helpTourPrevious');if(prev)prev.onclick=()=>{helpTourIndex--;showHelpTourStep()};
+ overlay.querySelector('#helpTourNext').onclick=()=>{helpTourIndex++;if(helpTourIndex>=HELP_TOUR_STEPS.length)finishHelpTour(true);else showHelpTourStep()};
+}
 window.replayApprenticeTour=()=>{localStorage.removeItem(HELP_TOUR_KEY);startHelpTour()};
 
 async function createUpdateSafetyBackup(){
@@ -4536,7 +4596,9 @@ async function registerAutoUpdater(){
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')registration.update().catch(()=>{})});
  window.setInterval(()=>registration.update().catch(()=>{}),60*60*1000);
 }
-document.addEventListener('click',e=>{if(e.target.closest('#pageHelpButton')){e.preventDefault();openPageHelp()}});
+document.addEventListener('click',e=>{const help=e.target.closest('#pageHelpButton');if(!help)return;e.preventDefault();e.stopPropagation();openPageHelp()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(document.getElementById('pageHelpModal'))closePageHelp();else if(helpTourRunning)finishHelpTour(false)});
+window.addEventListener('popstate',()=>{if(document.getElementById('pageHelpModal'))closePageHelp();else if(helpTourRunning)finishHelpTour(false)});
 app.addEventListener('click',e=>{const nav=e.target.closest('[data-nav]');if(!nav)return;const target=nav.dataset.nav;if(target==='academy'){state.view='academy';state.assignment=null;state.section=null}else if(target==='resources'){state.view='resources';state.assignment=null;state.section=null;state.editingNoteId=null}else{state.view='home';state.assignment=null;state.section=null}render();window.scrollTo({top:0,behavior:'smooth'})});
 
 (async()=>{db=await openDB();await load();await createUpdateSafetyBackup();await registerAutoUpdater()})().catch(e=>{console.error(e);app.innerHTML=shell(`<section class="card panel"><h2>Unable to open local storage</h2><p class="muted">Check that private browsing is off and reload the app.</p></section>`)})

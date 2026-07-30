@@ -414,3 +414,9 @@
 - Added separate KSB and Learning Outcome completion rules and evidence guidance.
 - Added a short first-run tour using the live app interface and highlighted controls.
 - Added replay support through `replayApprenticeTour()` for future Settings wiring.
+
+## V1.9.1
+- Fixed duplicate help modal creation that prevented Close buttons from dismissing the panel.
+- Added Close, backdrop tap, swipe-down, Escape and Android Back dismissal handling.
+- Rebuilt the first-run tour with a mini mobile-phone preview of the actual Apprentice+ screen for every step.
+- Added Back, Next, Skip, Finish, progress dots and replay support.
