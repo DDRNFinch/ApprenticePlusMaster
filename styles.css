@@ -872,3 +872,9 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
 .academy-knowledge-subject-copy em{font-size:12px;font-style:normal;color:#6d7978}
 .academy-knowledge-subject-action{font-size:12px;font-weight:900;color:#16844a;white-space:nowrap}
 @media(max-width:680px){.academy-knowledge-subsection{padding:14px}.academy-knowledge-subject-grid{grid-template-columns:1fr}.academy-knowledge-subject{grid-template-columns:40px minmax(0,1fr) auto;padding:13px}.academy-knowledge-subject-icon{width:40px;height:40px}.academy-knowledge-subject-action{font-size:11px}}
+
+/* V1.3.58: all knowledge slide packs live in one Academy subsection */
+.academy-knowledge-group{margin:18px 0 26px}
+.academy-knowledge-group>.academy-subsection-heading{margin:0 0 10px;padding:0 4px}
+.academy-knowledge-group .academy-knowledge-subsection{margin:0}
+.academy-knowledge-group .academy-knowledge-subsection>.academy-subsection-heading{display:none}

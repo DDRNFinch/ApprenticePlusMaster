@@ -1,3 +1,12 @@
+## V1.3.58 - Central Knowledge Slides Subsection
+
+- Added a dedicated **Academy > Knowledge Slides** destination.
+- Moved every 15-slide subject pack into this single subsection.
+- Separated Trade Course slide packs from Functional Skills slide packs within the Knowledge Slides page.
+- Removed slide packs from the Trade Courses and Functional Skills assessment pages.
+- Kept independent progress, completion and resume state for every subject.
+- Updated slide back-navigation to return to Knowledge Slides.
+
 ## V1.3.57 - Subject-Specific Knowledge Training
 
 - Split Academy knowledge slides into separate subject modules.
