@@ -1,3 +1,11 @@
+# Apprentice+ V1.3.65
+
+- Restored Photographic Evidence and Professional Discussion as separate LO evidence methods.
+- All six LO evidence methods count toward the existing 2-evidence-per-LO rule.
+- Added six compact evidence icons in one row on evidence-pack cards and assignment pages.
+- Kept Video Walkthrough independent from Professional Discussion.
+- Added restored evidence types to portfolio data and downloads.
+
 # Apprentice+ V1.3.64
 
 - Replaced Professional Discussion with Video Walkthrough for NVQ Trowel Occupations LO courses.

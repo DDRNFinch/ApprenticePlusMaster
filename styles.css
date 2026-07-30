@@ -906,3 +906,14 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
  .training-certificate footer span{font-size:7.5pt!important}.training-certificate footer strong{font-size:8.5pt!important;overflow-wrap:anywhere!important}
  .certificate-details{display:none!important}
 }
+/* V1.3.65: six evidence methods in one compact row */
+.assignment-card .icons{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
+.assignment-card .icon-state{min-width:0;padding:7px 2px;border-radius:11px}
+.assignment-card .icon-state .app-icon{width:21px;height:21px}
+@media(max-width:420px){.assignment-card .icons{gap:4px}.assignment-card .icon-state{min-height:48px;padding:6px 1px}.assignment-card .icon-state .app-icon{width:19px;height:19px}}
+.nvq-six-evidence.evidence-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.nvq-six-evidence .evidence-tile{min-height:96px;padding:9px 4px;text-align:center;border-radius:14px;overflow:hidden}
+.nvq-six-evidence .evidence-tile .tile-icon{display:flex;justify-content:center;margin:0}
+.nvq-six-evidence .evidence-tile .tile-icon .app-icon{width:25px;height:25px}
+.nvq-six-evidence .evidence-tile h3{font-size:10px;line-height:1.15;margin:7px 0 0;word-break:normal}
+.nvq-six-evidence .evidence-tile p,.nvq-six-evidence .tile-ribbon{display:none}
