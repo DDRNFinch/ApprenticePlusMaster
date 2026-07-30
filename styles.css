@@ -1171,21 +1171,8 @@ textarea{min-height:138px}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
 
-/* Unified evidence status pills */
-.status-pill{
-display:inline-flex;
-align-items:center;
-justify-content:center;
-gap:6px;
-min-width:64px;
-height:28px;
-padding:0 12px;
-border-radius:999px;
-font-size:13px;
-font-weight:700;
-letter-spacing:.02em;
-border:none;
-}
-.status-pill.complete{background:#EAFBF1;color:#16803C;}
-.status-pill.partial{background:#FFF4D6;color:#A86A00;}
-.status-pill.empty{background:#F2F4F5;color:#6B7280;}
+/* Unified status pills */
+.status-pill{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.02em}
+.status-pill.complete{background:#EAFBF1;color:#16803C}
+.status-pill.partial{background:#FFF4D6;color:#A86A00}
+.status-pill.empty{background:#F2F4F5;color:#6B7280}
