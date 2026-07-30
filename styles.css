@@ -672,3 +672,17 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
 .academy-empty-state>span{width:64px;height:64px;border-radius:20px;background:#fff4dc;color:#9a5b08;display:grid;place-items:center}
 .academy-empty-state .app-icon{width:34px;height:34px}
 .academy-empty-state p{color:var(--muted)}
+
+/* V1.3.43 Functional Skills tests */
+.functional-test-card{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.functional-test-card>span:first-child{width:54px;height:54px;display:grid;place-items:center;border-radius:16px;background:var(--soft-green,#ecfdf3);color:var(--green,#16a34a)}
+.functional-test-card>span:first-child svg{width:30px;height:30px}
+.functional-test-card .btn{width:100%;margin-top:auto}
+.functional-test-card .epa-tile-stat{width:100%}
+.functional-grade-scale{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
+.functional-grade-scale span{padding:10px 8px;border:1px solid var(--line,#e5e7eb);border-radius:12px;text-align:center;font-size:12px;font-weight:800;background:#fff}
+.functional-grade-scale span.active{border-color:#16a34a;background:#ecfdf3;color:#166534}
+.functional-review-item{margin-top:16px;padding:16px;border:1px solid var(--line,#e5e7eb);border-radius:16px;background:#fff}
+.functional-review-item p{margin:8px 0 0;line-height:1.5}
+.functional-review-item .key-takeaway{display:flex;flex-direction:column;gap:4px;margin-top:12px;padding:12px;border-radius:12px;background:#f0fdf4;color:#166534}
+@media(max-width:520px){.functional-grade-scale{grid-template-columns:1fr}}

@@ -1,3 +1,12 @@
+# V1.3.43 — Functional Skills Tests
+
+- Added a 15-question English Functional Skills test.
+- Added a 15-question Maths Functional Skills test.
+- Added exact grading: Pass 13/15, Merit 14/15, Distinction 15/15.
+- Added saved attempt history, results and answer-review feedback.
+- Corrected the English homophone answer so the marked answer is grammatically valid.
+- Updated the service-worker cache and app version.
+
 ## v1.3.42 – Academy 2x2 Tile Redesign
 
 - Rebuilt the Academy landing page as four equal square tiles in a 2x2 grid.
