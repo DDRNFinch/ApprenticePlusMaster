@@ -1,3 +1,8 @@
+## V1.9.4
+- Academy help now guides learners through all five Academy tiles individually.
+- The live phone preview highlights Knowledge Slides, Trade Courses, EPA Academy, Functional Skills and Certificates in sequence.
+- Added Back, Next, Finish and step progress controls to Academy help.
+
 ## V1.8
 
 - Added a dedicated app-installation screen immediately after first-time learner setup.
