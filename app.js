@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.9.7';
+const APP_VERSION='V1.9.8';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -4545,17 +4545,30 @@ function scrollPageHelpPhoneToFocus(instant=false){
  const target=scale?.querySelector('.page-help-phone-focus');
  if(!screen||!scale||!target)return;
  requestAnimationFrame(()=>{
-  const transform=getComputedStyle(scale).transform;
+  // Keep the phone frame fixed. Only move the page vertically inside the screen.
+  const computed=getComputedStyle(scale);
+  const transform=computed.transform;
   let zoom=1;
   if(transform&&transform!=='none'){
    const match=transform.match(/^matrix\(([^)]+)\)$/);
    if(match){const values=match[1].split(',').map(Number);zoom=Math.abs(values[0])||1}
   }
+  const offsetWithinScale=el=>{
+   let top=0,node=el;
+   while(node&&node!==scale){top+=node.offsetTop||0;node=node.offsetParent}
+   return top;
+  };
   const visibleHeight=screen.clientHeight/zoom;
-  const visibleWidth=screen.clientWidth/zoom;
-  const top=Math.max(0,target.offsetTop-(visibleHeight-target.offsetHeight)/2);
-  const left=Math.max(0,target.offsetLeft-(visibleWidth-target.offsetWidth)/2);
-  screen.scrollTo({top,left,behavior:instant?'auto':'smooth'});
+  const contentHeight=Math.max(scale.scrollHeight,scale.offsetHeight,780);
+  const targetTop=offsetWithinScale(target);
+  const targetHeight=target.offsetHeight||0;
+  const maximumScroll=Math.max(0,contentHeight-visibleHeight);
+  const desired=Math.min(maximumScroll,Math.max(0,targetTop-(visibleHeight-targetHeight)/2));
+  const screenPixels=desired*zoom;
+  scale.style.transition=instant?'none':'transform .32s cubic-bezier(.2,.75,.25,1)';
+  scale.style.transform=`translate3d(0, ${-screenPixels}px, 0) scale(${zoom})`;
+  screen.scrollTop=0;
+  screen.scrollLeft=0;
  });
 }
 function pageHelpSelectors(){

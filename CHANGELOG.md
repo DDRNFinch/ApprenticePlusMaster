@@ -474,3 +474,8 @@ Certificates - View and download certificates you have earned after completing A
 - Fixed the quick tour reopening immediately after it was closed.
 - Added the live miniature phone preview to the help panel on every page.
 - Changed every page information button to solid Apprentice+ green.
+
+## V1.9.8
+- Kept the miniature phone frame fixed while scrolling only the page inside it.
+- Removed horizontal movement and clamped vertical movement at the top and bottom of the page.
+- Enlarged the miniature phone and tightened the instruction/button layout on mobile.

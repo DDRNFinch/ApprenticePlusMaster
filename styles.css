@@ -1318,3 +1318,20 @@ body.page-help-open,body.help-tour-open{overflow:hidden;touch-action:none}
  .page-help-content{font-size:13px;line-height:1.22}
  .page-help-footer{font-size:13px}
 }
+
+/* V1.9.8: fixed phone frame with true vertical screen scrolling */
+.page-help-phone-screen{overflow:hidden!important}
+.page-help-phone-scale{will-change:transform;transform-origin:top left!important}
+@media(max-width:640px){
+ .page-help-phone{width:178px;height:318px;border-width:6px;border-radius:28px;padding:10px 4px 14px}
+ .page-help-phone-scale{transform:scale(.405)}
+ .page-help-body{gap:9px}
+ .page-help-instructions{margin-top:1px}
+ .page-help-step-controls{margin-top:7px!important}
+ .page-help-footer{margin-top:auto!important;padding-top:6px}
+}
+@media(max-height:760px) and (max-width:640px){
+ .page-help-phone{width:158px;height:278px}
+ .page-help-phone-scale{transform:scale(.36)}
+ .page-help-content{font-size:13px;line-height:1.22}
+}
