@@ -651,3 +651,6 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
  .epa-dashboard-tile{width:min(270px,86vw);padding:25px 23px}
  .epa-dashboard-tile p{display:none}
 }
+/* v1.3.43 English and Maths Academy quizzes */
+.academy-functional-quiz h3{white-space:pre-line;line-height:1.55}
+.academy-pass-note{text-align:center;color:var(--muted);font-size:.82rem;font-weight:800;margin:14px 0 4px}

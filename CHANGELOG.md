@@ -108,3 +108,8 @@
 - Added a combined Scores and Results screen with search and test-type filtering.
 - Removed the 20-attempt cap so every completed Knowledge Practice and Professional Discussion is retained.
 - Practical attempt history remains unlimited, with best result and PDF access retained.
+
+## v1.3.43 — English and Maths Academy MCQs
+- Added 15-question English and 15-question Maths multiple-choice quizzes.
+- Set the pass mark for each quiz to 12 correct answers out of 15.
+- Added randomized answer order, required completion of all questions, saved attempt records, and full answer review with explanations and key takeaways.
