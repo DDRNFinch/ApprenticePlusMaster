@@ -479,3 +479,9 @@ Certificates - View and download certificates you have earned after completing A
 - Kept the miniature phone frame fixed while scrolling only the page inside it.
 - Removed horizontal movement and clamped vertical movement at the top and bottom of the page.
 - Enlarged the miniature phone and tightened the instruction/button layout on mobile.
+
+
+## V1.9.9
+- Moved the full course progress and course-date control from the progress ring to the learner-name button.
+- The progress ring is now a visual summary only.
+- Updated page help and the quick tour to match the new interaction.

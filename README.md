@@ -111,3 +111,7 @@ The previous generated EPA multiple-choice mock has been replaced by a fixed, ap
 
 ### V1.38.9 Professional-Judgement MCQ Standard
 EPA question banks are now checked against the locked Apprentice+ writing standard: realistic workplace scenarios, four plausible answers, natural trade language, no careless distractors, no giveaway wording, and a stored explanation plus key takeaway. Incorrect answers display an immediate coaching panel during the test.
+
+
+### V1.9.9
+Tap the learner name in the header to open course progress, review submitted work and evidence activity, and edit course dates. The progress ring is display-only.
