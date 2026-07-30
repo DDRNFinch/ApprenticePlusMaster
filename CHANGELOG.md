@@ -407,3 +407,10 @@
 - Professional Discussion recorder now displays the selected Knowledge, Behaviour or learning-outcome description while recording.
 - Added assessor prompt questions tailored to Knowledge and Behaviour criteria.
 - Added mobile-friendly scrolling and layout for the recording guidance panel.
+
+## V1.9 — Page Help and Quick Tour
+- Added a concise information button beside the learner name on every app page.
+- Added context-sensitive instructions for Home, assignments/evidence packs, every evidence type, Academy, Toolbox and mini apps.
+- Added separate KSB and Learning Outcome completion rules and evidence guidance.
+- Added a short first-run tour using the live app interface and highlighted controls.
+- Added replay support through `replayApprenticeTour()` for future Settings wiring.
