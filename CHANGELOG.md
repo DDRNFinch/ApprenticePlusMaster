@@ -1,3 +1,10 @@
+# Apprentice+ V1.3.64
+
+- Replaced Professional Discussion with Video Walkthrough for NVQ Trowel Occupations LO courses.
+- Added per-learning-outcome landscape video recording with camera and microphone.
+- Updated LO evidence labels, coverage sources, PDF headings, stamps and packaged media folders to VW / Video Walkthrough.
+- Existing legacy discussion audio remains viewable for backwards compatibility.
+
 # Apprentice+ V1.3.63
 
 ## Mobile video playback compatibility
