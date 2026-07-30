@@ -1169,3 +1169,17 @@ textarea{min-height:138px}
   .bottom-nav{width:calc(100% - 18px);bottom:max(8px,env(safe-area-inset-bottom))}
 }
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+
+/* V1.3 — one consistent Learner Statement status-pill design across every evidence section */
+.evidence-status-pill{
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;
+ margin-left:8px!important;padding:0 12px!important;height:28px!important;border:0!important;border-radius:999px!important;
+ font-size:13px!important;font-weight:700!important;letter-spacing:.02em!important;line-height:28px!important;
+ vertical-align:middle!important;white-space:nowrap!important;box-shadow:none!important;
+}
+.evidence-status-pill.evidence-complete-note{background:#EAFBF1!important;color:#16803C!important}
+.evidence-status-pill.evidence-progress-note{background:#FFF4D6!important;color:#A86A00!important}
+@media(max-width:480px){
+ .evidence-status-pill{font-size:9px!important;padding:0 7px!important;height:23px!important;line-height:23px!important;margin-left:4px!important}
+}

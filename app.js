@@ -594,7 +594,7 @@ function ksbEvidenceCoverage(n){
 function ksbCoverageComplete(n){const values=Object.values(ksbEvidenceCoverage(n));return values.length>0&&values.every(item=>item.count>=2)}
 function ksbCoverageSummary(n){const coverage=ksbEvidenceCoverage(n),items=Object.entries(coverage);return {coverage,total:items.length,met:items.filter(([,v])=>v.count>=2).length,requirementsMet:items.reduce((sum,[,v])=>sum+Math.min(2,v.count),0),requirementsTotal:items.length*2,missing:items.filter(([,v])=>v.count<2).map(([code,v])=>`${code} ${v.count}/2`)}}
 function evidenceCoverageCount(n,code){const coverage=COURSE.nvqUnits?nvqOutcomeCoverage(n):ksbEvidenceCoverage(n);return Number(coverage?.[code]?.count||0)}
-function evidenceCoverageBadge(n,code){const count=evidenceCoverageCount(n,code),required=COURSE.nvqUnits?3:2;return count>=required?`<span class="evidence-complete-note" title="${required}/${required} evidence requirement completed">✓ Completed</span>`:count>0?`<span class="evidence-progress-note" title="${count}/${required} distinct evidence types collected">${count}/${required}</span>`:''}
+function evidenceCoverageBadge(n,code){const count=evidenceCoverageCount(n,code),required=COURSE.nvqUnits?3:2;return count>=required?`<span class="evidence-status-pill evidence-complete-note" title="${required}/${required} evidence requirement completed">✓ Completed</span>`:count>0?`<span class="evidence-status-pill evidence-progress-note" title="${count}/${required} distinct evidence types collected">${count}/${required}</span>`:''}
 
 function assignmentComplete(n){return assignmentRPL(n)||(COURSE.nvqUnits?nvqCoverageComplete(n):ksbCoverageComplete(n))}
 function packDownloaded(n){return !!state.data[packStatusKey(n)]?.downloaded}
