@@ -1,3 +1,15 @@
+# Apprentice+ V1.2 — One-off Modern Professional Visual Upgrade
+
+- Created as an isolated visual test build for a backup repository.
+- Retained all V1.1 evidence rules, saved-data structures, workflows and PDF logic.
+- Introduced softer borderless cards, refined shadows and increased whitespace.
+- Standardised typography, spacing, form controls and button styling.
+- Improved assignment, evidence and status-card hierarchy.
+- Added a floating, glass-style mobile navigation bar.
+- Retained left-aligned evidence icons, adjacent KSB capability labels and purple ribbons.
+- Added restrained press/hover motion and reduced-motion support.
+- Updated visible app version to V1.2.
+
 # V1.1 UI Polish
 
 - Removed the Professional Discussion notes field from each audio recording card.
