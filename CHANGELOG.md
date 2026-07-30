@@ -1,3 +1,10 @@
+# V1.3.67 — 2×3 Evidence Tile Grid
+
+- Replaced the cramped six-icon row for NVQ evidence packs with a clear two-column, three-row layout.
+- Added readable evidence-method labels to the six status tiles on each evidence-pack card.
+- Restored full titles, descriptions and evidence ribbons on the assignment evidence tiles.
+- Kept all evidence rules, saved records and 2/2 coverage calculations unchanged.
+
 # V1.3.66 — Evidence Coverage Ticks
 
 - Added live coverage markers beside every KSB and Learning Outcome inside evidence forms.

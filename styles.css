@@ -906,17 +906,31 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
  .training-certificate footer span{font-size:7.5pt!important}.training-certificate footer strong{font-size:8.5pt!important;overflow-wrap:anywhere!important}
  .certificate-details{display:none!important}
 }
-/* V1.3.65: six evidence methods in one compact row */
-.assignment-card .icons{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
-.assignment-card .icon-state{min-width:0;padding:7px 2px;border-radius:11px}
-.assignment-card .icon-state .app-icon{width:21px;height:21px}
-@media(max-width:420px){.assignment-card .icons{gap:4px}.assignment-card .icon-state{min-height:48px;padding:6px 1px}.assignment-card .icon-state .app-icon{width:19px;height:19px}}
-.nvq-six-evidence.evidence-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
-.nvq-six-evidence .evidence-tile{min-height:96px;padding:9px 4px;text-align:center;border-radius:14px;overflow:hidden}
-.nvq-six-evidence .evidence-tile .tile-icon{display:flex;justify-content:center;margin:0}
-.nvq-six-evidence .evidence-tile .tile-icon .app-icon{width:25px;height:25px}
-.nvq-six-evidence .evidence-tile h3{font-size:10px;line-height:1.15;margin:7px 0 0;word-break:normal}
-.nvq-six-evidence .evidence-tile p,.nvq-six-evidence .tile-ribbon{display:none}
+/* V1.3.67: readable six-method evidence grids */
+.assignment-card .icons{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.assignment-card .icon-state{min-width:0;padding:8px 4px;border-radius:12px;display:grid;place-items:center;gap:4px}
+.assignment-card .icon-state .app-icon{width:22px;height:22px}
+.assignment-card .icon-state-label{display:none}
+.assignment-card .nvq-six-icons{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.assignment-card .nvq-six-icons .icon-state{min-height:62px;grid-template-columns:auto 1fr auto;justify-items:start;text-align:left;padding:9px 10px}
+.assignment-card .nvq-six-icons .icon-state-label{display:block;font-size:11px;line-height:1.2;font-weight:850;color:inherit}
+.assignment-card .nvq-six-icons .state-mark{justify-self:end}
+.nvq-six-evidence.evidence-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.nvq-six-evidence .evidence-tile{min-height:138px;padding:15px;text-align:left;border-radius:18px;overflow:hidden}
+.nvq-six-evidence .evidence-tile .tile-icon{display:flex;justify-content:flex-start;margin:0}
+.nvq-six-evidence .evidence-tile .tile-icon .app-icon{width:29px;height:29px}
+.nvq-six-evidence .evidence-tile h3{font-size:15px;line-height:1.2;margin:10px 0 5px;word-break:normal}
+.nvq-six-evidence .evidence-tile p{display:block;font-size:12px;line-height:1.35;color:var(--muted)}
+.nvq-six-evidence .tile-ribbon{display:block}
+@media(max-width:420px){
+ .assignment-card .nvq-six-icons{gap:7px}
+ .assignment-card .nvq-six-icons .icon-state{min-height:58px;padding:8px}
+ .assignment-card .nvq-six-icons .icon-state-label{font-size:10px}
+ .nvq-six-evidence.evidence-grid{gap:9px}
+ .nvq-six-evidence .evidence-tile{min-height:132px;padding:13px}
+ .nvq-six-evidence .evidence-tile h3{font-size:14px}
+ .nvq-six-evidence .evidence-tile p{font-size:11px}
+}
 
 /* V1.3.66 — live 2/2 coverage indicators inside evidence tabs */
 .evidence-complete-note,.evidence-progress-note{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:900;line-height:1.35;vertical-align:middle;white-space:nowrap}
