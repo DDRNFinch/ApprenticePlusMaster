@@ -1,3 +1,10 @@
+# V1.3.73 — Professional Discussion Voice Recorder Layout
+
+- Professional Discussion now mirrors the Video Walkthrough card layout.
+- Replaced video capture with microphone-only voice recording.
+- Added per-KSB/LO audio recording, playback, replace and remove controls.
+- Retained locked submissions, new-attempt workflow, evidence coverage rules and PDF compatibility.
+
 # V1.3.72 — Evidence-Type Reuse Locks
 
 - Removed K/S/B and LO capability labels from outer assignment and evidence-pack cards.

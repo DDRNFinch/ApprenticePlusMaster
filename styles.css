@@ -969,3 +969,17 @@ body.a11y-captions video::cue{background:rgba(0,0,0,.78);color:#fff}
 .evidence-type-used{opacity:.48;filter:grayscale(1);position:relative;background:#f1f2f2!important;border-color:#c9cdcf!important}
 .evidence-type-used button{cursor:not-allowed!important}
 .evidence-type-used-note{display:block;margin:8px 12px 10px;padding:6px 9px;border-radius:8px;background:#dfe2e3;color:#555;font-size:11px;font-weight:800;text-align:center}
+
+/* V1.3.73 Professional Discussion voice-recorder walkthrough layout */
+.professional-discussion-head{margin-top:8px}
+.professional-discussion-details{margin:16px 0}
+.professional-discussion-mini{grid-template-columns:minmax(0,1fr) 104px}
+.professional-discussion-record-button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:96px;padding:10px 7px}
+.professional-discussion-record-button .voice-recorder-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:rgba(34,197,94,.13)}
+.professional-discussion-record-button .voice-recorder-icon svg{width:25px;height:25px}
+.professional-discussion-record-button span:last-child{font-size:10px;font-weight:900;letter-spacing:.04em;text-align:center}
+.professional-discussion-audio{display:block;width:100%;margin-top:10px}
+.professional-discussion-remove{margin-top:8px;color:#a62c2c}
+.professional-discussion-list .discussion-note-label{display:block;margin-top:10px}
+.professional-discussion-list .discussion-note{width:100%;min-height:72px;margin-top:5px}
+@media(max-width:380px){.professional-discussion-mini{grid-template-columns:minmax(0,1fr) 88px}.professional-discussion-record-button{width:84px;min-height:84px}}
