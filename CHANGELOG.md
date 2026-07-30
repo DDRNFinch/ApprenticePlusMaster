@@ -1,3 +1,9 @@
+## V1.3.59 - A4 Certificate Print Fix
+- Fixed blank certificate PDFs caused by conflicting print visibility rules.
+- Certificates now print as one A4 portrait page with fixed print-safe margins.
+- Reduced and constrained certificate typography to prevent clipping with long names, course titles and certificate IDs.
+- Updated the offline cache so the corrected certificate stylesheet is installed.
+
 ## V1.3.58 - Central Knowledge Slides Subsection
 
 - Added a dedicated **Academy > Knowledge Slides** destination.
