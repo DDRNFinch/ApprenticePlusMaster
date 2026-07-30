@@ -67,8 +67,6 @@ async function generateEvidencePackPDF({course, assignment, profile, sections, b
   (sections.photos||[]).forEach((d,i)=>{const ref=`PE${i+1}`;addEvidence(ref,`Photographic Evidence ${i+1}`,'Photo Evidence',d.date);selectedCodes(d).forEach(code=>addMatrix(code,ref))});
   (sections.discussion||[]).forEach((d,i)=>{const ref=`PD${i+1}`;addEvidence(ref,`Professional Discussion ${i+1}`,'Professional Discussion',d.date);Object.keys(d.recordings||{}).filter(code=>d.recordings?.[code]?.data).forEach(code=>addMatrix(code,ref))});
   (sections.walkthrough||[]).forEach((d,i)=>{const ref=`VW${i+1}`;addEvidence(ref,`Video Walkthrough ${i+1}`,'Video Walkthrough',d.date);if(d.code)addMatrix(d.code,ref)});
-  let supportingWitnessOffset=(sections.witness||[]).length;
-  (sections.supporting||[]).forEach((d,i)=>{if(d.tab==='files'){addEvidence(`SE${i+1}`,`Supporting Evidence ${i+1}`,'Documents',d.date);selectedCodes(d).forEach(code=>addMatrix(code,`SE${i+1}`))}else{const ref=`WT${++supportingWitnessOffset}`;addEvidence(ref,`${d.type||'Witness / Employer Statement'} ${supportingWitnessOffset}`,'Witness Testimony',d.date);selectedCodes(d).forEach(code=>addMatrix(code,ref))}});
 
   function drawCompactParagraph(x,text,px,py,maxWidth,maxHeight){
     const sizes=[20,19,18,17,16,15,14];
@@ -134,21 +132,31 @@ async function generateEvidencePackPDF({course, assignment, profile, sections, b
       evidenceCatalogue.forEach((item,i)=>{if(y>H-135)return;x.fillStyle=i%2?WHITE:PALE;x.fillRect(M,y-28,W-2*M,52);x.fillStyle=x._sectionColour||TEAL;x.font='700 19px Arial';x.fillText(item.ref,M+16,y);x.fillStyle=INK;x.font='600 18px Arial';fitText(x,item.title,M+105,y,W-2*M-340,18);x.fillStyle=MUTED;x.font='500 16px Arial';x.textAlign='right';x.fillText(item.date||'-',W-M-18,y);x.textAlign='left';y+=56});
     }
     y=Math.min(y+25,H-310);y=sectionHeading(x,'Evidence Reference Key',y);
-    const keys=['PA  Practical Assessment','LS  Learner Statement','WT  Witness / Employer Testimony','VW  Video Walkthrough','PD  Professional Discussion','PE  Photo Evidence','SE  Supporting Evidence'];
+    const keys=['PA  Practical Assessment','LS  Learner Statement','WT  Witness / Employer Testimony','VW  Video Walkthrough','PD  Professional Discussion','PE  Photo Evidence'];
     keys.forEach((t,i)=>{x.fillStyle=INK;x.font='600 17px Arial';x.fillText(t,M+(i%2)*520,y+Math.floor(i/2)*34)});
   }
 
-  // Page 2 - automatic KSB evidence matrix
+  // Page 2+ - automatic KSB evidence matrix. Every evidence reference is shown
+  // and long KSB descriptions wrap instead of running beyond the page edge.
   {
-    const p=meta(newPage('KSB Evidence Matrix','Page 2'),'Automatic mapping','Evidence Portfolio');const x=p.x;let y=sectionHeading(x,'KSB Mapping',p.y);
-    x.fillStyle=MUTED;x.font='400 17px Arial';x.fillText('Evidence references show where each KSB is evidenced within this downloaded portfolio.',M,y);y+=42;
+    let p=meta(newPage('KSB Evidence Matrix','Page 2'),'Automatic mapping','Evidence Portfolio');let x=p.x;let y=sectionHeading(x,'KSB Mapping',p.y);
+    x.fillStyle=MUTED;x.font='400 17px Arial';x.fillText('Evidence references show exactly where each KSB is evidenced within this downloaded portfolio.',M,y);y+=42;
+    const drawMatrixHeader=()=>{x.fillStyle=x._sectionColour||TEAL;x.fillRect(M,y-24,W-2*M,38);x.fillStyle=WHITE;x.font='700 15px Arial';x.fillText('KSB',M+14,y);x.fillText('Description',M+88,y);x.textAlign='right';x.fillText('Evidence location',W-M-16,y);x.textAlign='left';y+=54};
+    drawMatrixHeader();
     for(const [code,summary] of assignment.ksbs||[]){
-      const refs=evidenceMatrix[code]||[];const rowH=78;if(y+rowH>H-100)break;
-      x.fillStyle=refs.length?PALE:'#fafafa';x.fillRect(M,y-25,W-2*M,rowH-6);x.fillStyle=x._sectionColour||TEAL;x.font='700 19px Arial';x.fillText(code,M+16,y);
-      x.fillStyle=INK;x.font='600 16px Arial';fitText(x,clean(summary),M+90,y,W-2*M-355,16);
-      x.textAlign='right';x.fillStyle=refs.length?(x._sectionColour||TEAL):MUTED;x.font='700 18px Arial';x.fillText(refs.length?refs.join('  '):'No evidence mapped',W-M-18,y+20);x.textAlign='left';y+=rowH;
+      const refs=evidenceMatrix[code]||[];
+      x.font='600 15px Arial';const summaryLines=wrap(x,clean(summary),W-2*M-390,'600 15px Arial');
+      x.font='700 16px Arial';const refText=refs.length?refs.join('  '):'No evidence mapped';const refLines=wrap(x,refText,280,'700 16px Arial');
+      const rowH=Math.max(58,Math.max(summaryLines.length*20,refLines.length*21)+26);
+      if(y+rowH>H-115){p=meta(newPage('KSB Evidence Matrix - Continued','Automatic mapping'),'Automatic mapping','Evidence Portfolio');x=p.x;y=sectionHeading(x,'KSB Mapping (continued)',p.y);drawMatrixHeader()}
+      x.fillStyle=refs.length?PALE:'#fafafa';x.fillRect(M,y-25,W-2*M,rowH-6);
+      x.fillStyle=x._sectionColour||TEAL;x.font='700 18px Arial';x.fillText(code,M+14,y);
+      x.fillStyle=INK;x.font='600 15px Arial';summaryLines.forEach((line,i)=>x.fillText(line,M+88,y+i*20));
+      x.textAlign='right';x.fillStyle=refs.length?(x._sectionColour||TEAL):MUTED;x.font='700 16px Arial';refLines.forEach((line,i)=>x.fillText(line,W-M-16,y+i*21));x.textAlign='left';y+=rowH;
     }
-    const covered=Object.values(evidenceMatrix).filter(v=>v.length).length,total=(assignment.ksbs||[]).length;y=Math.min(y+10,H-205);x.fillStyle=PALE;x.fillRect(M,y,W-2*M,76);label(x,'KSB coverage in this pack',M+22,y+31);value(x,`${covered} of ${total} KSBs mapped`,M+355,y+32,22,true);
+    const covered=Object.values(evidenceMatrix).filter(v=>v.length).length,total=(assignment.ksbs||[]).length;
+    if(y+86>H-110){p=meta(newPage('KSB Evidence Matrix - Summary','Automatic mapping'),'Automatic mapping','Evidence Portfolio');x=p.x;y=sectionHeading(x,'KSB Mapping Summary',p.y)}
+    x.fillStyle=PALE;x.fillRect(M,y,W-2*M,76);label(x,'KSB coverage in this pack',M+22,y+31);value(x,`${covered} of ${total} KSBs mapped`,M+355,y+32,22,true);
   }
 
   const scoreRows=(p,d,startY)=>{const x=p.x;let y=startY;assignment.ksbs.forEach(([code,summary])=>{if(y>H-230){p=meta(newPage(`${p.title||'Assessment'} - Scores Continued`,d._version),d._version,d.date,'Assessment');y=sectionHeading(p.x,'KSB Scores (continued)',p.y)}x=p.x;x.fillStyle=PALE;x.fillRect(M,y-29,W-2*M,45);x.fillStyle=TEAL;x.font='700 19px Arial';x.fillText(code,M+16,y);x.fillStyle=INK;x.font='400 18px Arial';x.fillText(clean(summary),M+105,y);x.textAlign='right';x.font='700 20px Arial';x.fillText(`${d.scores?.[code]||'-'} / 5`,W-M-18,y);x.textAlign='left';y+=52});return {p,y}};
@@ -216,7 +224,6 @@ async function generateEvidencePackPDF({course, assignment, profile, sections, b
   {
     const videoTitles=[];
     for(const f of sections.walkthrough||[])videoTitles.push(ksbMediaFileName(f));
-    for(const d of sections.supporting||[])for(const f of d.files||[])if((f.type||'').startsWith('video/'))videoTitles.push(f.evidenceName||f.name||'Untitled video');
     if(videoTitles.length){
       const p=meta(newPage('Video Evidence Files','Attached media'),'Attached media','Video Evidence Index');const x=p.x;let y=sectionHeading(x,'Attached video files',p.y);
       x.fillStyle=MUTED;x.font='400 17px Arial';x.fillText('The playable files below are included in the downloaded evidence package.',M,y);y+=42;
@@ -226,32 +233,6 @@ async function generateEvidencePackPDF({course, assignment, profile, sections, b
     }
   }
 
-  // Supporting evidence
-  for(let i=0;i<(sections.supporting||[]).length;i++){
-    const d=sections.supporting[i],v=i+1;
-    if(d.tab==='files'){
-      const files=d.files||[],images=files.filter(f=>(f.type||'').startsWith('image/')),videos=files.filter(f=>(f.type||'').startsWith('video/')),other=files.filter(f=>!(f.type||'').startsWith('image/')&&!(f.type||'').startsWith('video/'));
-      for(let n=0;n<images.length;n++){
-        const f=images[n],img=await loadImage(f.data),p=meta(newPage('Supporting Evidence - Image',v),v,d.date,'Supporting Image');const x=p.x;let y=sectionHeading(x,`Image ${n+1} of ${images.length}`,p.y);
-        label(x,'File name',M,y);value(x,f.evidenceName||f.name,M+180,y,19,true);y+=44;
-        x.fillStyle=PALE;x.fillRect(M,y,W-2*M,H-y-160);
-        if(img){const maxW=W-2*M-28,maxH=H-y-190,scale=Math.min(maxW/img.width,maxH/img.height);const iw=img.width*scale,ih=img.height*scale;x.drawImage(img,M+(maxW-iw)/2+14,y+(maxH-ih)/2+14,iw,ih)}
-      }
-      // Video files are listed together on the single Video Evidence Files page above.
-      if(other.length){const text=other.map((f,n)=>`${n+1}. ${f.evidenceName||f.name}\n   Type: ${f.type||'Unknown'} | Size: ${f.size?Math.round(f.size/1024)+' KB':'Unknown'}`).join('\n\n');addTextPages('Supporting Evidence - Documents',v,d.date,'Supporting Documents','Uploaded Files',text)}
-      if(!files.length)addTextPages('Supporting Evidence - Documents',v,d.date,'Supporting Evidence','Uploaded Files','No supporting files listed');
-    }else{
-      // Witness / employer statement - exactly one A4 page per version
-      const p=meta(newPage('Supporting Evidence - Statement',`Attempt ${v}`),`Attempt ${v}`,d.date,d.type||'Witness / Employer Statement');const x=p.x;let y=sectionHeading(x,'Contributor Details',p.y);
-      [['Evidence source',d.type],['Name',d.personName],['Role',d.role],['Organisation',d.organisation]].forEach(([a,b])=>{label(x,a,M,y);value(x,b,M+250,y,18,true);y+=36});
-      y=sectionHeading(x,'Activity Details',y+4);y=drawCompactParagraph(x,d.activity,M,y,W-2*M,52)+10;
-      y=sectionHeading(x,'KSB Scores',y);y=compactScoreRows(p,d,y);
-      y+=4;label(x,'Overall result',M,y);value(x,resultText(d),M+240,y,21,true);const sigTop=H-320;
-      const sig=await loadImage(d.signature);signature(x,sig,sigTop,`${d.type||'Contributor'} signature`);
-      {const fp=meta(newPage('Witness / Employer Feedback',`Attempt ${v}`),`Attempt ${v}`,d.date,d.type||'Witness / Employer Statement');const fx=fp.x;let fy=sectionHeading(fx,'Assessment Summary',fp.y);fy=drawCompactParagraph(fx,d.feedbackSummary||d.feedback||'No assessment summary recorded.',M,fy,W-2*M,290)+24;fy=sectionHeading(fx,'Areas for Improvement',fy);fy=drawCompactParagraph(fx,d.feedbackDevelopment||'No areas for improvement recorded.',M,fy,W-2*M,290)+24;fy=sectionHeading(fx,'Additional Comments',fy);drawCompactParagraph(fx,d.feedback||'No additional comments recorded.',M,fy,W-2*M,Math.max(120,H-fy-120));}
-      if(course.nvqUnits)await addOutcomePhotoPages(d,d.type||'Witness Testimony',`Attempt ${v}`,d.date,d.type||'Witness Testimony',true);
-    }
-  }
 
   footerAll();
   const jpegPages=pages.map(p=>dataUrlBytes(p.canvas.toDataURL('image/jpeg',0.90)));
@@ -294,17 +275,19 @@ async function generateNVQEvidencePackPDF({course, assignment, profile, sections
   const W=1240,H=1754,M=88,TEAL='#073539',GREEN='#48E023',YELLOW='#F7D75C',GREY='#EEF1F1',INK='#1A1A1A',MUTED='#5f6f70',PALE='#f2f7f5',WHITE='#ffffff';
   const pages=[];
   const clean=v=>String(v??'').replace(/[\u2010-\u2015]/g,'-').replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"');
-  const selectedScores=d=>(assignment.ksbs||[]).filter(([code])=>+d?.scores?.[code]===5);
-  const selectedStatement=d=>(assignment.ksbs||[]).filter(([code])=>!!d?.outcomePhotos?.[code]?.data);
-  const selectedDiscussion=d=>(assignment.ksbs||[]).filter(([code])=>!!d?.recordings?.[code]?.data);
+  const allOutcomeCodes=new Set((assignment.ksbs||[]).map(([code])=>code));
+  const selectedCodes=d=>{const explicit=Array.isArray(d?.ksbEvidence)?d.ksbEvidence:[];const photos=Object.keys(d?.outcomePhotos||{}).filter(code=>d.outcomePhotos?.[code]?.data);const scores=Object.keys(d?.scores||{}).map(k=>String(k).split('::')[0]).filter(code=>Number(d?.scores?.[code]??Object.entries(d?.scores||{}).find(([key])=>String(key).split('::')[0]===code)?.[1])>0);const recordings=Object.keys(d?.recordings||{}).filter(code=>d.recordings?.[code]?.data);return [...new Set([...explicit,...photos,...scores,...recordings].filter(code=>allOutcomeCodes.has(code)))];};
+  const selectedScores=d=>(assignment.ksbs||[]).filter(([code])=>selectedCodes(d).includes(code));
+  const selectedStatement=d=>(assignment.ksbs||[]).filter(([code])=>selectedCodes(d).includes(code));
+  const selectedDiscussion=d=>(assignment.ksbs||[]).filter(([code])=>selectedCodes(d).includes(code));
   const evidenceMap={};(assignment.ksbs||[]).forEach(([code])=>evidenceMap[code]=[]);
-  const add=(code,type,attempt)=>{if(evidenceMap[code])evidenceMap[code].push({type,attempt})};
-  (sections.practical||[]).forEach((d,i)=>selectedScores(d).forEach(([c])=>add(c,'Assessor observation',i+1)));
-  (sections.photos||[]).forEach((d,i)=>selectedStatement(d).forEach(([c])=>add(c,'Photographic evidence',i+1)));
-  (sections.statement||[]).forEach((d,i)=>selectedStatement(d).forEach(([c])=>add(c,'Learner statement',i+1)));
-  (sections.discussion||[]).forEach((d,i)=>selectedDiscussion(d).forEach(([c])=>add(c,'Video walkthrough',i+1)));
-  (sections.professionalDiscussion||[]).forEach((d,i)=>selectedDiscussion(d).forEach(([c])=>add(c,'Professional discussion',i+1)));
-  (sections.witness||[]).forEach((d,i)=>selectedScores(d).forEach(([c])=>add(c,'Witness testimony',i+1)));
+  const add=(code,ref,type)=>{if(evidenceMap[code]&&!evidenceMap[code].some(e=>e.ref===ref))evidenceMap[code].push({ref,type})};
+  (sections.practical||[]).forEach((d,i)=>selectedCodes(d).forEach(c=>add(c,`AO${i+1}`,'Assessor Observation')));
+  (sections.photos||[]).forEach((d,i)=>selectedCodes(d).forEach(c=>add(c,`PE${i+1}`,'Photographic Evidence')));
+  (sections.statement||[]).forEach((d,i)=>selectedCodes(d).forEach(c=>add(c,`LS${i+1}`,'Learner Statement')));
+  (sections.discussion||[]).forEach((d,i)=>selectedCodes(d).forEach(c=>add(c,`VW${i+1}`,'Video Walkthrough')));
+  (sections.professionalDiscussion||[]).forEach((d,i)=>selectedCodes(d).forEach(c=>add(c,`PD${i+1}`,'Professional Discussion')));
+  (sections.witness||[]).forEach((d,i)=>selectedCodes(d).forEach(c=>add(c,`WT${i+1}`,'Witness Testimony')));
 
   const PDF_COLOURS={cover:'#22C55E',practical:'#2E7D32',statement:'#1565C0',witness:'#F9A825',video:'#6A1B9A',discussion:'#00897B',photo:'#EF6C00',knowledge:'#3949AB',documents:'#546E7A'};
   const pdfSectionFor=title=>{const t=String(title||'').toLowerCase();if(/assessor observation|practical/.test(t))return ['Practical Assessment',PDF_COLOURS.practical];if(/learner statement/.test(t))return ['Learner Statement',PDF_COLOURS.statement];if(/witness|employer/.test(t))return ['Witness Testimony',PDF_COLOURS.witness];if(/video|walkthrough/.test(t))return ['Video Walkthrough',PDF_COLOURS.video];if(/professional discussion/.test(t))return ['Professional Discussion',PDF_COLOURS.discussion];if(/photo|image/.test(t))return ['Photo Evidence',PDF_COLOURS.photo];if(/knowledge|question/.test(t))return ['Knowledge Questions',PDF_COLOURS.knowledge];if(/document|certificate|supporting/.test(t))return ['Documents',PDF_COLOURS.documents];return ['Evidence Portfolio',PDF_COLOURS.cover]};
@@ -324,6 +307,12 @@ async function generateNVQEvidencePackPDF({course, assignment, profile, sections
   async function photoPages(d,title,attempt,outcomes){const photos=d?.outcomePhotos||{},available=outcomes.filter(([code])=>photos[code]?.data);for(let i=0;i<available.length;i+=4){const batch=available.slice(i,i+4),p=meta(newPage(`${title} - ${course.nvqUnits?'Learning Outcome':'KSB'} Photos`,`${title} | Attempt ${attempt}`),d.date,title,attempt),x=p.x;let y=sectionHeading(x,course.nvqUnits?'Learning Outcome Photographs':'KSB Photographs',p.y),gapX=22,gapY=32,cellW=(W-2*M-gapX)/2,cellH=cellW*9/16;for(let j=0;j<batch.length;j++){const [code,text]=batch[j],col=j%2,row=Math.floor(j/2),px=M+col*(cellW+gapX),py=y+row*(cellH+gapY+54),img=await loadImage(photos[code].data);x.fillStyle=PALE;x.fillRect(px,py,cellW,cellH);if(img){const scale=Math.max(cellW/img.width,cellH/img.height),iw=img.width*scale,ih=img.height*scale;x.save();x.beginPath();x.rect(px,py,cellW,cellH);x.clip();x.drawImage(img,px+(cellW-iw)/2,py+(cellH-ih)/2,iw,ih);x.restore()}x.fillStyle=TEAL;x.font='700 17px Arial';x.fillText(code,px,py+cellH+24);x.fillStyle=INK;x.font='400 13px Arial';wrap(x,text,cellW,'400 13px Arial').slice(0,2).forEach((line,k)=>x.fillText(line,px,py+cellH+43+k*16))}}}
 
   {const p=newPage(`Evidence Pack ${assignment.n}: ${assignment.title}`,`Unit ${assignment.unit}${assignment.optional?' | Optional unit':''}`),x=p.x;let y=p.y;x.fillStyle=PALE;x.fillRect(M,y,W-2*M,300);y+=46;[['Qualification',course.name],['Unit',assignment.unit],['Learner',profile.fullName],['Employer',profile.employer],['Assessor',profile.mentor]].forEach(([a,b])=>{label(x,a,M+28,y);value(x,b,M+300,y,21,true);y+=46});y=sectionHeading(x,'Learning Outcome Coverage',p.y+350);for(const [code,text] of assignment.ksbs){const count=Math.min(2,evidenceMap[code].length),colour=count>=2?GREEN:count===1?YELLOW:GREY;x.fillStyle=colour;x.fillRect(M,y-28,W-2*M,66);x.fillStyle=TEAL;x.font='700 20px Arial';x.fillText(`${code}  ${count}/2`,M+18,y);x.fillStyle=INK;x.font='600 16px Arial';fitText(x,clean(text),M+150,y,W-2*M-175,16);y+=78}const met=Object.values(evidenceMap).reduce((n,a)=>n+Math.min(2,a.length),0),total=(assignment.ksbs||[]).length*2;x.fillStyle=PALE;x.fillRect(M,y,W-2*M,78);label(x,'Overall evidence coverage',M+24,y+30);value(x,`${met} of ${total} requirements met`,M+330,y+31,22,true)}
+
+  // Detailed LO matrix: shows every evidence type and its exact location.
+  {let p=meta(newPage('Learning Outcome Evidence Matrix','Automatic mapping'),'-','Learning Outcome Matrix',1),x=p.x,y=sectionHeading(x,'Learning Outcome Mapping',p.y);x.fillStyle=MUTED;x.font='400 17px Arial';x.fillText('References show exactly where each learning outcome is evidenced in this portfolio.',M,y);y+=44;
+   const header=()=>{x.fillStyle=TEAL;x.fillRect(M,y-24,W-2*M,38);x.fillStyle=WHITE;x.font='700 15px Arial';x.fillText('LO',M+14,y);x.fillText('Learning outcome',M+82,y);x.textAlign='right';x.fillText('Evidence location',W-M-16,y);x.textAlign='left';y+=54};header();
+   for(const [code,text] of assignment.ksbs){const refs=evidenceMap[code]||[],refText=refs.length?refs.map(e=>e.ref).join('  '):'No evidence mapped';x.font='600 15px Arial';const desc=wrap(x,clean(text),W-2*M-390,'600 15px Arial');x.font='700 16px Arial';const refLines=wrap(x,refText,280,'700 16px Arial');const rowH=Math.max(58,Math.max(desc.length*20,refLines.length*21)+26);if(y+rowH>H-115){p=meta(newPage('Learning Outcome Evidence Matrix - Continued','Automatic mapping'),'-','Learning Outcome Matrix',1);x=p.x;y=sectionHeading(x,'Learning Outcome Mapping (continued)',p.y);header()}x.fillStyle=refs.length?PALE:'#fafafa';x.fillRect(M,y-25,W-2*M,rowH-6);x.fillStyle=TEAL;x.font='700 18px Arial';x.fillText(code,M+14,y);x.fillStyle=INK;x.font='600 15px Arial';desc.forEach((line,i)=>x.fillText(line,M+82,y+i*20));x.textAlign='right';x.fillStyle=refs.length?TEAL:MUTED;x.font='700 16px Arial';refLines.forEach((line,i)=>x.fillText(line,W-M-16,y+i*21));x.textAlign='left';y+=rowH}
+   if(y+130>H-110){p=meta(newPage('Learning Outcome Evidence Key','Automatic mapping'),'-','Learning Outcome Matrix',1);x=p.x;y=sectionHeading(x,'Evidence Reference Key',p.y)}else y=sectionHeading(x,'Evidence Reference Key',y+12);const keys=['AO  Assessor Observation','LS  Learner Statement','WT  Witness Testimony','VW  Video Walkthrough','PD  Professional Discussion','PE  Photographic Evidence'];keys.forEach((t,i)=>{x.fillStyle=INK;x.font='600 16px Arial';x.fillText(t,M+(i%2)*520,y+Math.floor(i/2)*32)})}
 
   for(let i=0;i<(sections.practical||[]).length;i++){const d=sections.practical[i],attempt=i+1,outcomes=selectedScores(d),p=meta(newPage('Assessor Observation',`Attempt ${attempt}`),d.date,'Assessor Observation',attempt),x=p.x;let y=sectionHeading(x,'Observation Details',p.y);label(x,'Assessor',M,y);value(x,d.tutor,M+230,y,19,true);y+=40;label(x,'Activity observed',M,y);value(x,d.activity,M+230,y,18);y+=54;y=sectionHeading(x,'Learning Outcomes Observed',y);y=drawOutcomeRows(x,outcomes,y);y=sectionHeading(x,'Assessor Observation',y+8);y=paragraph(x,d.feedback||'-',y,Math.max(110,H-y-330));const sig=await loadImage(d.signature);signature(x,sig,Math.min(H-245,y+28),'Assessor signature');{const fp=meta(newPage('Assessor Observation Feedback',`Attempt ${attempt}`),d.date,'Assessor Observation',attempt),fx=fp.x;let fy=sectionHeading(fx,'Assessment Summary',fp.y);fy=paragraph(fx,d.feedbackSummary||d.feedback||'No assessment summary recorded.',fy,300)+24;fy=sectionHeading(fx,'Areas for Improvement',fy);paragraph(fx,d.feedbackDevelopment||'No areas for improvement recorded.',fy,300)}await photoPages(d,'Assessor Observation',attempt,outcomes)}
   for(let i=0;i<(sections.photos||[]).length;i++){const d=sections.photos[i],attempt=i+1,outcomes=selectedStatement(d),p=meta(newPage('Photographic Evidence',`Attempt ${attempt}`),d.date,'Photographic Evidence',attempt),x=p.x;let y=sectionHeading(x,'Learning Outcomes Evidenced',p.y);y=drawOutcomeRows(x,outcomes,y);y=sectionHeading(x,'Photographic Evidence Notes',y+8);y=paragraph(x,d.activity||'Photographs submitted as evidence for the selected learning outcomes.',y,Math.max(100,H-y-330));const sig=await loadImage(d.signature);signature(x,sig,Math.min(H-245,y+28),'Learner signature');await photoPages(d,'Photographic Evidence',attempt,outcomes)}

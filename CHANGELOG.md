@@ -1,3 +1,10 @@
+# V1.4
+
+- Removed obsolete Supporting Evidence references and pages from generated PDFs.
+- KSB matrices now list every evidence reference for each KSB.
+- Added detailed LO evidence matrices listing AO, LS, WT, VW, PD and PE locations.
+- Wrapped and paginated long KSB/LO descriptions and reference lists to prevent page overflow.
+
 # Apprentice+ V1.2 — One-off Modern Professional Visual Upgrade
 
 - Created as an isolated visual test build for a backup repository.
