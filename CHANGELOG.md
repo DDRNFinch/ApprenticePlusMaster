@@ -1,3 +1,11 @@
+# V1.11.4 — Advanced Assignment Finder
+
+- Added pre-search activity pills generated from the current course assignments and criteria.
+- Upgraded close-match suggestions with synonym expansion, fuzzy matching and course-specific ranking.
+- Searches now always return the best available course matches when no exact wording is found.
+- Added clearer Strong match, Close match and Possible match labels.
+- Added guidance to refine broad or unusual searches.
+
 ## V1.11.3 – Evidenced Items Only PDF Fix
 
 - Professional Discussion PDFs now list only KSBs or learning outcomes with an attached audio recording.
@@ -556,3 +564,9 @@ Certificates - View and download certificates you have earned after completing A
 - Tightened the course metadata pills and spacing.
 - Kept the assignment-finder button in the lower-right corner without using unnecessary space.
 - Forced assignment status pills such as “In progress” to remain on one line.
+
+## V1.11.5
+- Green progress ring now measures assignments completed.
+- Yellow progress ring now measures completed KSB numbers instead of evidence sections added.
+- Added a compact EPA readiness scale to the learner profile using the best EPA MCQ, Professional Discussion and Practical scores.
+- Unattempted EPA areas are clearly shown and count as 0% in the overall readiness score.
