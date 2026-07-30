@@ -125,3 +125,10 @@
 - Added a combined Scores and Results screen with search and test-type filtering.
 - Removed the 20-attempt cap so every completed Knowledge Practice and Professional Discussion is retained.
 - Practical attempt history remains unlimited, with best result and PDF access retained.
+
+## V1.3.44 — Trade Courses MCQ Tests
+- Renamed the Academy "Knowledge Library" tile to "Trade Courses".
+- Added four 15-question Trade Courses tests: Legislation, Manual Handling, Equality & Diversity, and CSCS.
+- Added Pass (13/15), Merit (14/15), and Distinction (15/15) grading.
+- Added saved attempt history, latest-result display, retakes, and incorrect-answer review with explanations and key takeaways.
+- Updated the offline cache to include the new trade-courses question bank.
