@@ -1574,3 +1574,8 @@ body.page-help-open,body.help-tour-open{overflow:hidden;touch-action:none}
     height:23px;
   }
 }
+
+/* V1.10.6 Apprentice+ header wordmark */
+.brand-title-row h1{color:#0f2f25}
+.brand-title-row .brand-plus{color:#84cc16}
+.brand-tagline{color:#65a30d!important;font-weight:750;letter-spacing:-.01em}

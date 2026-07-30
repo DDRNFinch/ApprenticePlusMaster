@@ -128,6 +128,6 @@ Tap the learner name in the header to open course progress, review submitted wor
 The Course page now uses a shorter progress summary card and single-line assignment status pills for a cleaner mobile layout.
 
 
-## V1.10.4 — Dark Compact Course Tile
+## V1.10.6 — Dark Compact Course Tile
 
 The course summary is now a smaller dark-green tile. The progress ring is enlarged and fixed in the top-right, while the white assignment-search icon remains in the bottom-right.

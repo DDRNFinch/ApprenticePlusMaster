@@ -1,3 +1,10 @@
+# Apprentice+ V1.10.6
+
+- Updated the in-app header to show **Apprentice+** with a light-green plus sign.
+- Replaced the previous subtitle with **Your Course, Your Way**.
+- Kept the existing app logo unchanged.
+- Updated the displayed version and offline cache.
+
 ## V1.10.4 — Dark Compact Course Tile
 
 - Reduced the course summary tile height again.
