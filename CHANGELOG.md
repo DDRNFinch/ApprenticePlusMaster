@@ -1,3 +1,10 @@
+# V1.5.64
+
+- Removed remaining generic analytics events and duplicate reporting.
+- Added readable feature-specific open, close, assessment, export, file and media event names.
+- Updated service-worker activation and cache version so the PWA reliably replaces earlier builds.
+- No personal details or evidence content are transmitted.
+
 # V1.5.63
 
 - Updated all visible and cached version references to V1.5.63.

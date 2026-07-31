@@ -1,6 +1,17 @@
 {
-  "latest": "V1.5.63",
+  "latest": "V1.5.64",
   "releases": [
+    {
+      "version": "V1.5.64",
+      "title": "Named analytics cleanup and update reliability",
+      "features": [
+        "Removed remaining generic feature_open and feature_exit analytics events.",
+        "Replaced generic assessment, export, file and media events with readable feature-specific event names.",
+        "Reduced duplicate analytics events so Firebase reports are easier to understand.",
+        "Added a new service-worker cache and immediate activation to ensure this update replaces V1.5.62/V1.5.63 reliably.",
+        "Continues to exclude learner identities, evidence content, answers, photos, videos, audio, signatures and files."
+      ]
+    },
     {
       "version": "V1.5.63",
       "title": "Analytics Event Cleanup",
@@ -309,7 +320,7 @@
       ]
     }
   },
-  "latestVersion": "V1.5.63",
+  "latestVersion": "V1.5.64",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",
