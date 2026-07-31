@@ -1,13 +1,14 @@
-const CACHE='apprentice-plus-v1.5.12-persistent-read-aloud';
+const CACHE='apprentice-plus-v1.5.13-reading-guide-controls';
 const UPDATE_INFO={
- version:'V1.5.12',
+ version:'V1.5.13',
  features:[
-  'Keeps the Text-to-Speech control visible when switching pages.',
-  'Fixes the control permanently above the Toolbox tab in the bottom-left corner.',
-  'Stops current speech on navigation without hiding the accessibility control.'
+  'Places the reading-guide blur control below the reading box on the left.',
+  'Places the reading-guide move control below the reading box on the right.',
+  'Keeps both reading-guide controls sharp and outside the blurred page areas.',
+  'Retains the persistent Text-to-Speech control above the Toolbox tab.'
  ]
 };
-const APP_SHELL=['./','./index.html','./styles.css?v=1.5.12','./functional-skills-bank.js?v=1.5.12','./trade-courses-bank.js?v=1.5.12','./app.js?v=1.5.12','./manifest.json','./pdf-generator.js?v=1.5.12','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
+const APP_SHELL=['./','./index.html','./styles.css?v=1.5.13','./functional-skills-bank.js?v=1.5.13','./trade-courses-bank.js?v=1.5.13','./app.js?v=1.5.13','./manifest.json','./pdf-generator.js?v=1.5.13','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
 
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)));

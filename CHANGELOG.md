@@ -1,3 +1,12 @@
+# V1.5.13
+
+- Corrected the V1.5.11 reading-guide control update so it uses the actual component class names.
+- Positioned the eye/blur control below the reading box on the left.
+- Positioned the vertical move control below the reading box on the right.
+- Kept both controls outside the blur layer and permanently sharp.
+- Retained the persistent Text-to-Speech control above the Toolbox tab.
+- Updated the application and offline cache version.
+
 # V1.5.12
 
 - Kept the Text-to-Speech controller permanently visible whenever Read Aloud is enabled.

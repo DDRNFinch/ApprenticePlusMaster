@@ -1955,26 +1955,38 @@ body.a11y-high-contrast .reading-guide-label,body.a11y-high-contrast .reading-gu
 body.a11y-reduce-motion .reading-guide-mask,body.a11y-reduce-motion .reading-guide-drag{transition:none!important}
 
 
-/* V1.5.11 Reading guide controls */
+/* V1.5.13 reading guide control layout fix */
 .reading-guide-controls{
+ position:fixed;
+ left:10px;
+ right:10px;
+ top:calc(var(--reading-guide-y) + 34px);
+ transform:none;
  display:flex;
  justify-content:space-between;
  align-items:center;
- margin-top:8px;
-}
-.reading-guide-controls .blur-control{
- order:1;
- margin-right:auto;
- backdrop-filter:none!important;
+ gap:12px;
+ z-index:10043;
+ pointer-events:none;
  filter:none!important;
-}
-.reading-guide-controls .move-control{
- order:2;
- margin-left:auto;
  backdrop-filter:none!important;
- filter:none!important;
+ -webkit-backdrop-filter:none!important;
 }
-
+.reading-guide-blur,
+.reading-guide-drag{
+ position:relative;
+ z-index:10044;
+ flex:0 0 auto;
+ pointer-events:auto;
+ filter:none!important;
+ backdrop-filter:none!important;
+ -webkit-backdrop-filter:none!important;
+ isolation:isolate;
+}
+.reading-guide-blur{margin-right:auto}
+.reading-guide-drag{margin-left:auto}
+.reading-guide-label,.reading-guide-box{z-index:10042}
+.reading-guide-mask{z-index:10040}
 
 /* V1.5.12 persistent Text-to-Speech control */
 .read-aloud-controller{position:fixed!important;left:10px!important;right:auto!important;bottom:calc(78px + env(safe-area-inset-bottom))!important;z-index:10060!important}

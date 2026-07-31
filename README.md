@@ -1,3 +1,7 @@
+# Apprentice+ V1.5.13
+
+This build fixes the reading-guide control layout while retaining the persistent Text-to-Speech control.
+
 # V1.2 Modern Visual Test Build
 
 This is a one-off visual upgrade intended for testing in a backup Apprentice+ repository. It preserves the V1.1 application logic and data model. The original V1.1 ZIP should be retained as the rollback source.
