@@ -69,6 +69,6 @@ function installLifecycle(){
  window.addEventListener('apprenticeplus:update-ready',()=>track('update_available'));
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')track('feature_exit',{screen:currentScreen,category:screenCategory(currentScreen),duration_seconds:Math.max(1,Math.round((Date.now()-screenEnteredAt)/1000))})});
 }
-function init(){if(!A()){setTimeout(init,100);return}installScreenHook();installDownloadHooks();installLifecycle();A()?.setUserProperties?.({analytics_level:'full_anonymous',integration_version:'v1_5_55'});window.addEventListener('pagehide',sendDailySummary);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sendDailySummary()});track('analytics_integration_ready',{coverage:'dashboard_ready_full_anonymous'});}
+function init(){if(!A()){setTimeout(init,100);return}installScreenHook();installDownloadHooks();installLifecycle();A()?.setUserProperties?.({analytics_level:'full_anonymous',integration_version:'v1_5_56'});window.addEventListener('pagehide',sendDailySummary);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sendDailySummary()});track('analytics_integration_ready',{coverage:'dashboard_ready_full_anonymous'});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

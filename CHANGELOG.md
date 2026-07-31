@@ -1,3 +1,11 @@
+# Changelog
+
+## V1.5.56 — Analytics Developer Tools
+- Added seven-tap version-number access to developer tools.
+- Added analytics enable/disable and forced offline queue testing.
+- Added recent event names, last successful send, Firebase Measurement ID and engine version.
+- Added an in-app privacy summary and improved diagnostics controls.
+
 # Apprentice+ Changelog
 
 ## V1.5.55 — Analytics Optimisation and Diagnostics

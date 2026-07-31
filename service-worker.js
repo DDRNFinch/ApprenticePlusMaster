@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.5.55-analytics-optimisation';
-const CURRENT_VERSION='V1.5.55';
+const CACHE='apprentice-plus-v1.5.56-analytics-developer-tools';
+const CURRENT_VERSION='V1.5.56';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,

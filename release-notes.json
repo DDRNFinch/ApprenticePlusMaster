@@ -1,6 +1,18 @@
 {
-  "latest": "V1.5.55",
+  "latest": "V1.5.56",
   "releases": [
+    {
+      "version": "V1.5.56",
+      "title": "Analytics Developer Tools",
+      "date": "2026-07-31",
+      "items": [
+        "Unlock developer tools by tapping the app version seven times.",
+        "View Firebase connection, queue size, recent anonymous event names and last successful send.",
+        "Enable or disable anonymous analytics on the current device.",
+        "Test offline queueing, send a test event, flush queued events and clear the queue.",
+        "View a clear privacy summary showing what is and is not collected."
+      ]
+    },
     {
       "version": "V1.5.55",
       "title": "Analytics Optimisation and Diagnostics",

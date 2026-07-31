@@ -9,14 +9,20 @@ const CONFIG={
  appId:'1:722558138211:web:4427a2814b197d7004c556',
  measurementId:'G-NKTP7D72GY'
 };
-const VERSION='V1.5.55';
+const VERSION='V1.5.56';
+const ENGINE_VERSION='1.5.56';
 const QUEUE_KEY='apprenticeplus.analytics.queue.v1';
 const INSTALL_KEY='apprenticeplus.analytics.install.v1';
 const SESSION_KEY='apprenticeplus.analytics.session.v1';
 const STATUS_KEY='apprenticeplus.analytics.status.v2';
+const ENABLED_KEY='apprenticeplus.analytics.enabled.v1';
+const RECENT_KEY='apprenticeplus.analytics.recent.v1';
+const LAST_SEND_KEY='apprenticeplus.analytics.lastSend.v1';
 const MAX_QUEUE=500;
 const FORBIDDEN=/(name|email|photo|video|audio|signature|statement|evidence|employer|tutor|college|message|answer|transcript|content|file|attachment|location|gps|address|phone|learner|mentor|website|url)/i;
 let analytics=null,ready=false,currentScreen='',screenStarted=Date.now(),sessionStarted=Date.now(),sessionId='';
+let enabled=localStorage.getItem(ENABLED_KEY)!=='false';
+let forceQueue=false;
 let status={eventsThisSession:0,sentThisSession:0,queuedThisSession:0,failedThisSession:0,lastEvent:'',lastEventAt:'',lastFlushAt:'',initialisedAt:'',firebaseReady:false};
 function safeValue(v){
  if(v==null)return undefined;
@@ -35,19 +41,22 @@ function writeQueue(q){try{localStorage.setItem(QUEUE_KEY,JSON.stringify(q.slice
 function persistStatus(){try{localStorage.setItem(STATUS_KEY,JSON.stringify({...status,queueSize:readQueue().length,updatedAt:new Date().toISOString()}))}catch{}}
 function enqueue(name,params){const q=readQueue();q.push({name,params:sanitise(params),queued_at:Date.now()});writeQueue(q);status.queuedThisSession++;persistStatus();}
 function validName(name){return String(name||'event').toLowerCase().replace(/[^a-z0-9_]+/g,'_').replace(/^_+|_+$/g,'').slice(0,40)||'event'}
-function noteEvent(name){status.eventsThisSession++;status.lastEvent=name;status.lastEventAt=new Date().toISOString();persistStatus();}
+function readRecent(){try{const x=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]');return Array.isArray(x)?x:[]}catch{return []}}
+function writeRecent(items){try{localStorage.setItem(RECENT_KEY,JSON.stringify(items.slice(0,20)))}catch{}}
+function noteEvent(name){status.eventsThisSession++;status.lastEvent=name;status.lastEventAt=new Date().toISOString();const recent=readRecent();recent.unshift({name,at:status.lastEventAt});writeRecent(recent);persistStatus();}
 function send(name,params){
  const eventName=validName(name),safe=sanitise(params);noteEvent(eventName);
- if(!ready||!analytics||!navigator.onLine){enqueue(eventName,safe);return false;}
- try{analytics.logEvent(eventName,safe);status.sentThisSession++;persistStatus();return true;}
+ if(!enabled)return false;
+ if(forceQueue||!ready||!analytics||!navigator.onLine){enqueue(eventName,safe);return false;}
+ try{analytics.logEvent(eventName,safe);status.sentThisSession++;const sentAt=new Date().toISOString();localStorage.setItem(LAST_SEND_KEY,sentAt);persistStatus();return true;}
  catch{status.failedThisSession++;enqueue(eventName,safe);return false;}
 }
 function flush(){
- if(!ready||!analytics||!navigator.onLine)return 0;
+ if(!enabled||forceQueue||!ready||!analytics||!navigator.onLine)return 0;
  const q=readQueue();if(!q.length){status.lastFlushAt=new Date().toISOString();persistStatus();return 0;}
  const remaining=[];let sent=0;
  q.forEach(item=>{try{analytics.logEvent(validName(item.name),sanitise({...item.params,was_queued:'yes'}));sent++;}catch{remaining.push(item);}});
- writeQueue(remaining);status.sentThisSession+=sent;status.lastFlushAt=new Date().toISOString();persistStatus();return sent;
+ writeQueue(remaining);status.sentThisSession+=sent;status.lastFlushAt=new Date().toISOString();if(sent)localStorage.setItem(LAST_SEND_KEY,status.lastFlushAt);persistStatus();return sent;
 }
 function clearQueue(){writeQueue([]);persistStatus();return true;}
 function setUserProperties(props){
@@ -67,14 +76,16 @@ function installSignals(){
  if(!info.firstVersion){info={firstVersion:VERSION,currentVersion:VERSION,installedAt:new Date().toISOString()};try{localStorage.setItem(INSTALL_KEY,JSON.stringify(info))}catch{}send('first_open',{first_version:VERSION});}
  else if(info.currentVersion!==VERSION){const previous=info.currentVersion||'unknown';info.currentVersion=VERSION;info.updatedAt=new Date().toISOString();try{localStorage.setItem(INSTALL_KEY,JSON.stringify(info))}catch{}send('app_update',{previous_version:previous,new_version:VERSION});}
 }
-function diagnostics(){return {version:VERSION,firebaseReady:ready,online:navigator.onLine,queueSize:readQueue().length,currentScreen,sessionId,...status};}
+function setEnabled(value){enabled=!!value;try{localStorage.setItem(ENABLED_KEY,enabled?'true':'false')}catch{}try{analytics?.setAnalyticsCollectionEnabled?.(enabled)}catch{}persistStatus();return enabled}
+function simulateOffline(value){forceQueue=!!value;persistStatus();return forceQueue}
+function diagnostics(){return {version:VERSION,engineVersion:ENGINE_VERSION,measurementId:CONFIG.measurementId,firebaseReady:ready,enabled,forceQueue,online:navigator.onLine,queueSize:readQueue().length,currentScreen,sessionId,lastSuccessfulSend:localStorage.getItem(LAST_SEND_KEY)||'',recentEvents:readRecent(),...status};}
 function init(){
  try{
-  if(window.firebase&&firebase.initializeApp){if(!firebase.apps.length)firebase.initializeApp(CONFIG);analytics=firebase.analytics();ready=true;analytics.setAnalyticsCollectionEnabled(true);status.firebaseReady=true;status.initialisedAt=new Date().toISOString();}
+  if(window.firebase&&firebase.initializeApp){if(!firebase.apps.length)firebase.initializeApp(CONFIG);analytics=firebase.analytics();ready=true;analytics.setAnalyticsCollectionEnabled(enabled);status.firebaseReady=true;status.initialisedAt=new Date().toISOString();}
  }catch(error){ready=false;status.firebaseReady=false;console.warn('Apprentice+ analytics unavailable',error);}
  installSignals();newSession();setUserProperties({app_version:VERSION,platform:'web_pwa',display_mode:window.matchMedia?.('(display-mode: standalone)').matches?'standalone':'browser'});send('app_open',{standalone:window.matchMedia?.('(display-mode: standalone)').matches?'yes':'no'});flush();persistStatus();
 }
-window.ApprenticeAnalytics={trackEvent:send,trackScreen,flush,clearQueue,setUserProperties,diagnostics,isReady:()=>ready,queueSize:()=>readQueue().length,version:VERSION,test:()=>send('analytics_test',{source:'admin_mode'})};
+window.ApprenticeAnalytics={trackEvent:send,trackScreen,flush,clearQueue,setUserProperties,diagnostics,setEnabled,simulateOffline,isEnabled:()=>enabled,isReady:()=>ready,queueSize:()=>readQueue().length,version:VERSION,engineVersion:ENGINE_VERSION,test:()=>send('analytics_test',{source:'developer_tools'})};
 window.trackEvent=send;window.trackScreen=trackScreen;
 window.addEventListener('online',()=>{send('connection_online');flush();});
 window.addEventListener('offline',()=>send('connection_offline'));
