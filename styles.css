@@ -2642,3 +2642,79 @@ html.keyboard-open :where(.modal,.progress-modal-layer,.learning-support-modal,.
 html.keyboard-open :where(input,textarea,select,[contenteditable="true"]){scroll-margin-top:90px;scroll-margin-bottom:32px;}
 @media(max-width:390px){:root{--app-bottom-clearance:calc(100px + env(safe-area-inset-bottom));}}
 @media print{.shell{padding-bottom:0!important;}}
+
+/* V1.5.42 — app-wide bottom navigation safe-area system */
+:root{
+  --bottom-nav-height:76px;
+  --bottom-nav-gap:18px;
+  --bottom-nav-safe:calc(var(--bottom-nav-height) + var(--bottom-nav-gap) + env(safe-area-inset-bottom));
+}
+html,body{min-height:100%;}
+body{padding-bottom:0!important;}
+.shell{
+  min-height:100dvh!important;
+  padding-bottom:calc(var(--bottom-nav-safe) + 22px)!important;
+  scroll-padding-bottom:calc(var(--bottom-nav-safe) + 28px)!important;
+}
+/* All normal screens and app sections inherit room for their last control. */
+.shell > :where(section,article,.card,.panel,.course-card,.academy-grid,.assignment-list,.evidence-grid,.settings-tab-panel,.toolbox-grid,.reminder-groups,.otj-list,.revision-assignment-list):last-child{
+  margin-bottom:18px!important;
+}
+/* Common final action areas must never finish underneath the fixed navigation. */
+:where(.btn-row,.form-actions,.page-actions,.course-actions,.test-actions,.wizard-actions,.section-actions,.assessment-actions,.otj-action-head,.page-help-footer,.help-tour-actions):last-child{
+  margin-bottom:calc(var(--bottom-nav-safe) - 70px)!important;
+}
+/* Modals, popups and sheets use the viewport above the navigation, with internal scrolling. */
+:where(.modal,.progress-modal-layer,.learning-support-modal,.help-tour-overlay,.page-help-modal,.notepad-search-modal,.notification-bell-backdrop,.walk-recorder-overlay,.install-app-overlay,.admin-modal-layer){
+  box-sizing:border-box!important;
+  padding-bottom:var(--bottom-nav-safe)!important;
+}
+:where(.modal-card,.progress-review-card,.learning-support-modal-card,.page-help-sheet,.help-tour-layout,.notepad-search-sheet,.notification-bell-panel,.install-app-card,.admin-modal-card){
+  box-sizing:border-box!important;
+  max-height:calc(100dvh - var(--bottom-nav-safe) - 20px)!important;
+  overscroll-behavior:contain;
+}
+/* Bottom sheets and centred popups are lifted clear of the navigation. */
+.notification-bell-panel{
+  bottom:var(--bottom-nav-safe)!important;
+  max-height:calc(100dvh - var(--bottom-nav-safe) - 28px)!important;
+  border-radius:26px!important;
+}
+/* Tour/help footers remain visible without sitting behind the nav. */
+.page-help-footer{
+  bottom:0!important;
+  z-index:20!important;
+  padding-bottom:12px!important;
+}
+.help-tour-overlay{align-items:flex-start!important;overflow:hidden!important;}
+.help-tour-layout{height:calc(100dvh - var(--bottom-nav-safe) - 16px)!important;max-height:calc(100dvh - var(--bottom-nav-safe) - 16px)!important;}
+/* Focused controls can always scroll above the navigation. */
+:where(button,a,input,textarea,select,[tabindex]){
+  scroll-margin-bottom:calc(var(--bottom-nav-safe) + 18px);
+}
+/* Keyboard: let the OS keyboard cover the app navigation instead of pushing it upward. */
+html.keyboard-open .bottom-nav,
+html.keyboard-open .notification-bell,
+html.keyboard-open .read-aloud-controller,
+html.keyboard-open .app-version-bottom{
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+  transform:translate(-50%,120%)!important;
+}
+html.keyboard-open .notification-bell,
+html.keyboard-open .read-aloud-controller{transform:translateY(120%)!important;}
+html.keyboard-open .shell{
+  padding-bottom:24px!important;
+  scroll-padding-bottom:32px!important;
+}
+html.keyboard-open :where(.modal,.progress-modal-layer,.learning-support-modal,.help-tour-overlay,.page-help-modal,.notepad-search-modal,.walk-recorder-overlay,.install-app-overlay){padding-bottom:12px!important;}
+html.keyboard-open :where(.modal-card,.progress-review-card,.learning-support-modal-card,.page-help-sheet,.help-tour-layout,.notepad-search-sheet,.install-app-card){max-height:calc(100dvh - 18px)!important;}
+@media(max-width:420px){
+  :root{--bottom-nav-height:72px;--bottom-nav-gap:14px;}
+  .shell{padding-bottom:calc(var(--bottom-nav-safe) + 18px)!important;}
+}
+@media print{
+  .shell{padding-bottom:0!important;}
+  :where(.modal,.progress-modal-layer,.learning-support-modal,.help-tour-overlay,.page-help-modal,.notepad-search-modal){padding-bottom:0!important;}
+}

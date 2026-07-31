@@ -1,6 +1,16 @@
 {
-  "latest": "V1.5.41",
+  "latest": "V1.5.42",
   "releases": [
+    {
+      "version": "V1.5.42",
+      "title": "Global navigation safe-area fix",
+      "features": [
+        "Keeps every screen and final action button above the fixed bottom navigation.",
+        "Applies the same safe-area rule to Course, Academy, Toolbox, Settings, EPA, evidence pages and Mate apps.",
+        "Constrains popups, help tours and modal sheets above the navigation with internal scrolling where needed.",
+        "Hides the app navigation while the phone keyboard is open so the keyboard does not push it upward."
+      ]
+    },
     {
       "version": "V1.5.41",
       "date": "2026-07-31",
