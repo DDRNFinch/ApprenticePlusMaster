@@ -2901,3 +2901,10 @@ body.dual-ruler-open{overflow:hidden;overscroll-behavior:none}
   .admin-modal-card{height:100dvh;min-height:100dvh;max-height:100dvh;overflow-y:auto;padding-bottom:calc(28px + env(safe-area-inset-bottom))}
   .admin-modal-head{top:0}
 }
+
+/* V1.5.58 — hidden Developer Mode separated from Admin Mode */
+.developer-tools-modal{background:rgba(4,18,22,.82)}
+.developer-tools-dashboard{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+.developer-summary{background:linear-gradient(135deg,#102b32,#174851);color:#fff}
+.developer-summary span,.developer-summary small{color:rgba(255,255,255,.75)}
+.developer-summary .admin-status{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.18)}

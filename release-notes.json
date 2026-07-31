@@ -1,6 +1,17 @@
 {
-  "latest": "V1.5.57",
+  "latest": "V1.5.58",
   "releases": [
+    {
+      "version": "V1.5.58",
+      "title": "Hidden Developer Mode",
+      "date": "2026-07-31",
+      "items": [
+        "Removed analytics developer tools from the existing Admin Mode screen.",
+        "Added a separate hidden Developer Mode unlocked by tapping the app version seven times.",
+        "Kept Firebase diagnostics, queue controls, recent anonymous events and privacy details inside the hidden screen only.",
+        "Kept Admin Mode focused on course management, college branding, RPL and data controls."
+      ]
+    },
     {
       "version": "V1.5.57",
       "title": "Admin Mode Scrolling Fix",
@@ -203,9 +214,20 @@
         "Made the ruler preview clickable and added a dedicated Use ruler button.",
         "Used the saved bank-card calibration for physical screen accuracy."
       ]
+    },
+    "V1.5.58": {
+      "version": "V1.5.58",
+      "title": "Hidden Developer Mode",
+      "date": "2026-07-31",
+      "items": [
+        "Removed analytics developer tools from the existing Admin Mode screen.",
+        "Added a separate hidden Developer Mode unlocked by tapping the app version seven times.",
+        "Kept Firebase diagnostics, queue controls, recent anonymous events and privacy details inside the hidden screen only.",
+        "Kept Admin Mode focused on course management, college branding, RPL and data controls."
+      ]
     }
   },
-  "latestVersion": "V1.5.51",
+  "latestVersion": "V1.5.58",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",
@@ -227,6 +249,17 @@
         "Added distinctive colour gradients to each mini app for faster visual recognition.",
         "Moved Settings into the Support section beside FeedbackMate.",
         "Kept the existing phone-style four-column app layout."
+      ]
+    },
+    "V1.5.58": {
+      "version": "V1.5.58",
+      "title": "Hidden Developer Mode",
+      "date": "2026-07-31",
+      "features": [
+        "Removed analytics developer tools from the existing Admin Mode screen.",
+        "Added a separate hidden Developer Mode unlocked by tapping the app version seven times.",
+        "Kept Firebase diagnostics, queue controls, recent anonymous events and privacy details inside the hidden screen only.",
+        "Kept Admin Mode focused on course management, college branding, RPL and data controls."
       ]
     }
   }
