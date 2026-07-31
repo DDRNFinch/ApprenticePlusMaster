@@ -1,13 +1,13 @@
-const CACHE='apprentice-plus-v1.5.3-settings-tabs';
+const CACHE='apprentice-plus-v1.5.4-search-stability';
 const UPDATE_INFO={
- version:'V1.5.3',
+ version:'V1.5.4',
  features:[
-  'Removes the existing Learning Support card from Settings.',
-  'Adds General, Notifications and Learning Support tabs across the top of Settings.',
-  'Keeps the new Settings sections empty and ready to build next.'
+  'Fixes clipped first letters on assignment-search activity pills.',
+  'Improves notification swipe and panel cleanup after app resume.',
+  'Throttles repeated update checks to reduce intermittent freezing.'
  ]
 };
-const APP_SHELL=['./','./index.html','./styles.css?v=1.5.3','./functional-skills-bank.js?v=1.5.3','./trade-courses-bank.js?v=1.5.3','./app.js?v=1.5.3','./manifest.json','./pdf-generator.js?v=1.5.3','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
+const APP_SHELL=['./','./index.html','./styles.css?v=1.5.4','./functional-skills-bank.js?v=1.5.4','./trade-courses-bank.js?v=1.5.4','./app.js?v=1.5.4','./manifest.json','./pdf-generator.js?v=1.5.4','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
 
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)));

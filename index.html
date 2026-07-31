@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=1.5.3">
+  <link rel="stylesheet" href="styles.css?v=1.5.4">
   <title>Apprentice+</title>
 </head>
 <body>
@@ -56,12 +56,12 @@
     </div>
   </section>
 
-  <script src="qrcode-browser.js?v=1.5.3"></script>
-  <script src="pdf-generator.js?v=1.5.3"></script>
-  <script src="specification-sheet.js?v=1.5.3"></script>
-  <script src="functional-skills-bank.js?v=1.5.3"></script>
-  <script src="trade-courses-bank.js?v=1.5.3"></script>
-  <script src="app.js?v=1.5.3"></script>
+  <script src="qrcode-browser.js?v=1.5.4"></script>
+  <script src="pdf-generator.js?v=1.5.4"></script>
+  <script src="specification-sheet.js?v=1.5.4"></script>
+  <script src="functional-skills-bank.js?v=1.5.4"></script>
+  <script src="trade-courses-bank.js?v=1.5.4"></script>
+  <script src="app.js?v=1.5.4"></script>
   <script>
   (() => {
     const bell = document.getElementById('notificationBell');
@@ -69,7 +69,7 @@
     const backdrop = document.getElementById('notificationBellBackdrop');
     const closeButton = document.getElementById('notificationBellClose');
     const list = document.getElementById('notificationBellList');
-    const count = bell.querySelector('.notification-bell-count');
+    const count = bell?.querySelector('.notification-bell-count');
     const updateItem = document.getElementById('notificationUpdateItem');
     const updateVersion = document.getElementById('notificationUpdateVersion');
     const updateFeatures = document.getElementById('notificationUpdateFeatures');
@@ -78,6 +78,8 @@
 
     const deletedKey = 'apprenticeplus.notifications.deleted.v1';
     let deleted = [];
+    let closeTimer = 0;
+    let panelOpen = false;
     try { deleted = JSON.parse(localStorage.getItem(deletedKey) || '[]'); } catch { deleted = []; }
     list.querySelectorAll('[data-notification-id]').forEach(item => {
       if (deleted.includes(item.dataset.notificationId)) item.remove();
@@ -86,9 +88,9 @@
       const total = list.querySelectorAll('.notification-bell-item:not([hidden])').length;
       count.textContent = String(total);
       count.hidden = total === 0;
-      if (!total && !list.querySelector('.notification-bell-empty')) {
-        list.insertAdjacentHTML('beforeend', '<div class="notification-bell-empty"><strong>No notifications</strong><p>New Apprentice+ messages will appear here.</p></div>');
-      }
+      const empty = list.querySelector('.notification-bell-empty');
+      if (!total && !empty) list.insertAdjacentHTML('beforeend', '<div class="notification-bell-empty"><strong>No notifications</strong><p>New Apprentice+ messages will appear here.</p></div>');
+      if (total && empty) empty.remove();
     };
     const deleteNotification = item => {
       const id = item.dataset.notificationId;
@@ -104,21 +106,23 @@
       item.dataset.swipeReady = '1';
       const content = item.querySelector('.notification-bell-item-content');
       if (!content) return;
-      let startX = 0, startY = 0, currentX = 0, currentY = 0, dragging = false, horizontal = false;
+      let pointerId = null, startX = 0, startY = 0, currentX = 0, currentY = 0, dragging = false, horizontal = false;
       const reset = () => {
-        dragging = false; horizontal = false;
+        if (pointerId !== null) { try { item.releasePointerCapture(pointerId); } catch {} }
+        pointerId = null; dragging = false; horizontal = false;
         item.classList.remove('swiping','swipe-left','swipe-right');
         content.style.transform = '';
       };
       item.addEventListener('pointerdown', event => {
         if (event.target.closest('button')) return;
         if (event.pointerType === 'mouse' && event.button !== 0) return;
+        pointerId = event.pointerId;
         startX = currentX = event.clientX; startY = currentY = event.clientY;
-        dragging = true;
-        try { item.setPointerCapture(event.pointerId); } catch {}
-      });
+        dragging = true; horizontal = false;
+        try { item.setPointerCapture(pointerId); } catch {}
+      }, {passive:true});
       item.addEventListener('pointermove', event => {
-        if (!dragging) return;
+        if (!dragging || event.pointerId !== pointerId) return;
         currentX = event.clientX; currentY = event.clientY;
         const dx = currentX - startX, dy = currentY - startY;
         if (!horizontal && Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
@@ -127,17 +131,34 @@
         item.classList.toggle('swipe-left', dx < 0);
         item.classList.toggle('swipe-right', dx > 0);
         content.style.transform = `translateX(${Math.max(-125, Math.min(125, dx))}px)`;
-        event.preventDefault();
-      });
-      const finish = () => {
-        if (!dragging) return;
+        if (event.cancelable) event.preventDefault();
+      }, {passive:false});
+      const finish = event => {
+        if (!dragging || (event && event.pointerId !== pointerId)) return;
         const dx = currentX - startX;
         if (horizontal && Math.abs(dx) >= 72) deleteNotification(item); else reset();
       };
       item.addEventListener('pointerup', finish);
       item.addEventListener('pointercancel', reset);
+      item.addEventListener('lostpointercapture', () => { if (dragging) reset(); });
     };
     list.querySelectorAll('.notification-bell-item').forEach(attachSwipe);
+
+    const closeNotifications = (immediate = false) => {
+      clearTimeout(closeTimer); panelOpen = false;
+      panel.classList.remove('open');
+      bell.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('notification-panel-open');
+      const finish = () => { if (!panelOpen) { panel.hidden = true; backdrop.hidden = true; } };
+      if (immediate) finish(); else closeTimer = window.setTimeout(finish, 180);
+    };
+    const openNotifications = () => {
+      clearTimeout(closeTimer); panelOpen = true;
+      panel.hidden = false; backdrop.hidden = false;
+      bell.setAttribute('aria-expanded', 'true');
+      document.body.classList.add('notification-panel-open');
+      requestAnimationFrame(() => { if (panelOpen) panel.classList.add('open'); });
+    };
 
     const showUpdateNotification = info => {
       if (!updateItem) return;
@@ -148,9 +169,7 @@
       const features = Array.isArray(info?.features) && info.features.length ? info.features : ['Performance improvements and minor fixes.'];
       updateVersion.textContent = `${version} is ready to install.`;
       updateFeatures.innerHTML = features.slice(0, 8).map(feature => `<li>${String(feature).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}</li>`).join('');
-      updateItem.hidden = false;
-      attachSwipe(updateItem);
-      updateCount();
+      updateItem.hidden = false; attachSwipe(updateItem); updateCount();
     };
     window.addEventListener('apprenticeplus:update-ready', event => showUpdateNotification(event.detail));
     if (window.apprenticePlusPendingUpdateInfo) showUpdateNotification(window.apprenticePlusPendingUpdateInfo);
@@ -160,26 +179,12 @@
     });
     updateCount();
 
-    const openNotifications = () => {
-      panel.hidden = false;
-      backdrop.hidden = false;
-      bell.setAttribute('aria-expanded', 'true');
-      document.body.classList.add('notification-panel-open');
-      requestAnimationFrame(() => panel.classList.add('open'));
-    };
-    const closeNotifications = () => {
-      panel.classList.remove('open');
-      bell.setAttribute('aria-expanded', 'false');
-      document.body.classList.remove('notification-panel-open');
-      window.setTimeout(() => { panel.hidden = true; backdrop.hidden = true; }, 180);
-    };
-
     bell.addEventListener('click', openNotifications);
-    closeButton.addEventListener('click', closeNotifications);
-    backdrop.addEventListener('click', closeNotifications);
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && !panel.hidden) closeNotifications();
-    });
+    closeButton.addEventListener('click', () => closeNotifications());
+    backdrop.addEventListener('click', () => closeNotifications());
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && panelOpen) closeNotifications(); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !panelOpen) closeNotifications(true); });
+    window.addEventListener('pageshow', () => { if (!panelOpen) closeNotifications(true); });
   })();
   </script>
 

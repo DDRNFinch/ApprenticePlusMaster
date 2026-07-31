@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.3';
+const APP_VERSION='V1.5.4';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -4933,10 +4933,18 @@ async function registerAutoUpdater(){
    if(worker.state==='installed'&&navigator.serviceWorker.controller){markUpdateReady(worker,DEFAULT_UPDATE_INFO);requestWaitingWorkerInfo(worker)}
   });
  });
- await registration.update().catch(()=>{});
- document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){registration.update().catch(()=>{});inspectWaiting()}});
- window.addEventListener('focus',inspectWaiting);
- window.setInterval(()=>registration.update().catch(()=>{}),60*60*1000);
+ let lastUpdateCheckAt=0;
+ const checkForUpdate=()=>{
+  const now=Date.now();
+  inspectWaiting();
+  if(now-lastUpdateCheckAt<30000)return;
+  lastUpdateCheckAt=now;
+  registration.update().catch(()=>{});
+ };
+ checkForUpdate();
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkForUpdate()});
+ window.addEventListener('focus',checkForUpdate);
+ window.setInterval(checkForUpdate,60*60*1000);
 }
 
 const updateBadgeObserver=new MutationObserver(()=>syncUpdateBadge());
