@@ -1,5 +1,5 @@
 {
-  "latest": "V1.5.23",
+  "latest": "V1.5.24",
   "releases": {
     "V1.5.20": {
       "title": "Instant dyslexia tint controls",
@@ -61,6 +61,15 @@
         "Keeps Admin Mode protected by the existing four-digit password.",
         "Automatically locks Admin Mode whenever its window is closed.",
         "Removes the old Admin Mode link from the evidence-pack page."
+      ]
+    },
+    "V1.5.24": {
+      "title": "Full-app colour themes",
+      "features": [
+        "App colour now changes buttons, tabs, selected states and progress highlights throughout Apprentice+.",
+        "Built-in line icons and icon backgrounds now follow the selected app colour.",
+        "Completion cards, active navigation, switches, focus rings and accent borders update immediately.",
+        "Warning, error and evidence-type colours remain distinct for clarity."
       ]
     }
   }

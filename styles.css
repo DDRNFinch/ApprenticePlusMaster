@@ -2050,3 +2050,149 @@ body.a11y-high-contrast .tts-tile-button{background:#000;color:#fff;border:2px s
 
 /* V1.5.23 — Admin Mode moved into Settings and auto-locks on close */
 .admin-settings-entry{text-align:center;padding:28px 20px}.admin-settings-lock{width:68px;height:68px;margin:0 auto 14px;border-radius:22px;display:grid;place-items:center;background:var(--green2);color:var(--green)}.admin-settings-lock svg{width:32px;height:32px}.admin-settings-entry .btn{width:100%;margin-top:10px}.admin-auto-lock-note{display:block;margin-top:14px;color:#66736f;line-height:1.45}
+
+
+/* V1.5.24 — full application accent-colour theming */
+:root{
+  --greenDark:#2f8f1c;
+  --greenDeep:#075f2f;
+  --greenBorder:#b7e875;
+  --greenGlow:rgba(88,181,31,.24);
+}
+
+/* Core controls, tabs and selected states */
+.btn:not(.danger),
+.settings-tabs button.active,
+.settings-segmented button.active,
+.bottom-nav-item.active,
+.tab-button.active,
+.segmented button.active,
+.filter-chip.active,
+.choice-chip.active,
+.score-button.active,
+.samsung-switch-input:checked + .samsung-switch,
+.primary-action,
+.course-search-launch,
+.notification-bell,
+.tts-tile-button,
+.mic-button.has-recording,
+.learning-phone-card button,
+.progress-fill,
+.bar-fill{
+  background-color:var(--green)!important;
+  border-color:var(--green)!important;
+}
+
+/* Accent gradients used by prominent buttons and tiles */
+.btn:not(.secondary):not(.danger),
+.update-install-button,
+.search-submit,
+.primary-gradient,
+.settings-tabs button.active{
+  background-image:linear-gradient(135deg,color-mix(in srgb,var(--green) 82%,white),var(--greenDark))!important;
+  color:#fff!important;
+}
+
+/* App icons and icon containers */
+.app-icon,
+.tool-app-icon,
+.section-title-icon .app-icon,
+.tile-icon .app-icon,
+.camera-mark .app-icon,
+.nav-icon,
+.academy-icon .app-icon,
+.settings-icon,
+.page-help-button,
+.learning-support-info,
+.number,
+.brand-plus,
+.link-accent{
+  color:var(--green)!important;
+}
+.tile-icon,
+.section-title-icon,
+.camera-mark,
+.tool-app-icon,
+.admin-settings-lock,
+.icon-accent-bg{
+  background:linear-gradient(145deg,color-mix(in srgb,var(--green2) 72%,white),var(--green2))!important;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--green) 16%,transparent)!important;
+}
+
+/* Active navigation, settings and academy tabs */
+.bottom-nav-item.active,
+.bottom-nav-item.active strong,
+.settings-tabs button.active,
+.settings-tabs button[aria-selected="true"],
+.academy-tabs button.active,
+.tool-tabs button.active{
+  color:var(--greenDeep)!important;
+}
+.bottom-nav-item.active span,
+.bottom-nav-item.active .nav-icon{
+  color:var(--green)!important;
+}
+
+/* Green completion/status surfaces should follow the chosen app colour */
+.pill.green,
+.status-pill.done,
+.ksb-chip.covered,
+.icon-state.done,
+.evidence-tile.done,
+.assignment-card.complete,
+.download-card.complete,
+.ksb-mini.coverage-complete,
+.outcome-tick.achieved,
+.lesson-style,
+.tint-overlay-options,
+.completed-card,
+.success-card,
+.active-accent-card{
+  background-color:var(--green2)!important;
+  border-color:var(--greenBorder)!important;
+  color:var(--greenDeep)!important;
+}
+.assignment-card.complete,
+.epa-course-card,
+.active-accent-card{
+  background-image:linear-gradient(135deg,color-mix(in srgb,var(--green2) 68%,white),var(--green2))!important;
+}
+
+/* Borders, focus rings and selected choices */
+.app-colour-choice.active,
+.tint-colour-choice.active,
+.optional-unit-choice:has(input:checked),
+input:focus,
+textarea:focus,
+select:focus,
+.focus-accent,
+.selected-card,
+.active-tile{
+  border-color:var(--green)!important;
+  box-shadow:0 0 0 2px var(--greenGlow)!important;
+  outline-color:var(--green)!important;
+}
+input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:var(--green)!important}
+
+/* Progress rings and indicators */
+.progress-rings .ring-green,
+.progress-ring-accent,
+.circular-progress,
+.modern-status.complete,
+.tick-box.complete,
+.outcome-tick.achieved .tick-box{
+  color:var(--green)!important;
+  background-color:var(--green)!important;
+  border-color:var(--green)!important;
+}
+
+/* Links, headings and small emphasis */
+a:not(.danger-link),
+.lesson-question summary span,
+.course-search-result strong,
+.accent-text,
+.settings-card h3::selection{
+  color:var(--greenDark);
+}
+
+/* Keep semantic warning, error, assessor and evidence-ribbon colours unchanged. */

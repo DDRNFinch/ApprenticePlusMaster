@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.23';
+const APP_VERSION='V1.5.24';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -3716,7 +3716,7 @@ function defaultAppSettings(){return {appearance:'light',accent:'green',notifica
 function appSettings(){try{const saved=JSON.parse(localStorage.getItem(APP_SETTINGS_KEY)||'{}');return {...defaultAppSettings(),...saved,notifications:{...defaultAppSettings().notifications,...(saved.notifications||{})}}}catch{return defaultAppSettings()}}
 function saveAppSettings(next){try{localStorage.setItem(APP_SETTINGS_KEY,JSON.stringify(next))}catch{}applyAppSettings(next);window.dispatchEvent(new CustomEvent('apprenticeplus:settings-changed',{detail:next}))}
 function applyAppSettings(settings=appSettings()){
- const palettes={green:{green:'#58b51f',green2:'#eefbdc',ink:'#0b2b23'},teal:{green:'#0f766e',green2:'#dff7f3',ink:'#103b37'},blue:{green:'#2563eb',green2:'#e7efff',ink:'#172b4d'},purple:{green:'#7c3aed',green2:'#f0e9ff',ink:'#33205a'},orange:{green:'#ea6a16',green2:'#fff0e3',ink:'#4b2b16'}};
+ const palettes={green:{green:'#58b51f',green2:'#eefbdc',greenDark:'#2f8f1c',greenDeep:'#075f2f',greenBorder:'#b7e875',greenGlow:'rgba(88,181,31,.24)',ink:'#0b2b23'},teal:{green:'#0f766e',green2:'#dff7f3',greenDark:'#0b5f59',greenDeep:'#084b46',greenBorder:'#7ed7cc',greenGlow:'rgba(15,118,110,.24)',ink:'#103b37'},blue:{green:'#2563eb',green2:'#e7efff',greenDark:'#1d4ed8',greenDeep:'#173b8f',greenBorder:'#9cbcff',greenGlow:'rgba(37,99,235,.24)',ink:'#172b4d'},purple:{green:'#7c3aed',green2:'#f0e9ff',greenDark:'#6d28d9',greenDeep:'#4c1d95',greenBorder:'#c5a7ff',greenGlow:'rgba(124,58,237,.24)',ink:'#33205a'},orange:{green:'#ea6a16',green2:'#fff0e3',greenDark:'#c8540e',greenDeep:'#8f3708',greenBorder:'#ffc08f',greenGlow:'rgba(234,106,22,.24)',ink:'#4b2b16'}};
  const palette=palettes[settings.accent]||palettes.green,root=document.documentElement;
  Object.entries(palette).forEach(([key,value])=>root.style.setProperty(`--${key}`,value));
  document.body.classList.toggle('app-dark-mode',settings.appearance==='dark');
