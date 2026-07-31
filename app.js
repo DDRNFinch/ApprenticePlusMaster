@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3';
+const APP_VERSION='V1.4';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -668,7 +668,7 @@ async function load(){
 async function saveData(){await putStore('data',state.data)}
 async function saveProfile(){await putStore('profile',state.profile)}
 
-function shell(content){const active=state.view==='resources'||state.view==='notepad'||state.view==='tools'||state.view==='measuremate'||state.view==='materialmate'||state.view==='drawingmate'||state.view==='projectmate'||state.view==='learning-support'?'resources':state.view==='academy'||state.view==='library'||state.view==='trade-courses'||state.view==='trade-test'||state.view==='trade-result'||state.view==='functional-skills'||state.view==='certificates'||state.view==='academy-knowledge'||state.view==='knowledge-slides'?'academy':'course';return `<main class="shell"><header class="topbar"><div class="brand"><div class="logo"><img src="logo-apprentice-plus.png" alt="Apprentice+ logo"></div><div><div class="brand-title-row"><h1>Apprentice<span class="brand-plus">+</span></h1></div><p class="subtitle brand-tagline">Your Course, Your Way</p></div>${state.branding?.logo?`<div class="college-header-brand"><img src="${state.branding.logo}" alt="${esc(state.branding.name||'College')} logo"><span>${esc(state.branding.name||'')}</span></div>`:''}</div>${state.profile?`<div class="learner-help-wrap"><button type="button" class="pill learner-progress-button" id="learnerProgressBtn" aria-label="Open course progress and course details">${esc(state.profile.fullName.split(' ')[0]||'Learner')}</button><button type="button" class="page-help-button no-print" id="pageHelpButton" aria-label="How to use this page">i</button></div>`:''}</header>${content}<div class="app-version-bottom no-print">${APP_VERSION}</div><nav class="bottom-nav no-print" aria-label="Main navigation"><button class="bottom-nav-item ${active==='resources'?'active':''}" data-nav="resources" aria-label="Toolbox"><span>${appIcon('toolbox','nav-icon')}</span><strong>Toolbox</strong></button><button class="bottom-nav-item ${active==='course'?'active':''}" data-nav="course" aria-label="Course"><span>${appIcon('course','nav-icon')}</span><strong>Course</strong></button><button class="bottom-nav-item ${active==='academy'?'active':''}" data-nav="academy" aria-label="Academy"><span>${appIcon('academy','nav-icon')}</span><strong>Academy</strong></button></nav></main>`}
+function shell(content){const active=state.view==='resources'||state.view==='notepad'||state.view==='tools'||state.view==='measuremate'||state.view==='materialmate'||state.view==='drawingmate'||state.view==='projectmate'||state.view==='learning-support'?'resources':state.view==='academy'||state.view==='library'||state.view==='trade-courses'||state.view==='trade-test'||state.view==='trade-result'||state.view==='functional-skills'||state.view==='certificates'||state.view==='academy-knowledge'||state.view==='knowledge-slides'?'academy':'course';return `<main class="shell"><header class="topbar"><div class="brand"><div class="logo update-logo-wrap"><img src="logo-apprentice-plus.png" alt="Apprentice+ logo"><button type="button" class="update-notification-badge no-print" id="updateNotificationButton" aria-label="1 app update ready" hidden>1</button></div><div><div class="brand-title-row"><h1>Apprentice<span class="brand-plus">+</span></h1></div><p class="subtitle brand-tagline">Your Course, Your Way</p></div>${state.branding?.logo?`<div class="college-header-brand"><img src="${state.branding.logo}" alt="${esc(state.branding.name||'College')} logo"><span>${esc(state.branding.name||'')}</span></div>`:''}</div>${state.profile?`<div class="learner-help-wrap"><button type="button" class="pill learner-progress-button" id="learnerProgressBtn" aria-label="Open course progress and course details">${esc(state.profile.fullName.split(' ')[0]||'Learner')}</button><button type="button" class="page-help-button no-print" id="pageHelpButton" aria-label="How to use this page">i</button></div>`:''}</header>${content}<div class="app-version-bottom no-print">${APP_VERSION}</div><nav class="bottom-nav no-print" aria-label="Main navigation"><button class="bottom-nav-item ${active==='resources'?'active':''}" data-nav="resources" aria-label="Toolbox"><span>${appIcon('toolbox','nav-icon')}</span><strong>Toolbox</strong></button><button class="bottom-nav-item ${active==='course'?'active':''}" data-nav="course" aria-label="Course"><span>${appIcon('course','nav-icon')}</span><strong>Course</strong></button><button class="bottom-nav-item ${active==='academy'?'active':''}" data-nav="academy" aria-label="Academy"><span>${appIcon('academy','nav-icon')}</span><strong>Academy</strong></button></nav></main>`}
 function courseHeader(){const p=courseProgressStats(),red=p.red??0;return `<section class="course-card"><div class="course-summary"><div class="course-copy"><div class="course-title-row"><h2>${COURSE.name}</h2><span class="target-status ${p.tone}">${p.label}</span></div><div class="meta"><span class="pill">${COURSE.standard}</span><span class="pill">Version ${COURSE.version}</span><span class="pill">Level ${COURSE.level}</span><span class="pill green">${courseAssignments().length} evidence packs</span></div></div><div class="progress-rings" id="courseProgressBtn" aria-label="Course progress summary" style="--green:${p.green*3.6}deg;--yellow:${p.yellow*3.6}deg;--red:${red*3.6}deg"><span class="ring ring-green"></span><span class="ring ring-yellow"></span><span class="ring ring-red"></span><strong>${p.green}%</strong></div></div><button type="button" class="course-search-launch no-print" id="openWorkSearch" aria-label="Find an assignment" title="Find an assignment"><svg class="search-silhouette" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M10.5 2a8.5 8.5 0 1 0 5.28 15.16l4.66 4.65a1.5 1.5 0 0 0 2.12-2.12l-4.66-4.65A8.5 8.5 0 0 0 10.5 2Zm0 3a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg></button></section>`}
 
 function showWorkSearchLauncher(){const modal=document.createElement('div');modal.className='modal work-search-launcher-modal';modal.id='workSearchLauncherModal';modal.innerHTML=`<section class="modal-card work-search-launcher" role="dialog" aria-modal="true" aria-labelledby="workSearchTitle"><button class="icon-close-button" id="closeWorkSearchLauncher" aria-label="Close assignment search">${appIcon('close')}</button><div class="work-search-launcher-icon">${appIcon('search')}</div><h2 id="workSearchTitle">What are you working on today?</h2><p class="work-search-help">Choose a common activity below or describe the work in your own words.</p><div class="work-search-row"><input class="input" id="workSearchInput" type="search" autocomplete="off" placeholder="e.g. cavity walling, mortices, CNC machine, fixing a tap"><button class="btn" id="workSearchButton">Search</button></div><div class="work-search-suggestions" id="workSearchSuggestions" aria-live="polite"></div></section>`;document.body.appendChild(modal);const close=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)close()};modal.querySelector('#closeWorkSearchLauncher').onclick=close;bindWorkSearch();setTimeout(()=>modal.querySelector('#workSearchInput')?.focus(),50)}
@@ -4857,19 +4857,73 @@ async function createUpdateSafetyBackup(){
  if(existing)return;
  await putStore(key,{app:'Apprentice+',appVersion:APP_VERSION,created:new Date().toISOString(),activeCourse:ACTIVE_COURSE_ID,profile:structuredClone(state.profile),data:structuredClone(state.data)});
 }
+let pendingAppUpdate=null;
+let updateReloading=false;
+const DEFAULT_UPDATE_INFO={version:'A new version',features:['Performance improvements and minor fixes.']};
+function normaliseUpdateInfo(info){
+ const features=Array.isArray(info?.features)?info.features.filter(Boolean).map(String).slice(0,8):[];
+ return {version:String(info?.version||DEFAULT_UPDATE_INFO.version),features:features.length?features:DEFAULT_UPDATE_INFO.features};
+}
+function syncUpdateBadge(){
+ const badge=document.getElementById('updateNotificationButton');
+ if(!badge)return;
+ badge.hidden=!pendingAppUpdate;
+ badge.textContent=pendingAppUpdate?'1':'';
+}
+function requestWaitingWorkerInfo(worker){
+ if(!worker)return;
+ try{worker.postMessage({type:'GET_UPDATE_INFO'})}catch(error){console.warn('Unable to request update details',error)}
+}
+function markUpdateReady(worker,info){
+ if(!worker)return;
+ pendingAppUpdate={worker,info:normaliseUpdateInfo(info)};
+ syncUpdateBadge();
+}
+function closeUpdateReadyModal(){document.getElementById('updateReadyModal')?.remove()}
+function openUpdateReadyModal(){
+ if(!pendingAppUpdate)return;
+ closeUpdateReadyModal();
+ const info=pendingAppUpdate.info;
+ const features=info.features.map(item=>`<li>${esc(item)}</li>`).join('');
+ document.body.insertAdjacentHTML('beforeend',`<div class="modal update-ready-modal" id="updateReadyModal"><section class="update-ready-card" role="dialog" aria-modal="true" aria-labelledby="updateReadyTitle"><button type="button" class="update-ready-close" id="closeUpdateReady" aria-label="Close">×</button><div class="update-ready-icon">↑</div><p class="update-ready-kicker">APPRENTICE+ ${esc(info.version)}</p><h2 id="updateReadyTitle">A new update is ready</h2><p class="update-ready-copy">Install the latest version now. Your saved learner work and evidence will stay on this device.</p><div class="update-ready-features"><strong>What’s included</strong><ul>${features}</ul></div><button type="button" class="btn update-ready-action" id="installReadyUpdate">Let’s go</button><p class="update-ready-small">The app will refresh once to finish installing the update.</p></section></div>`);
+ const modal=document.getElementById('updateReadyModal');
+ modal.querySelector('#closeUpdateReady').onclick=closeUpdateReadyModal;
+ modal.onclick=e=>{if(e.target===modal)closeUpdateReadyModal()};
+ modal.querySelector('#installReadyUpdate').onclick=async()=>{
+  const button=modal.querySelector('#installReadyUpdate');
+  button.disabled=true;button.textContent='Updating…';
+  try{await createUpdateSafetyBackup()}catch(error){console.warn('Update backup could not be created',error)}
+  try{pendingAppUpdate.worker.postMessage({type:'SKIP_WAITING'})}catch(error){button.disabled=false;button.textContent='Let’s go';toast('Unable to start the update. Please try again.')}
+ };
+}
 async function registerAutoUpdater(){
  if(!('serviceWorker'in navigator))return;
- let reloading=false;
+ navigator.serviceWorker.addEventListener('message',event=>{
+  if(event.data?.type==='UPDATE_INFO'&&pendingAppUpdate?.worker){markUpdateReady(pendingAppUpdate.worker,event.data.info)}
+ });
  navigator.serviceWorker.addEventListener('controllerchange',()=>{
-  if(reloading)return;
-  reloading=true;
+  if(updateReloading)return;
+  updateReloading=true;
   window.location.reload();
  });
  const registration=await navigator.serviceWorker.register('./service-worker.js',{updateViaCache:'none'});
+ const inspectWaiting=()=>{if(registration.waiting){markUpdateReady(registration.waiting,DEFAULT_UPDATE_INFO);requestWaitingWorkerInfo(registration.waiting)}};
+ inspectWaiting();
+ registration.addEventListener('updatefound',()=>{
+  const worker=registration.installing;if(!worker)return;
+  worker.addEventListener('statechange',()=>{
+   if(worker.state==='installed'&&navigator.serviceWorker.controller){markUpdateReady(worker,DEFAULT_UPDATE_INFO);requestWaitingWorkerInfo(worker)}
+  });
+ });
  await registration.update().catch(()=>{});
- document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')registration.update().catch(()=>{})});
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){registration.update().catch(()=>{});inspectWaiting()}});
+ window.addEventListener('focus',inspectWaiting);
  window.setInterval(()=>registration.update().catch(()=>{}),60*60*1000);
 }
+
+const updateBadgeObserver=new MutationObserver(()=>syncUpdateBadge());
+updateBadgeObserver.observe(app,{childList:true,subtree:true});
+document.addEventListener('click',e=>{const badge=e.target.closest('#updateNotificationButton');if(!badge)return;e.preventDefault();e.stopPropagation();openUpdateReadyModal()});
 document.addEventListener('click',e=>{const help=e.target.closest('#pageHelpButton');if(!help)return;e.preventDefault();e.stopPropagation();openPageHelp()});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(document.getElementById('pageHelpModal'))closePageHelp();else if(helpTourRunning)finishHelpTour(false)});
 window.addEventListener('popstate',()=>{if(document.getElementById('pageHelpModal'))closePageHelp();else if(helpTourRunning)finishHelpTour(false)});

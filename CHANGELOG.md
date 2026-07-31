@@ -1,12 +1,3 @@
-# V1.3 — Navigation Resume and Page-Top Fix
-
-- Fixed primary navigation occasionally becoming unresponsive after the installed app is resumed from the background.
-- Added a pointer-up fallback for Android PWA navigation while preventing duplicate activations.
-- Restores navigation controls and clears stale hidden overlays when the app becomes visible again.
-- Every newly opened page now starts at the top instead of inheriting the previous page's scroll position.
-- Browser back/forward restoration still returns to the saved scroll position.
-- Updated the app and offline cache version to V1.3.
-
 # V1.2 — Guide Phone Auto-Scroll Fix
 
 - Restored automatic scrolling inside the enlarged guide phone preview.
@@ -593,3 +584,10 @@ Certificates - View and download certificates you have earned after completing A
 - Rebuilt the page guides for Photographic Evidence, Learner Statement, Witness Testimony, Video Walkthrough, Assessor Observation, Practical Assessment, Professional Discussion and Supporting Evidence.
 - Guides now describe the actual evidence rules, required photographs, eligible KSB/LO types, signatures, scoring and submit-and-lock behaviour.
 - Enlarged the miniature phone used in page guides by 50% while keeping a reduced fallback for very short or narrow screens.
+
+## V1.4
+- Added an in-app update notification badge to the top-left of the Apprentice+ logo.
+- Added an update details panel with a compact list of new features and fixes.
+- Added a “Let’s go” button that safely activates the waiting service worker and refreshes the app once.
+- Updates no longer install unexpectedly while the learner is using the app.
+- Learner profile and evidence data remain stored locally during the update.
