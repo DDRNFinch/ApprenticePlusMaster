@@ -1,6 +1,6 @@
-const CACHE='apprentice-plus-v1.5.8-stability-tts';
+const CACHE='apprentice-plus-v1.5.9-stability-tts';
 const UPDATE_INFO={
- version:'V1.5.8',
+ version:'V1.5.9',
  features:[
   'Fixes the Course navigation button becoming unresponsive.',
   'Adds working page text-to-speech controls with play, pause and stop.',

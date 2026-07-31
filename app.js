@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.8';
+const APP_VERSION='V1.5.9';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -3601,10 +3601,35 @@ function cleanupTransientUi(){
  document.querySelectorAll('#learningSupportInfoModal,.page-help-modal.closing,.help-tour-overlay[aria-hidden="true"],.modal[aria-hidden="true"],.modal.hidden').forEach(node=>node.remove());
  document.documentElement.style.pointerEvents='';document.body.style.pointerEvents='';app.style.pointerEvents='';
 }
-function defaultAccessibilitySettings(){return {dyslexicFont:false,largeText:false,highContrast:false,reduceMotion:false,fontSize:100,lineSpacing:1.5,background:'default',readingRuler:false,focusMode:false,captions:false,largeCaptions:false,visualAlerts:true,vibration:false,readAloud:true,voiceInput:true,simplify:false}}
+function defaultAccessibilitySettings(){return {dyslexicFont:false,largeText:false,highContrast:false,reduceMotion:false,fontSize:100,lineSpacing:1.5,background:'default',readingRuler:false,readingRulerY:45,readingRulerBlur:false,focusMode:false,captions:false,largeCaptions:false,visualAlerts:true,vibration:false,readAloud:true,voiceInput:true,simplify:false}}
 function accessibilitySettings(){try{return {...defaultAccessibilitySettings(),...JSON.parse(localStorage.getItem(ACCESSIBILITY_KEY)||'{}')}}catch{return defaultAccessibilitySettings()}}
 function saveAccessibilitySettings(next){localStorage.setItem(ACCESSIBILITY_KEY,JSON.stringify(next));applyAccessibilitySettings();}
-function applyAccessibilitySettings(){const a=accessibilitySettings(),root=document.documentElement,body=document.body;if(!body)return;body.classList.toggle('a11y-dyslexic',!!a.dyslexicFont);body.classList.toggle('a11y-large-text',!!a.largeText);body.classList.toggle('a11y-high-contrast',!!a.highContrast);body.classList.toggle('a11y-reduce-motion',!!a.reduceMotion);body.classList.toggle('a11y-reading-ruler',!!a.readingRuler);body.classList.toggle('a11y-focus',!!a.focusMode);body.classList.toggle('a11y-simplified',!!a.simplify);body.classList.toggle('a11y-visual-alerts',!!a.visualAlerts);body.classList.toggle('a11y-large-captions',!!a.largeCaptions);body.classList.toggle('a11y-captions',!!a.captions);body.dataset.a11yBackground=a.background||'default';const effectiveFontSize=a.largeText?Math.max(115,Number(a.fontSize)||100):(Number(a.fontSize)||100);root.style.setProperty('--a11y-font-scale',String(effectiveFontSize/100));root.style.setProperty('--a11y-line-height',String(Number(a.lineSpacing)||1.5));applyAccessibilityToCurrentView();syncReadAloudControl();}
+
+function syncReadingGuide(){
+ const a=accessibilitySettings();
+ let guide=document.getElementById('readingGuideOverlay');
+ if(!a.readingRuler){guide?.remove();document.body.classList.remove('reading-guide-active');return}
+ if(!guide){
+  guide=document.createElement('div');guide.id='readingGuideOverlay';guide.className='reading-guide-overlay no-print';
+  guide.innerHTML=`<div class="reading-guide-mask reading-guide-mask-top"></div><div class="reading-guide-box"><button type="button" class="reading-guide-blur" aria-label="Toggle blur outside reading box" title="Toggle blur"><span class="reading-guide-eye-open">👁</span><span class="reading-guide-eye-squint">😑</span></button><span class="reading-guide-label">Reading guide</span><button type="button" class="reading-guide-drag" aria-label="Hold and move reading guide up or down" title="Hold and drag">↕️</button></div><div class="reading-guide-mask reading-guide-mask-bottom"></div>`;
+  document.body.appendChild(guide);
+  const drag=guide.querySelector('.reading-guide-drag');
+  const move=e=>{const y=Math.max(4,Math.min(92,(e.clientY/window.innerHeight)*100));const next=accessibilitySettings();next.readingRulerY=Math.round(y*10)/10;localStorage.setItem(ACCESSIBILITY_KEY,JSON.stringify(next));positionReadingGuide(guide,next)};
+  drag.addEventListener('pointerdown',e=>{e.preventDefault();drag.setPointerCapture?.(e.pointerId);guide.classList.add('dragging')});
+  drag.addEventListener('pointermove',e=>{if(!guide.classList.contains('dragging'))return;move(e)});
+  const end=e=>{guide.classList.remove('dragging');try{drag.releasePointerCapture?.(e.pointerId)}catch{}};
+  drag.addEventListener('pointerup',end);drag.addEventListener('pointercancel',end);
+  guide.querySelector('.reading-guide-blur').addEventListener('click',()=>{const next=accessibilitySettings();next.readingRulerBlur=!next.readingRulerBlur;saveAccessibilitySettings(next)});
+ }
+ positionReadingGuide(guide,a);document.body.classList.add('reading-guide-active');
+}
+function positionReadingGuide(guide,a){
+ const y=Math.max(4,Math.min(92,Number(a.readingRulerY)||45));
+ guide.style.setProperty('--reading-guide-y',`${y}vh`);
+ guide.classList.toggle('blur-on',!!a.readingRulerBlur);
+ guide.querySelector('.reading-guide-blur')?.setAttribute('aria-pressed',a.readingRulerBlur?'true':'false');
+}
+function applyAccessibilitySettings(){const a=accessibilitySettings(),root=document.documentElement,body=document.body;if(!body)return;body.classList.toggle('a11y-dyslexic',!!a.dyslexicFont);body.classList.toggle('a11y-large-text',!!a.largeText);body.classList.toggle('a11y-high-contrast',!!a.highContrast);body.classList.toggle('a11y-reduce-motion',!!a.reduceMotion);body.classList.toggle('a11y-reading-ruler',!!a.readingRuler);body.classList.toggle('a11y-focus',!!a.focusMode);body.classList.toggle('a11y-simplified',!!a.simplify);body.classList.toggle('a11y-visual-alerts',!!a.visualAlerts);body.classList.toggle('a11y-large-captions',!!a.largeCaptions);body.classList.toggle('a11y-captions',!!a.captions);body.dataset.a11yBackground=a.background||'default';const effectiveFontSize=a.largeText?Math.max(115,Number(a.fontSize)||100):(Number(a.fontSize)||100);root.style.setProperty('--a11y-font-scale',String(effectiveFontSize/100));root.style.setProperty('--a11y-line-height',String(Number(a.lineSpacing)||1.5));applyAccessibilityToCurrentView();syncReadAloudControl();syncReadingGuide();}
 function applyAccessibilityToCurrentView(){const a=accessibilitySettings(),scale=(a.largeText?Math.max(115,Number(a.fontSize)||100):(Number(a.fontSize)||100))/100,scope=document.getElementById('app');if(!scope)return;const selector='h1,h2,h3,h4,h5,h6,p,li,label,button,input,textarea,select,summary,small,.number,.pill,.muted,.meta,.status,.subtitle,.app-version-bottom';const nodes=[...scope.querySelectorAll(selector)].filter(el=>!el.closest('svg')&&!el.classList.contains('nav-icon'));const sizes=nodes.map(el=>{if(!el.dataset.a11yBaseFont){const px=parseFloat(getComputedStyle(el).fontSize);if(Number.isFinite(px))el.dataset.a11yBaseFont=String(px)}return [el,Number(el.dataset.a11yBaseFont)]});sizes.forEach(([el,base])=>{if(Number.isFinite(base))el.style.fontSize=`${Math.max(11,base*scale)}px`;el.style.lineHeight=String(Number(a.lineSpacing)||1.5)});scope.querySelectorAll('video').forEach(video=>{for(const track of video.textTracks){try{track.mode=a.captions?'showing':'disabled'}catch{}}});}
 function accessibilityCheckAnswers(){try{return JSON.parse(localStorage.getItem(ACCESSIBILITY_CHECK_KEY)||'{}')}catch{return {}}}
 function supportTabButton(id,label){return `<button class="support-tab ${state.learningSupportTab===id?'active':''}" data-support-tab="${id}">${label}</button>`}
@@ -5085,5 +5110,5 @@ function updateTargetedRevision({title,assignment,source,score}){
 const EPA_INTERVIEW_FRAMEWORK=`You are an experienced End-Point Assessor for construction apprenticeships.`;
 const EPA_MCQ_FRAMEWORK=THEORY_MCQ_FRAMEWORK_V140;
 
-// V1.5.8 stability and working text-to-speech controls.
+// V1.5.9 stability and working text-to-speech controls.
 applyAppSettings();

@@ -592,7 +592,7 @@ Certificates - View and download certificates you have earned after completing A
 - Updates no longer install unexpectedly while the learner is using the app.
 - Learner profile and evidence data remain stored locally during the update.
 
-## V1.5.8
+## V1.5.9
 - Fixed intermittent Course navigation blocking caused by stale overlays.
 - Added working page text-to-speech controls with play, pause/resume and stop.
 - Added safer Learning Support popup pointer cleanup.
