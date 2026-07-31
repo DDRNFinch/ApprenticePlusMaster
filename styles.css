@@ -1849,3 +1849,30 @@ body.page-help-open,body.help-tour-open{overflow:hidden;touch-action:none}
 .update-ready-features ul{margin:0;padding-left:19px;color:#53635f;font-size:12px;line-height:1.5}
 .update-ready-action{width:100%;font-size:16px;min-height:49px}
 .update-ready-small{font-size:10px;color:#7a8884;margin:9px 0 0}
+
+
+/* Isolated floating notification bell — no dependency on app.js or the Apprentice+ renderer. */
+.notification-bell{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(92px,calc(env(safe-area-inset-bottom) + 82px));z-index:10010;width:56px;height:56px;border:0;border-radius:50%;display:grid;place-items:center;background:#0f3f35;color:#fff;box-shadow:0 12px 28px rgba(15,63,53,.32);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.notification-bell:active{transform:scale(.95)}
+.notification-bell:focus-visible{outline:4px solid rgba(121,210,47,.45);outline-offset:3px}
+.notification-bell-icon{font-size:25px;line-height:1;filter:grayscale(1) brightness(0) invert(1)}
+.notification-bell-count{position:absolute;top:-3px;right:-3px;min-width:22px;height:22px;padding:0 5px;border:3px solid #fff;border-radius:999px;background:#e32636;color:#fff;font:900 11px/16px Arial,sans-serif;text-align:center;box-shadow:0 3px 8px rgba(111,0,11,.28)}
+.notification-bell-backdrop{position:fixed;inset:0;z-index:10011;background:rgba(6,23,21,.52);backdrop-filter:blur(3px)}
+.notification-bell-panel{position:fixed;left:50%;bottom:0;z-index:10012;width:min(620px,100%);max-height:min(72vh,650px);overflow:auto;transform:translate(-50%,105%);transition:transform .18s ease;background:#fff;border-radius:26px 26px 0 0;padding:10px 18px calc(22px + env(safe-area-inset-bottom));box-shadow:0 -18px 60px rgba(0,0,0,.24)}
+.notification-bell-panel.open{transform:translate(-50%,0)}
+.notification-bell-panel[hidden],.notification-bell-backdrop[hidden]{display:none!important}
+.notification-bell-handle{width:46px;height:5px;border-radius:6px;background:#cbd5d1;margin:2px auto 12px}
+.notification-bell-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:2px 2px 16px;border-bottom:1px solid #e3ebe6}
+.notification-bell-header h2{font-size:24px}
+.notification-bell-kicker{font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#188657;margin-bottom:3px}
+.notification-bell-close{width:44px;height:44px;border:0;border-radius:50%;display:grid;place-items:center;background:#eef3ef;color:#17363b;font:400 30px/1 Arial,sans-serif;cursor:pointer}
+.notification-bell-list{padding:14px 0}
+.notification-bell-item{display:grid;grid-template-columns:44px 1fr;gap:12px;padding:15px;border:1px solid #dce8df;border-radius:18px;background:#fff}
+.notification-bell-item.unread{background:#effbea;border-color:#b9e79d}
+.notification-bell-item-icon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:#0f3f35;font-size:21px}
+.notification-bell-item strong{display:block;font-size:16px;margin:1px 0 5px}
+.notification-bell-item p{font-size:14px;line-height:1.42;color:#526665;margin:0 0 7px}
+.notification-bell-item small{font-size:12px;color:#758684}
+body.notification-panel-open{overflow:hidden}
+@media(max-width:390px){.notification-bell{right:12px;bottom:max(84px,calc(env(safe-area-inset-bottom) + 76px));width:52px;height:52px}.notification-bell-panel{padding-left:14px;padding-right:14px}}
+@media print{.notification-bell,.notification-bell-panel,.notification-bell-backdrop{display:none!important}}

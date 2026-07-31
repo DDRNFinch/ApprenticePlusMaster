@@ -15,11 +15,70 @@
   <noscript><div class="noscript">Apprentice+ requires JavaScript.</div></noscript>
   <div id="app"></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <!-- Isolated notification bell: intentionally outside #app so Apprentice+ renders cannot replace it. -->
+  <button type="button" id="notificationBell" class="notification-bell no-print" aria-label="Open notifications" aria-controls="notificationBellPanel" aria-expanded="false">
+    <span class="notification-bell-icon" aria-hidden="true">🔔</span>
+    <span class="notification-bell-count" aria-label="1 unread notification">1</span>
+  </button>
+
+  <div id="notificationBellBackdrop" class="notification-bell-backdrop no-print" hidden></div>
+  <section id="notificationBellPanel" class="notification-bell-panel no-print" role="dialog" aria-modal="true" aria-labelledby="notificationBellTitle" hidden>
+    <div class="notification-bell-handle" aria-hidden="true"></div>
+    <header class="notification-bell-header">
+      <div>
+        <p class="notification-bell-kicker">Apprentice+</p>
+        <h2 id="notificationBellTitle">Notifications</h2>
+      </div>
+      <button type="button" id="notificationBellClose" class="notification-bell-close" aria-label="Close notifications">×</button>
+    </header>
+    <div class="notification-bell-list">
+      <article class="notification-bell-item unread">
+        <span class="notification-bell-item-icon" aria-hidden="true">🔔</span>
+        <div>
+          <strong>Notifications are ready</strong>
+          <p>This bell will show important Apprentice+ messages without changing the app logo or main navigation.</p>
+          <small>Just now</small>
+        </div>
+      </article>
+    </div>
+  </section>
+
   <script src="qrcode-browser.js?v=1.4.0"></script>
   <script src="pdf-generator.js?v=1.4.0"></script>
   <script src="specification-sheet.js?v=1.4.0"></script>
   <script src="functional-skills-bank.js?v=1.4.0"></script>
   <script src="trade-courses-bank.js?v=1.4.0"></script>
   <script src="app.js?v=1.4"></script>
+  <script>
+  (() => {
+    const bell = document.getElementById('notificationBell');
+    const panel = document.getElementById('notificationBellPanel');
+    const backdrop = document.getElementById('notificationBellBackdrop');
+    const closeButton = document.getElementById('notificationBellClose');
+    if (!bell || !panel || !backdrop || !closeButton) return;
+
+    const openNotifications = () => {
+      panel.hidden = false;
+      backdrop.hidden = false;
+      bell.setAttribute('aria-expanded', 'true');
+      document.body.classList.add('notification-panel-open');
+      requestAnimationFrame(() => panel.classList.add('open'));
+    };
+    const closeNotifications = () => {
+      panel.classList.remove('open');
+      bell.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('notification-panel-open');
+      window.setTimeout(() => { panel.hidden = true; backdrop.hidden = true; }, 180);
+    };
+
+    bell.addEventListener('click', openNotifications);
+    closeButton.addEventListener('click', closeNotifications);
+    backdrop.addEventListener('click', closeNotifications);
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !panel.hidden) closeNotifications();
+    });
+  })();
+  </script>
+
 </body>
 </html>
