@@ -9,8 +9,8 @@ const CONFIG={
  appId:'1:722558138211:web:4427a2814b197d7004c556',
  measurementId:'G-NKTP7D72GY'
 };
-const VERSION='V1.5.60';
-const ENGINE_VERSION='1.5.60';
+const VERSION='V1.5.61';
+const ENGINE_VERSION='1.5.61';
 const QUEUE_KEY='apprenticeplus.analytics.queue.v1';
 const INSTALL_KEY='apprenticeplus.analytics.install.v1';
 const SESSION_KEY='apprenticeplus.analytics.session.v1';

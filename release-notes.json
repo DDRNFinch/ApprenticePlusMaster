@@ -1,6 +1,18 @@
 {
-  "latest": "V1.5.60",
+  "latest": "V1.5.61",
   "releases": [
+    {
+      "version": "V1.5.61",
+      "title": "Evidence Analytics Events",
+      "date": "2026-07-31",
+      "items": [
+        "Added clear anonymous events for every evidence submission type.",
+        "Added named events for photographic evidence photos, video walkthrough clips and professional discussion recordings.",
+        "Added anonymous evidence retake, package export, whole-portfolio export and upload-confirmation events.",
+        "Events include only non-personal counts, evidence type, assignment number and course identifier.",
+        "Names, emails, typed evidence, answers, photos, videos, audio, signatures and file contents remain excluded."
+      ]
+    },
     {
       "version": "V1.5.60",
       "title": "Core Named Analytics Events",
@@ -275,7 +287,7 @@
       ]
     }
   },
-  "latestVersion": "V1.5.60",
+  "latestVersion": "V1.5.61",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",
@@ -308,6 +320,18 @@
         "Added a separate hidden Developer Mode unlocked by tapping the app version seven times.",
         "Kept Firebase diagnostics, queue controls, recent anonymous events and privacy details inside the hidden screen only.",
         "Kept Admin Mode focused on course management, college branding, RPL and data controls."
+      ]
+    },
+    "V1.5.61": {
+      "version": "V1.5.61",
+      "title": "Evidence Analytics Events",
+      "date": "2026-07-31",
+      "features": [
+        "Added clear anonymous events for every evidence submission type.",
+        "Added named events for photographic evidence photos, video walkthrough clips and professional discussion recordings.",
+        "Added anonymous evidence retake, package export, whole-portfolio export and upload-confirmation events.",
+        "Events include only non-personal counts, evidence type, assignment number and course identifier.",
+        "Names, emails, typed evidence, answers, photos, videos, audio, signatures and file contents remain excluded."
       ]
     }
   }

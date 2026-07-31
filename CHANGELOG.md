@@ -1,3 +1,10 @@
+# V1.5.61
+
+- Added meaningful anonymous analytics for all evidence submissions.
+- Added events for photos, video walkthrough clips and professional discussion recordings.
+- Added evidence retake, evidence package, portfolio export and upload confirmation tracking.
+- Continued excluding all personal details and evidence content.
+
 # V1.5.60
 
 - Replaced generic analytics events with clear feature-specific event names.
