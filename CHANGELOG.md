@@ -1,8 +1,11 @@
-# V1.5.14
+# V1.5.15
 
-- Text-to-Speech now reads the visible content of the current page sentence by sentence.
-- Added previous-sentence and next-sentence controls.
-- Pause, resume and stop controls remain available in the persistent bottom-left controller.
-- Reading automatically continues to the following sentence until the page is complete.
-- Fixed the reading guide drag behaviour so only the vertical move icon starts movement.
-- The guide now preserves its position when the move icon is first pressed instead of jumping to the finger position.
+## Contextual Text-to-Speech
+
+- Removed the floating Play, Pause, Stop, Previous and Next controls.
+- Added Apprentice+ style speaker buttons to built-in information tiles.
+- Speaker buttons appear only while Learning Support Text-to-Speech is enabled.
+- Each button reads only its own tile.
+- The active tile and speaker are visually indicated while speech is playing.
+- Tapping the active speaker stops it; selecting another tile switches speech immediately.
+- Editable learner text and input controls are excluded.

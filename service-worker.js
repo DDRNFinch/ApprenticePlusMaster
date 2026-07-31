@@ -1,6 +1,6 @@
-const CACHE='apprentice-plus-v1.5.14-tts-sentence-navigation';
+const CACHE='apprentice-plus-v1.5.15-contextual-tile-tts';
 const UPDATE_INFO={
- version:'V1.5.14',
+ version:'V1.5.15',
  features:[
   'Places the reading-guide blur control below the reading box on the left.',
   'Places the reading-guide move control below the reading box on the right.',
@@ -8,7 +8,7 @@ const UPDATE_INFO={
   'Retains the persistent Text-to-Speech control above the Toolbox tab.'
  ]
 };
-const APP_SHELL=['./','./index.html','./styles.css?v=1.5.14','./functional-skills-bank.js?v=1.5.14','./trade-courses-bank.js?v=1.5.14','./app.js?v=1.5.14','./manifest.json','./pdf-generator.js?v=1.5.14','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
+const APP_SHELL=['./','./index.html','./styles.css?v=1.5.15','./functional-skills-bank.js?v=1.5.15','./trade-courses-bank.js?v=1.5.15','./app.js?v=1.5.15','./manifest.json','./pdf-generator.js?v=1.5.15','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
 
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)));

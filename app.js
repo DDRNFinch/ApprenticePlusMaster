@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.14';
+const APP_VERSION='V1.5.15';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -724,7 +724,7 @@ function scrollNewPageToTop(signature){
  }
  lastRenderedPageSignature=signature;
 }
-function render(){const pageSignature=currentPageSignature();recordNavigation();if(state.view==='resources')renderResources();else if(state.view==='notepad')renderNotepad();else if(state.view==='tools')renderTools();else if(state.view==='measuremate')renderMeasureMate();else if(state.view==='materialmate')renderMaterialMate();else if(state.view==='drawingmate')renderDrawingMate();else if(state.view==='projectmate')renderProjectMate();else if(state.view==='learning-support')renderLearningSupport();else if(state.view==='settings')renderSettings();else if(state.view==='home')renderHome();else if(state.view==='assignment')renderAssignment();else if(state.view==='academy')renderAcademy();else if(state.view==='library'||state.view==='trade-courses')renderTradeCourses();else if(state.view==='trade-test')renderTradeCourseTest();else if(state.view==='trade-result')renderTradeCourseResult();else if(state.view==='functional-skills')renderFunctionalSkills();else if(state.view==='knowledge-slides')renderKnowledgeSlides();else if(state.view==='academy-knowledge')renderAcademyKnowledge();else if(state.view==='functional-test')renderFunctionalSkillsTest();else if(state.view==='functional-result')renderFunctionalSkillsResult();else if(state.view==='certificates')renderCertificates();else if(state.view==='lesson')renderAcademyLesson();else if(state.view==='epa')renderEpaMockHome();else if(state.view==='epa-results')renderEpaResults();else if(state.view==='epa-test')renderEpaMockTest();else if(state.view==='epa-result')renderEpaMockResult();else if(state.view==='epa-discussion')renderEpaDiscussion();else if(state.view==='epa-discussion-result')renderEpaDiscussionResult();else if(state.view==='epa-practical')renderEpaPractical();else if(state.view==='knowledge-test')renderAssignmentKnowledgeTest();else if(state.view==='knowledge-result')renderAssignmentKnowledgeResult();else if(state.view==='walkthrough')renderWalkthrough();else renderSection();enhanceVoiceToText(app);applyAccessibilityToCurrentView();attachPageHelp();scrollNewPageToTop(pageSignature)}
+function render(){const pageSignature=currentPageSignature();recordNavigation();if(state.view==='resources')renderResources();else if(state.view==='notepad')renderNotepad();else if(state.view==='tools')renderTools();else if(state.view==='measuremate')renderMeasureMate();else if(state.view==='materialmate')renderMaterialMate();else if(state.view==='drawingmate')renderDrawingMate();else if(state.view==='projectmate')renderProjectMate();else if(state.view==='learning-support')renderLearningSupport();else if(state.view==='settings')renderSettings();else if(state.view==='home')renderHome();else if(state.view==='assignment')renderAssignment();else if(state.view==='academy')renderAcademy();else if(state.view==='library'||state.view==='trade-courses')renderTradeCourses();else if(state.view==='trade-test')renderTradeCourseTest();else if(state.view==='trade-result')renderTradeCourseResult();else if(state.view==='functional-skills')renderFunctionalSkills();else if(state.view==='knowledge-slides')renderKnowledgeSlides();else if(state.view==='academy-knowledge')renderAcademyKnowledge();else if(state.view==='functional-test')renderFunctionalSkillsTest();else if(state.view==='functional-result')renderFunctionalSkillsResult();else if(state.view==='certificates')renderCertificates();else if(state.view==='lesson')renderAcademyLesson();else if(state.view==='epa')renderEpaMockHome();else if(state.view==='epa-results')renderEpaResults();else if(state.view==='epa-test')renderEpaMockTest();else if(state.view==='epa-result')renderEpaMockResult();else if(state.view==='epa-discussion')renderEpaDiscussion();else if(state.view==='epa-discussion-result')renderEpaDiscussionResult();else if(state.view==='epa-practical')renderEpaPractical();else if(state.view==='knowledge-test')renderAssignmentKnowledgeTest();else if(state.view==='knowledge-result')renderAssignmentKnowledgeResult();else if(state.view==='walkthrough')renderWalkthrough();else renderSection();enhanceVoiceToText(app);applyAccessibilityToCurrentView();syncReadAloudControl();attachPageHelp();scrollNewPageToTop(pageSignature)}
 
 let activeSpeechRecognition=null;
 let activeSpeechButton=null;
@@ -3572,91 +3572,55 @@ function stopReadAloud({hide=false,reset=true}={}){
  readAloudRunId++;
  try{window.speechSynthesis?.cancel?.()}catch{}
  activeSpeechUtterance=null;
+ document.querySelectorAll('.tts-readable-tile.tts-speaking').forEach(tile=>tile.classList.remove('tts-speaking'));
+ document.querySelectorAll('.tts-tile-button[aria-pressed="true"]').forEach(button=>{button.setAttribute('aria-pressed','false');button.setAttribute('aria-label','Read this tile aloud');button.title='Read this tile aloud'});
  if(reset){readAloudSentences=[];readAloudSentenceIndex=0}
- document.body.classList.remove('read-aloud-active');
- if(hide){document.getElementById('readAloudController')?.remove();return}
- if(accessibilitySettings().readAloud)renderReadAloudController('ready');
+ if(hide)document.querySelectorAll('.tts-tile-button').forEach(button=>button.remove());
 }
-function pageTextForReadAloud(){
- const scope=document.querySelector('#app main')||document.getElementById('app');
- if(!scope)return '';
- const clone=scope.cloneNode(true);
- clone.querySelectorAll('nav,button,input,textarea,select,svg,script,style,.no-print,.app-version-bottom,.read-aloud-controller').forEach(n=>n.remove());
- return (clone.innerText||clone.textContent||'').replace(/\s+/g,' ').trim().slice(0,24000);
+function tileTextForReadAloud(tile){
+ if(!tile)return '';
+ const clone=tile.cloneNode(true);
+ clone.querySelectorAll('button,input,textarea,select,option,svg,script,style,video,audio,.no-print,.tts-tile-button,[contenteditable="true"],.voice-text-button,.app-version-bottom').forEach(node=>node.remove());
+ return (clone.innerText||clone.textContent||'').replace(/\s+/g,' ').trim().slice(0,12000);
 }
-function pageSentencesForReadAloud(){
- const text=pageTextForReadAloud();
- if(!text)return [];
- const matched=text.match(/[^.!?]+(?:[.!?]+|$)/g)||[text];
- return matched.map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
+function readableTileCandidates(){
+ const scope=document.getElementById('app');if(!scope)return [];
+ const selector=['.card','.panel','.settings-card','.lesson-card','.epa-dashboard-tile','.academy-square-tile','.tool-app-card','.outcome-card','.score-card','.accuracy-card','.calc-panel','.knowledge-slide-block','.epa-question','.support-setting','.support-option','.assignment-card','.resource-card','.tile','.info-card','details.epa-review'].join(',');
+ const excluded='.bottom-nav,.topbar,.modal,.recording-modal,.voice-text-field,.field,.input,.file-drop,.photo-slot,.signature-pad,.learner-note,.note-card,.statement-ksb-card,.epa-option,.score-buttons';
+ return [...scope.querySelectorAll(selector)].filter(tile=>{
+  if(tile.matches(excluded)||tile.closest('.bottom-nav,.topbar'))return false;
+  if(tile.closest('[hidden],.hide'))return false;
+  const text=tileTextForReadAloud(tile);
+  return text.length>=3;
+ });
 }
-function updateReadAloudPosition(){
- const label=document.querySelector('#readAloudController .read-aloud-position');
- if(!label)return;
- label.textContent=readAloudSentences.length?`${Math.min(readAloudSentenceIndex+1,readAloudSentences.length)}/${readAloudSentences.length}`:'Read page';
-}
-function renderReadAloudController(status='ready'){
- let box=document.getElementById('readAloudController');
- if(!box){
-  box=document.createElement('div');box.id='readAloudController';box.className='read-aloud-controller no-print';
-  box.innerHTML=`<button type="button" data-tts="previous" aria-label="Skip back one sentence" title="Previous sentence">${appIcon('previousSentence')}</button><button type="button" data-tts="play" aria-label="Read this page aloud" title="Read page">${appIcon('volume')}</button><button type="button" data-tts="pause" aria-label="Pause or resume reading" title="Pause or resume">${appIcon('pause')}</button><button type="button" data-tts="next" aria-label="Skip to next sentence" title="Next sentence">${appIcon('nextSentence')}</button><button type="button" data-tts="stop" aria-label="Stop reading" title="Stop">${appIcon('stopSquare')}</button><span class="read-aloud-position">Read page</span>`;
-  document.body.appendChild(box);
-  box.addEventListener('click',e=>{
-   const action=e.target.closest('[data-tts]')?.dataset.tts;if(!action)return;
-   if(action==='play')startReadAloud();
-   else if(action==='pause')toggleReadAloudPause();
-   else if(action==='next')skipReadAloudSentence(1);
-   else if(action==='previous')skipReadAloudSentence(-1);
-   else stopReadAloud();
-  });
- }
- box.dataset.status=status;
- updateReadAloudPosition();
- document.body.classList.toggle('read-aloud-active',status==='speaking'||status==='paused');
-}
-function speakReadAloudSentence(index){
- if(!readAloudSentences.length)return;
- readAloudSentenceIndex=Math.max(0,Math.min(readAloudSentences.length-1,index));
- const runId=++readAloudRunId;
- try{window.speechSynthesis.cancel()}catch{}
- const u=new SpeechSynthesisUtterance(readAloudSentences[readAloudSentenceIndex]);
- activeSpeechUtterance=u;u.lang='en-GB';u.rate=.92;
- u.onend=()=>{
-  if(runId!==readAloudRunId)return;
-  activeSpeechUtterance=null;
-  if(readAloudSentenceIndex<readAloudSentences.length-1){readAloudSentenceIndex++;speakReadAloudSentence(readAloudSentenceIndex)}
-  else{renderReadAloudController('ready')}
- };
- u.onerror=e=>{
-  if(runId!==readAloudRunId||e?.error==='canceled'||e?.error==='interrupted')return;
-  activeSpeechUtterance=null;renderReadAloudController('ready');toast('Read aloud stopped');
- };
- renderReadAloudController('speaking');
- try{window.speechSynthesis.speak(u)}catch{stopReadAloud();toast('Read aloud could not start')}
-}
-function startReadAloud(){
+function speakReadableTile(tile,button){
  if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined')return toast('Read aloud is not supported on this device');
- readAloudSentences=pageSentencesForReadAloud();
- if(!readAloudSentences.length)return toast('There is no readable text on this page');
- readAloudSentenceIndex=0;speakReadAloudSentence(0);
+ if(tile.classList.contains('tts-speaking')){stopReadAloud();return}
+ const text=tileTextForReadAloud(tile);if(!text)return toast('There is no readable text in this tile');
+ stopReadAloud({reset:false});
+ const runId=++readAloudRunId;
+ tile.classList.add('tts-speaking');button.setAttribute('aria-pressed','true');button.setAttribute('aria-label','Stop reading this tile');button.title='Stop reading';
+ const utterance=new SpeechSynthesisUtterance(text);activeSpeechUtterance=utterance;utterance.lang='en-GB';utterance.rate=.92;
+ const finish=()=>{if(runId!==readAloudRunId)return;activeSpeechUtterance=null;tile.classList.remove('tts-speaking');button.setAttribute('aria-pressed','false');button.setAttribute('aria-label','Read this tile aloud');button.title='Read this tile aloud'};
+ utterance.onend=finish;utterance.onerror=e=>{if(e?.error!=='canceled'&&e?.error!=='interrupted')toast('Read aloud stopped');finish()};
+ try{window.speechSynthesis.speak(utterance)}catch{finish();toast('Read aloud could not start')}
 }
-function skipReadAloudSentence(direction){
- if(!readAloudSentences.length){readAloudSentences=pageSentencesForReadAloud();if(!readAloudSentences.length)return toast('There is no readable text on this page')}
- const next=Math.max(0,Math.min(readAloudSentences.length-1,readAloudSentenceIndex+direction));
- if(next===readAloudSentenceIndex){toast(direction>0?'This is the last sentence':'This is the first sentence');return}
- speakReadAloudSentence(next);
-}
-function toggleReadAloudPause(){
- const synth=window.speechSynthesis;if(!synth)return;
- if(synth.paused){synth.resume();renderReadAloudController('speaking')}
- else if(synth.speaking){synth.pause();renderReadAloudController('paused')}
- else startReadAloud();
-}
-function syncReadAloudControl(){
+function addTileReadAloudButtons(){
  const enabled=!!accessibilitySettings().readAloud;
- if(!enabled){stopReadAloud({hide:true});return}
- renderReadAloudController(window.speechSynthesis?.paused?'paused':window.speechSynthesis?.speaking?'speaking':'ready');
+ document.getElementById('readAloudController')?.remove();
+ if(!enabled){stopReadAloud({hide:true});document.body.classList.remove('a11y-tile-tts');return}
+ document.body.classList.add('a11y-tile-tts');
+ readableTileCandidates().forEach(tile=>{
+  tile.classList.add('tts-readable-tile');
+  if(tile.querySelector(':scope > .tts-tile-button'))return;
+  const button=document.createElement('button');button.type='button';button.className='tts-tile-button no-print';button.setAttribute('aria-label','Read this tile aloud');button.setAttribute('aria-pressed','false');button.title='Read this tile aloud';button.innerHTML=appIcon('volume');
+  button.addEventListener('pointerdown',e=>e.stopPropagation());
+  button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();speakReadableTile(tile,button)});
+  tile.appendChild(button);
+ });
 }
+function syncReadAloudControl(){addTileReadAloudButtons()}
 function cleanupTransientUi(){
  stopVoiceToText();stopReadAloud({hide:false});closeLearningSupportInfo();
  document.body.classList.remove('learning-support-modal-open','page-help-open');
@@ -3752,7 +3716,7 @@ const LEARNING_SUPPORT_INFO={
  highContrast:{title:'High contrast',before:'Standard colours',after:'Stronger contrast and clearer borders',className:'preview-high-contrast',explanation:'Strengthens the difference between text, controls and backgrounds. It may help learners who need clearer visual separation between elements.'},
  reduceMotion:{title:'Reduce motion',before:'Animated transitions',after:'Calmer, static transitions',className:'preview-reduce-motion',explanation:'Reduces or removes most movement and animation in the app. It may help learners who find motion distracting or uncomfortable.'},
  readingRuler:{title:'Reading guide',before:'Normal page',after:'Highlighted reading line',className:'preview-reading-guide',explanation:'Adds a horizontal guide that follows the pointer or touch position to make it easier to keep your place while reading.'},
- readAloud:{title:'Text-to-speech',before:'Text only',after:'Read-aloud control available',className:'preview-read-aloud',explanation:'Enables read-aloud controls where supported. Apprentice+ uses the speech voice available on the learner’s device.'},
+ readAloud:{title:'Text-to-speech',before:'Text only',after:'Speaker buttons on information tiles',className:'preview-read-aloud',explanation:'Adds a speaker button to built-in information tiles. Tap a speaker to read only that tile using the voice available on the learner’s device.'},
  voiceInput:{title:'Voice-to-text',before:'Keyboard entry',after:'Microphone entry available',className:'preview-voice-input',explanation:'Shows microphone controls beside supported text fields so learners can use their device’s built-in speech input.'},
  simplify:{title:'Simplified layout',before:'Full page detail',after:'Reduced visual clutter',className:'preview-simplified',explanation:'Hides non-essential decorative information and places greater emphasis on the main task. No work, evidence or features are deleted.'}
 };
@@ -3765,7 +3729,7 @@ function renderSettings(){
  let panel='';
  if(active==='general')panel=`<section class="settings-card"><h3>Appearance</h3><p class="settings-card-copy">Choose how Apprentice+ looks on this device.</p><div class="settings-segmented" role="group" aria-label="App appearance"><button class="${settings.appearance==='light'?'active':''}" data-appearance="light">Light</button><button class="${settings.appearance==='dark'?'active':''}" data-appearance="dark">Dark</button></div></section><section class="settings-card"><h3>App colour</h3><p class="settings-card-copy">Select the main colour used for buttons, tabs and progress highlights.</p><div class="app-colour-grid">${[['green','Apprentice+ Green'],['teal','Teal'],['blue','Blue'],['purple','Purple'],['orange','Orange']].map(([id,label])=>`<button class="app-colour-choice ${settings.accent===id?'active':''}" data-accent="${id}"><span class="app-colour-dot colour-${id}"></span><strong>${label}</strong>${settings.accent===id?'<b>✓</b>':''}</button>`).join('')}</div></section>`;
  if(active==='notifications')panel=`<section class="settings-card notification-settings-card"><h3>Notifications</h3><p class="settings-card-copy">Choose which messages appear in the notification bell.</p>${samsungToggle('settingNotificationsEnabled','Allow notifications','Show the notification bell and messages.',settings.notifications.enabled)}<div class="notification-subsettings ${settings.notifications.enabled?'':'disabled'}">${samsungToggle('settingUpdates','App updates','What’s new and new version messages.',settings.notifications.updates)}${samsungToggle('settingEpa','EPA readiness','Progress and readiness reminders.',settings.notifications.epa)}${samsungToggle('settingAssignments','Assignments','Completion and evidence reminders.',settings.notifications.assignments)}${samsungToggle('settingCertificates','Certificates','New certificate and achievement messages.',settings.notifications.certificates)}</div></section>`;
- if(active==='learning-support'){const a=accessibilitySettings();panel=`<section class="settings-card learning-support-settings-card"><h3>Learning Support</h3><p class="settings-card-copy">Choose the support features that make Apprentice+ easier and more comfortable to use. Tap the i beside an option to see before and after examples.</p>${learningSupportToggle('supportDyslexicFont','dyslexicFont','Dyslexia-friendly text','Uses a clearer typeface and more distinct letter shapes.',a.dyslexicFont)}${learningSupportToggle('supportLargeText','largeText','Larger text','Increases text size throughout the app.',a.largeText)}${learningSupportToggle('supportHighContrast','highContrast','High contrast','Strengthens contrast between text, controls and backgrounds.',a.highContrast)}${learningSupportToggle('supportReduceMotion','reduceMotion','Reduce motion','Removes most animations and moving transitions.',a.reduceMotion)}${learningSupportToggle('supportReadingGuide','readingRuler','Reading guide','Adds a horizontal guide to help follow lines of text.',a.readingRuler)}${learningSupportToggle('supportReadAloud','readAloud','Text-to-speech','Enables read-aloud controls where supported.',a.readAloud)}${learningSupportToggle('supportVoiceInput','voiceInput','Voice-to-text','Shows microphone controls beside supported text fields.',a.voiceInput)}${learningSupportToggle('supportSimplifiedLayout','simplify','Simplified layout','Reduces visual clutter and emphasises the main task.',a.simplify)}<button type="button" class="btn secondary learning-support-reset" id="resetLearningSupport">Reset Learning Support</button></section>`;}
+ if(active==='learning-support'){const a=accessibilitySettings();panel=`<section class="settings-card learning-support-settings-card"><h3>Learning Support</h3><p class="settings-card-copy">Choose the support features that make Apprentice+ easier and more comfortable to use. Tap the i beside an option to see before and after examples.</p>${learningSupportToggle('supportDyslexicFont','dyslexicFont','Dyslexia-friendly text','Uses a clearer typeface and more distinct letter shapes.',a.dyslexicFont)}${learningSupportToggle('supportLargeText','largeText','Larger text','Increases text size throughout the app.',a.largeText)}${learningSupportToggle('supportHighContrast','highContrast','High contrast','Strengthens contrast between text, controls and backgrounds.',a.highContrast)}${learningSupportToggle('supportReduceMotion','reduceMotion','Reduce motion','Removes most animations and moving transitions.',a.reduceMotion)}${learningSupportToggle('supportReadingGuide','readingRuler','Reading guide','Adds a horizontal guide to help follow lines of text.',a.readingRuler)}${learningSupportToggle('supportReadAloud','readAloud','Text-to-speech','Adds a speaker button to built-in information tiles.',a.readAloud)}${learningSupportToggle('supportVoiceInput','voiceInput','Voice-to-text','Shows microphone controls beside supported text fields.',a.voiceInput)}${learningSupportToggle('supportSimplifiedLayout','simplify','Simplified layout','Reduces visual clutter and emphasises the main task.',a.simplify)}<button type="button" class="btn secondary learning-support-reset" id="resetLearningSupport">Reset Learning Support</button></section>`;}
  app.innerHTML=shell(`<button class="back no-print" id="backResources">← Toolbox</button><div class="section-heading settings-heading"><div><div class="number">Settings</div><h2>App settings</h2></div></div><div class="settings-tabs no-print" role="tablist" aria-label="Settings sections">${tabs.map(([id,label])=>`<button type="button" role="tab" aria-selected="${active===id}" class="${active===id?'active':''}" data-settings-tab="${id}">${label}</button>`).join('')}</div><div class="settings-tab-panel" data-active-settings-panel="${active}">${panel}</div>`);
  document.getElementById('backResources').onclick=()=>{state.view='resources';render();window.scrollTo(0,0)};
  document.querySelectorAll('[data-settings-tab]').forEach(button=>button.onclick=()=>{state.settingsTab=button.dataset.settingsTab;renderSettings();window.scrollTo(0,0)});
