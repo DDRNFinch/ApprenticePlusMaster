@@ -2293,3 +2293,24 @@ a:not(.danger-link),
 @media(max-height:720px){.progress-review-card{padding:14px;gap:8px}.review-tracker-list{gap:6px}.review-tracker{padding:7px 9px}.review-tracker small{display:none}.progress-review-title h2{font-size:20px}.review-gradient-track{height:8px}.review-quick-status{padding:8px 10px}.progress-done{padding:9px}}
 .settings-profile-summary{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:12px 0;padding:11px 12px;border-radius:13px;background:var(--green2)}
 .settings-profile-summary strong,.settings-profile-summary span{display:block}.settings-profile-summary span{font-size:12px;color:var(--muted);text-align:right}
+
+/* V1.5.31 — high-contrast white Toolbox app symbols */
+.phone-app-icon svg,
+.phone-app-icon .app-icon{
+  width:52%;
+  height:52%;
+  color:#fff !important;
+  stroke:#fff !important;
+  fill:none !important;
+  opacity:1 !important;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.22));
+}
+.phone-app-icon svg *,
+.phone-app-icon .app-icon *{
+  stroke:#fff !important;
+  vector-effect:non-scaling-stroke;
+}
+.phone-app-icon svg [fill]:not([fill="none"]),
+.phone-app-icon .app-icon [fill]:not([fill="none"]){
+  fill:#fff !important;
+}

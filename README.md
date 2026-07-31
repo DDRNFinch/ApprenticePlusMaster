@@ -1,3 +1,5 @@
+Apprentice+ V1.5.31 — White Toolbox Icons
+
 # Apprentice+ V1.5.29
 
 This build gives the Toolbox a phone-style four-column app icon layout, with mini apps in alphabetical order and Settings always last.

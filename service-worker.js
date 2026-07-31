@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.5.30-compact-progress-review';
-const CURRENT_VERSION='V1.5.30';
+const CACHE='apprentice-plus-v1.5.31-white-toolbox-icons';
+const CURRENT_VERSION='V1.5.31';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,

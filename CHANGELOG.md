@@ -1,3 +1,10 @@
+# Apprentice+ V1.5.31
+
+- Changed all phone-style Toolbox app symbols to solid high-contrast white.
+- Increased the symbol size and added a subtle shadow.
+- Forced SVG strokes and supported filled shapes to remain white under every app theme.
+- Updated the app version, release notes and service-worker cache.
+
 # Apprentice+ V1.5.29
 
 - Rebuilt the Toolbox as a four-column phone-style app grid.
