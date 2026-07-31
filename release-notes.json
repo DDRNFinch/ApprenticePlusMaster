@@ -1,5 +1,5 @@
 {
-  "latest": "V1.5.36",
+  "latest": "V1.5.37",
   "releases": {
     "V1.5.20": {
       "title": "Instant dyslexia tint controls",
@@ -181,6 +181,15 @@
         "Changed silhouettes on every solid green action surface to white for clear contrast.",
         "Applied the fix to primary buttons, active tabs, navigation, notification, speech, recording, reminder and Toolbox icons.",
         "Protected white SVG strokes and filled icon shapes from being recoloured by the selected app theme."
+      ]
+    },
+    "V1.5.37": {
+      "title": "Storage and navigation recovery",
+      "features": [
+        "Prevents a failed update backup from replacing the app with a false local-storage error.",
+        "Automatically removes older duplicate update backups before creating the current safety backup.",
+        "Keeps Toolbox, Course and Academy navigation responsive when an individual page encounters an error.",
+        "Separates genuine learner-data loading errors from optional backup, update and notification failures."
       ]
     }
   }

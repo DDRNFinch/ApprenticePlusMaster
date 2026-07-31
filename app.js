@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.36';
+const APP_VERSION='V1.5.37';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -5161,11 +5161,28 @@ function showHelpTourStep(){
 }
 window.replayApprenticeTour=()=>{localStorage.removeItem(HELP_TOUR_KEY);startHelpTour()};
 
+async function removeOlderUpdateSafetyBackups(keepKey){
+ if(!db)return;
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction('store','readwrite'),store=tx.objectStore('store'),request=store.openCursor();
+  request.onsuccess=()=>{const cursor=request.result;if(!cursor)return;const key=String(cursor.key||'');if(key.startsWith('updateSafetyBackup:')&&key!==keepKey)cursor.delete();cursor.continue()};
+  request.onerror=()=>reject(request.error);
+  tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Backup cleanup was aborted'));
+ });
+}
 async function createUpdateSafetyBackup(){
  const key=`updateSafetyBackup:${APP_VERSION}`;
- const existing=await getStore(key);
- if(existing)return;
- await putStore(key,{app:'Apprentice+',appVersion:APP_VERSION,created:new Date().toISOString(),activeCourse:ACTIVE_COURSE_ID,profile:structuredClone(state.profile),data:structuredClone(state.data)});
+ try{if(await getStore(key))return true}catch(error){console.warn('Unable to check update backup',error)}
+ // Keep only one safety backup. Previous versions duplicated the full learner data on every update,
+ // which could exhaust IndexedDB quota and incorrectly replace the app with a storage error screen.
+ try{await removeOlderUpdateSafetyBackups(key)}catch(error){console.warn('Old update backups could not be removed',error)}
+ try{
+  await putStore(key,{app:'Apprentice+',appVersion:APP_VERSION,created:new Date().toISOString(),activeCourse:ACTIVE_COURSE_ID,profile:structuredClone(state.profile),data:structuredClone(state.data)});
+  return true;
+ }catch(error){
+  console.warn('Update safety backup skipped because device storage is full or unavailable',error);
+  return false;
+ }
 }
 let pendingAppUpdate=null;
 let updateReloading=false;
@@ -5253,9 +5270,14 @@ function activatePrimaryNavigation(target){
  if(target==='academy'){state.view='academy';state.assignment=null;state.section=null}
  else if(target==='resources'){state.view='resources';state.assignment=null;state.section=null;state.editingNoteId=null}
  else{state.view='home';state.assignment=null;state.section=null}
- render();
+ try{render()}catch(error){
+  console.error(`Unable to open ${target}`,error);
+  app.innerHTML=shell(`<section class="card panel"><h2>This page could not open</h2><p class="muted">Apprentice+ kept your saved work. Tap another navigation button and try this page again.</p><button type="button" class="btn" id="retryCurrentPage">Try again</button></section>`);
+  document.getElementById('retryCurrentPage')?.addEventListener('click',()=>{primaryNavigationLocked=false;activatePrimaryNavigation(target)});
+ }
  requestAnimationFrame(()=>{
-  syncReadAloudControl();syncReadingGuide();window.scrollTo({top:0,left:0,behavior:'instant'});
+  try{syncReadAloudControl();syncReadingGuide()}catch(error){console.warn(error)}
+  window.scrollTo({top:0,left:0,behavior:'instant'});
   primaryNavigationLocked=false;
  });
  window.setTimeout(()=>{primaryNavigationLocked=false},500);
@@ -5293,7 +5315,13 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('pageshow',()=>requestAnimationFrame(restoreAppAfterResume));
 window.addEventListener('focus',()=>requestAnimationFrame(restoreAppAfterResume));
 
-(async()=>{db=await openDB();await load();await createUpdateSafetyBackup();await registerAutoUpdater();syncReminderNotifications()})().catch(e=>{console.error(e);app.innerHTML=shell(`<section class="card panel"><h2>Unable to open local storage</h2><p class="muted">Check that private browsing is off and reload the app.</p></section>`)})
+(async()=>{
+ try{db=await openDB();await load()}
+ catch(error){console.error('Unable to load learner data',error);app.innerHTML=shell(`<section class="card panel"><h2>Unable to open learner data</h2><p class="muted">Reload the app. Your saved work has not been deleted.</p></section>`);return}
+ try{await createUpdateSafetyBackup()}catch(error){console.warn('Update backup was skipped',error)}
+ try{await registerAutoUpdater()}catch(error){console.warn('Automatic updates are temporarily unavailable',error)}
+ try{syncReminderNotifications()}catch(error){console.warn('Reminder notifications could not be refreshed',error)}
+})()
 
 
 // v1.3.9 Targeted Revision Engine

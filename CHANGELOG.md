@@ -13,6 +13,13 @@
 - Fitted tour screens and controls above the fixed bottom navigation.
 - Added global navigation-safe spacing and height limits to popups, sheets and modal dialogs.
 
+## V1.5.37
+
+- Fixed the false “Unable to open local storage” crash caused by update safety backups exhausting IndexedDB storage.
+- Older duplicate update backups are removed before the current backup is written.
+- Backup, service-worker and notification failures no longer stop the main app from loading.
+- Added navigation recovery so Toolbox, Course and Academy remain usable if one page throws a runtime error.
+
 ## V1.5.36
 - Restored the mobile quick tour to a stacked layout: phone preview in the top half and guidance in the bottom half.
 - Kept the tour fully above the fixed bottom navigation.
