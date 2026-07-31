@@ -1,4 +1,4 @@
-# V1.5.48
+# V1.5.49
 
 - Upgraded DrawingMate with separate left and right scale selectors.
 - Added a clickable preview and Use ruler button.

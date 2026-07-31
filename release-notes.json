@@ -2,7 +2,7 @@
   "latest": "V1.5.47",
   "releases": [
     {
-      "version": "V1.5.48",
+      "version": "V1.5.49",
       "title": "DrawingMate Two-Sided Scale Ruler",
       "date": "2026-07-31",
       "features": [
@@ -118,7 +118,7 @@
         "Separates genuine learner-data loading errors from optional backup, update and notification failures."
       ]
     },
-    "V1.5.48": {
+    "V1.5.49": {
       "title": "DrawingMate Two-Sided Scale Ruler",
       "date": "2026-07-31",
       "features": [
@@ -129,5 +129,5 @@
       ]
     }
   },
-  "latestVersion": "V1.5.48"
+  "latestVersion": "V1.5.49"
 }
