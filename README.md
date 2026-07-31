@@ -1,1 +1,3 @@
-Apprentice+ V1.5.25 – Course Navigation Reliability Fix
+# Apprentice+ V1.5.26
+
+Text-to-Speech speaker icon contrast update.

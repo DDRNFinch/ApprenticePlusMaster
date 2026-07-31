@@ -1,6 +1,6 @@
-# Apprentice+ V1.5.25
+# Apprentice+ V1.5.26
 
-- Fixed intermittent Course button failures.
-- Added capture-phase primary navigation handling for Android/PWA reliability.
-- Kept bottom navigation above non-modal overlays and restored pointer events after resume.
-- Replaced the timestamp debounce with a render-safe navigation lock.
+- Made the contextual Text-to-Speech speaker icon solid white.
+- Prevented full-app colour themes from recolouring or hiding the speaker glyph.
+- Increased the speaker icon size and stroke weight for clearer visibility.
+- Retained the existing green button and active-reading animation.
