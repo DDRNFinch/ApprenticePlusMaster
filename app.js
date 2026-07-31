@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.9';
+const APP_VERSION='V1.5.10';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -337,6 +337,9 @@ function appIcon(name,extra=''){
   functional:'<path d="M4 5a2 2 0 0 1 2-2h5a3 3 0 0 1 3 3v14a3 3 0 0 0-3-3H4Z"/><path d="M20 5a2 2 0 0 0-2-2h-1a3 3 0 0 0-3 3v14a3 3 0 0 1 3-3h3Z"/><path d="m7 10 2 2 3-4"/>',
   certificate:'<path d="M6 3h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M8 7h8M8 11h5"/><circle cx="15.5" cy="13.5" r="2.5"/><path d="m14 16-1 5 2.5-1.5L18 21l-1-5"/>',
   settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21h-4v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H3v-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3.1V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1v4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>',
+  eye:'<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>',
+  eyeSquint:'<path d="M3 12s3.5-3.5 9-3.5 9 3.5 9 3.5-3.5 3.5-9 3.5S3 12 3 12Z"/><path d="M8 12h8M6.5 8.5 5 7M17.5 8.5 19 7"/>',
+  moveVertical:'<path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/>',
   warning:'<path d="M12 3 2.8 20h18.4Z"/><path d="M12 9v5M12 17h.01"/>'
  };
  return `<svg class="app-icon ${extra}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${paths[name]||paths.file}</svg>`;
@@ -3611,7 +3614,7 @@ function syncReadingGuide(){
  if(!a.readingRuler){guide?.remove();document.body.classList.remove('reading-guide-active');return}
  if(!guide){
   guide=document.createElement('div');guide.id='readingGuideOverlay';guide.className='reading-guide-overlay no-print';
-  guide.innerHTML=`<div class="reading-guide-mask reading-guide-mask-top"></div><div class="reading-guide-box"><button type="button" class="reading-guide-blur" aria-label="Toggle blur outside reading box" title="Toggle blur"><span class="reading-guide-eye-open">👁</span><span class="reading-guide-eye-squint">😑</span></button><span class="reading-guide-label">Reading guide</span><button type="button" class="reading-guide-drag" aria-label="Hold and move reading guide up or down" title="Hold and drag">↕️</button></div><div class="reading-guide-mask reading-guide-mask-bottom"></div>`;
+  guide.innerHTML=`<div class="reading-guide-mask reading-guide-mask-top"></div><div class="reading-guide-label">Reading guide</div><div class="reading-guide-box"></div><div class="reading-guide-controls"><button type="button" class="reading-guide-blur" aria-label="Toggle blur outside reading box" title="Toggle blur"><span class="reading-guide-eye-open">${appIcon('eye')}</span><span class="reading-guide-eye-squint">${appIcon('eyeSquint')}</span></button><button type="button" class="reading-guide-drag" aria-label="Hold and move reading guide up or down" title="Hold and drag">${appIcon('moveVertical')}</button></div><div class="reading-guide-mask reading-guide-mask-bottom"></div>`;
   document.body.appendChild(guide);
   const drag=guide.querySelector('.reading-guide-drag');
   const move=e=>{const y=Math.max(4,Math.min(92,(e.clientY/window.innerHeight)*100));const next=accessibilitySettings();next.readingRulerY=Math.round(y*10)/10;localStorage.setItem(ACCESSIBILITY_KEY,JSON.stringify(next));positionReadingGuide(guide,next)};
@@ -5110,5 +5113,5 @@ function updateTargetedRevision({title,assignment,source,score}){
 const EPA_INTERVIEW_FRAMEWORK=`You are an experienced End-Point Assessor for construction apprenticeships.`;
 const EPA_MCQ_FRAMEWORK=THEORY_MCQ_FRAMEWORK_V140;
 
-// V1.5.9 stability and working text-to-speech controls.
+// V1.5.10 reading guide layout and floating control positioning.
 applyAppSettings();

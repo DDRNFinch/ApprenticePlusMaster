@@ -1,3 +1,10 @@
+## V1.5.10
+
+- Moved the floating text-to-speech controls to the bottom-left so they no longer overlap the notification bell.
+- Moved the Reading Guide title above the clear reading window.
+- Moved the blur toggle and vertical drag control below the reading window.
+- Replaced emoji controls with Apprentice+ line-style SVG icons.
+
 # V1.2 — Guide Phone Auto-Scroll Fix
 
 - Restored automatic scrolling inside the enlarged guide phone preview.
