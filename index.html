@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=1.4">
+  <link rel="stylesheet" href="styles.css?v=1.5.2">
   <title>Apprentice+</title>
 </head>
 <body>
@@ -17,7 +17,7 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <!-- Isolated notification bell: intentionally outside #app so Apprentice+ renders cannot replace it. -->
   <button type="button" id="notificationBell" class="notification-bell no-print" aria-label="Open notifications" aria-controls="notificationBellPanel" aria-expanded="false">
-    <span class="notification-bell-icon" aria-hidden="true">🔔</span>
+    <span class="notification-bell-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"/><path d="M10 21h4"/></svg></span>
     <span class="notification-bell-count" aria-label="1 unread notification">1</span>
   </button>
 
@@ -33,22 +33,35 @@
     </header>
     <div class="notification-bell-list" id="notificationBellList">
       <article class="notification-bell-item unread" data-notification-id="welcome">
-        <span class="notification-bell-item-icon" aria-hidden="true">🔔</span>
-        <div>
-          <strong>Notifications are ready</strong>
-          <p>This bell will show important Apprentice+ messages without changing the app logo or main navigation.</p>
-          <small>Just now</small>
+        <div class="notification-bell-item-content">
+          <span class="notification-bell-item-icon" aria-hidden="true">🔔</span>
+          <div>
+            <strong>Notifications are ready</strong>
+            <p>This bell will show important Apprentice+ messages without changing the app logo or main navigation.</p>
+            <small>Just now</small>
+          </div>
+        </div>
+      </article>
+      <article class="notification-bell-item unread notification-update-item" id="notificationUpdateItem" hidden>
+        <div class="notification-bell-item-content">
+          <span class="notification-bell-item-icon update" aria-hidden="true">↑</span>
+          <div>
+            <strong>App update available</strong>
+            <p class="notification-update-version" id="notificationUpdateVersion">A new Apprentice+ version is ready.</p>
+            <div class="notification-update-whats-new"><b>What’s new</b><ul id="notificationUpdateFeatures"></ul></div>
+            <button type="button" class="notification-update-button" id="notificationOpenUpdate">View update</button>
+          </div>
         </div>
       </article>
     </div>
   </section>
 
-  <script src="qrcode-browser.js?v=1.4.0"></script>
-  <script src="pdf-generator.js?v=1.4.0"></script>
-  <script src="specification-sheet.js?v=1.4.0"></script>
-  <script src="functional-skills-bank.js?v=1.4.0"></script>
-  <script src="trade-courses-bank.js?v=1.4.0"></script>
-  <script src="app.js?v=1.4"></script>
+  <script src="qrcode-browser.js?v=1.5.2"></script>
+  <script src="pdf-generator.js?v=1.5.2"></script>
+  <script src="specification-sheet.js?v=1.5.2"></script>
+  <script src="functional-skills-bank.js?v=1.5.2"></script>
+  <script src="trade-courses-bank.js?v=1.5.2"></script>
+  <script src="app.js?v=1.5.2"></script>
   <script>
   (() => {
     const bell = document.getElementById('notificationBell');
@@ -57,6 +70,10 @@
     const closeButton = document.getElementById('notificationBellClose');
     const list = document.getElementById('notificationBellList');
     const count = bell.querySelector('.notification-bell-count');
+    const updateItem = document.getElementById('notificationUpdateItem');
+    const updateVersion = document.getElementById('notificationUpdateVersion');
+    const updateFeatures = document.getElementById('notificationUpdateFeatures');
+    const openUpdateButton = document.getElementById('notificationOpenUpdate');
     if (!bell || !panel || !backdrop || !closeButton || !list || !count) return;
 
     const deletedKey = 'apprenticeplus.notifications.deleted.v1';
@@ -66,7 +83,7 @@
       if (deleted.includes(item.dataset.notificationId)) item.remove();
     });
     const updateCount = () => {
-      const total = list.querySelectorAll('.notification-bell-item').length;
+      const total = list.querySelectorAll('.notification-bell-item:not([hidden])').length;
       count.textContent = String(total);
       count.hidden = total === 0;
       if (!total && !list.querySelector('.notification-bell-empty')) {
@@ -83,27 +100,64 @@
       window.setTimeout(() => { item.remove(); updateCount(); }, 180);
     };
     const attachSwipe = item => {
-      let startX = 0, currentX = 0, dragging = false;
-      const reset = () => { dragging = false; item.classList.remove('swiping'); item.style.transform = ''; };
+      if (!item || item.dataset.swipeReady === '1') return;
+      item.dataset.swipeReady = '1';
+      const content = item.querySelector('.notification-bell-item-content');
+      if (!content) return;
+      let startX = 0, startY = 0, currentX = 0, currentY = 0, dragging = false, horizontal = false;
+      const reset = () => {
+        dragging = false; horizontal = false;
+        item.classList.remove('swiping','swipe-left','swipe-right');
+        content.style.transform = '';
+      };
       item.addEventListener('pointerdown', event => {
+        if (event.target.closest('button')) return;
         if (event.pointerType === 'mouse' && event.button !== 0) return;
-        startX = currentX = event.clientX; dragging = true; item.classList.add('swiping');
+        startX = currentX = event.clientX; startY = currentY = event.clientY;
+        dragging = true;
         try { item.setPointerCapture(event.pointerId); } catch {}
       });
       item.addEventListener('pointermove', event => {
         if (!dragging) return;
-        currentX = event.clientX;
-        const dx = Math.min(0, currentX - startX);
-        item.style.transform = `translateX(${Math.max(-120, dx)}px)`;
+        currentX = event.clientX; currentY = event.clientY;
+        const dx = currentX - startX, dy = currentY - startY;
+        if (!horizontal && Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        if (!horizontal && Math.abs(dy) > Math.abs(dx)) { reset(); return; }
+        horizontal = true; item.classList.add('swiping');
+        item.classList.toggle('swipe-left', dx < 0);
+        item.classList.toggle('swipe-right', dx > 0);
+        content.style.transform = `translateX(${Math.max(-125, Math.min(125, dx))}px)`;
+        event.preventDefault();
       });
-      item.addEventListener('pointerup', () => {
+      const finish = () => {
         if (!dragging) return;
         const dx = currentX - startX;
-        if (dx < -72) deleteNotification(item); else reset();
-      });
+        if (horizontal && Math.abs(dx) >= 72) deleteNotification(item); else reset();
+      };
+      item.addEventListener('pointerup', finish);
       item.addEventListener('pointercancel', reset);
     };
     list.querySelectorAll('.notification-bell-item').forEach(attachSwipe);
+
+    const showUpdateNotification = info => {
+      if (!updateItem) return;
+      const version = String(info?.version || 'A new version');
+      const updateId = `app-update-${version.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+      if (deleted.includes(updateId)) return;
+      updateItem.dataset.notificationId = updateId;
+      const features = Array.isArray(info?.features) && info.features.length ? info.features : ['Performance improvements and minor fixes.'];
+      updateVersion.textContent = `${version} is ready to install.`;
+      updateFeatures.innerHTML = features.slice(0, 8).map(feature => `<li>${String(feature).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}</li>`).join('');
+      updateItem.hidden = false;
+      attachSwipe(updateItem);
+      updateCount();
+    };
+    window.addEventListener('apprenticeplus:update-ready', event => showUpdateNotification(event.detail));
+    if (window.apprenticePlusPendingUpdateInfo) showUpdateNotification(window.apprenticePlusPendingUpdateInfo);
+    openUpdateButton?.addEventListener('click', () => {
+      closeNotifications();
+      window.setTimeout(() => { if (typeof window.openUpdateReadyModal === 'function') window.openUpdateReadyModal(); }, 190);
+    });
     updateCount();
 
     const openNotifications = () => {

@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.1';
+const APP_VERSION='V1.5.2';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -4882,9 +4882,7 @@ function normaliseUpdateInfo(info){
 }
 function syncUpdateBadge(){
  const badge=document.getElementById('updateNotificationButton');
- if(!badge)return;
- badge.hidden=!pendingAppUpdate;
- badge.textContent=pendingAppUpdate?'1':'';
+ if(badge)badge.hidden=true;
 }
 function requestWaitingWorkerInfo(worker){
  if(!worker)return;
@@ -4893,10 +4891,12 @@ function requestWaitingWorkerInfo(worker){
 function markUpdateReady(worker,info){
  if(!worker)return;
  pendingAppUpdate={worker,info:normaliseUpdateInfo(info)};
+ window.apprenticePlusPendingUpdateInfo=pendingAppUpdate.info;
+ window.dispatchEvent(new CustomEvent('apprenticeplus:update-ready',{detail:pendingAppUpdate.info}));
  syncUpdateBadge();
 }
 function closeUpdateReadyModal(){document.getElementById('updateReadyModal')?.remove()}
-function openUpdateReadyModal(){
+window.openUpdateReadyModal=function openUpdateReadyModal(){
  if(!pendingAppUpdate)return;
  closeUpdateReadyModal();
  const info=pendingAppUpdate.info;
