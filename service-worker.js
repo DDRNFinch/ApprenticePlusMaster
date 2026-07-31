@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.5.22-search-pill-text-fix';
-const CURRENT_VERSION='V1.5.22';
+const CACHE='apprentice-plus-v1.5.23-admin-settings-auto-lock';
+const CURRENT_VERSION='V1.5.23';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,

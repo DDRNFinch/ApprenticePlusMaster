@@ -2047,3 +2047,6 @@ body.a11y-high-contrast .tts-tile-button{background:#000;color:#fff;border:2px s
 .tint-colour-picker{margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
 .tint-colour-picker[hidden]{display:none!important}
 .tint-colour-picker .tint-colour-choice{min-height:78px}.tint-colour-picker .tint-colour-choice span{width:36px;height:36px}
+
+/* V1.5.23 — Admin Mode moved into Settings and auto-locks on close */
+.admin-settings-entry{text-align:center;padding:28px 20px}.admin-settings-lock{width:68px;height:68px;margin:0 auto 14px;border-radius:22px;display:grid;place-items:center;background:var(--green2);color:var(--green)}.admin-settings-lock svg{width:32px;height:32px}.admin-settings-entry .btn{width:100%;margin-top:10px}.admin-auto-lock-note{display:block;margin-top:14px;color:#66736f;line-height:1.45}
