@@ -2496,3 +2496,15 @@ a:not(.danger-link),
   .help-tour-card h2{font-size:18px!important}.help-tour-card p{font-size:12px!important;line-height:1.22!important}
   .help-tour-dots{display:none!important}
 }
+
+
+/* V1.5.35 — complete OTJ entry cards and clipboard action */
+.otj-entry-cards{display:grid;gap:12px}
+.otj-entry-card{border:1px solid rgba(15,118,110,.18);border-radius:16px;background:#fff;padding:14px;box-shadow:0 6px 18px rgba(15,35,40,.05)}
+.otj-entry-card.exported{background:#f8faf9}
+.otj-entry-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:10px;border-bottom:1px solid rgba(88,181,31,.35)}
+.otj-entry-card-head>div{display:grid;gap:3px}.otj-entry-card-head span,.otj-entry-card-head small{font-size:.78rem;color:var(--muted)}
+.otj-entry-card-head small{font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.otj-entry-details{margin:12px 0 0;display:grid;gap:12px}.otj-entry-details div{display:grid;gap:4px}.otj-entry-details dt{font-weight:800;color:var(--ink);font-size:.83rem}.otj-entry-details dd{margin:0;color:var(--ink);font-size:.88rem;line-height:1.48;white-space:pre-wrap}
+.otj-entry-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:13px;padding-top:11px;border-top:1px solid rgba(88,181,31,.35)}
+.otj-entry-actions .btn{margin-right:auto}
