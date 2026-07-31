@@ -1,3 +1,9 @@
+# V1.5.38
+
+- Restored the missing `reminders()` and `saveReminders()` functions.
+- Fixed the Toolbox page runtime crash.
+- Fixed intermittent Academy crashes caused by reminder notification refreshes.
+
 # V1.5.35
 
 - Expanded notification settings for newer Mate apps and course features.

@@ -1,178 +1,17 @@
 {
   "latest": "V1.5.37",
-  "releases": {
-    "V1.5.20": {
-      "title": "Instant dyslexia tint controls",
+  "releases": [
+    {
+      "version": "V1.5.38",
+      "title": "Toolbox and reminder runtime fix",
+      "date": "2026-07-31",
       "features": [
-        "Shows the tint colour and strength controls immediately when Dyslexia tint overlay is turned on.",
-        "Hides the tint controls immediately when the overlay is turned off.",
-        "Applies and removes the full-app glass tint instantly without refreshing the page.",
-        "Keeps the selected colour and strength saved on the learner\u2019s device."
-      ]
-    },
-    "V1.5.19": {
-      "title": "Reliable update descriptions",
-      "features": [
-        "Loads update descriptions from one central release-notes file instead of hard-coded service-worker text.",
-        "Automatically displays the notes that match the version being installed.",
-        "Keeps the notification centre and update installation popup in sync.",
-        "Includes a safe fallback message if release notes cannot be loaded while offline."
-      ]
-    },
-    "V1.5.18": {
-      "title": "Toolbox and Settings help tours",
-      "features": [
-        "Updates the information tour for every Toolbox section.",
-        "Adds guided help for MeasureMate, MaterialMate, NoteMate, DrawingMate and ProjectMate.",
-        "Adds separate guidance for Settings: General, Notifications and Learning Support.",
-        "Highlights the current reading guide, text-to-speech and dyslexia tint controls."
-      ]
-    },
-    "V1.5.17": {
-      "title": "Tint colour picker",
-      "features": [
-        "Adds a clearly labelled overlay-colour selector in Learning Support.",
-        "Provides Yellow, Blue, Mint, Peach, Rose and Grey tint choices.",
-        "Applies colour and strength changes instantly across the entire app.",
-        "Saves the selected tint settings on the learner's device."
-      ]
-    },
-    "V1.5.21": {
-      "title": "Search activity pill text fix",
-      "features": [
-        "Restores the missing first letter on every Popular Course Activities search pill.",
-        "Corrects the activity-title cleaning rule so normal titles such as Health & Safety and Cavity Walling remain complete.",
-        "Keeps assignment-code removal working only when a genuine code separator is present."
-      ]
-    },
-    "V1.5.22": {
-      "title": "Complete Settings help highlights",
-      "features": [
-        "Makes the green help-tour highlight cover the complete Settings tile or switch row instead of only the hidden checkbox control.",
-        "Adds visible highlights for every General, Notifications and Learning Support setting.",
-        "Shows the Dyslexia tint colour and strength controls inside the tour even when the tint is currently switched off.",
-        "Keeps the phone preview scrolling to each highlighted Settings item."
-      ]
-    },
-    "V1.5.23": {
-      "title": "Admin Mode moved to Settings",
-      "features": [
-        "Moves Admin Mode to the final section in Settings.",
-        "Keeps Admin Mode protected by the existing four-digit password.",
-        "Automatically locks Admin Mode whenever its window is closed.",
-        "Removes the old Admin Mode link from the evidence-pack page."
-      ]
-    },
-    "V1.5.24": {
-      "title": "Full-app colour themes",
-      "features": [
-        "App colour now changes buttons, tabs, selected states and progress highlights throughout Apprentice+.",
-        "Built-in line icons and icon backgrounds now follow the selected app colour.",
-        "Completion cards, active navigation, switches, focus rings and accent borders update immediately.",
-        "Warning, error and evidence-type colours remain distinct for clarity."
-      ]
-    },
-    "V1.5.25": {
-      "title": "Reliable Course navigation",
-      "features": [
-        "Keeps the Course button responsive without requiring a page refresh.",
-        "Moves primary navigation handling to capture-phase touch and click listeners so child controls cannot consume the tap.",
-        "Keeps the bottom navigation above non-modal accessibility overlays and repairs stale pointer-event states after resume.",
-        "Replaces the timing-only tap guard with a render-safe navigation lock."
-      ]
-    },
-    "V1.5.26": {
-      "title": "Clear Text-to-Speech speaker icon",
-      "features": [
-        "Displays the speaker symbol in solid white inside every Text-to-Speech button.",
-        "Prevents the selected app colour from overriding the speaker glyph.",
-        "Slightly enlarges and strengthens the speaker icon so it remains easy to recognise.",
-        "Keeps the green circular button and existing speaking animation."
-      ]
-    },
-    "V1.5.27": {
-      "title": "Centred notification popup",
-      "features": [
-        "Opens the bell notification panel in the middle of the screen.",
-        "Keeps the popup above the bottom navigation on phones and installed PWAs.",
-        "Adds a centred fade-and-scale animation and rounded modal layout.",
-        "Keeps backdrop tapping, close button and Escape-key closing behaviour."
-      ]
-    },
-    "V1.5.28": {
-      "title": "OTJMate and RemindMate",
-      "features": [
-        "Added OTJMate with editable date, College/Workplace/Other hour presets, activity details, a 30-word learning reflection and optional photos.",
-        "OTJMate tracks recorded hours against 8 expected hours per elapsed week inside the course progress popup.",
-        "Each OTJ export contains the full details of new entries, stores the PDF locally and excludes exported entries from the next PDF.",
-        "Added RemindMate for review targets and dated tasks, including due-today and overdue notifications in the bell."
-      ]
-    },
-    "V1.5.29": {
-      "title": "Phone-style Toolbox app grid",
-      "features": [
-        "Replaced the large Toolbox cards with rounded-square app icons in a four-column phone-style grid.",
-        "Sorted the mini apps alphabetically while keeping Settings permanently as the final app.",
-        "Added press feedback, white app symbols and app-theme-aware icon colours.",
-        "Added compact badges for saved NoteMate items, unexported OTJMate entries and due RemindMate reminders."
-      ]
-    },
-    "V1.5.30": {
-      "title": "Compact learner progress review",
-      "features": [
-        "Rebuilt the learner-name progress popup as a compact, non-scrolling review dashboard.",
-        "Assignments, KSBs and OTJ now compare actual progress with the amount expected by today.",
-        "Restored EPA readiness using collective best EPA scores.",
-        "Added red-to-amber-to-green tracker bars and kept the popup above bottom navigation.",
-        "Moved learner profile editing into the Settings app."
-      ]
-    },
-    "V1.5.31": {
-      "title": "White Toolbox app icons",
-      "features": [
-        "Changed every Toolbox and Settings app symbol to a high-contrast white icon.",
-        "Increased icon size slightly so each mini app is easier to recognise.",
-        "Prevented app-theme colours from overriding the white symbols.",
-        "Added a subtle icon shadow for visibility on lighter theme colours."
-      ]
-    },
-    "V1.5.33": {
-      "title": "Accurate NVQ learning-outcome progress",
-      "features": [
-        "Counts repeated Learning Outcome numbers separately within each mandatory unit.",
-        "Includes Learning Outcomes from the learner\u2019s selected optional unit in the total.",
-        "Moves the learner progress popup action from the learner name to the progress ring.",
-        "Displays time elapsed on a constant green line while retaining its current percentage marker."
-      ]
-    },
-    "V1.5.34": {
-      "title": "Current fitted tours and navigation-safe popups",
-      "features": [
-        "Updates every i help tour to match the current Home, Course, Academy and eight-app Toolbox layouts.",
-        "Clarifies that the learner name is display-only and that progress opens from the progress ring.",
-        "Keeps help-tour controls fully above the bottom navigation on short phone screens.",
-        "Adds app-wide bottom-navigation clearance so popup, sheet and modal buttons remain visible and easy to press."
-      ]
-    },
-    "V1.5.35": {
-      "title": "Expanded notifications and compact OTJ exports",
-      "features": [
-        "Adds notification controls for OTJMate, RemindMate, ProjectMate, progress reviews and Academy learning.",
-        "Removes photographs from OTJMate entries and exports.",
-        "Places multiple complete OTJ entries on each PDF page with thin green dividers.",
-        "Adds Copy entry to copy a complete Aptem-ready OTJ record to the phone clipboard."
-      ]
-    },
-    "V1.5.36": {
-      "title": "Restored stacked quick-tour layout",
-      "features": [
-        "Restores the original mobile tour arrangement with the phone preview in the top half and guidance in the bottom half.",
-        "Keeps the complete tour above the fixed navigation bar on supported phone sizes.",
-        "Keeps Skip, Back, Next and Finish controls visible and easy to press.",
-        "Allows only the guidance paragraph to scroll when a smaller screen cannot display all text."
+        "Restored the missing RemindMate data functions that prevented the Toolbox from opening.",
+        "Stopped reminder notification refreshes from crashing Academy or other pages.",
+        "Kept all learner OTJ entries and reminders unchanged."
       ]
     }
-  },
+  ],
   "versions": {
     "V1.5.32": {
       "title": "White Icons on Green Surfaces",
@@ -192,5 +31,6 @@
         "Separates genuine learner-data loading errors from optional backup, update and notification failures."
       ]
     }
-  }
+  },
+  "latestVersion": "V1.5.38"
 }

@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.5.37-storage-navigation-recovery';
-const CURRENT_VERSION='V1.5.37';
+const CACHE='apprentice-plus-v1.5.38-storage-navigation-recovery';
+const CURRENT_VERSION='V1.5.38';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,
