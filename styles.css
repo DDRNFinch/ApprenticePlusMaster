@@ -1990,3 +1990,12 @@ body.a11y-reduce-motion .reading-guide-mask,body.a11y-reduce-motion .reading-gui
 
 /* V1.5.12 persistent Text-to-Speech control */
 .read-aloud-controller{position:fixed!important;left:10px!important;right:auto!important;bottom:calc(78px + env(safe-area-inset-bottom))!important;z-index:10060!important}
+
+/* V1.5.14 sentence navigation and isolated reading-guide drag handle */
+.read-aloud-controller{max-width:calc(100vw - 20px);flex-wrap:nowrap}
+.read-aloud-controller button .app-icon{width:18px;height:18px;stroke-width:2.1}
+.read-aloud-controller .read-aloud-position{min-width:42px;text-align:center;white-space:nowrap}
+.read-aloud-controller[data-status="paused"] button[data-tts="pause"]{box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 25%,transparent)}
+.reading-guide-drag{touch-action:none!important;overscroll-behavior:contain;cursor:ns-resize}
+.reading-guide-box,.reading-guide-label,.reading-guide-mask{touch-action:auto;pointer-events:none!important}
+@media(max-width:430px){.read-aloud-controller{gap:4px}.read-aloud-controller button{width:30px;height:30px}.read-aloud-controller .read-aloud-position{font-size:10px;display:inline-block;min-width:34px}}

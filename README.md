@@ -1,4 +1,4 @@
-# Apprentice+ V1.5.13
+# Apprentice+ V1.5.14
 
 This build fixes the reading-guide control layout while retaining the persistent Text-to-Speech control.
 

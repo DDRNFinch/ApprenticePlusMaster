@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.13';
+const APP_VERSION='V1.5.14';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -340,6 +340,11 @@ function appIcon(name,extra=''){
   eye:'<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>',
   eyeSquint:'<path d="M3 12s3.5-3.5 9-3.5 9 3.5 9 3.5-3.5 3.5-9 3.5S3 12 3 12Z"/><path d="M8 12h8M6.5 8.5 5 7M17.5 8.5 19 7"/>',
   moveVertical:'<path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/>',
+  volume:'<path d="M11 5 6.5 9H3v6h3.5L11 19Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/>',
+  previousSentence:'<path d="M6 5v14"/><path d="m18 6-8 6 8 6Z"/>',
+  nextSentence:'<path d="M18 5v14"/><path d="m6 6 8 6-8 6Z"/>',
+  pause:'<path d="M8 5v14M16 5v14"/>',
+  stopSquare:'<rect x="6" y="6" width="12" height="12" rx="1"/>',
   warning:'<path d="M12 3 2.8 20h18.4Z"/><path d="M12 9v5M12 17h.01"/>'
  };
  return `<svg class="app-icon ${extra}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${paths[name]||paths.file}</svg>`;
@@ -3560,9 +3565,14 @@ function noteDate(value){try{return new Intl.DateTimeFormat('en-GB',{day:'2-digi
 const ACCESSIBILITY_KEY='apprenticeplus.accessibility.v1';
 const ACCESSIBILITY_CHECK_KEY='apprenticeplus.accessibilityCheck.v1';
 let activeSpeechUtterance=null;
-function stopReadAloud({hide=false}={}){
+let readAloudSentences=[];
+let readAloudSentenceIndex=0;
+let readAloudRunId=0;
+function stopReadAloud({hide=false,reset=true}={}){
+ readAloudRunId++;
  try{window.speechSynthesis?.cancel?.()}catch{}
  activeSpeechUtterance=null;
+ if(reset){readAloudSentences=[];readAloudSentenceIndex=0}
  document.body.classList.remove('read-aloud-active');
  if(hide){document.getElementById('readAloudController')?.remove();return}
  if(accessibilitySettings().readAloud)renderReadAloudController('ready');
@@ -3572,32 +3582,80 @@ function pageTextForReadAloud(){
  if(!scope)return '';
  const clone=scope.cloneNode(true);
  clone.querySelectorAll('nav,button,input,textarea,select,svg,script,style,.no-print,.app-version-bottom,.read-aloud-controller').forEach(n=>n.remove());
- return (clone.innerText||clone.textContent||'').replace(/\s+/g,' ').trim().slice(0,12000);
+ return (clone.innerText||clone.textContent||'').replace(/\s+/g,' ').trim().slice(0,24000);
+}
+function pageSentencesForReadAloud(){
+ const text=pageTextForReadAloud();
+ if(!text)return [];
+ const matched=text.match(/[^.!?]+(?:[.!?]+|$)/g)||[text];
+ return matched.map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
+}
+function updateReadAloudPosition(){
+ const label=document.querySelector('#readAloudController .read-aloud-position');
+ if(!label)return;
+ label.textContent=readAloudSentences.length?`${Math.min(readAloudSentenceIndex+1,readAloudSentences.length)}/${readAloudSentences.length}`:'Read page';
 }
 function renderReadAloudController(status='ready'){
  let box=document.getElementById('readAloudController');
  if(!box){
   box=document.createElement('div');box.id='readAloudController';box.className='read-aloud-controller no-print';
-  box.innerHTML=`<button type="button" data-tts="play" aria-label="Read this page aloud">🔊</button><button type="button" data-tts="pause" aria-label="Pause or resume reading">⏯</button><button type="button" data-tts="stop" aria-label="Stop reading">■</button><span>Read aloud</span>`;
+  box.innerHTML=`<button type="button" data-tts="previous" aria-label="Skip back one sentence" title="Previous sentence">${appIcon('previousSentence')}</button><button type="button" data-tts="play" aria-label="Read this page aloud" title="Read page">${appIcon('volume')}</button><button type="button" data-tts="pause" aria-label="Pause or resume reading" title="Pause or resume">${appIcon('pause')}</button><button type="button" data-tts="next" aria-label="Skip to next sentence" title="Next sentence">${appIcon('nextSentence')}</button><button type="button" data-tts="stop" aria-label="Stop reading" title="Stop">${appIcon('stopSquare')}</button><span class="read-aloud-position">Read page</span>`;
   document.body.appendChild(box);
-  box.addEventListener('click',e=>{const action=e.target.closest('[data-tts]')?.dataset.tts;if(!action)return;if(action==='play')startReadAloud();else if(action==='pause'){const synth=window.speechSynthesis;if(!synth)return;if(synth.paused)synth.resume();else if(synth.speaking)synth.pause()}else stopReadAloud()});
+  box.addEventListener('click',e=>{
+   const action=e.target.closest('[data-tts]')?.dataset.tts;if(!action)return;
+   if(action==='play')startReadAloud();
+   else if(action==='pause')toggleReadAloudPause();
+   else if(action==='next')skipReadAloudSentence(1);
+   else if(action==='previous')skipReadAloudSentence(-1);
+   else stopReadAloud();
+  });
  }
  box.dataset.status=status;
+ updateReadAloudPosition();
  document.body.classList.toggle('read-aloud-active',status==='speaking'||status==='paused');
+}
+function speakReadAloudSentence(index){
+ if(!readAloudSentences.length)return;
+ readAloudSentenceIndex=Math.max(0,Math.min(readAloudSentences.length-1,index));
+ const runId=++readAloudRunId;
+ try{window.speechSynthesis.cancel()}catch{}
+ const u=new SpeechSynthesisUtterance(readAloudSentences[readAloudSentenceIndex]);
+ activeSpeechUtterance=u;u.lang='en-GB';u.rate=.92;
+ u.onend=()=>{
+  if(runId!==readAloudRunId)return;
+  activeSpeechUtterance=null;
+  if(readAloudSentenceIndex<readAloudSentences.length-1){readAloudSentenceIndex++;speakReadAloudSentence(readAloudSentenceIndex)}
+  else{renderReadAloudController('ready')}
+ };
+ u.onerror=e=>{
+  if(runId!==readAloudRunId||e?.error==='canceled'||e?.error==='interrupted')return;
+  activeSpeechUtterance=null;renderReadAloudController('ready');toast('Read aloud stopped');
+ };
+ renderReadAloudController('speaking');
+ try{window.speechSynthesis.speak(u)}catch{stopReadAloud();toast('Read aloud could not start')}
 }
 function startReadAloud(){
  if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined')return toast('Read aloud is not supported on this device');
- const text=pageTextForReadAloud();if(!text)return toast('There is no readable text on this page');
- stopReadAloud();renderReadAloudController('speaking');
- const u=new SpeechSynthesisUtterance(text);activeSpeechUtterance=u;u.lang='en-GB';u.rate=.92;
- u.onend=()=>{activeSpeechUtterance=null;renderReadAloudController('ready')};
- u.onerror=()=>{activeSpeechUtterance=null;renderReadAloudController('ready');toast('Read aloud stopped')};
- try{window.speechSynthesis.cancel();window.speechSynthesis.speak(u)}catch{stopReadAloud();toast('Read aloud could not start')}
+ readAloudSentences=pageSentencesForReadAloud();
+ if(!readAloudSentences.length)return toast('There is no readable text on this page');
+ readAloudSentenceIndex=0;speakReadAloudSentence(0);
+}
+function skipReadAloudSentence(direction){
+ if(!readAloudSentences.length){readAloudSentences=pageSentencesForReadAloud();if(!readAloudSentences.length)return toast('There is no readable text on this page')}
+ const next=Math.max(0,Math.min(readAloudSentences.length-1,readAloudSentenceIndex+direction));
+ if(next===readAloudSentenceIndex){toast(direction>0?'This is the last sentence':'This is the first sentence');return}
+ speakReadAloudSentence(next);
+}
+function toggleReadAloudPause(){
+ const synth=window.speechSynthesis;if(!synth)return;
+ if(synth.paused){synth.resume();renderReadAloudController('speaking')}
+ else if(synth.speaking){synth.pause();renderReadAloudController('paused')}
+ else startReadAloud();
 }
 function syncReadAloudControl(){
  const enabled=!!accessibilitySettings().readAloud;
  if(!enabled){stopReadAloud({hide:true});return}
- renderReadAloudController(window.speechSynthesis?.speaking?'speaking':'ready');
+ renderReadAloudController(window.speechSynthesis?.paused?'paused':window.speechSynthesis?.speaking?'speaking':'ready');
 }
 function cleanupTransientUi(){
  stopVoiceToText();stopReadAloud({hide:false});closeLearningSupportInfo();
@@ -3618,10 +3676,11 @@ function syncReadingGuide(){
   guide.innerHTML=`<div class="reading-guide-mask reading-guide-mask-top"></div><div class="reading-guide-label">Reading guide</div><div class="reading-guide-box"></div><div class="reading-guide-controls"><button type="button" class="reading-guide-blur" aria-label="Toggle blur outside reading box" title="Toggle blur"><span class="reading-guide-eye-open">${appIcon('eye')}</span><span class="reading-guide-eye-squint">${appIcon('eyeSquint')}</span></button><button type="button" class="reading-guide-drag" aria-label="Hold and move reading guide up or down" title="Hold and drag">${appIcon('moveVertical')}</button></div><div class="reading-guide-mask reading-guide-mask-bottom"></div>`;
   document.body.appendChild(guide);
   const drag=guide.querySelector('.reading-guide-drag');
-  const move=e=>{const y=Math.max(4,Math.min(92,(e.clientY/window.innerHeight)*100));const next=accessibilitySettings();next.readingRulerY=Math.round(y*10)/10;localStorage.setItem(ACCESSIBILITY_KEY,JSON.stringify(next));positionReadingGuide(guide,next)};
-  drag.addEventListener('pointerdown',e=>{e.preventDefault();drag.setPointerCapture?.(e.pointerId);guide.classList.add('dragging')});
-  drag.addEventListener('pointermove',e=>{if(!guide.classList.contains('dragging'))return;move(e)});
-  const end=e=>{guide.classList.remove('dragging');try{drag.releasePointerCapture?.(e.pointerId)}catch{}};
+  let dragOffsetY=0;
+  const move=e=>{const guideY=(e.clientY-dragOffsetY)/window.innerHeight*100;const y=Math.max(4,Math.min(92,guideY));const next=accessibilitySettings();next.readingRulerY=Math.round(y*10)/10;localStorage.setItem(ACCESSIBILITY_KEY,JSON.stringify(next));positionReadingGuide(guide,next)};
+  drag.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const currentY=Math.max(4,Math.min(92,Number(accessibilitySettings().readingRulerY)||45))/100*window.innerHeight;dragOffsetY=e.clientY-currentY;drag.setPointerCapture?.(e.pointerId);guide.classList.add('dragging')});
+  drag.addEventListener('pointermove',e=>{if(!guide.classList.contains('dragging'))return;e.preventDefault();e.stopPropagation();move(e)});
+  const end=e=>{e.preventDefault();e.stopPropagation();guide.classList.remove('dragging');try{drag.releasePointerCapture?.(e.pointerId)}catch{}};
   drag.addEventListener('pointerup',end);drag.addEventListener('pointercancel',end);
   guide.querySelector('.reading-guide-blur').addEventListener('click',()=>{const next=accessibilitySettings();next.readingRulerBlur=!next.readingRulerBlur;saveAccessibilitySettings(next)});
  }
