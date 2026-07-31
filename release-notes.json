@@ -1,6 +1,30 @@
 {
-  "latest": "V1.5.58",
+  "latest": "V1.5.60",
   "releases": [
+    {
+      "version": "V1.5.60",
+      "title": "Core Named Analytics Events",
+      "date": "2026-07-31",
+      "items": [
+        "Replaced vague ui_action and field_changed reporting with clear feature-specific event names.",
+        "Added readable open events for Home, Toolbox, Academy, Trade Courses, Functional Skills, EPA and every Toolbox mini app.",
+        "Added named started and completed events for Trade Course, Functional Skills, EPA Knowledge, EPA Discussion, EPA Practical and assignment knowledge tests.",
+        "Added meaningful feature action events for starts, completions, saves, exports, downloads, searches, retakes and submissions.",
+        "Continued excluding names, emails, typed content, answers, evidence, media, signatures, files and precise location."
+      ]
+    },
+    {
+      "version": "V1.5.59",
+      "title": "Useful Analytics Dashboard",
+      "date": "2026-07-31",
+      "items": [
+        "Replaced raw developer event lists with a practical usage summary for the current device.",
+        "Added today and seven-day totals for sessions, time used, assessments, evidence saves and document exports.",
+        "Added rankings for the most-used Toolbox apps and most-visited screens.",
+        "Added readable recent activity while keeping names, emails, evidence content and media excluded.",
+        "Kept Firebase connection and queue checks available inside a compact privacy and diagnostics section."
+      ]
+    },
     {
       "version": "V1.5.58",
       "title": "Hidden Developer Mode",
@@ -225,9 +249,33 @@
         "Kept Firebase diagnostics, queue controls, recent anonymous events and privacy details inside the hidden screen only.",
         "Kept Admin Mode focused on course management, college branding, RPL and data controls."
       ]
+    },
+    "V1.5.59": {
+      "version": "V1.5.59",
+      "title": "Useful Analytics Dashboard",
+      "date": "2026-07-31",
+      "items": [
+        "Replaced raw developer event lists with a practical usage summary for the current device.",
+        "Added today and seven-day totals for sessions, time used, assessments, evidence saves and document exports.",
+        "Added rankings for the most-used Toolbox apps and most-visited screens.",
+        "Added readable recent activity while keeping names, emails, evidence content and media excluded.",
+        "Kept Firebase connection and queue checks available inside a compact privacy and diagnostics section."
+      ]
+    },
+    "V1.5.60": {
+      "version": "V1.5.60",
+      "title": "Core Named Analytics Events",
+      "date": "2026-07-31",
+      "items": [
+        "Replaced vague ui_action and field_changed reporting with clear feature-specific event names.",
+        "Added readable open events for Home, Toolbox, Academy, Trade Courses, Functional Skills, EPA and every Toolbox mini app.",
+        "Added named started and completed events for Trade Course, Functional Skills, EPA Knowledge, EPA Discussion, EPA Practical and assignment knowledge tests.",
+        "Added meaningful feature action events for starts, completions, saves, exports, downloads, searches, retakes and submissions.",
+        "Continued excluding names, emails, typed content, answers, evidence, media, signatures, files and precise location."
+      ]
     }
   },
-  "latestVersion": "V1.5.58",
+  "latestVersion": "V1.5.60",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",

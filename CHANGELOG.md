@@ -1,3 +1,11 @@
+# V1.5.60
+
+- Replaced generic analytics events with clear feature-specific event names.
+- Added named open events for core screens and Toolbox mini apps.
+- Added named start and completion events for Trade Courses, Functional Skills and EPA assessments.
+- Removed analytics reporting for ordinary text-field changes.
+- Kept all personal details, typed content and learner evidence excluded.
+
 # Changelog
 
 ## V1.5.56 — Analytics Developer Tools
