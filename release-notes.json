@@ -1,6 +1,16 @@
 {
-  "latest": "V1.5.53",
+  "latest": "V1.5.54",
   "releases": [
+    {
+      "version": "V1.5.54",
+      "title": "Full Anonymous Analytics Integration",
+      "features": [
+        "Anonymous interaction tracking across every current app screen and feature flow.",
+        "Assessment starts and completions across Trade Courses, Functional Skills, assignment knowledge and EPA.",
+        "Anonymous evidence, video, media, Toolbox, search, certificate, PDF and export activity tracking.",
+        "No learner details, entered answers, evidence content, photos, videos, audio, signatures or contact details are sent."
+      ]
+    },
     {
       "version": "V1.5.53",
       "title": "Anonymous Analytics Foundation",

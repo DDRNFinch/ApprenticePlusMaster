@@ -1,5 +1,11 @@
 # Apprentice+ Changelog
 
+## V1.5.54 — Full Anonymous Analytics Integration
+- Connected analytics to all current UI controls, navigation and feature flows.
+- Added anonymous assessment start/completion tracking for Trade Courses, Functional Skills, assignment knowledge and EPA.
+- Added anonymous evidence, video/media, Toolbox, search, certificate, PDF/export, update and installation events.
+- Added strict metadata-only tracking: no entered text, learner identity, evidence content or media is transmitted.
+
 ## V1.5.53 — Analytics Foundation
 - Added Firebase Analytics bootstrap and a reusable anonymous `trackEvent()` API.
 - Added app open, first open, update, session, screen-view and screen-time tracking.
