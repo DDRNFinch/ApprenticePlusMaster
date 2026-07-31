@@ -31,8 +31,8 @@
       </div>
       <button type="button" id="notificationBellClose" class="notification-bell-close" aria-label="Close notifications">×</button>
     </header>
-    <div class="notification-bell-list">
-      <article class="notification-bell-item unread">
+    <div class="notification-bell-list" id="notificationBellList">
+      <article class="notification-bell-item unread" data-notification-id="welcome">
         <span class="notification-bell-item-icon" aria-hidden="true">🔔</span>
         <div>
           <strong>Notifications are ready</strong>
@@ -55,7 +55,56 @@
     const panel = document.getElementById('notificationBellPanel');
     const backdrop = document.getElementById('notificationBellBackdrop');
     const closeButton = document.getElementById('notificationBellClose');
-    if (!bell || !panel || !backdrop || !closeButton) return;
+    const list = document.getElementById('notificationBellList');
+    const count = bell.querySelector('.notification-bell-count');
+    if (!bell || !panel || !backdrop || !closeButton || !list || !count) return;
+
+    const deletedKey = 'apprenticeplus.notifications.deleted.v1';
+    let deleted = [];
+    try { deleted = JSON.parse(localStorage.getItem(deletedKey) || '[]'); } catch { deleted = []; }
+    list.querySelectorAll('[data-notification-id]').forEach(item => {
+      if (deleted.includes(item.dataset.notificationId)) item.remove();
+    });
+    const updateCount = () => {
+      const total = list.querySelectorAll('.notification-bell-item').length;
+      count.textContent = String(total);
+      count.hidden = total === 0;
+      if (!total && !list.querySelector('.notification-bell-empty')) {
+        list.insertAdjacentHTML('beforeend', '<div class="notification-bell-empty"><strong>No notifications</strong><p>New Apprentice+ messages will appear here.</p></div>');
+      }
+    };
+    const deleteNotification = item => {
+      const id = item.dataset.notificationId;
+      if (id && !deleted.includes(id)) {
+        deleted.push(id);
+        try { localStorage.setItem(deletedKey, JSON.stringify(deleted)); } catch {}
+      }
+      item.classList.add('deleting');
+      window.setTimeout(() => { item.remove(); updateCount(); }, 180);
+    };
+    const attachSwipe = item => {
+      let startX = 0, currentX = 0, dragging = false;
+      const reset = () => { dragging = false; item.classList.remove('swiping'); item.style.transform = ''; };
+      item.addEventListener('pointerdown', event => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        startX = currentX = event.clientX; dragging = true; item.classList.add('swiping');
+        try { item.setPointerCapture(event.pointerId); } catch {}
+      });
+      item.addEventListener('pointermove', event => {
+        if (!dragging) return;
+        currentX = event.clientX;
+        const dx = Math.min(0, currentX - startX);
+        item.style.transform = `translateX(${Math.max(-120, dx)}px)`;
+      });
+      item.addEventListener('pointerup', () => {
+        if (!dragging) return;
+        const dx = currentX - startX;
+        if (dx < -72) deleteNotification(item); else reset();
+      });
+      item.addEventListener('pointercancel', reset);
+    };
+    list.querySelectorAll('.notification-bell-item').forEach(attachSwipe);
+    updateCount();
 
     const openNotifications = () => {
       panel.hidden = false;
