@@ -1953,3 +1953,24 @@ body.a11y-reading-ruler::after{display:none!important}
 body.a11y-high-contrast .reading-guide-box{border-color:#000;background:rgba(255,255,0,.22)}
 body.a11y-high-contrast .reading-guide-label,body.a11y-high-contrast .reading-guide-drag,body.a11y-high-contrast .reading-guide-blur{background:#000;color:#fff;border-color:#000}
 body.a11y-reduce-motion .reading-guide-mask,body.a11y-reduce-motion .reading-guide-drag{transition:none!important}
+
+
+/* V1.5.11 Reading guide controls */
+.reading-guide-controls{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ margin-top:8px;
+}
+.reading-guide-controls .blur-control{
+ order:1;
+ margin-right:auto;
+ backdrop-filter:none!important;
+ filter:none!important;
+}
+.reading-guide-controls .move-control{
+ order:2;
+ margin-left:auto;
+ backdrop-filter:none!important;
+ filter:none!important;
+}
