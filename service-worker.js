@@ -1,6 +1,6 @@
-const CACHE='apprentice-plus-v1.5.6-learning-support';
+const CACHE='apprentice-plus-v1.5.7-learning-support';
 const UPDATE_INFO={
- version:'V1.5.6',
+ version:'V1.5.7',
  features:[
   'Adds Samsung-style notification on/off switches.',
   'Adds notification controls for updates, EPA, assignments and certificates.',
