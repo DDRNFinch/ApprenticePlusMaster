@@ -1,6 +1,17 @@
 {
-  "latest": "V1.5.50",
+  "latest": "V1.5.51",
   "releases": [
+    {
+      "version": "V1.5.51",
+      "title": "Colour-coded grouped Toolbox",
+      "date": "2026-07-31",
+      "features": [
+        "Grouped Toolbox apps into Work tools, Productivity and Support.",
+        "Added distinctive colour gradients to each mini app for faster visual recognition.",
+        "Moved Settings into the Support section beside FeedbackMate.",
+        "Kept the existing phone-style four-column app layout."
+      ]
+    },
     {
       "version": "V1.5.50",
       "title": "FeedbackMate idea and issue submissions",
@@ -140,7 +151,7 @@
       ]
     }
   },
-  "latestVersion": "V1.5.50",
+  "latestVersion": "V1.5.51",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",
@@ -151,6 +162,17 @@
         "Added Idea and Issue submission types with learner name, reply email, title, details and optional screenshot.",
         "Submits feedback online to apprentice-plus@outlook.com and includes app version, course, date and device details.",
         "Saves unfinished feedback locally and provides an email-app fallback if automatic delivery fails."
+      ]
+    },
+    "V1.5.51": {
+      "version": "V1.5.51",
+      "title": "Colour-coded grouped Toolbox",
+      "date": "2026-07-31",
+      "features": [
+        "Grouped Toolbox apps into Work tools, Productivity and Support.",
+        "Added distinctive colour gradients to each mini app for faster visual recognition.",
+        "Moved Settings into the Support section beside FeedbackMate.",
+        "Kept the existing phone-style four-column app layout."
       ]
     }
   }

@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.50';
+const APP_VERSION='V1.5.51';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -3759,20 +3759,26 @@ async function sendFeedbackMate(event){
 function renderResources(){
  const pendingOtj=otjEntries().filter(entry=>!entry.exportedAt).length;
  const dueReminders=reminders().filter(reminder=>!reminder.completed&&reminder.due<=isoToday()).length;
- // Mini apps stay alphabetical; Settings is always kept as the final icon.
- const regularTools=[
-  ['openDrawingMate','drawing','DrawingMate','Symbols, hatching, scales and drawing tools.',0],
-  ['openFeedbackMate','note','FeedbackMate','Suggest an idea or report an issue.',0],
-  ['openMaterialMate','supporting','MaterialMate','Estimate materials with adjustable wastage.',0],
-  ['openMeasureMate','tools','MeasureMate','Conversions, geometry and construction calculations.',0],
-  ['openNotepad','note','NoteMate','Save notes, photos, videos and voice recordings.',learnerNotes().length],
-  ['openOTJMate','note','OTJMate','Record off-the-job learning and export new entries.',pendingOtj],
-  ['openProjectMate','project','ProjectMate','Generate, quote and complete customer-style jobs.',0],
-  ['openRemindMate','revision','RemindMate','Save review targets and receive due-date reminders.',dueReminders]
+ const groups=[
+  {title:'Work tools',copy:'Measure, calculate, draw and record.',tools:[
+   ['openMeasureMate','tools','MeasureMate','Conversions, geometry and construction calculations.',0,'blue'],
+   ['openMaterialMate','supporting','MaterialMate','Estimate materials with adjustable wastage.',0,'orange'],
+   ['openDrawingMate','drawing','DrawingMate','Symbols, hatching, scales and drawing tools.',0,'indigo'],
+   ['openNotepad','note','NoteMate','Save notes, photos, videos and voice recordings.',learnerNotes().length,'purple']
+  ]},
+  {title:'Productivity',copy:'Plan work, record progress and stay organised.',tools:[
+   ['openOTJMate','note','OTJMate','Record off-the-job learning and export new entries.',pendingOtj,'teal'],
+   ['openProjectMate','project','ProjectMate','Generate, quote and complete customer-style jobs.',0,'amber'],
+   ['openRemindMate','revision','RemindMate','Save review targets and receive due-date reminders.',dueReminders,'rose']
+  ]},
+  {title:'Support',copy:'Get help and manage Apprentice+.',tools:[
+   ['openFeedbackMate','note','FeedbackMate','Suggest an idea or report an issue.',0,'cyan'],
+   ['openSettings','settings','Settings','App preferences and controls.',0,'slate']
+  ]}
  ];
- const allTools=[...regularTools,['openSettings','settings','Settings','App preferences and controls.',0]];
- const cards=allTools.map(([id,icon,title,copy,badge])=>`<button class="phone-app" id="${id}" data-phone-app="${title.toLowerCase()}" aria-label="Open ${title}: ${copy}"><span class="phone-app-icon">${appIcon(icon)}${badge?`<b class="phone-app-badge" aria-label="${badge} pending">${badge>99?'99+':badge}</b>`:''}</span><strong class="phone-app-label">${title}</strong></button>`).join('');
- app.innerHTML=shell(`<div class="section-heading toolbox-phone-heading"><div><div class="number">Toolbox</div><h2>Workplace apps</h2><p class="muted">Tap an app to open it.</p></div></div><section class="phone-app-grid" aria-label="Toolbox apps">${cards}</section>`);
+ const card=([id,icon,title,copy,badge,tone])=>`<button class="phone-app phone-app-${tone}" id="${id}" data-phone-app="${title.toLowerCase()}" aria-label="Open ${title}: ${copy}"><span class="phone-app-icon">${appIcon(icon)}${badge?`<b class="phone-app-badge" aria-label="${badge} pending">${badge>99?'99+':badge}</b>`:''}</span><strong class="phone-app-label">${title}</strong></button>`;
+ const sections=groups.map(group=>`<section class="toolbox-app-section" aria-label="${group.title}"><div class="toolbox-group-heading"><h3>${group.title}</h3><p>${group.copy}</p></div><div class="phone-app-grid">${group.tools.map(card).join('')}</div></section>`).join('');
+ app.innerHTML=shell(`<div class="section-heading toolbox-phone-heading"><div><div class="number">Toolbox</div><h2>Workplace apps</h2><p class="muted">Tap an app to open it.</p></div></div><div class="toolbox-app-groups">${sections}</div>`);
  document.getElementById('openFeedbackMate').onclick=()=>{state.view='feedbackmate';render();window.scrollTo(0,0)};
  document.getElementById('openMeasureMate').onclick=()=>{state.view='measuremate';render();window.scrollTo(0,0)};
  document.getElementById('openMaterialMate').onclick=()=>{state.view='materialmate';render();window.scrollTo(0,0)};

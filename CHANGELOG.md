@@ -1,3 +1,11 @@
+# V1.5.51
+
+- Grouped Toolbox mini apps into Work tools, Productivity and Support.
+- Added a distinctive accent colour to every mini app tile.
+- Kept the existing four-column phone-style layout and white app icons.
+- Moved Settings into the Support section beside FeedbackMate.
+- Did not add SafeMate.
+
 # V1.5.50
 
 - Added FeedbackMate to the Toolbox.
