@@ -2871,3 +2871,7 @@ body.dual-ruler-open{overflow:hidden;overscroll-behavior:none}
 .phone-app[class*="phone-app-"]:focus-visible .phone-app-icon{outline-color:var(--tool-a)}
 .app-dark-mode .toolbox-app-section{background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.1);box-shadow:none}
 @media(max-width:420px){.toolbox-app-section{padding-inline:10px}.toolbox-app-section .phone-app-grid{column-gap:8px}}
+
+
+/* V1.5.55 — analytics diagnostics in Admin Mode */
+.analytics-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}.analytics-status-grid>div{display:flex;flex-direction:column;gap:4px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--card)}.analytics-status-grid span{font-size:.76rem;color:var(--muted);font-weight:700}.analytics-status-grid strong{font-size:1rem;color:var(--ink)}.analytics-status-grid .analytics-active{color:#16823a}.analytics-status-grid .analytics-warning{color:#b46908}.app-dark-mode .analytics-status-grid>div{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}@media(max-width:420px){.analytics-status-grid{grid-template-columns:1fr 1fr}}

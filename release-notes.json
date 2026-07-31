@@ -1,6 +1,17 @@
 {
-  "latest": "V1.5.54",
+  "latest": "V1.5.55",
   "releases": [
+    {
+      "version": "V1.5.55",
+      "title": "Analytics Optimisation and Diagnostics",
+      "date": "2026-07-31",
+      "features": [
+        "Added dashboard-ready anonymous engagement summaries and Firebase user properties for app version and platform.",
+        "Added an Admin Mode analytics status panel showing Firebase connection, queued events and session event totals.",
+        "Added test, retry, refresh and clear-queue controls for verifying analytics without exposing learner data.",
+        "Expanded the offline queue and retained strict filtering of personal details, evidence content and media."
+      ]
+    },
     {
       "version": "V1.5.54",
       "title": "Full Anonymous Analytics Integration",

@@ -1,5 +1,11 @@
 # Apprentice+ Changelog
 
+## V1.5.55 — Analytics Optimisation and Diagnostics
+- Added dashboard-ready daily engagement summary events and anonymous Firebase user properties.
+- Added an Admin Mode analytics diagnostics panel with live connection and queue status.
+- Added test event, manual queue flush, refresh and queue-clear controls.
+- Increased resilient offline queue capacity while retaining strict personal-data filtering.
+
 ## V1.5.54 — Full Anonymous Analytics Integration
 - Connected analytics to all current UI controls, navigation and feature flows.
 - Added anonymous assessment start/completion tracking for Trade Courses, Functional Skills, assignment knowledge and EPA.
