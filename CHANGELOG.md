@@ -1,5 +1,7 @@
-# Apprentice+ V1.5.33
+# Apprentice+ V1.5.34
 
-- Counts every NVQ Learning Outcome separately by unit, including the selected optional unit.
-- Opens learner progress from the course progress ring instead of the learner name.
-- Keeps the time-elapsed tracker green at every stage.
+- Rebuilt the page-information tours around the current app layout.
+- Added OTJMate and RemindMate to Toolbox guidance.
+- Corrected learner-name and progress-ring guidance.
+- Fitted tour screens and controls above the fixed bottom navigation.
+- Added global navigation-safe spacing and height limits to popups, sheets and modal dialogs.

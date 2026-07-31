@@ -1,5 +1,5 @@
 {
-  "latest": "V1.5.33",
+  "latest": "V1.5.34",
   "releases": {
     "V1.5.20": {
       "title": "Instant dyslexia tint controls",
@@ -143,6 +143,15 @@
         "Includes Learning Outcomes from the learner’s selected optional unit in the total.",
         "Moves the learner progress popup action from the learner name to the progress ring.",
         "Displays time elapsed on a constant green line while retaining its current percentage marker."
+      ]
+    },
+    "V1.5.34": {
+      "title": "Current fitted tours and navigation-safe popups",
+      "features": [
+        "Updates every i help tour to match the current Home, Course, Academy and eight-app Toolbox layouts.",
+        "Clarifies that the learner name is display-only and that progress opens from the progress ring.",
+        "Keeps help-tour controls fully above the bottom navigation on short phone screens.",
+        "Adds app-wide bottom-navigation clearance so popup, sheet and modal buttons remain visible and easy to press."
       ]
     }
   },

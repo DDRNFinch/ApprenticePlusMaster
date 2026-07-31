@@ -2397,3 +2397,102 @@ a:not(.danger-link),
 #courseProgressBtn:focus-visible{outline:3px solid rgba(34,197,94,.42);outline-offset:4px}
 .review-tracker.fixed-green .review-gradient-track{background:#40ad28}
 .review-tracker.fixed-green .review-gradient-track:after{background:rgba(255,255,255,.22)}
+
+/* V1.5.34 — fitted current help tours and navigation-safe overlays */
+:root{--fixed-nav-clearance:calc(86px + env(safe-area-inset-bottom));--overlay-edge-gap:12px}
+
+/* Every in-app dialog must finish above the fixed navigation. */
+.shell .modal,
+.shell .progress-modal-layer,
+.shell .learning-support-modal{
+  box-sizing:border-box!important;
+  padding-bottom:var(--fixed-nav-clearance)!important;
+}
+.shell .modal-card,
+.shell .progress-review-card,
+.shell .learning-support-modal-card,
+.shell .install-app-card,
+.shell .professional-discussion-recording-modal{
+  max-height:calc(100dvh - var(--fixed-nav-clearance) - 24px)!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain;
+  scroll-padding-bottom:24px;
+}
+
+/* Information sheets are constrained to the usable screen above navigation. */
+.page-help-modal{
+  inset:0 0 var(--fixed-nav-clearance) 0!important;
+  padding:8px 12px!important;
+  align-items:center!important;
+  overflow:hidden!important;
+}
+.page-help-sheet{
+  width:min(620px,100%)!important;
+  height:min(100%,760px)!important;
+  max-height:100%!important;
+  overflow:hidden!important;
+  padding:12px 14px 10px!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+.page-help-body{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  gap:10px!important;
+  align-items:center!important;
+}
+.page-help-phone{flex:0 1 auto!important;max-height:100%!important}
+.page-help-instructions{min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain;padding-right:2px}
+.page-help-step-controls,.page-help-footer{flex:0 0 auto!important}
+.page-help-footer{margin-top:7px!important;padding-top:5px!important;background:#fff}
+.page-help-footer .btn,.page-help-step-controls .btn{min-height:44px}
+
+/* First-run tour uses only the viewport that is not occupied by navigation. */
+.help-tour-overlay{
+  inset:0 0 var(--fixed-nav-clearance) 0!important;
+  height:auto!important;
+  max-height:none!important;
+  padding:8px 12px!important;
+  overflow:hidden!important;
+  align-items:center!important;
+}
+.help-tour-layout{max-height:100%!important;min-height:0!important}
+.help-tour-card{max-height:100%!important;overflow-y:auto!important;overscroll-behavior:contain}
+
+@media(max-width:640px){
+  .page-help-sheet{border-radius:20px!important}
+  .page-help-body{display:grid!important;grid-template-columns:1fr!important;grid-template-rows:minmax(150px,42%) minmax(0,1fr)!important}
+  .page-help-phone{width:148px!important;height:260px!important;margin:0 auto!important;border-width:5px!important;border-radius:24px!important;padding:9px 4px 12px!important}
+  .page-help-phone-scale{transform:scale(.337)!important}
+  .page-help-instructions{display:grid!important;grid-template-columns:34px minmax(0,1fr)!important;column-gap:8px!important;align-content:start!important}
+  .page-help-symbol{width:32px!important;height:32px!important;font-size:18px!important;grid-row:1/3}
+  .page-help-sheet h2{font-size:20px!important;line-height:1.08!important;margin:1px 38px 5px 0!important}
+  .page-help-content{grid-column:2;font-size:13px!important;line-height:1.28!important}
+  .page-help-content p{margin:5px 0!important}.page-help-content ol{margin:5px 0!important;padding-left:18px!important}.page-help-content li{margin:2px 0!important}
+  .page-help-step-controls{grid-column:1/-1;margin-top:6px!important}
+  .page-help-footer{gap:8px!important}.page-help-footer .link-button{font-size:12px;padding:8px 0!important}.page-help-footer .btn{min-width:92px!important}
+
+  .help-tour-layout{width:100%!important;height:100%!important;display:grid!important;grid-template-rows:minmax(150px,44%) minmax(0,1fr)!important;gap:8px!important}
+  .tour-phone{width:160px!important;height:100%!important;max-height:300px!important;min-height:150px!important;border-width:5px!important;border-radius:25px!important;padding:9px 4px 12px!important}
+  .tour-phone-scale{transform:scale(.385)!important}
+  .help-tour-card{width:100%!important;padding:12px 14px!important;border-radius:18px!important}
+  .help-tour-card h2{font-size:20px!important;line-height:1.08!important;margin:5px 0!important}
+  .help-tour-card p{font-size:13px!important;line-height:1.3!important}
+  .help-tour-dots{margin-top:8px!important}.help-tour-actions{margin-top:8px!important}
+  .help-tour-x{width:34px!important;height:34px!important}.help-tour-actions .btn{min-height:42px!important;padding:8px 12px!important}
+}
+
+@media(max-width:390px){
+  :root{--fixed-nav-clearance:calc(80px + env(safe-area-inset-bottom))}
+  .shell .modal,.shell .progress-modal-layer,.shell .learning-support-modal{padding-left:8px!important;padding-right:8px!important}
+}
+@media(max-height:700px) and (max-width:640px){
+  .page-help-body{grid-template-rows:minmax(118px,35%) minmax(0,1fr)!important}
+  .page-help-phone{width:124px!important;height:218px!important}.page-help-phone-scale{transform:scale(.282)!important}
+  .page-help-sheet h2{font-size:18px!important}.page-help-content{font-size:12px!important;line-height:1.2!important}
+  .help-tour-layout{grid-template-rows:minmax(115px,35%) minmax(0,1fr)!important}
+  .tour-phone{width:126px!important;max-height:220px!important}.tour-phone-scale{transform:scale(.30)!important}
+  .help-tour-card h2{font-size:18px!important}.help-tour-card p{font-size:12px!important;line-height:1.22!important}
+  .help-tour-dots{display:none!important}
+}

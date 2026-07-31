@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.33';
+const APP_VERSION='V1.5.34';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -4754,7 +4754,7 @@ document.addEventListener('change',async event=>{
 
 
 /* V1.9 concise page guidance and first-run tour */
-const HELP_TOUR_KEY='apprenticeplus.helpTour.v1.9.complete';
+const HELP_TOUR_KEY='apprenticeplus.helpTour.v1.5.34.complete';
 function helpCourseRule(){return COURSE.nvqUnits?'Each Learning Outcome needs three different forms of evidence. Any available evidence types can be combined.':'Each Knowledge, Skill and Behaviour needs two different forms of evidence. Any available evidence types can be combined.'}
 function currentHelp(){
  const v=state.view,s=state.section;
@@ -4768,7 +4768,7 @@ function currentHelp(){
    {selector:'.assignment-card .ksb-row',focusIndex:0,title:COURSE.nvqUnits?'Learning Outcome coverage':'KSB coverage',html:`<p>Grey means no evidence, amber means some evidence and green means enough different evidence types have been collected.</p><p><strong>${helpCourseRule()}</strong></p>`},
    {selector:'.assignment-card .status-pill',focusIndex:0,title:'Assignment status',html:'<p><strong>In progress</strong> means work is still needed. <strong>Evidence ready</strong> means the evidence requirements are met. <strong>Submitted</strong> means the latest package was confirmed as uploaded.</p>'},
    {selector:'.entire-portfolio-card',title:'Download Entire Portfolio',html:'<p>Use this button to download every saved evidence item across the course. Blank and unsaved sections are excluded.</p>'},
-   {selector:'#learnerProgressBtn',title:'Learner name',html:'<p>Your learner name is displayed here. Use the Settings app to edit profile details. Tap the progress ring for the full progress summary.</p><p>Tap the green <strong>i</strong> button for instructions about the current page.</p>'}
+   {selector:'.learner-help-wrap',title:'Learner name and page help',html:'<p>Your learner name is displayed here for reference only; pressing it does not open another screen. Edit profile details in Settings.</p><p>Tap the green <strong>i</strong> button for instructions about the current page, and tap the course progress ring for the full progress summary.</p>'}
   ]},
   assignment:{title:COURSE.nvqUnits?'Complete this Evidence Pack':'Complete this Assignment',html:'',steps:[
    {selector:'.assignment-title',title:COURSE.nvqUnits?'Evidence pack details':'Assignment details',html:`<p>This area shows the assignment title and every ${COURSE.nvqUnits?'Learning Outcome':'Knowledge, Skill and Behaviour'} included in it.</p>`},
@@ -4794,7 +4794,9 @@ function currentHelp(){
    {selector:'#openNotepad',title:'NoteMate',html:'<p>Create searchable workplace or college notes. Add writing, photographs, videos, voice recordings or gallery files, then save the note for later use.</p>'},
    {selector:'#openDrawingMate',title:'DrawingMate',html:'<p>Use drawing symbols, hatching, scale and setting-out tools. Select the correct section and check every dimension before applying the result to practical work.</p>'},
    {selector:'#openProjectMate',title:'ProjectMate',html:'<p>Create or open customer-style projects. Follow the brief, plan materials and labour, check wastage, add a project photograph and save the completed plan.</p>'},
-   {selector:'#openSettings',title:'Settings',html:'<p>Open General, Notifications and Learning Support settings. Changes are stored on this device and apply across Apprentice+.</p>'}
+   {selector:'#openOTJMate',title:'OTJMate',html:'<p>Record off-the-job learning, add optional photographs and export only new entries into an upload-ready PDF. Previously exported entries stay marked to prevent duplicates.</p>'},
+   {selector:'#openRemindMate',title:'RemindMate',html:'<p>Save review targets and other deadlines, see what is overdue or due today and mark reminders complete when the action has been finished.</p>'},
+   {selector:'#openSettings',title:'Settings',html:'<p>Open General, Notifications and Learning Support settings. Edit the learner profile here; the learner name on the Home screen is display-only.</p>'}
   ]},
   notepad:{title:'NoteMate',html:'',steps:[
    {selector:'#addNote,.notepad-add',title:'Create a note',html:'<p>Tap the add control to start a new workplace or college note.</p>'},
@@ -5099,13 +5101,14 @@ function openPageHelp(){
 }
 function attachPageHelp(){const courseProgressBtn=document.getElementById('courseProgressBtn');if(courseProgressBtn){courseProgressBtn.onclick=showCourseProgress;courseProgressBtn.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();showCourseProgress()}}}maybeStartHelpTour()}
 const HELP_TOUR_STEPS=[
- {view:'home',selector:'#learnerProgressBtn',title:'Learner name',text:'Your learner name is shown here. Profile details can be edited from the Settings app.'},
- {view:'home',selector:'#courseProgressBtn',title:'Your course progress',text:'Tap the progress ring to open the full learner summary, including assignments, learning outcomes or KSBs, time elapsed, OTJ progress, EPA readiness and review status.'},
+ {view:'home',selector:'#courseProgressBtn',title:'Your progress ring',text:'Tap the progress ring to open the learner summary. It compares assignments, Learning Outcomes or KSBs and OTJ against where you should be today, and also shows time elapsed and EPA readiness.'},
+ {view:'home',selector:'.learner-help-wrap',title:'Learner name and help',text:'Your learner name is display-only. Edit it in Settings. Tap the green i button for instructions about whichever page is open.'},
  {view:'home',selector:'.assignment-card',title:COURSE.nvqUnits?'Open an evidence pack':'Open an assignment',text:'Tap a card to open it. Grey means not started, amber means in progress and green means the evidence requirement has been met.'},
- {view:'assignment',selector:'.evidence-grid, [data-section]',title:'Add your evidence',text:COURSE.nvqUnits?'Open an evidence tile and save work against the Learning Outcomes. Each Learning Outcome needs three different evidence types.':'Open an evidence tile and save work against the KSBs. Each KSB needs two different evidence types.'},
- {view:'academy',selector:'.academy-grid, .academy-home-grid, [data-academy]',title:'Use the Academy',text:'Open Knowledge Practice, Professional Discussion, EPA Practical or Scores & Results. Completed attempts are saved for review.'},
- {view:'resources',selector:'.tools-grid, .resource-grid, .tool-app-grid, .phone-app-grid',title:'Use the Toolbox',text:'Open NoteMate, MeasureMate, MaterialMate or ProjectMate for practical workplace support.'},
- {view:'home',selector:'.page-help-button',title:'Help on every page',text:'Tap i at any time for short, exact instructions about the current screen.'}
+ {view:'assignment',selector:'.evidence-grid, [data-section]',title:'Add your evidence',text:COURSE.nvqUnits?'Use the six evidence tiles. Each Learning Outcome needs three different evidence types.':'Use the six evidence tiles. Each KSB needs two different evidence types.'},
+ {view:'academy',selector:'.academy-grid, .academy-home-grid, [data-academy]',title:'Use the Academy',text:'Open Knowledge Slides, Trade Courses, EPA Academy, Functional Skills or Certificates. EPA Academy contains Knowledge Practice, Professional Discussion, EPA Practical and Scores & Results.'},
+ {view:'resources',selector:'.phone-app-grid',title:'Use the Toolbox',text:'The Toolbox now contains MeasureMate, MaterialMate, NoteMate, DrawingMate, ProjectMate, OTJMate, RemindMate and Settings.'},
+ {view:'resources',selector:'#openOTJMate',title:'Record off-the-job learning',text:'OTJMate records learning hours and creates upload-ready PDF logs without exporting the same entry twice.'},
+ {view:'resources',selector:'#openRemindMate',title:'Keep targets visible',text:'RemindMate stores review targets and deadlines, groups them by urgency and lets you mark completed actions.'}
 ];
 let helpTourIndex=0,helpTourRunning=false,helpTourOriginalView=null,helpTourStartTimer=null;
 function maybeStartHelpTour(){if(helpTourRunning||helpTourStartTimer||!state.profile||localStorage.getItem(HELP_TOUR_KEY)==='1'||state.view!=='home')return;helpTourStartTimer=setTimeout(()=>{helpTourStartTimer=null;startHelpTour()},500)}
