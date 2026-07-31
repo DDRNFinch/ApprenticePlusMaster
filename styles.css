@@ -2619,3 +2619,26 @@ a:not(.danger-link),
 .signature-unlock{position:absolute;inset:0;width:100%;border:1px dashed #9faca2;border-radius:17px;background:rgba(255,255,255,.9);color:#0b2b23;font:inherit;font-weight:900;cursor:pointer;display:grid;place-items:center;padding:18px;text-align:center;backdrop-filter:blur(2px)}
 .signature-unlock::before{content:'✍';display:block;font-size:28px;margin-bottom:7px;color:var(--green)}
 @media(max-width:420px){.otj-place-options{gap:5px;padding:5px}.otj-place-options button{min-height:43px;font-size:.82rem}}
+
+
+/* V1.5.41 — universal bottom-navigation clearance */
+:root{--app-bottom-clearance:calc(108px + env(safe-area-inset-bottom));}
+.shell{box-sizing:border-box!important;padding-bottom:var(--app-bottom-clearance)!important;min-height:100dvh;}
+.shell> :where(section,article,.card,.panel,.section-heading,.settings-tab-panel,.academy-grid,.toolbox-grid,.support-tabs):last-of-type{margin-bottom:12px;}
+:where(.modal,.progress-modal-layer,.learning-support-modal,.help-tour-overlay,.page-help-modal,.notepad-search-modal,.notification-bell-panel,.walk-recorder-overlay,.install-app-overlay){scroll-padding-bottom:var(--app-bottom-clearance);}
+:where(.modal-card,.progress-review-card,.learning-support-modal-card,.page-help-sheet,.help-tour-layout,.notepad-search-sheet,.install-app-card){box-sizing:border-box;max-height:calc(100dvh - var(--app-bottom-clearance) - 20px);}
+.otj-export-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;}
+.otj-list-item{align-items:center;}
+
+/* Let the software keyboard occupy the bottom of the screen instead of lifting the app navigation. */
+html.keyboard-open .bottom-nav,
+html.keyboard-open .notification-bell,
+html.keyboard-open .read-aloud-controller,
+html.keyboard-open .app-version-bottom{transform:translate(-50%,calc(100% + 40px))!important;pointer-events:none!important;opacity:0!important;transition:transform .14s ease,opacity .12s ease!important;}
+html.keyboard-open .notification-bell,
+html.keyboard-open .read-aloud-controller{transform:translateY(calc(100% + 40px))!important;}
+html.keyboard-open .shell{padding-bottom:24px!important;}
+html.keyboard-open :where(.modal,.progress-modal-layer,.learning-support-modal,.help-tour-overlay,.page-help-modal,.notepad-search-modal){padding-bottom:18px!important;inset-bottom:0!important;}
+html.keyboard-open :where(input,textarea,select,[contenteditable="true"]){scroll-margin-top:90px;scroll-margin-bottom:32px;}
+@media(max-width:390px){:root{--app-bottom-clearance:calc(100px + env(safe-area-inset-bottom));}}
+@media print{.shell{padding-bottom:0!important;}}

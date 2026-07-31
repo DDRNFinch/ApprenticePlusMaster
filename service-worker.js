@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.5.40-otj-signature-style';
-const CURRENT_VERSION='V1.5.40';
+const CACHE='apprentice-plus-v1.5.41-nav-keyboard-otj-delete';
+const CURRENT_VERSION='V1.5.41';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,

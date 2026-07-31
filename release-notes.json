@@ -1,6 +1,17 @@
 {
-  "latest": "V1.5.40",
+  "latest": "V1.5.41",
   "releases": [
+    {
+      "version": "V1.5.41",
+      "date": "2026-07-31",
+      "title": "Navigation clearance, keyboard and OTJ deletion",
+      "changes": [
+        "Added app-wide bottom clearance so screens, forms, dialogs and action buttons finish above the fixed navigation bar.",
+        "The bottom navigation now moves out of the way when the phone keyboard opens instead of being pushed upward.",
+        "OTJ entries can be deleted with confirmation and totals refresh immediately.",
+        "Archived OTJ PDFs can now be deleted without deleting their underlying entries; those entries become available for export again."
+      ]
+    },
     {
       "version": "V1.5.40",
       "date": "2026-07-31",

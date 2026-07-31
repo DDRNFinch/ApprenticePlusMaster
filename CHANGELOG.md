@@ -42,3 +42,8 @@
 - Restored the mobile quick tour to a stacked layout: phone preview in the top half and guidance in the bottom half.
 - Kept the tour fully above the fixed bottom navigation.
 - Kept all tour action buttons visible, with internal text scrolling only where required.
+
+## V1.5.41
+- Added universal fixed-navigation clearance across screens and overlays.
+- Prevented the software keyboard from lifting the bottom navigation.
+- Added deletion for OTJ entries and archived OTJ PDFs.

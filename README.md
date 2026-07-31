@@ -6,3 +6,7 @@ This build changes every icon or silhouette placed on a solid green action surfa
 - Restored the mobile quick tour to a stacked layout: phone preview in the top half and guidance in the bottom half.
 - Kept the tour fully above the fixed bottom navigation.
 - Kept all tour action buttons visible, with internal text scrolling only where required.
+
+
+### V1.5.41
+Every screen now keeps controls above the bottom navigation. The mobile keyboard hides the app navigation while typing. OTJ entries and archived PDFs can be deleted independently.
