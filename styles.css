@@ -2877,3 +2877,27 @@ body.dual-ruler-open{overflow:hidden;overscroll-behavior:none}
 .analytics-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}.analytics-status-grid>div{display:flex;flex-direction:column;gap:4px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--card)}.analytics-status-grid span{font-size:.76rem;color:var(--muted);font-weight:700}.analytics-status-grid strong{font-size:1rem;color:var(--ink)}.analytics-status-grid .analytics-active{color:#16823a}.analytics-status-grid .analytics-warning{color:#b46908}.app-dark-mode .analytics-status-grid>div{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}@media(max-width:420px){.analytics-status-grid{grid-template-columns:1fr 1fr}}
 
 .analytics-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 2px;border-top:1px solid var(--line)}.analytics-toggle-row span{display:flex;flex-direction:column;gap:3px}.analytics-toggle-row small{color:var(--muted);font-weight:500}.analytics-toggle-row input{width:22px;height:22px;accent-color:var(--green)}.analytics-privacy{margin:12px 0;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card)}.analytics-privacy summary{font-weight:800;cursor:pointer}.analytics-privacy p{margin:10px 0 0;color:var(--muted);line-height:1.45}.analytics-recent{margin:14px 0}.analytics-recent h4{margin:0 0 8px}.analytics-recent>div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}.analytics-recent code{font-size:.78rem;overflow-wrap:anywhere}.analytics-recent span{font-size:.76rem;color:var(--muted);white-space:nowrap}.app-version-bottom{border:0;background:transparent;color:inherit;font:inherit;cursor:pointer}
+
+
+/* V1.5.57 — Admin Mode mobile scrolling fix */
+.admin-modal{
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+}
+.admin-modal-card{
+  max-height:calc(100dvh - 36px);
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+}
+.admin-dashboard{min-height:max-content}
+@media(max-width:600px){
+  .admin-modal{height:100dvh;max-height:100dvh;overflow-y:auto}
+  .admin-modal-card{height:100dvh;min-height:100dvh;max-height:100dvh;overflow-y:auto;padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+  .admin-modal-head{top:0}
+}

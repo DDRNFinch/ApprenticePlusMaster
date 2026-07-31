@@ -1,6 +1,16 @@
 {
-  "latest": "V1.5.56",
+  "latest": "V1.5.57",
   "releases": [
+    {
+      "version": "V1.5.57",
+      "title": "Admin Mode Scrolling Fix",
+      "date": "2026-07-31",
+      "items": [
+        "Fixed Admin Mode so the full screen scrolls correctly on phones and tablets.",
+        "Added smooth touch scrolling and safe-area spacing for mobile devices.",
+        "Kept the Admin Mode header visible while scrolling through the controls."
+      ]
+    },
     {
       "version": "V1.5.56",
       "title": "Analytics Developer Tools",
