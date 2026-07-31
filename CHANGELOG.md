@@ -1,3 +1,12 @@
+# Apprentice+ Changelog
+
+## V1.5.53 — Analytics Foundation
+- Added Firebase Analytics bootstrap and a reusable anonymous `trackEvent()` API.
+- Added app open, first open, update, session, screen-view and screen-time tracking.
+- Added offline event queueing and automatic retry when connectivity returns.
+- Added anonymous technical JavaScript and promise error events.
+- Added a strict parameter privacy filter that blocks personal and evidence-related fields.
+
 # V1.5.51
 
 - Grouped Toolbox mini apps into Work tools, Productivity and Support.

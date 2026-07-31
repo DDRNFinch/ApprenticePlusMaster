@@ -1,6 +1,17 @@
 {
-  "latest": "V1.5.51",
+  "latest": "V1.5.53",
   "releases": [
+    {
+      "version": "V1.5.53",
+      "title": "Anonymous Analytics Foundation",
+      "date": "2026-07-31",
+      "features": [
+        "Added Firebase Analytics infrastructure without learner accounts or portfolio syncing.",
+        "Added anonymous app, session, version and automatic screen usage tracking.",
+        "Added offline event queuing with automatic retry when internet access returns.",
+        "Added privacy filtering that excludes personal details and evidence content."
+      ]
+    },
     {
       "version": "V1.5.51",
       "title": "Colour-coded grouped Toolbox",
