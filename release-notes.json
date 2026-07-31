@@ -1,5 +1,5 @@
 {
-  "latest": "V1.5.35",
+  "latest": "V1.5.36",
   "releases": {
     "V1.5.20": {
       "title": "Instant dyslexia tint controls",
@@ -7,7 +7,7 @@
         "Shows the tint colour and strength controls immediately when Dyslexia tint overlay is turned on.",
         "Hides the tint controls immediately when the overlay is turned off.",
         "Applies and removes the full-app glass tint instantly without refreshing the page.",
-        "Keeps the selected colour and strength saved on the learner’s device."
+        "Keeps the selected colour and strength saved on the learner\u2019s device."
       ]
     },
     "V1.5.19": {
@@ -140,7 +140,7 @@
       "title": "Accurate NVQ learning-outcome progress",
       "features": [
         "Counts repeated Learning Outcome numbers separately within each mandatory unit.",
-        "Includes Learning Outcomes from the learner’s selected optional unit in the total.",
+        "Includes Learning Outcomes from the learner\u2019s selected optional unit in the total.",
         "Moves the learner progress popup action from the learner name to the progress ring.",
         "Displays time elapsed on a constant green line while retaining its current percentage marker."
       ]
@@ -161,6 +161,15 @@
         "Removes photographs from OTJMate entries and exports.",
         "Places multiple complete OTJ entries on each PDF page with thin green dividers.",
         "Adds Copy entry to copy a complete Aptem-ready OTJ record to the phone clipboard."
+      ]
+    },
+    "V1.5.36": {
+      "title": "Restored stacked quick-tour layout",
+      "features": [
+        "Restores the original mobile tour arrangement with the phone preview in the top half and guidance in the bottom half.",
+        "Keeps the complete tour above the fixed navigation bar on supported phone sizes.",
+        "Keeps Skip, Back, Next and Finish controls visible and easy to press.",
+        "Allows only the guidance paragraph to scroll when a smaller screen cannot display all text."
       ]
     }
   },

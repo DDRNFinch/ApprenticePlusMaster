@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.35';
+const APP_VERSION='V1.5.36';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -4755,7 +4755,7 @@ document.addEventListener('change',async event=>{
 
 
 /* V1.9 concise page guidance and first-run tour */
-const HELP_TOUR_KEY='apprenticeplus.helpTour.v1.5.35.complete';
+const HELP_TOUR_KEY='apprenticeplus.helpTour.v1.5.36.complete';
 function helpCourseRule(){return COURSE.nvqUnits?'Each Learning Outcome needs three different forms of evidence. Any available evidence types can be combined.':'Each Knowledge, Skill and Behaviour needs two different forms of evidence. Any available evidence types can be combined.'}
 function currentHelp(){
  const v=state.view,s=state.section;
