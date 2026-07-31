@@ -1,3 +1,10 @@
+# V1.5.48
+
+- Upgraded DrawingMate with separate left and right scale selectors.
+- Added a clickable preview and Use ruler button.
+- Added a full-screen white two-sided ruler with the calibrated scales touching both screen edges.
+- Added millimetre ticks, five-millimetre ticks and labelled ten-millimetre divisions translated into real dimensions for each selected scale.
+
 # V1.5.47
 
 - Replaced Academy MCQ answer arrows with Previous and locked Submit controls below the question card.

@@ -1,11 +1,11 @@
-const CACHE='apprentice-plus-v1.5.47-mcq-notification-refresh';
-const CURRENT_VERSION='V1.5.45';
+const CACHE='apprentice-plus-v1.5.48-drawingmate-dual-ruler';
+const CURRENT_VERSION='V1.5.48';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,
  features:['This update includes Apprentice+ improvements and fixes.']
 };
-const APP_SHELL=['./','./index.html','./styles.css?v=1.5.26','./functional-skills-bank.js?v=1.5.20','./trade-courses-bank.js?v=1.5.20','./app.js?v=1.5.26','./release-notes.json','./manifest.json','./pdf-generator.js?v=1.5.20','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
+const APP_SHELL=['./','./index.html','./styles.css?v=1.5.48','./functional-skills-bank.js?v=1.5.20','./trade-courses-bank.js?v=1.5.20','./app.js?v=1.5.48','./release-notes.json','./manifest.json','./pdf-generator.js?v=1.5.20','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
 
 async function loadUpdateInfo(){
  try{

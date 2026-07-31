@@ -2830,3 +2830,17 @@ body.app-dark-mode .notification-bell-item-content strong{color:#fff!important}
 body.app-dark-mode .notification-bell-item-content p{color:#d8dfdc!important}
 body.app-dark-mode .notification-bell-item-content small{color:#aeb9b4!important}
 body.app-dark-mode .notification-update-whats-new{background:rgba(255,255,255,.08)!important}
+
+/* V1.5.48 DrawingMate full-screen two-sided scale ruler */
+.dual-ruler-selectors{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:15px}
+.scale-ruler-launch{width:100%;min-height:112px;margin:14px 0;border:2px solid #58b51f;border-radius:18px;background:#fff;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:9px;padding:12px;color:#0f2328;cursor:pointer}
+.scale-ruler-launch>span{display:flex;flex-direction:column;align-items:center;gap:4px}.scale-ruler-launch b{font-size:24px}.scale-ruler-launch small{font-size:11px;color:#657273}.scale-ruler-launch>i{font-style:normal;font-size:11px;font-weight:850;color:#2f8f1c;text-transform:uppercase;letter-spacing:.04em}.drawing-use-ruler{width:100%}
+body.dual-ruler-open{overflow:hidden;overscroll-behavior:none}
+.dual-scale-ruler-overlay{position:fixed;inset:0;z-index:1000000;background:#fff;color:#111;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.dual-ruler-edge{position:absolute;top:0;bottom:0;width:70px;background:#fff}
+.dual-ruler-edge.left{left:0;border-right:2px solid #111}.dual-ruler-edge.right{right:0;border-left:2px solid #111}
+.dual-ruler-scale-label{position:fixed;top:8px;z-index:2;padding:5px 8px;border-radius:8px;background:#111;color:#fff;font-size:13px;font-weight:900;line-height:1}.dual-ruler-edge.left .dual-ruler-scale-label{left:8px}.dual-ruler-edge.right .dual-ruler-scale-label{right:8px}
+.dual-ruler-tick{position:absolute;height:1px;width:100%;pointer-events:none}.dual-ruler-tick i{position:absolute;top:0;height:1px;background:#111}.dual-ruler-edge.left .dual-ruler-tick i{right:0}.dual-ruler-edge.right .dual-ruler-tick i{left:0}.dual-ruler-tick.minor i{width:15px}.dual-ruler-tick.mid i{width:26px;height:1.5px}.dual-ruler-tick.major i{width:40px;height:2px}
+.dual-ruler-tick b{position:absolute;top:3px;font-size:10px;line-height:1;white-space:nowrap}.dual-ruler-tick b small{font-size:7px;margin-left:2px}.dual-ruler-edge.left .dual-ruler-tick b{right:43px;text-align:right}.dual-ruler-edge.right .dual-ruler-tick b{left:43px;text-align:left}
+.dual-ruler-centre{position:absolute;left:82px;right:82px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;color:#4f5d59}.dual-ruler-centre strong{font-size:14px}.dual-ruler-centre small{font-size:10px}.dual-ruler-close{border:0;border-radius:999px;background:#159447;color:#fff;padding:12px 20px;font:800 14px inherit;box-shadow:0 8px 22px rgba(21,148,71,.25)}
+@media(max-width:360px){.dual-ruler-edge{width:62px}.dual-ruler-centre{left:70px;right:70px}.dual-ruler-edge.left .dual-ruler-tick b{right:42px}.dual-ruler-edge.right .dual-ruler-tick b{left:42px}.dual-ruler-tick b{font-size:9px}}

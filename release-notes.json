@@ -2,6 +2,17 @@
   "latest": "V1.5.47",
   "releases": [
     {
+      "version": "V1.5.48",
+      "title": "DrawingMate Two-Sided Scale Ruler",
+      "date": "2026-07-31",
+      "features": [
+        "Added separate left and right drawing-scale selectors.",
+        "Added a full-screen two-sided ruler with measuring marks touching both screen edges.",
+        "Made the ruler preview clickable and added a dedicated Use ruler button.",
+        "Used the saved bank-card calibration for physical screen accuracy."
+      ]
+    },
+    {
       "version": "V1.5.47",
       "title": "Academy MCQ controls and notification refresh",
       "features": [
@@ -106,7 +117,17 @@
         "Keeps Toolbox, Course and Academy navigation responsive when an individual page encounters an error.",
         "Separates genuine learner-data loading errors from optional backup, update and notification failures."
       ]
+    },
+    "V1.5.48": {
+      "title": "DrawingMate Two-Sided Scale Ruler",
+      "date": "2026-07-31",
+      "features": [
+        "Added separate left and right drawing-scale selectors.",
+        "Added a full-screen two-sided ruler with measuring marks touching both screen edges.",
+        "Made the ruler preview clickable and added a dedicated Use ruler button.",
+        "Used the saved bank-card calibration for physical screen accuracy."
+      ]
     }
   },
-  "latestVersion": "V1.5.39"
+  "latestVersion": "V1.5.48"
 }
