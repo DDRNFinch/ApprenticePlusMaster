@@ -1,4 +1,4 @@
-const CACHE='apprentice-plus-v1.5.45-progress-video-pdf-fixes';
+const CACHE='apprentice-plus-v1.5.47-mcq-notification-refresh';
 const CURRENT_VERSION='V1.5.45';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={

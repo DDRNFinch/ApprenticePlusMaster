@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=1.5.35">
+  <link rel="stylesheet" href="styles.css?v=1.5.47">
   <title>Apprentice+</title>
 </head>
 <body>
@@ -23,7 +23,7 @@
 
   <div id="notificationBellBackdrop" class="notification-bell-backdrop no-print" hidden></div>
   <section id="notificationBellPanel" class="notification-bell-panel no-print" role="dialog" aria-modal="true" aria-labelledby="notificationBellTitle" hidden>
-    <div class="notification-bell-handle" aria-hidden="true"></div>
+    
     <header class="notification-bell-header">
       <div>
         <p class="notification-bell-kicker">Apprentice+</p>
@@ -54,6 +54,7 @@
         </div>
       </article>
     </div>
+    <footer class="notification-bell-footer"><button type="button" id="notificationSettingsButton">Notification settings</button><button type="button" id="notificationClearButton">Clear</button></footer>
   </section>
 
   <script src="qrcode-browser.js?v=1.5.5"></script>
@@ -61,7 +62,7 @@
   <script src="specification-sheet.js?v=1.5.5"></script>
   <script src="functional-skills-bank.js?v=1.5.5"></script>
   <script src="trade-courses-bank.js?v=1.5.5"></script>
-  <script src="app.js?v=1.5.35"></script>
+  <script src="app.js?v=1.5.47"></script>
   <script>
   (() => {
     const bell = document.getElementById('notificationBell');
@@ -74,6 +75,8 @@
     const updateVersion = document.getElementById('notificationUpdateVersion');
     const updateFeatures = document.getElementById('notificationUpdateFeatures');
     const openUpdateButton = document.getElementById('notificationOpenUpdate');
+    const settingsButton = document.getElementById('notificationSettingsButton');
+    const clearButton = document.getElementById('notificationClearButton');
     if (!bell || !panel || !backdrop || !closeButton || !list || !count) return;
 
     const settingsKey = 'apprenticeplus.appSettings.v1';
@@ -198,6 +201,8 @@
     bell.addEventListener('click', openNotifications);
     closeButton.addEventListener('click', () => closeNotifications());
     backdrop.addEventListener('click', () => closeNotifications());
+    settingsButton?.addEventListener('click',()=>{ closeNotifications(); window.setTimeout(()=>{ if(window.__apprenticePlusOpenNotificationSettings) window.__apprenticePlusOpenNotificationSettings(); },190); });
+    clearButton?.addEventListener('click',()=>{ list.querySelectorAll('.notification-bell-item:not([hidden])').forEach(item=>deleteNotification(item)); });
     document.addEventListener('keydown', event => { if (event.key === 'Escape' && panelOpen) closeNotifications(); });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !panelOpen) closeNotifications(true); });
     window.addEventListener('pageshow', () => { if (!panelOpen) closeNotifications(true); });

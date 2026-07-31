@@ -1,6 +1,16 @@
 {
-  "latest": "V1.5.45",
+  "latest": "V1.5.47",
   "releases": [
+    {
+      "version": "V1.5.47",
+      "title": "Academy MCQ controls and notification refresh",
+      "features": [
+        "Replaces inline answer arrows with Previous and locked Submit buttons directly below every Academy MCQ question card.",
+        "Keeps Submit disabled until an answer has been selected, then advances or finishes the test.",
+        "Restyles the notification centre with a modern phone-notification appearance, rounded notification cards and clearer icons.",
+        "Adds Notification settings and Clear actions to the notification panel."
+      ]
+    },
     {
       "version": "V1.5.45",
       "features": [

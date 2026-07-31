@@ -2778,3 +2778,55 @@ html.keyboard-open .video-page-bottom-spacer{
 }
 .review-tracker.timeline .review-gradient-track:after{background:rgba(255,255,255,.18)!important}
 .review-tracker.timeline{color:#218a2e!important}
+
+
+/* V1.5.47 — locked MCQ controls and modern notification shade */
+.answer-submit-arrow{display:none!important}
+.mcq-question-actions{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+  margin:12px 0 calc(var(--app-nav-clearance,96px) + 18px + env(safe-area-inset-bottom,0px));
+  padding:0 2px;
+}
+.mcq-question-actions .btn{margin:0;min-height:52px}
+.mcq-question-actions .btn:disabled{opacity:.42;filter:grayscale(.25);box-shadow:none;cursor:not-allowed}
+@media(max-width:390px){.mcq-question-actions{gap:9px}.mcq-question-actions .btn{padding:12px 8px;font-size:.95rem}}
+
+.notification-bell-backdrop{background:rgba(3,8,7,.72)!important;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.notification-bell-panel{
+  width:min(620px,calc(100% - 24px))!important;
+  max-height:min(78dvh,720px)!important;
+  padding:18px 14px 12px!important;
+  border-radius:34px!important;
+  background:rgba(225,229,226,.94)!important;
+  border:1px solid rgba(255,255,255,.45)!important;
+  box-shadow:0 28px 90px rgba(0,0,0,.5)!important;
+  color:#17211f!important;
+  overflow:hidden!important;
+}
+.notification-bell-header{padding:2px 8px 12px!important;align-items:center!important}
+.notification-bell-kicker{display:none!important}
+.notification-bell-header h2{font-size:1.45rem!important;letter-spacing:-.02em;margin:0!important}
+.notification-bell-close{width:42px!important;height:42px!important;border-radius:50%!important;background:rgba(255,255,255,.7)!important;color:#17211f!important;font-size:28px!important}
+.notification-bell-list{display:grid!important;gap:10px!important;overflow:auto!important;padding:2px 2px 12px!important;max-height:calc(min(78dvh,720px) - 128px)!important}
+.notification-bell-item{border:0!important;border-radius:26px!important;overflow:hidden!important;background:rgba(255,255,255,.78)!important;box-shadow:0 2px 8px rgba(0,0,0,.08)!important;min-height:88px!important}
+.notification-bell-item::before{border-radius:26px!important}
+.notification-bell-item-content{padding:14px 16px!important;background:transparent!important;border:0!important;border-radius:26px!important;display:grid!important;grid-template-columns:48px 1fr!important;gap:12px!important;align-items:start!important}
+.notification-bell-item.unread .notification-bell-item-content{background:rgba(255,255,255,.9)!important}
+.notification-bell-item-icon{width:48px!important;height:48px!important;border-radius:50%!important;display:grid!important;place-items:center!important;background:var(--green)!important;color:#fff!important;font-size:20px!important;font-weight:900!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.35)!important}
+.notification-bell-item-content strong{font-size:1rem!important;line-height:1.25!important;color:#17211f!important}
+.notification-bell-item-content p{margin:4px 0 3px!important;color:#34413e!important;line-height:1.35!important}
+.notification-bell-item-content small{color:#66716e!important;font-size:.78rem!important}
+.notification-update-whats-new{margin-top:9px!important;padding:10px 12px!important;border-radius:16px!important;background:rgba(237,241,238,.9)!important}
+.notification-update-button{border-radius:999px!important;padding:9px 14px!important}
+.notification-bell-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 10px 2px;border-top:1px solid rgba(23,33,31,.12)}
+.notification-bell-footer button{border:0;background:transparent;color:#17211f;font-weight:750;font-size:.9rem;padding:8px 6px}
+.notification-bell-footer button:last-child{margin-left:auto}
+.notification-bell-empty{padding:28px 18px!important;background:rgba(255,255,255,.72)!important;border-radius:24px!important;text-align:center!important}
+body.app-dark-mode .notification-bell-panel{background:rgba(45,51,49,.96)!important;color:#fff!important}
+body.app-dark-mode .notification-bell-header h2,body.app-dark-mode .notification-bell-footer button{color:#fff!important}
+body.app-dark-mode .notification-bell-close{background:rgba(255,255,255,.14)!important;color:#fff!important}
+body.app-dark-mode .notification-bell-item{background:rgba(255,255,255,.1)!important}
+body.app-dark-mode .notification-bell-item-content strong{color:#fff!important}
+body.app-dark-mode .notification-bell-item-content p{color:#d8dfdc!important}
+body.app-dark-mode .notification-bell-item-content small{color:#aeb9b4!important}
+body.app-dark-mode .notification-update-whats-new{background:rgba(255,255,255,.08)!important}
