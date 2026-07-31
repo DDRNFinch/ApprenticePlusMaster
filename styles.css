@@ -2219,3 +2219,29 @@ a:not(.danger-link),
 .tts-tile-button .app-icon polyline{
   stroke:#fff!important;
 }
+
+
+/* V1.5.27 centred notification dialog */
+.notification-bell-panel{
+  left:50%;
+  top:50%;
+  bottom:auto;
+  width:min(560px,calc(100% - 32px));
+  max-height:min(76vh,650px);
+  border-radius:24px;
+  padding:14px 18px calc(18px + env(safe-area-inset-bottom));
+  transform:translate(-50%,-50%) scale(.96);
+  opacity:0;
+  box-shadow:0 24px 80px rgba(0,0,0,.32);
+  transition:transform .18s ease,opacity .18s ease;
+}
+.notification-bell-panel.open{transform:translate(-50%,-50%) scale(1);opacity:1}
+@media(max-width:390px){
+  .notification-bell-panel{
+    width:calc(100% - 24px);
+    max-height:78vh;
+    padding-left:14px;
+    padding-right:14px;
+    border-radius:20px;
+  }
+}

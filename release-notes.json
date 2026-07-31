@@ -1,5 +1,5 @@
 {
-  "latest": "V1.5.24",
+  "latest": "V1.5.27",
   "releases": {
     "V1.5.20": {
       "title": "Instant dyslexia tint controls",
@@ -88,6 +88,15 @@
         "Prevents the selected app colour from overriding the speaker glyph.",
         "Slightly enlarges and strengthens the speaker icon so it remains easy to recognise.",
         "Keeps the green circular button and existing speaking animation."
+      ]
+    },
+    "V1.5.27": {
+      "title": "Centred notification popup",
+      "features": [
+        "Opens the bell notification panel in the middle of the screen.",
+        "Keeps the popup above the bottom navigation on phones and installed PWAs.",
+        "Adds a centred fade-and-scale animation and rounded modal layout.",
+        "Keeps backdrop tapping, close button and Escape-key closing behaviour."
       ]
     }
   }
