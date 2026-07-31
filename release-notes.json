@@ -1,6 +1,17 @@
 {
-  "latest": "V1.5.66",
+  "latest": "V1.5.67",
   "releases": [
+    {
+      "version": "V1.5.67",
+      "title": "Skills Card Evidence Sources",
+      "date": "2026-08-01",
+      "changes": [
+        "Skills Card rows are now clickable.",
+        "Each skill opens a popup listing the Practical Assessments and ProjectMate tasks that contributed to the count.",
+        "Each source shows the concise task title, source type and achieved grade.",
+        "Open buttons take the learner directly to the saved source assessment or ProjectMate task."
+      ]
+    },
     {
       "version": "V1.5.66",
       "title": "Skills Card mapping and counts",
@@ -370,7 +381,7 @@
       ]
     }
   },
-  "latestVersion": "V1.5.66",
+  "latestVersion": "V1.5.67",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",

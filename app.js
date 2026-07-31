@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.66';
+const APP_VERSION='V1.5.67';
 function analyticsEvent(name,params={}){
  try{
   const safe={};
@@ -3864,7 +3864,9 @@ function skillsCardEntries(){
     const taskText=[a.title,v.activity,v.taskTitle,v.description].filter(Boolean).join(' ');
     for(const skill of skillsCardMappedSkills(taskText,v.activity||a.title))demonstrations.push({
      id:`assessment:${a.n}:${index}:${skill}`,
-     skill,grade,percentage:score.percentage||0
+     skill,grade,percentage:score.percentage||0,
+     sourceType:'Practical Assessment',sourceId:`${a.n}:${index}`,assignmentNumber:a.n,versionIndex:index,
+     taskTitle:skillsCardTaskName(v.activity||v.taskTitle||a.title,a.title),sourceLabel:`Practical Assessment ${a.n}`
     });
    });
   }
@@ -3875,14 +3877,17 @@ function skillsCardEntries(){
   const taskText=[p.title,p.brief,p.dimensions,p.completionNote].filter(Boolean).join(' ');
   for(const skill of skillsCardMappedSkills(taskText,p.title||'ProjectMate task'))demonstrations.push({
    id:`project:${p.id}:${skill}`,
-   skill,grade,percentage:grade==='Distinction'?90:grade==='Merit'?80:70
+   skill,grade,percentage:grade==='Distinction'?90:grade==='Merit'?80:70,
+   sourceType:'ProjectMate',sourceId:p.id,projectId:p.id,
+   taskTitle:skillsCardTaskName(p.title||'ProjectMate task','ProjectMate task'),sourceLabel:'ProjectMate'
   });
  }
  const summary=new Map();
  for(const item of demonstrations){
   const key=item.skill.toLowerCase();
-  const current=summary.get(key)||{title:item.skill,count:0,grade:'',percentage:0};
+  const current=summary.get(key)||{title:item.skill,count:0,grade:'',percentage:0,sources:[]};
   current.count+=1;
+  current.sources.push(item);
   if(skillsCardGradeRank(item.grade)>skillsCardGradeRank(current.grade)||
     (skillsCardGradeRank(item.grade)===skillsCardGradeRank(current.grade)&&item.percentage>current.percentage)){
    current.grade=item.grade;current.percentage=item.percentage;
@@ -3896,11 +3901,32 @@ function skillsCardEntries(){
   a.title.localeCompare(b.title)
  );
 }
+function showSkillsCardSources(item){
+ const sources=[...(item?.sources||[])].sort((a,b)=>skillsCardGradeRank(b.grade)-skillsCardGradeRank(a.grade)||(b.percentage||0)-(a.percentage||0));
+ const modal=document.createElement('div');modal.className='modal skills-source-modal';
+ modal.innerHTML=`<div class="modal-card skills-source-card"><div class="skills-source-head"><div><div class="number">Skills Card evidence</div><h2>${esc(item.title)}</h2><p>${item.count} completed practical${item.count===1?'':'s'} · Highest grade: <strong>${esc(item.grade)}</strong></p></div><button class="modal-close" id="closeSkillSources" aria-label="Close">×</button></div><div class="skills-source-list">${sources.map((source,index)=>`<div class="skills-source-row"><div><strong>${esc(source.taskTitle||'Practical task')}</strong><span>${esc(source.sourceLabel||source.sourceType||'Practical')}</span></div><div class="skills-source-result"><b>${esc(source.grade)}</b><button class="btn secondary" data-open-skill-source="${index}">Open</button></div></div>`).join('')}</div></div>`;
+ document.body.appendChild(modal);
+ const close=()=>modal.remove();document.getElementById('closeSkillSources').onclick=close;modal.onclick=e=>{if(e.target===modal)close()};
+ modal.querySelectorAll('[data-open-skill-source]').forEach(button=>button.onclick=()=>{
+  const source=sources[Number(button.dataset.openSkillSource)];if(!source)return;
+  close();
+  if(source.sourceType==='ProjectMate'){
+   state.view='projectmate';state.projectMateTab='mine';state.activeProjectId=source.projectId;render();window.scrollTo(0,0);
+  }else{
+   const a=assignment(source.assignmentNumber);if(!a)return toast('Source assessment could not be opened');
+   const sd=sectionData(a.n,'practical'),version=sd.versions?.[source.versionIndex];
+   if(version)sd.draft=structuredClone(version);
+   state.assignment=a.n;state.section='practical';state.view='section';render();window.scrollTo(0,0);
+  }
+  window.ApprenticeAnalytics?.trackEvent('skills_card_source_opened',{course_id:COURSE.id,source_type:source.sourceType==='ProjectMate'?'projectmate':'practical_assessment'});
+ });
+}
 function renderSkillsCard(){
  const items=skillsCardEntries(),name=state.profile?.fullName||'Learner';
- const rows=items.map(item=>`<div class="skills-card-row skills-card-${item.grade.toLowerCase()}"><strong>${esc(item.title)} <small>(x${item.count})</small></strong><span>${item.grade}</span></div>`).join('');
- app.innerHTML=shell(`<button class="back no-print" id="backSkillsCard">← Toolbox</button><div class="section-heading"><div><div class="number">Workplace app</div><h2>Skills Card</h2><p class="muted">A quick reference to practical skills demonstrated, how often they were completed and the highest grade achieved.</p></div></div><section class="skills-card-phone"><div class="skills-card-head"><div><small>APPRENTICE+</small><h3>${esc(name)}</h3><p>${esc(COURSE.name)} apprentice</p></div><span>${items.length} skill${items.length===1?'':'s'}</span></div><div class="skills-card-list">${rows||`<div class="skills-card-empty"><strong>No graded practical skills yet</strong><p>Completed Practical Assessments and graded ProjectMate tasks will build this card automatically.</p></div>`}</div></section><section class="accuracy-card skills-card-note"><strong>What employers see</strong><p>Each concise skill, the number of times demonstrated and the learner’s highest recorded grade. No assignments, evidence or personal files are shown.</p></section>`);
+ const rows=items.map((item,index)=>`<button type="button" class="skills-card-row skills-card-${item.grade.toLowerCase()}" data-skill-row="${index}"><strong>${esc(item.title)} <small>(x${item.count})</small></strong><span>${item.grade}</span></button>`).join('');
+ app.innerHTML=shell(`<button class="back no-print" id="backSkillsCard">← Toolbox</button><div class="section-heading"><div><div class="number">Workplace app</div><h2>Skills Card</h2><p class="muted">A quick reference to practical skills demonstrated, how often they were completed and the highest grade achieved.</p></div></div><section class="skills-card-phone"><div class="skills-card-head"><div><small>APPRENTICE+</small><h3>${esc(name)}</h3><p>${esc(COURSE.name)} apprentice</p></div><span>${items.length} skill${items.length===1?'':'s'}</span></div><div class="skills-card-list">${rows||`<div class="skills-card-empty"><strong>No graded practical skills yet</strong><p>Completed Practical Assessments and graded ProjectMate tasks will build this card automatically.</p></div>`}</div></section><section class="accuracy-card skills-card-note"><strong>Tap a skill to view its source</strong><p>Each entry shows the completed practical tasks and grades that contributed to the skill count.</p></section>`);
  document.getElementById('backSkillsCard').onclick=()=>{state.view='resources';render()};
+ document.querySelectorAll('[data-skill-row]').forEach(button=>button.onclick=()=>showSkillsCardSources(items[Number(button.dataset.skillRow)]));
  window.ApprenticeAnalytics?.trackEvent('skills_card_opened',{course_id:COURSE.id,skill_count:items.length});
 }
 

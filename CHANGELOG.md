@@ -1,3 +1,10 @@
+# V1.5.67
+
+- Made every Skills Card row clickable.
+- Added a popup showing every Practical Assessment and ProjectMate source contributing to the selected skill.
+- Added concise source task names, grades and direct Open buttons.
+- Preserved highest-grade ranking and demonstration counts.
+
 # V1.5.66
 
 - Skills Card now groups tasks into concise trade skills.

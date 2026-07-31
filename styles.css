@@ -2949,3 +2949,16 @@ body.dual-ruler-open{overflow:hidden;overscroll-behavior:none}
 .skills-card-note{margin-bottom:18px}
 .project-skill-grade{margin-top:14px}
 @media(max-width:380px){.skills-card-head{padding:18px 15px}.skills-card-row{padding:13px 14px}.skills-card-head h3{font-size:21px}.skills-card-row strong{font-size:14px}}
+
+/* V1.5.67 Skills Card source evidence */
+.skills-card-row{width:100%;border:0;background:#fff;text-align:left;font:inherit;cursor:pointer}
+.skills-card-row:active{background:#f5faf8}
+.skills-card-row:focus-visible{outline:3px solid #62d68e;outline-offset:-3px}
+.skills-source-card{max-height:min(78vh,720px);overflow:auto;padding:0}
+.skills-source-head{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;gap:14px;padding:20px;background:#fff;border-bottom:1px solid #e4ece8}
+.skills-source-head h2{margin:4px 0 5px}.skills-source-head p{margin:0;color:#64736e;font-size:13px}
+.skills-source-list{padding:8px 16px 18px}
+.skills-source-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 2px;border-bottom:1px solid #e8eeeb}
+.skills-source-row:last-child{border-bottom:0}.skills-source-row>div:first-child{min-width:0}.skills-source-row strong{display:block;color:#143029;line-height:1.3}.skills-source-row span{display:block;margin-top:4px;color:#687872;font-size:12px}
+.skills-source-result{display:flex;align-items:flex-end;gap:8px;flex-direction:column;flex:0 0 auto}.skills-source-result b{font-size:12px;color:#0d6d42}.skills-source-result .btn{padding:7px 11px;font-size:12px}
+@media(max-width:420px){.skills-source-row{align-items:flex-start}.skills-source-result{align-items:flex-end}.skills-source-card{max-height:86vh}}
