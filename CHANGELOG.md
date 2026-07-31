@@ -1,3 +1,11 @@
+# V1.5.65
+
+- Added Skills Card to the Toolbox.
+- Shows the learner name and completed practical task names with Pass, Merit or Distinction.
+- Sorts highest grades first and keeps the highest grade for repeated tasks.
+- Includes Practical Assessment results and graded ProjectMate completions.
+- Added a practical grade selector when completing ProjectMate tasks.
+
 # V1.5.64
 
 - Removed remaining generic analytics events and duplicate reporting.

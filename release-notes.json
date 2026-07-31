@@ -1,6 +1,19 @@
 {
-  "latest": "V1.5.64",
+  "latest": "V1.5.65",
   "releases": [
+    {
+      "version": "V1.5.65",
+      "title": "Skills Card",
+      "date": "2026-08-01",
+      "features": [
+        "Added a new Skills Card workplace app in the Toolbox.",
+        "Shows the learner name and a ranked list of completed practical tasks.",
+        "Ranks Distinction first, then Merit, then Pass.",
+        "Uses the highest grade recorded for each practical task.",
+        "Includes graded Practical Assessments and completed ProjectMate tasks.",
+        "Added a Pass, Merit or Distinction selector when saving a completed ProjectMate task."
+      ]
+    },
     {
       "version": "V1.5.64",
       "title": "Named analytics cleanup and update reliability",
@@ -318,9 +331,22 @@
         "Added meaningful feature action events for starts, completions, saves, exports, downloads, searches, retakes and submissions.",
         "Continued excluding names, emails, typed content, answers, evidence, media, signatures, files and precise location."
       ]
+    },
+    "V1.5.65": {
+      "version": "V1.5.65",
+      "title": "Skills Card",
+      "date": "2026-08-01",
+      "features": [
+        "Added a new Skills Card workplace app in the Toolbox.",
+        "Shows the learner name and a ranked list of completed practical tasks.",
+        "Ranks Distinction first, then Merit, then Pass.",
+        "Uses the highest grade recorded for each practical task.",
+        "Includes graded Practical Assessments and completed ProjectMate tasks.",
+        "Added a Pass, Merit or Distinction selector when saving a completed ProjectMate task."
+      ]
     }
   },
-  "latestVersion": "V1.5.64",
+  "latestVersion": "V1.5.65",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",
@@ -387,6 +413,19 @@
         "Updated the visible app build and service-worker cache to V1.5.63.",
         "Reduced reliance on generic analytics events and prioritised named feature, completion, export and submission events.",
         "Kept anonymous analytics only and continued excluding learner identity, evidence content, media and files."
+      ]
+    },
+    "V1.5.65": {
+      "version": "V1.5.65",
+      "title": "Skills Card",
+      "date": "2026-08-01",
+      "features": [
+        "Added a new Skills Card workplace app in the Toolbox.",
+        "Shows the learner name and a ranked list of completed practical tasks.",
+        "Ranks Distinction first, then Merit, then Pass.",
+        "Uses the highest grade recorded for each practical task.",
+        "Includes graded Practical Assessments and completed ProjectMate tasks.",
+        "Added a Pass, Merit or Distinction selector when saving a completed ProjectMate task."
       ]
     }
   }

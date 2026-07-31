@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.5.64-named-analytics-cleanup';
-const CURRENT_VERSION='V1.5.64';
+const CACHE='apprentice-plus-v1.5.65-skills-card';
+const CURRENT_VERSION='V1.5.65';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,
