@@ -1,3 +1,9 @@
+# V1.5.43
+
+- MCQ answers now select on first tap and submit from an arrow inside the selected answer row.
+- Removed bottom Next/Submit controls from Academy, EPA, Functional Skills, Trade Course and assignment knowledge quizzes.
+- Kept previous-question access above the bottom navigation.
+
 # V1.5.42
 
 - Added a single app-wide bottom-navigation safe-area system.

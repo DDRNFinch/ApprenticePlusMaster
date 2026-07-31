@@ -1,6 +1,14 @@
 {
-  "latest": "V1.5.42",
+  "latest": "V1.5.43",
   "releases": [
+    {
+      "version": "V1.5.43",
+      "features": [
+        "Select an Academy or EPA answer with one tap, then use the white arrow inside that answer row to submit it.",
+        "Removes the bottom Next and Submit buttons from MCQ question screens so they cannot sit behind the app navigation.",
+        "Applies the same answer-row interaction to Functional Skills, Trade Courses, assignment knowledge assessments and EPA Knowledge Practice."
+      ]
+    },
     {
       "version": "V1.5.42",
       "title": "Global navigation safe-area fix",

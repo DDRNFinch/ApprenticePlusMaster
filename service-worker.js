@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.5.42-global-bottom-safe-area';
-const CURRENT_VERSION='V1.5.42';
+const CACHE='apprentice-plus-v1.5.43-inline-answer-submit';
+const CURRENT_VERSION='V1.5.43';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,

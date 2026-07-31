@@ -2718,3 +2718,19 @@ html.keyboard-open :where(.modal-card,.progress-review-card,.learning-support-mo
   .shell{padding-bottom:0!important;}
   :where(.modal,.progress-modal-layer,.learning-support-modal,.help-tour-overlay,.page-help-modal,.notepad-search-modal){padding-bottom:0!important;}
 }
+
+
+/* V1.5.43 — answer-row submit arrows for all MCQ screens */
+.epa-option{position:relative;display:flex;align-items:center;gap:10px;padding-right:58px}
+.epa-option>span{min-width:0;flex:1}
+.answer-submit-arrow{
+ position:absolute;right:10px;top:50%;transform:translateY(-50%);
+ width:40px;height:40px;border:0;border-radius:50%;
+ display:grid;place-items:center;background:var(--accent,#22c55e);color:#fff!important;
+ font-size:25px;font-weight:900;line-height:1;box-shadow:0 5px 14px rgba(15,35,40,.22);
+ z-index:3;cursor:pointer;touch-action:manipulation
+}
+.answer-submit-arrow:active{transform:translateY(-50%) scale(.92)}
+.epa-option.selected{padding-right:62px}
+.mcq-inline-back{display:flex;justify-content:flex-start;margin:14px 0 calc(var(--app-nav-clearance,96px) + env(safe-area-inset-bottom,0px))}
+.mcq-inline-back .btn{width:auto;min-width:150px}
