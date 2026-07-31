@@ -1,6 +1,18 @@
 {
-  "latest": "V1.5.67",
+  "latest": "V1.5.68",
   "releases": [
+    {
+      "version": "V1.5.68",
+      "title": "Concise Skills Card Evidence Details",
+      "date": "2026-08-01",
+      "changes": [
+        "Skills Card source popups now use concise practical task titles instead of full generated specifications.",
+        "Each source clearly lists every skill awarded by that completed practical.",
+        "Source type, achieved grade and completion date are shown at a glance.",
+        "ProjectMate skill mapping now uses the actual task title only, preventing boilerplate instructions from creating unrelated skills.",
+        "Open buttons still link directly to the saved Practical Assessment or ProjectMate task."
+      ]
+    },
     {
       "version": "V1.5.67",
       "title": "Skills Card Evidence Sources",
@@ -381,7 +393,7 @@
       ]
     }
   },
-  "latestVersion": "V1.5.67",
+  "latestVersion": "V1.5.68",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",

@@ -1,3 +1,10 @@
+# V1.5.68
+
+- Replaced full generated ProjectMate specifications in Skills Card popups with concise task titles.
+- Added awarded-skill chips, source type, grade and completion date to each source.
+- Prevented generic ProjectMate boilerplate from incorrectly awarding unrelated skills.
+- Kept direct links to the saved source task.
+
 # V1.5.67
 
 - Made every Skills Card row clickable.

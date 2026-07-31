@@ -2962,3 +2962,17 @@ body.dual-ruler-open{overflow:hidden;overscroll-behavior:none}
 .skills-source-row:last-child{border-bottom:0}.skills-source-row>div:first-child{min-width:0}.skills-source-row strong{display:block;color:#143029;line-height:1.3}.skills-source-row span{display:block;margin-top:4px;color:#687872;font-size:12px}
 .skills-source-result{display:flex;align-items:flex-end;gap:8px;flex-direction:column;flex:0 0 auto}.skills-source-result b{font-size:12px;color:#0d6d42}.skills-source-result .btn{padding:7px 11px;font-size:12px}
 @media(max-width:420px){.skills-source-row{align-items:flex-start}.skills-source-result{align-items:flex-end}.skills-source-card{max-height:86vh}}
+
+/* V1.5.68 concise Skills Card source details */
+.skills-source-row{align-items:flex-start;padding:16px 2px}
+.skills-source-main{min-width:0;flex:1}
+.skills-source-type{display:inline-block!important;margin:0 0 6px!important;color:#138047!important;font-size:11px!important;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+.skills-source-main>strong{font-size:15px;line-height:1.35}
+.skills-source-meta{display:flex;flex-wrap:wrap;gap:7px 14px;margin-top:7px;color:#65756f;font-size:12px}
+.skills-source-meta span{display:inline!important;margin:0!important}
+.skills-awarded{margin-top:12px;padding:10px 11px;border-radius:12px;background:#f3f8f5}
+.skills-awarded small{display:block;color:#65756f;font-weight:800;margin-bottom:7px}
+.skills-awarded>div{display:flex;flex-wrap:wrap;gap:6px}
+.skills-awarded span{display:inline-block!important;margin:0!important;padding:5px 8px;border-radius:999px;background:#fff;color:#17683f!important;font-size:11px!important;font-weight:850;border:1px solid #dcebe3}
+.skills-source-open{flex:0 0 auto;margin-top:22px}
+@media(max-width:420px){.skills-source-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px}.skills-source-open{margin-top:22px}}

@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.67';
+const APP_VERSION='V1.5.68';
 function analyticsEvent(name,params={}){
  try{
   const safe={};
@@ -3842,8 +3842,28 @@ const SKILLS_CARD_RULES={
  ]
 };
 function skillsCardTaskName(value,fallback='Practical task'){
- const text=String(value||fallback||'Practical task').trim().replace(/\s+/g,' ');
- return text.replace(/^(build|construct|complete|make|install|fit|repair|replace|set out and build|manufacture)\s+/i,'').replace(/[.]+$/,'')||fallback;
+ let text=String(value||fallback||'Practical task').trim().replace(/\s+/g,' ');
+ text=text.split(/\s+(?:Difficulty|Estimated duration|Assignment focus|Task description|Required dimensions|Suggested materials|Completion requirements)\s*[:·-]?/i)[0].trim();
+ text=text.replace(/^(build|construct|complete|make|install|fit|repair|replace|set out and build|manufacture)\s+/i,'').replace(/[.]+$/,'').trim();
+ return text||fallback;
+}
+function skillsCardSourceTitle(value,skills=[],fallback='Practical task'){
+ const raw=skillsCardTaskName(value,fallback);
+ const lower=raw.toLowerCase();
+ if(/mix mortar/.test(lower)&&/panel/.test(lower)&&/(joint|bucket[- ]handle|point)/.test(lower))return 'Mortar Mixing & Jointing Panel';
+ if(/cavity/.test(lower)&&/opening/.test(lower))return 'Cavity Wall with Opening';
+ if(/cavity/.test(lower)&&/return/.test(lower))return 'Cavity Wall with Return';
+ if(/cavity/.test(lower))return 'Cavity Wall';
+ if(/\bpier\b/.test(lower)&&/(joint|point)/.test(lower))return 'Brick Pier & Jointing';
+ if(/\bpier\b/.test(lower))return 'Brick Pier';
+ if(/solid wall|half[- ]brick wall|one[- ]brick wall|garden wall|boundary wall/.test(lower)&&/return/.test(lower))return 'Solid Wall with Return';
+ if(/solid wall|half[- ]brick wall|one[- ]brick wall|garden wall|boundary wall/.test(lower))return 'Solid Wall';
+ if(/decorative|feature panel|banding|soldier course|brick[- ]on[- ]edge/.test(lower))return 'Decorative Brickwork';
+ if(/curved|radius|circular/.test(lower))return 'Curved Brickwork';
+ if(/blockwork|block wall/.test(lower))return 'Blockwork';
+ if(raw.length<=64)return raw;
+ const useful=skills.filter(Boolean).slice(0,2).join(' & ');
+ return useful||`${raw.slice(0,61).trim()}…`;
 }
 function skillsCardMappedSkills(text,fallback){
  const source=String(text||'').replace(/\s+/g,' ').trim();
@@ -3861,12 +3881,14 @@ function skillsCardEntries(){
    versions.forEach((v,index)=>{
     const score=practicalScoringSummary(a,v),grade=score.percentage===null?'':gradeForPercentage(score.percentage);
     if(!skillsCardGradeRank(grade))return;
-    const taskText=[a.title,v.activity,v.taskTitle,v.description].filter(Boolean).join(' ');
-    for(const skill of skillsCardMappedSkills(taskText,v.activity||a.title))demonstrations.push({
+    const taskText=[v.taskTitle,v.activity,a.title].filter(Boolean).join(' ');
+    const awardedSkills=skillsCardMappedSkills(taskText,v.activity||a.title);
+    const taskTitle=skillsCardSourceTitle(v.taskTitle||v.activity||a.title,awardedSkills,a.title);
+    for(const skill of awardedSkills)demonstrations.push({
      id:`assessment:${a.n}:${index}:${skill}`,
      skill,grade,percentage:score.percentage||0,
      sourceType:'Practical Assessment',sourceId:`${a.n}:${index}`,assignmentNumber:a.n,versionIndex:index,
-     taskTitle:skillsCardTaskName(v.activity||v.taskTitle||a.title,a.title),sourceLabel:`Practical Assessment ${a.n}`
+     taskTitle,awardedSkills,completedDate:v.date||v.completedAt||v.submittedAt||'',sourceLabel:`Practical Assessment ${a.n}`
     });
    });
   }
@@ -3874,12 +3896,14 @@ function skillsCardEntries(){
  for(const p of projectList()){
   const grade=String(p.skillGrade||'');
   if(p.status!=='complete'||!p.completionSaved||!skillsCardGradeRank(grade))continue;
-  const taskText=[p.title,p.brief,p.dimensions,p.completionNote].filter(Boolean).join(' ');
-  for(const skill of skillsCardMappedSkills(taskText,p.title||'ProjectMate task'))demonstrations.push({
+  const taskText=skillsCardTaskName(p.title||'ProjectMate task','ProjectMate task');
+  const awardedSkills=skillsCardMappedSkills(taskText,p.title||'ProjectMate task');
+  const taskTitle=skillsCardSourceTitle(p.title||'ProjectMate task',awardedSkills,'ProjectMate task');
+  for(const skill of awardedSkills)demonstrations.push({
    id:`project:${p.id}:${skill}`,
    skill,grade,percentage:grade==='Distinction'?90:grade==='Merit'?80:70,
    sourceType:'ProjectMate',sourceId:p.id,projectId:p.id,
-   taskTitle:skillsCardTaskName(p.title||'ProjectMate task','ProjectMate task'),sourceLabel:'ProjectMate'
+   taskTitle,awardedSkills,completedDate:p.completedAt||p.updated||p.createdAt||'',sourceLabel:'ProjectMate'
   });
  }
  const summary=new Map();
@@ -3901,10 +3925,15 @@ function skillsCardEntries(){
   a.title.localeCompare(b.title)
  );
 }
+function skillsCardDisplayDate(value){
+ if(!value)return '';
+ const d=typeof value==='number'?new Date(value):new Date(value);
+ return Number.isNaN(d.getTime())?String(value):d.toLocaleDateString('en-GB');
+}
 function showSkillsCardSources(item){
  const sources=[...(item?.sources||[])].sort((a,b)=>skillsCardGradeRank(b.grade)-skillsCardGradeRank(a.grade)||(b.percentage||0)-(a.percentage||0));
  const modal=document.createElement('div');modal.className='modal skills-source-modal';
- modal.innerHTML=`<div class="modal-card skills-source-card"><div class="skills-source-head"><div><div class="number">Skills Card evidence</div><h2>${esc(item.title)}</h2><p>${item.count} completed practical${item.count===1?'':'s'} · Highest grade: <strong>${esc(item.grade)}</strong></p></div><button class="modal-close" id="closeSkillSources" aria-label="Close">×</button></div><div class="skills-source-list">${sources.map((source,index)=>`<div class="skills-source-row"><div><strong>${esc(source.taskTitle||'Practical task')}</strong><span>${esc(source.sourceLabel||source.sourceType||'Practical')}</span></div><div class="skills-source-result"><b>${esc(source.grade)}</b><button class="btn secondary" data-open-skill-source="${index}">Open</button></div></div>`).join('')}</div></div>`;
+ modal.innerHTML=`<div class="modal-card skills-source-card"><div class="skills-source-head"><div><div class="number">Skills Card evidence</div><h2>${esc(item.title)}</h2><p>${item.count} completed practical${item.count===1?'':'s'} · Highest grade: <strong>${esc(item.grade)}</strong></p></div><button class="modal-close" id="closeSkillSources" aria-label="Close">×</button></div><div class="skills-source-list">${sources.map((source,index)=>{const skills=[...(source.awardedSkills||[item.title])];const date=skillsCardDisplayDate(source.completedDate);return `<article class="skills-source-row"><div class="skills-source-main"><span class="skills-source-type">${esc(source.sourceLabel||source.sourceType||'Practical')}</span><strong>${esc(source.taskTitle||'Practical task')}</strong><div class="skills-source-meta"><span>Grade: <b>${esc(source.grade)}</b></span>${date?`<span>Completed: ${esc(date)}</span>`:''}</div><div class="skills-awarded"><small>Awarded skills</small><div>${skills.map(skill=>`<span>✓ ${esc(skill)}</span>`).join('')}</div></div></div><button class="btn secondary skills-source-open" data-open-skill-source="${index}">Open</button></article>`}).join('')}</div></div>`;
  document.body.appendChild(modal);
  const close=()=>modal.remove();document.getElementById('closeSkillSources').onclick=close;modal.onclick=e=>{if(e.target===modal)close()};
  modal.querySelectorAll('[data-open-skill-source]').forEach(button=>button.onclick=()=>{
@@ -3921,6 +3950,7 @@ function showSkillsCardSources(item){
   window.ApprenticeAnalytics?.trackEvent('skills_card_source_opened',{course_id:COURSE.id,source_type:source.sourceType==='ProjectMate'?'projectmate':'practical_assessment'});
  });
 }
+
 function renderSkillsCard(){
  const items=skillsCardEntries(),name=state.profile?.fullName||'Learner';
  const rows=items.map((item,index)=>`<button type="button" class="skills-card-row skills-card-${item.grade.toLowerCase()}" data-skill-row="${index}"><strong>${esc(item.title)} <small>(x${item.count})</small></strong><span>${item.grade}</span></button>`).join('');
