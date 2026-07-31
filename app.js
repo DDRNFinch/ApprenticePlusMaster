@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.4';
+const APP_VERSION='V1.5.5';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -3599,12 +3599,32 @@ function renderResources(){
  document.getElementById('openNotepad').onclick=()=>{state.view='notepad';state.editingNoteId=null;render();window.scrollTo(0,0)};
  document.getElementById('openSettings').onclick=()=>{state.view='settings';render();window.scrollTo(0,0)};
 }
+const APP_SETTINGS_KEY='apprenticeplus.appSettings.v1';
+function defaultAppSettings(){return {appearance:'light',accent:'green',notifications:{enabled:true,updates:true,epa:true,assignments:true,certificates:true}}}
+function appSettings(){try{const saved=JSON.parse(localStorage.getItem(APP_SETTINGS_KEY)||'{}');return {...defaultAppSettings(),...saved,notifications:{...defaultAppSettings().notifications,...(saved.notifications||{})}}}catch{return defaultAppSettings()}}
+function saveAppSettings(next){try{localStorage.setItem(APP_SETTINGS_KEY,JSON.stringify(next))}catch{}applyAppSettings(next);window.dispatchEvent(new CustomEvent('apprenticeplus:settings-changed',{detail:next}))}
+function applyAppSettings(settings=appSettings()){
+ const palettes={green:{green:'#58b51f',green2:'#eefbdc',ink:'#0b2b23'},teal:{green:'#0f766e',green2:'#dff7f3',ink:'#103b37'},blue:{green:'#2563eb',green2:'#e7efff',ink:'#172b4d'},purple:{green:'#7c3aed',green2:'#f0e9ff',ink:'#33205a'},orange:{green:'#ea6a16',green2:'#fff0e3',ink:'#4b2b16'}};
+ const palette=palettes[settings.accent]||palettes.green,root=document.documentElement;
+ Object.entries(palette).forEach(([key,value])=>root.style.setProperty(`--${key}`,value));
+ document.body.classList.toggle('app-dark-mode',settings.appearance==='dark');
+ document.querySelector('meta[name="theme-color"]')?.setAttribute('content',palette.green);
+}
+function samsungToggle(id,label,copy,checked){return `<label class="settings-switch-row" for="${id}"><span><strong>${label}</strong>${copy?`<small>${copy}</small>`:''}</span><input class="samsung-switch-input" type="checkbox" id="${id}" ${checked?'checked':''}><span class="samsung-switch" aria-hidden="true"><i></i></span></label>`}
 function renderSettings(){
- const active=state.settingsTab||'general';
+ const active=state.settingsTab||'general',settings=appSettings();
  const tabs=[['general','General'],['notifications','Notifications'],['learning-support','Learning Support']];
- app.innerHTML=shell(`<button class="back no-print" id="backResources">← Toolbox</button><div class="section-heading settings-heading"><div><div class="number">Settings</div><h2>App settings</h2></div></div><div class="settings-tabs no-print" role="tablist" aria-label="Settings sections">${tabs.map(([id,label])=>`<button type="button" role="tab" aria-selected="${active===id}" class="${active===id?'active':''}" data-settings-tab="${id}">${label}</button>`).join('')}</div><section class="settings-tab-panel" data-active-settings-panel="${active}"></section>`);
+ let panel='';
+ if(active==='general')panel=`<section class="settings-card"><h3>Appearance</h3><p class="settings-card-copy">Choose how Apprentice+ looks on this device.</p><div class="settings-segmented" role="group" aria-label="App appearance"><button class="${settings.appearance==='light'?'active':''}" data-appearance="light">Light</button><button class="${settings.appearance==='dark'?'active':''}" data-appearance="dark">Dark</button></div></section><section class="settings-card"><h3>App colour</h3><p class="settings-card-copy">Select the main colour used for buttons, tabs and progress highlights.</p><div class="app-colour-grid">${[['green','Apprentice+ Green'],['teal','Teal'],['blue','Blue'],['purple','Purple'],['orange','Orange']].map(([id,label])=>`<button class="app-colour-choice ${settings.accent===id?'active':''}" data-accent="${id}"><span class="app-colour-dot colour-${id}"></span><strong>${label}</strong>${settings.accent===id?'<b>✓</b>':''}</button>`).join('')}</div></section>`;
+ if(active==='notifications')panel=`<section class="settings-card notification-settings-card"><h3>Notifications</h3><p class="settings-card-copy">Choose which messages appear in the notification bell.</p>${samsungToggle('settingNotificationsEnabled','Allow notifications','Show the notification bell and messages.',settings.notifications.enabled)}<div class="notification-subsettings ${settings.notifications.enabled?'':'disabled'}">${samsungToggle('settingUpdates','App updates','What’s new and new version messages.',settings.notifications.updates)}${samsungToggle('settingEpa','EPA readiness','Progress and readiness reminders.',settings.notifications.epa)}${samsungToggle('settingAssignments','Assignments','Completion and evidence reminders.',settings.notifications.assignments)}${samsungToggle('settingCertificates','Certificates','New certificate and achievement messages.',settings.notifications.certificates)}</div></section>`;
+ if(active==='learning-support')panel='<section class="settings-card settings-empty-card"></section>';
+ app.innerHTML=shell(`<button class="back no-print" id="backResources">← Toolbox</button><div class="section-heading settings-heading"><div><div class="number">Settings</div><h2>App settings</h2></div></div><div class="settings-tabs no-print" role="tablist" aria-label="Settings sections">${tabs.map(([id,label])=>`<button type="button" role="tab" aria-selected="${active===id}" class="${active===id?'active':''}" data-settings-tab="${id}">${label}</button>`).join('')}</div><div class="settings-tab-panel" data-active-settings-panel="${active}">${panel}</div>`);
  document.getElementById('backResources').onclick=()=>{state.view='resources';render();window.scrollTo(0,0)};
  document.querySelectorAll('[data-settings-tab]').forEach(button=>button.onclick=()=>{state.settingsTab=button.dataset.settingsTab;renderSettings();window.scrollTo(0,0)});
+ document.querySelectorAll('[data-appearance]').forEach(button=>button.onclick=()=>{const next=appSettings();next.appearance=button.dataset.appearance;saveAppSettings(next);renderSettings()});
+ document.querySelectorAll('[data-accent]').forEach(button=>button.onclick=()=>{const next=appSettings();next.accent=button.dataset.accent;saveAppSettings(next);renderSettings()});
+ const bindNotification=(id,key)=>{const input=document.getElementById(id);if(input)input.onchange=()=>{const next=appSettings();next.notifications[key]=input.checked;saveAppSettings(next);renderSettings()}};
+ bindNotification('settingNotificationsEnabled','enabled');bindNotification('settingUpdates','updates');bindNotification('settingEpa','epa');bindNotification('settingAssignments','assignments');bindNotification('settingCertificates','certificates');
 }
 function renderTools(){state.view='resources';render()}
 function num(id){const el=document.getElementById(id);return el?Number(el.value)||0:0}
@@ -5003,3 +5023,6 @@ function updateTargetedRevision({title,assignment,source,score}){
 /* EPA_INTERVIEW_FRAMEWORK_V140 */
 const EPA_INTERVIEW_FRAMEWORK=`You are an experienced End-Point Assessor for construction apprenticeships.`;
 const EPA_MCQ_FRAMEWORK=THEORY_MCQ_FRAMEWORK_V140;
+
+// V1.5.5 apply saved visual preferences on load.
+applyAppSettings();

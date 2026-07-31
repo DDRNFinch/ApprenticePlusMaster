@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=1.5.4">
+  <link rel="stylesheet" href="styles.css?v=1.5.5">
   <title>Apprentice+</title>
 </head>
 <body>
@@ -56,12 +56,12 @@
     </div>
   </section>
 
-  <script src="qrcode-browser.js?v=1.5.4"></script>
-  <script src="pdf-generator.js?v=1.5.4"></script>
-  <script src="specification-sheet.js?v=1.5.4"></script>
-  <script src="functional-skills-bank.js?v=1.5.4"></script>
-  <script src="trade-courses-bank.js?v=1.5.4"></script>
-  <script src="app.js?v=1.5.4"></script>
+  <script src="qrcode-browser.js?v=1.5.5"></script>
+  <script src="pdf-generator.js?v=1.5.5"></script>
+  <script src="specification-sheet.js?v=1.5.5"></script>
+  <script src="functional-skills-bank.js?v=1.5.5"></script>
+  <script src="trade-courses-bank.js?v=1.5.5"></script>
+  <script src="app.js?v=1.5.5"></script>
   <script>
   (() => {
     const bell = document.getElementById('notificationBell');
@@ -75,6 +75,19 @@
     const updateFeatures = document.getElementById('notificationUpdateFeatures');
     const openUpdateButton = document.getElementById('notificationOpenUpdate');
     if (!bell || !panel || !backdrop || !closeButton || !list || !count) return;
+
+    const settingsKey = 'apprenticeplus.appSettings.v1';
+    const getNotificationSettings = () => {
+      try { return {enabled:true,updates:true,epa:true,assignments:true,certificates:true,...(JSON.parse(localStorage.getItem(settingsKey)||'{}').notifications||{})}; }
+      catch { return {enabled:true,updates:true,epa:true,assignments:true,certificates:true}; }
+    };
+    const applyNotificationSettings = () => {
+      const settings = getNotificationSettings();
+      bell.hidden = !settings.enabled;
+      if (!settings.enabled) closeNotifications?.(true);
+      if (updateItem) updateItem.hidden = !settings.enabled || !settings.updates || updateItem.dataset.updateAvailable !== '1';
+      updateCount();
+    };
 
     const deletedKey = 'apprenticeplus.notifications.deleted.v1';
     let deleted = [];
@@ -166,10 +179,11 @@
       const updateId = `app-update-${version.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
       if (deleted.includes(updateId)) return;
       updateItem.dataset.notificationId = updateId;
+      updateItem.dataset.updateAvailable = '1';
       const features = Array.isArray(info?.features) && info.features.length ? info.features : ['Performance improvements and minor fixes.'];
       updateVersion.textContent = `${version} is ready to install.`;
       updateFeatures.innerHTML = features.slice(0, 8).map(feature => `<li>${String(feature).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}</li>`).join('');
-      updateItem.hidden = false; attachSwipe(updateItem); updateCount();
+      updateItem.hidden = !getNotificationSettings().enabled || !getNotificationSettings().updates; attachSwipe(updateItem); updateCount();
     };
     window.addEventListener('apprenticeplus:update-ready', event => showUpdateNotification(event.detail));
     if (window.apprenticePlusPendingUpdateInfo) showUpdateNotification(window.apprenticePlusPendingUpdateInfo);
@@ -177,7 +191,9 @@
       closeNotifications();
       window.setTimeout(() => { if (typeof window.openUpdateReadyModal === 'function') window.openUpdateReadyModal(); }, 190);
     });
-    updateCount();
+    applyNotificationSettings();
+    window.addEventListener('apprenticeplus:settings-changed', applyNotificationSettings);
+    window.addEventListener('storage', event => { if (event.key === settingsKey) applyNotificationSettings(); });
 
     bell.addEventListener('click', openNotifications);
     closeButton.addEventListener('click', () => closeNotifications());
