@@ -1,3 +1,9 @@
+# V1.5.39
+
+- Removed EPA readiness from the Review Status red/amber/green calculation.
+- EPA readiness remains displayed as a separate tracker.
+- Review Status now uses assignments, KSBs/Learning Outcomes and OTJ progress only.
+
 # V1.5.38
 
 - Restored the missing `reminders()` and `saveReminders()` functions.

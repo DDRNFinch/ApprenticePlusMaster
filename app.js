@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.38';
+const APP_VERSION='V1.5.39';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -4169,8 +4169,7 @@ function showCourseProgress(){
  const scores=[
   expectedAssignments===null?null:(expectedAssignments? p.submitted/expectedAssignments:1),
   expectedKsbs===null?null:(expectedKsbs? p.ksbCompleted/expectedKsbs:1),
-  otj.expected?otj.total/otj.expected:1,
-  epa?epa.overall/100:null
+  otj.expected?otj.total/otj.expected:1
  ].filter(v=>v!==null);
  const average=scores.length?scores.reduce((a,b)=>a+Math.min(1.2,b),0)/scores.length:0;
  const reviewLabel=elapsed===null?'Course dates needed':average>=1?'On or ahead of target':average>=.8?'Close to target':'Behind target';

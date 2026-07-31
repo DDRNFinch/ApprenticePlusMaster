@@ -2,6 +2,15 @@
   "latest": "V1.5.37",
   "releases": [
     {
+      "version": "V1.5.39",
+      "date": "2026-07-31",
+      "title": "Review status calculation",
+      "changes": [
+        "EPA readiness remains visible but no longer affects the red, amber or green review status.",
+        "Review status is now calculated only from assignments, KSBs or learning outcomes, and off-the-job training against today's expected progress."
+      ]
+    },
+    {
       "version": "V1.5.38",
       "title": "Toolbox and reminder runtime fix",
       "date": "2026-07-31",
@@ -32,5 +41,5 @@
       ]
     }
   },
-  "latestVersion": "V1.5.38"
+  "latestVersion": "V1.5.39"
 }
