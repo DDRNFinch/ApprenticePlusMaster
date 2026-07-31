@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.28';
+const APP_VERSION='V1.5.29';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -3714,19 +3714,21 @@ function renderLearningSupport(){const tab=state.learningSupportTab||'home';cons
 function bindLearningSupport(tab){document.querySelectorAll('[data-a11y-setting]').forEach(el=>{el.oninput=()=>{const a=accessibilitySettings(),key=el.dataset.a11ySetting;a[key]=el.type==='checkbox'?el.checked:(el.type==='range'?Number(el.value):el.value);saveAccessibilitySettings(a);if(key==='fontSize')document.getElementById('fontSizeValue')?.replaceChildren(`${a.fontSize}%`);if(key==='lineSpacing')document.getElementById('lineSpacingValue')?.replaceChildren(String(a.lineSpacing));if(a.vibration&&navigator.vibrate)navigator.vibrate(20)}});const check=document.getElementById('saveAccessibilityCheck');if(check)check.onclick=()=>{const ans={};document.querySelectorAll('[data-a11y-check]').forEach(x=>ans[x.dataset.a11yCheck]=x.checked);localStorage.setItem(ACCESSIBILITY_CHECK_KEY,JSON.stringify(ans));const rec=recommendationsFor(ans),box=document.getElementById('supportRecommendations');box.innerHTML=`<div class="support-recommendations"><h4>Recommended tools</h4>${rec.length?rec.map(x=>`<span>✓ ${x}</span>`).join(''):'<p>No extra tools selected. You can still use any support feature.</p>'}</div>`};const txt=document.getElementById('supportWritingText');if(txt){const update=()=>{const value=txt.value.trim(),words=value?value.split(/\s+/).length:0,sentences=value?(value.match(/[.!?]+(?=\s|$)/g)||[]).length:0;document.getElementById('supportWordCount').textContent=words;document.getElementById('supportSentenceCount').textContent=sentences;document.getElementById('supportReadingTime').textContent=words?Math.max(1,Math.ceil(words/200)):0};txt.oninput=update;document.getElementById('clearSupportText').onclick=()=>{txt.value='';txt.dispatchEvent(new Event('input',{bubbles:true}))};document.getElementById('readSupportText').onclick=()=>{if(!txt.value.trim())return toast('Add some text first');if(!('speechSynthesis'in window))return toast('Read aloud is not supported on this device');speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt.value);u.lang='en-GB';speechSynthesis.speak(u)}}const planner=document.getElementById('supportPlannerAssignment');if(planner)planner.onchange=()=>{state.assignment=Number(planner.value);renderLearningSupport()};const simple=document.getElementById('simpleAssignmentSelect');if(simple)simple.onchange=()=>{state.assignment=Number(simple.value);renderLearningSupport()};const focus=document.getElementById('toggleFocusMode');if(focus)focus.onclick=()=>{const a=accessibilitySettings();a.focusMode=!a.focusMode;saveAccessibilitySettings(a);renderLearningSupport()};const add=document.getElementById('addMemoryCard');if(add)add.onclick=()=>{const value=document.getElementById('memoryCardText').value.trim();if(!value)return toast('Write a reminder first');let cards=[];try{cards=JSON.parse(localStorage.getItem('apprenticeplus.memoryCards.v1')||'[]')}catch{}cards.unshift(value);localStorage.setItem('apprenticeplus.memoryCards.v1',JSON.stringify(cards.slice(0,30)));renderLearningSupport();toast('Reminder saved')};document.querySelectorAll('[data-remove-memory]').forEach(b=>b.onclick=()=>{let cards=[];try{cards=JSON.parse(localStorage.getItem('apprenticeplus.memoryCards.v1')||'[]')}catch{}cards.splice(Number(b.dataset.removeMemory),1);localStorage.setItem('apprenticeplus.memoryCards.v1',JSON.stringify(cards));renderLearningSupport()});const reset=document.getElementById('resetAccessibility');if(reset)reset.onclick=()=>{if(!confirm('Reset all accessibility settings on this device?'))return;localStorage.removeItem(ACCESSIBILITY_KEY);applyAccessibilitySettings();renderLearningSupport();toast('Accessibility settings reset')};enhanceVoiceToText(app)}
 
 function renderResources(){
+ const pendingOtj=otjEntries().filter(entry=>!entry.exportedAt).length;
+ const dueReminders=reminders().filter(reminder=>!reminder.completed&&reminder.due<=isoToday()).length;
+ // Mini apps stay alphabetical; Settings is always kept as the final icon.
  const regularTools=[
-  ['openMeasureMate','tools','MeasureMate','Conversions, geometry and construction calculations.'],
-  ['openMaterialMate','supporting','MaterialMate','Estimate materials with adjustable wastage.'],
-  ['openNotepad','note','NoteMate','Save notes, photos, videos and voice recordings.',`${learnerNotes().length} saved note${learnerNotes().length===1?'':'s'}`],
-  ['openDrawingMate','drawing','DrawingMate','Symbols, hatching, scales and drawing tools.'],
-  ['openProjectMate','project','ProjectMate','Generate, quote and complete customer-style workshop jobs.'],
-  ['openOTJMate','note','OTJMate','Record off-the-job learning, track hours and export new entries to PDF.'],
-  ['openRemindMate','revision','RemindMate','Save review targets and receive due-date reminders.']
+  ['openDrawingMate','drawing','DrawingMate','Symbols, hatching, scales and drawing tools.',0],
+  ['openMaterialMate','supporting','MaterialMate','Estimate materials with adjustable wastage.',0],
+  ['openMeasureMate','tools','MeasureMate','Conversions, geometry and construction calculations.',0],
+  ['openNotepad','note','NoteMate','Save notes, photos, videos and voice recordings.',learnerNotes().length],
+  ['openOTJMate','note','OTJMate','Record off-the-job learning and export new entries.',pendingOtj],
+  ['openProjectMate','project','ProjectMate','Generate, quote and complete customer-style jobs.',0],
+  ['openRemindMate','revision','RemindMate','Save review targets and receive due-date reminders.',dueReminders]
  ];
- // Settings is appended separately so it always remains the final Toolbox tile.
- const allTools=[...regularTools,['openSettings','settings','Settings','App preferences and controls.']];
- const cards=allTools.map(([id,icon,title,copy,small])=>`<button class="tool-app-card ${id==='openSettings'?'settings-card':''}" id="${id}"><span class="tool-app-icon">${appIcon(icon)}</span><h3>${title}</h3><p>${copy}</p>${small?`<small>${small}</small>`:''}</button>`).join('');
- app.innerHTML=shell(`<div class="section-heading"><div><div class="number">Toolbox</div><h2>Workplace apps</h2><p class="muted">Fast, practical tools for use on site.</p></div></div><section class="tool-app-grid">${cards}</section>`);
+ const allTools=[...regularTools,['openSettings','settings','Settings','App preferences and controls.',0]];
+ const cards=allTools.map(([id,icon,title,copy,badge])=>`<button class="phone-app" id="${id}" data-phone-app="${title.toLowerCase()}" aria-label="Open ${title}: ${copy}"><span class="phone-app-icon">${appIcon(icon)}${badge?`<b class="phone-app-badge" aria-label="${badge} pending">${badge>99?'99+':badge}</b>`:''}</span><strong class="phone-app-label">${title}</strong></button>`).join('');
+ app.innerHTML=shell(`<div class="section-heading toolbox-phone-heading"><div><div class="number">Toolbox</div><h2>Workplace apps</h2><p class="muted">Tap an app to open it.</p></div></div><section class="phone-app-grid" aria-label="Toolbox apps">${cards}</section>`);
  document.getElementById('openMeasureMate').onclick=()=>{state.view='measuremate';render();window.scrollTo(0,0)};
  document.getElementById('openMaterialMate').onclick=()=>{state.view='materialmate';render();window.scrollTo(0,0)};
  document.getElementById('openDrawingMate').onclick=()=>{state.view='drawingmate';state.drawingTab='symbols';render();window.scrollTo(0,0)};
@@ -3736,6 +3738,7 @@ function renderResources(){
  document.getElementById('openNotepad').onclick=()=>{state.view='notepad';state.editingNoteId=null;render();window.scrollTo(0,0)};
  document.getElementById('openSettings').onclick=()=>{state.view='settings';render();window.scrollTo(0,0)};
 }
+
 const APP_SETTINGS_KEY='apprenticeplus.appSettings.v1';
 function defaultAppSettings(){return {appearance:'light',accent:'green',notifications:{enabled:true,updates:true,epa:true,assignments:true,certificates:true}}}
 function appSettings(){try{const saved=JSON.parse(localStorage.getItem(APP_SETTINGS_KEY)||'{}');return {...defaultAppSettings(),...saved,notifications:{...defaultAppSettings().notifications,...(saved.notifications||{})}}}catch{return defaultAppSettings()}}
@@ -5071,7 +5074,7 @@ const HELP_TOUR_STEPS=[
  {view:'home',selector:'.assignment-card',title:COURSE.nvqUnits?'Open an evidence pack':'Open an assignment',text:'Tap a card to open it. Grey means not started, amber means in progress and green means the evidence requirement has been met.'},
  {view:'assignment',selector:'.evidence-grid, [data-section]',title:'Add your evidence',text:COURSE.nvqUnits?'Open an evidence tile and save work against the Learning Outcomes. Each Learning Outcome needs three different evidence types.':'Open an evidence tile and save work against the KSBs. Each KSB needs two different evidence types.'},
  {view:'academy',selector:'.academy-grid, .academy-home-grid, [data-academy]',title:'Use the Academy',text:'Open Knowledge Practice, Professional Discussion, EPA Practical or Scores & Results. Completed attempts are saved for review.'},
- {view:'resources',selector:'.tools-grid, .resource-grid, .tool-app-grid',title:'Use the Toolbox',text:'Open NoteMate, MeasureMate, MaterialMate or ProjectMate for practical workplace support.'},
+ {view:'resources',selector:'.tools-grid, .resource-grid, .tool-app-grid, .phone-app-grid',title:'Use the Toolbox',text:'Open NoteMate, MeasureMate, MaterialMate or ProjectMate for practical workplace support.'},
  {view:'home',selector:'.page-help-button',title:'Help on every page',text:'Tap i at any time for short, exact instructions about the current screen.'}
 ];
 let helpTourIndex=0,helpTourRunning=false,helpTourOriginalView=null,helpTourStartTimer=null;
