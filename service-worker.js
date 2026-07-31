@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.5.29-phone-toolbox-grid';
-const CURRENT_VERSION='V1.5.29';
+const CACHE='apprentice-plus-v1.5.30-compact-progress-review';
+const CURRENT_VERSION='V1.5.30';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,
