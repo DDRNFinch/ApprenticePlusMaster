@@ -1,14 +1,31 @@
-const CACHE='apprentice-plus-v1.5.18-full-app-tint-overlay';
-const UPDATE_INFO={
- version:'V1.5.18',
- features:[
-  'Places the reading-guide blur control below the reading box on the left.',
-  'Places the reading-guide move control below the reading box on the right.',
-  'Keeps both reading-guide controls sharp and outside the blurred page areas.',
-  'Retains the persistent Text-to-Speech control above the Toolbox tab.'
- ]
+const CACHE='apprentice-plus-v1.5.19-release-notes';
+const CURRENT_VERSION='V1.5.19';
+const RELEASE_NOTES_URL='./release-notes.json';
+const FALLBACK_UPDATE_INFO={
+ version:CURRENT_VERSION,
+ features:['This update includes Apprentice+ improvements and fixes.']
 };
-const APP_SHELL=['./','./index.html','./styles.css?v=1.5.17','./functional-skills-bank.js?v=1.5.17','./trade-courses-bank.js?v=1.5.17','./app.js?v=1.5.17','./manifest.json','./pdf-generator.js?v=1.5.17','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
+const APP_SHELL=['./','./index.html','./styles.css?v=1.5.19','./functional-skills-bank.js?v=1.5.19','./trade-courses-bank.js?v=1.5.19','./app.js?v=1.5.19','./release-notes.json','./manifest.json','./pdf-generator.js?v=1.5.19','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
+
+async function loadUpdateInfo(){
+ try{
+  let response;
+  try{response=await fetch(RELEASE_NOTES_URL,{cache:'no-store'});}catch(_error){response=null;}
+  if(!response||!response.ok)response=await caches.match(RELEASE_NOTES_URL);
+  if(!response)return FALLBACK_UPDATE_INFO;
+  const data=await response.json();
+  const release=data?.releases?.[CURRENT_VERSION];
+  const features=Array.isArray(release?.features)?release.features.filter(Boolean).map(String).slice(0,8):[];
+  return {
+   version:CURRENT_VERSION,
+   title:String(release?.title||''),
+   features:features.length?features:FALLBACK_UPDATE_INFO.features
+  };
+ }catch(error){
+  console.warn('Unable to load release notes',error);
+  return FALLBACK_UPDATE_INFO;
+ }
+}
 
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)));
@@ -16,7 +33,7 @@ self.addEventListener('install',event=>{
 
 self.addEventListener('message',event=>{
  if(event.data?.type==='GET_UPDATE_INFO'){
-  event.source?.postMessage({type:'UPDATE_INFO',info:UPDATE_INFO});
+  event.waitUntil(loadUpdateInfo().then(info=>event.source?.postMessage({type:'UPDATE_INFO',info})));
  }
  if(event.data?.type==='SKIP_WAITING')self.skipWaiting();
 });
@@ -34,7 +51,7 @@ self.addEventListener('fetch',event=>{
  const url=new URL(event.request.url);
  if(url.origin!==self.location.origin)return;
  const isCoreFile=url.pathname.endsWith('/')||['index.html','app.js','functional-skills-bank.js',
-  'trade-courses-bank.js','qrcode-browser.js','pdf-generator.js','specification-sheet.js','styles.css','manifest.json','service-worker.js'].some(name=>url.pathname.endsWith('/'+name));
+  'trade-courses-bank.js','qrcode-browser.js','pdf-generator.js','specification-sheet.js','styles.css','manifest.json','release-notes.json','service-worker.js'].some(name=>url.pathname.endsWith('/'+name));
  if(isCoreFile){
   event.respondWith(
    fetch(event.request,{cache:'no-store'})

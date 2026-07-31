@@ -1,3 +1,10 @@
+# V1.5.19
+
+- Replaced hard-coded service-worker update descriptions with a central `release-notes.json` file.
+- Update notifications and the installation popup now load the notes matching the version being installed.
+- Added network-first loading with an offline cached fallback.
+- Added a safe generic message if release notes cannot be read.
+
 # V1.5.17
 
 - Added a clearly labelled Overlay colour row in Settings > Learning Support.

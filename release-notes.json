@@ -1,0 +1,32 @@
+{
+  "latest": "V1.5.19",
+  "releases": {
+    "V1.5.19": {
+      "title": "Reliable update descriptions",
+      "features": [
+        "Loads update descriptions from one central release-notes file instead of hard-coded service-worker text.",
+        "Automatically displays the notes that match the version being installed.",
+        "Keeps the notification centre and update installation popup in sync.",
+        "Includes a safe fallback message if release notes cannot be loaded while offline."
+      ]
+    },
+    "V1.5.18": {
+      "title": "Toolbox and Settings help tours",
+      "features": [
+        "Updates the information tour for every Toolbox section.",
+        "Adds guided help for MeasureMate, MaterialMate, NoteMate, DrawingMate and ProjectMate.",
+        "Adds separate guidance for Settings: General, Notifications and Learning Support.",
+        "Highlights the current reading guide, text-to-speech and dyslexia tint controls."
+      ]
+    },
+    "V1.5.17": {
+      "title": "Tint colour picker",
+      "features": [
+        "Adds a clearly labelled overlay-colour selector in Learning Support.",
+        "Provides Yellow, Blue, Mint, Peach, Rose and Grey tint choices.",
+        "Applies colour and strength changes instantly across the entire app.",
+        "Saves the selected tint settings on the learner's device."
+      ]
+    }
+  }
+}
