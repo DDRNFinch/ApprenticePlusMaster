@@ -1,3 +1,9 @@
+# V1.5.62
+
+- Added named anonymous course, assignment, search, Settings and certificate analytics events.
+- Added one-time anonymous assignment completion detection.
+- Continued excluding all personal information and evidence content.
+
 # V1.5.61
 
 - Added meaningful anonymous analytics for all evidence submissions.

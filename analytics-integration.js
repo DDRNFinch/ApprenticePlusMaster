@@ -69,6 +69,7 @@ function screenTransition(nextRaw){
   if(currentScreen!=='unknown')track('feature_exit',{screen:currentScreen,category:screenCategory(currentScreen),duration_seconds:Math.max(1,Math.round((now-screenEnteredAt)/1000))});
   currentScreen=next;screenEnteredAt=now;track('feature_open',{screen:next,category:screenCategory(next)});if(CORE_SCREEN_EVENTS[next])sendNamedEvent(CORE_SCREEN_EVENTS[next],{screen:next});countDaily('screen_views');if(screenCategory(next)==='toolbox')countDaily('tool_opens');
  }
+ if(next==='home')setTimeout(detectAssignmentCompletions,0);
  if(TEST_SCREENS.has(next)&&!startedScreens.has(next)){startedScreens.set(next,now);const assessment=ASSESSMENT_NAMES[next]||next;track('assessment_started',{assessment_type:assessment});sendNamedEvent(assessment+'_started',{assessment_type:assessment});countDaily('assessments_started');}
  if(RESULT_SCREENS.has(next)){const source=next.replace(/_result(s)?$/,'_test');const started=startedScreens.get(source)||startedScreens.get(next.replace('_result',''))||now;const assessment=ASSESSMENT_NAMES[next]||next;const duration=Math.max(1,Math.round((now-started)/1000));track('assessment_completed',{assessment_type:assessment,duration_seconds:duration});sendNamedEvent(assessment+'_completed',{assessment_type:assessment,duration_seconds:duration});countDaily('assessments_completed');startedScreens.delete(source);}
 }
@@ -97,18 +98,53 @@ function changeHandler(event){
 }
 function submitHandler(event){const form=event.target;if(!form?.matches?.('form'))return;const feature=semanticFeature(form);sendNamedEvent(feature+'_form_submitted',{screen:currentScreen,feature});}
 function mediaHandler(event){const el=event.target;if(!el?.matches?.('video,audio'))return;track('media_'+event.type,{screen:currentScreen,media_type:el.tagName.toLowerCase(),media_id:controlId(el),duration_seconds:Number.isFinite(el.duration)?Math.round(el.duration):0});}
+
+const COURSE_COMPLETION_KEY='apprenticeplus.analytics.courseCompletions.v1';
+function completionState(){try{const x=JSON.parse(localStorage.getItem(COURSE_COMPLETION_KEY)||'{}');return x&&typeof x==='object'?x:{}}catch{return {}}}
+function writeCompletionState(x){try{localStorage.setItem(COURSE_COMPLETION_KEY,JSON.stringify(x))}catch{}}
+function courseId(){try{return slug(window.COURSE?.id||window.ACTIVE_COURSE_ID||'current_course')}catch{return'current_course'}}
+function detectAssignmentCompletions(){
+ try{
+  const seen=completionState(),cid=courseId();seen[cid]=seen[cid]||{};
+  document.querySelectorAll('.assignment-card[data-open]').forEach(card=>{
+   const n=Math.max(0,Number(card.dataset.open||0));if(!n)return;
+   const complete=card.classList.contains('complete')||card.classList.contains('rpl');
+   if(complete&&!seen[cid][n]){seen[cid][n]=true;sendNamedEvent('assignment_completed',{course_id:cid,assignment_number:n,completion_type:card.classList.contains('rpl')?'rpl':'evidence'});}
+  });
+  writeCompletionState(seen);
+ }catch{}
+}
+function courseAnalyticsClick(event){
+ const el=event.target?.closest?.('button,a,[role="button"]');if(!el)return;
+ const cid=courseId();
+ if(el.matches?.('.assignment-card[data-open]'))sendNamedEvent('assignment_opened',{course_id:cid,assignment_number:Math.max(0,Number(el.dataset.open||0)),source:'course_home'});
+ if(el.id==='openWorkSearch')sendNamedEvent('assignment_search_opened',{course_id:cid});
+ if(el.id==='workSearchButton')sendNamedEvent('assignment_search_performed',{course_id:cid,search_source:'typed'});
+ if(el.matches?.('[data-work-suggestion]'))sendNamedEvent('assignment_search_suggestion_used',{course_id:cid});
+ if(el.matches?.('[data-work-assignment]')){const n=Math.max(0,Number(el.dataset.workAssignment||0));sendNamedEvent('assignment_search_result_opened',{course_id:cid,assignment_number:n});sendNamedEvent('assignment_opened',{course_id:cid,assignment_number:n,source:'search'});}
+ if(el.id==='courseProgressBtn')sendNamedEvent('course_progress_viewed',{course_id:cid});
+ if(el.id==='applyCourse'){const selected=document.getElementById('courseSelect')?.value||'';sendNamedEvent('course_selected',{course_id:slug(selected||cid),selection_source:'admin'});}
+ if(el.matches?.('[data-settings-tab]'))sendNamedEvent('settings_section_opened',{settings_section:slug(el.dataset.settingsTab||'unknown')});
+ if(el.matches?.('[data-open-certificate]')){const key=String(el.dataset.openCertificate||'');sendNamedEvent('certificate_viewed',{certificate_type:slug(key.split(':')[0]||'unknown')});}
+ if(el.id==='printCertificate')sendNamedEvent('certificate_exported',{export_type:'print_or_pdf'});
+ if(el.id==='openCertificates')sendNamedEvent('certificate_library_opened',{});
+ if(el.id==='openSettings')sendNamedEvent('settings_opened',{});
+ if(el.id==='learnerProgressBtn')sendNamedEvent('learner_profile_opened',{});
+ if(el.id==='downloadEntirePortfolio')sendNamedEvent('portfolio_export_started',{course_id:cid});
+}
+
 function installDownloadHooks(){
  const originalPrint=window.print;window.print=function(){track('document_export',{screen:currentScreen,document_type:'print_or_pdf',action:'print'});return originalPrint.apply(this,arguments)};
  const originalOpen=window.open;window.open=function(url,target,features){try{const u=String(url||'');if(u.startsWith('blob:')||/\.pdf($|\?)/i.test(u))track('document_export',{screen:currentScreen,document_type:'generated_document',action:'open'})}catch{}return originalOpen.apply(this,arguments)};
 }
 function installLifecycle(){
- document.addEventListener('click',clickHandler,true);document.addEventListener('change',changeHandler,true);document.addEventListener('submit',submitHandler,true);
+ document.addEventListener('click',clickHandler,true);document.addEventListener('click',courseAnalyticsClick,true);document.addEventListener('change',changeHandler,true);document.addEventListener('submit',submitHandler,true);
  ['play','pause','ended'].forEach(type=>document.addEventListener(type,mediaHandler,true));
  window.addEventListener('beforeinstallprompt',()=>track('install_prompt_shown'));
  window.addEventListener('appinstalled',()=>track('app_installed'));
  window.addEventListener('apprenticeplus:update-ready',()=>track('update_available'));
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')track('feature_exit',{screen:currentScreen,category:screenCategory(currentScreen),duration_seconds:Math.max(1,Math.round((Date.now()-screenEnteredAt)/1000))})});
 }
-function init(){if(!A()){setTimeout(init,100);return}installScreenHook();installDownloadHooks();installLifecycle();window.ApprenticeAnalytics.getUsageSummary=ownerUsageSummary;window.ApprenticeAnalytics.clearUsageSummary=clearOwnerUsage;A()?.setUserProperties?.({analytics_level:'full_anonymous',integration_version:'v1_5_61'});window.addEventListener('pagehide',sendDailySummary);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sendDailySummary()});track('analytics_integration_ready',{coverage:'evidence_named_events'});}
+function init(){if(!A()){setTimeout(init,100);return}installScreenHook();installDownloadHooks();installLifecycle();window.ApprenticeAnalytics.getUsageSummary=ownerUsageSummary;window.ApprenticeAnalytics.clearUsageSummary=clearOwnerUsage;A()?.setUserProperties?.({analytics_level:'full_anonymous',integration_version:'v1_5_62'});window.addEventListener('pagehide',sendDailySummary);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sendDailySummary()});track('analytics_integration_ready',{coverage:'course_named_events'});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

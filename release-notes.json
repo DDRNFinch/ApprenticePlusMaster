@@ -1,6 +1,18 @@
 {
-  "latest": "V1.5.61",
+  "latest": "V1.5.62",
   "releases": [
+    {
+      "version": "V1.5.62",
+      "title": "Course Analytics Events",
+      "date": "2026-07-31",
+      "items": [
+        "Added clear anonymous events for assignment opens, assignment completions and course progress views.",
+        "Added named events for assignment search opens, searches, suggested terms and selected results.",
+        "Added course selection, Settings section, certificate view/export and learner profile events.",
+        "Added one-time anonymous completion detection so completed assignments are counted without sending learner evidence.",
+        "Only course identifiers, assignment numbers, feature names and non-personal status values are sent."
+      ]
+    },
     {
       "version": "V1.5.61",
       "title": "Evidence Analytics Events",
@@ -287,7 +299,7 @@
       ]
     }
   },
-  "latestVersion": "V1.5.61",
+  "latestVersion": "V1.5.62",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",
@@ -332,6 +344,18 @@
         "Added anonymous evidence retake, package export, whole-portfolio export and upload-confirmation events.",
         "Events include only non-personal counts, evidence type, assignment number and course identifier.",
         "Names, emails, typed evidence, answers, photos, videos, audio, signatures and file contents remain excluded."
+      ]
+    },
+    "V1.5.62": {
+      "version": "V1.5.62",
+      "title": "Course Analytics Events",
+      "date": "2026-07-31",
+      "items": [
+        "Added clear anonymous events for assignment opens, assignment completions and course progress views.",
+        "Added named events for assignment search opens, searches, suggested terms and selected results.",
+        "Added course selection, Settings section, certificate view/export and learner profile events.",
+        "Added one-time anonymous completion detection so completed assignments are counted without sending learner evidence.",
+        "Only course identifiers, assignment numbers, feature names and non-personal status values are sent."
       ]
     }
   }
