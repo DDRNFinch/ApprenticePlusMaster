@@ -1,3 +1,1 @@
-# Apprentice+ V1.5.24
-
-Admin Mode is now the final Settings section and automatically locks whenever it is closed.
+Apprentice+ V1.5.25 – Course Navigation Reliability Fix

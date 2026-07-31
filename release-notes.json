@@ -71,6 +71,15 @@
         "Completion cards, active navigation, switches, focus rings and accent borders update immediately.",
         "Warning, error and evidence-type colours remain distinct for clarity."
       ]
+    },
+    "V1.5.25": {
+      "title": "Reliable Course navigation",
+      "features": [
+        "Keeps the Course button responsive without requiring a page refresh.",
+        "Moves primary navigation handling to capture-phase touch and click listeners so child controls cannot consume the tap.",
+        "Keeps the bottom navigation above non-modal accessibility overlays and repairs stale pointer-event states after resume.",
+        "Replaces the timing-only tap guard with a render-safe navigation lock."
+      ]
     }
   }
 }

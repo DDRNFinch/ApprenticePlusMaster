@@ -2196,3 +2196,8 @@ a:not(.danger-link),
 }
 
 /* Keep semantic warning, error, assessor and evidence-ribbon colours unchanged. */
+
+/* V1.5.25: keep primary navigation permanently tappable above non-modal overlays. */
+.bottom-nav{z-index:10045!important;pointer-events:auto!important;isolation:isolate}
+.bottom-nav-item{pointer-events:auto!important;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.bottom-nav-item>*{pointer-events:none}

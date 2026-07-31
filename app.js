@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.24';
+const APP_VERSION='V1.5.25';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -5183,26 +5183,49 @@ document.addEventListener('click',e=>{const badge=e.target.closest('#updateNotif
 document.addEventListener('click',e=>{const help=e.target.closest('#pageHelpButton');if(!help)return;e.preventDefault();e.stopPropagation();openPageHelp()});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(document.getElementById('pageHelpModal'))closePageHelp();else if(helpTourRunning)finishHelpTour(false)});
 window.addEventListener('popstate',()=>{if(document.getElementById('pageHelpModal'))closePageHelp();else if(helpTourRunning)finishHelpTour(false)});
-let lastPrimaryNavigationAt=0;
+let primaryNavigationLocked=false;
 function activatePrimaryNavigation(target){
- const now=Date.now();if(now-lastPrimaryNavigationAt<350)return;lastPrimaryNavigationAt=now;
+ if(primaryNavigationLocked)return;
+ primaryNavigationLocked=true;
  cleanupTransientUi();
  if(target==='academy'){state.view='academy';state.assignment=null;state.section=null}
  else if(target==='resources'){state.view='resources';state.assignment=null;state.section=null;state.editingNoteId=null}
  else{state.view='home';state.assignment=null;state.section=null}
- render();requestAnimationFrame(()=>{syncReadAloudControl();syncReadingGuide();window.scrollTo({top:0,left:0,behavior:'instant'})});
+ render();
+ requestAnimationFrame(()=>{
+  syncReadAloudControl();syncReadingGuide();window.scrollTo({top:0,left:0,behavior:'instant'});
+  primaryNavigationLocked=false;
+ });
+ window.setTimeout(()=>{primaryNavigationLocked=false},500);
 }
-app.addEventListener('click',e=>{const nav=e.target.closest('[data-nav]');if(!nav)return;e.preventDefault();activatePrimaryNavigation(nav.dataset.nav)});
-// Android PWAs can occasionally lose the synthetic click after being resumed.
-// Pointer-up provides a safe fallback while the timestamp guard prevents double navigation.
-app.addEventListener('pointerup',e=>{const nav=e.target.closest('[data-nav]');if(!nav||e.pointerType==='mouse')return;e.preventDefault();activatePrimaryNavigation(nav.dataset.nav)});
+function visibleBlockingModal(){
+ return [...document.querySelectorAll('.modal,.learning-support-modal,.page-help-modal,.help-tour-overlay')].some(node=>{
+  if(node.hidden||node.getAttribute('aria-hidden')==='true')return false;
+  const style=getComputedStyle(node);return style.display!=='none'&&style.visibility!=='hidden'&&style.pointerEvents!=='none';
+ });
+}
+function navButtonFromPoint(x,y){
+ const buttons=[...document.querySelectorAll('.bottom-nav-item[data-nav]')];
+ return buttons.find(button=>{const r=button.getBoundingClientRect();return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom})||null;
+}
+function handlePrimaryNavigationEvent(e){
+ let nav=e.target?.closest?.('[data-nav]');
+ if(!nav&&Number.isFinite(e.clientX)&&Number.isFinite(e.clientY)&&!visibleBlockingModal())nav=navButtonFromPoint(e.clientX,e.clientY);
+ if(!nav)return;
+ e.preventDefault();e.stopPropagation();
+ activatePrimaryNavigation(nav.dataset.nav);
+}
+// Capture-phase handlers keep the bottom navigation responsive even if a stale child
+// listener, accessibility control or invisible overlay attempts to consume the tap.
+document.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse')handlePrimaryNavigationEvent(e)},{capture:true,passive:false});
+document.addEventListener('click',handlePrimaryNavigationEvent,{capture:true,passive:false});
 function restoreAppAfterResume(){
  if(document.visibilityState==='hidden')return;
  document.documentElement.style.pointerEvents='';document.body.style.pointerEvents='';app.style.pointerEvents='';
  document.querySelectorAll('.bottom-nav-item').forEach(button=>{button.disabled=false;button.removeAttribute('aria-disabled')});
  // Remove only stale, hidden backdrops that can intercept the first tap after resume.
  document.querySelectorAll('.modal[aria-hidden="true"],.modal.hidden,.help-tour-overlay[aria-hidden="true"],#learningSupportInfoModal[aria-hidden="true"]').forEach(node=>node.remove());if(!document.getElementById('learningSupportInfoModal'))document.body.classList.remove('learning-support-modal-open');
- lastPrimaryNavigationAt=0;
+ primaryNavigationLocked=false;
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')requestAnimationFrame(restoreAppAfterResume)});
 window.addEventListener('pageshow',()=>requestAnimationFrame(restoreAppAfterResume));
