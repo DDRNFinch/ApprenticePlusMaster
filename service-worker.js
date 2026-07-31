@@ -1,4 +1,4 @@
-const CACHE='apprentice-plus-v1.5.0-notification-badge-only';
+const CACHE='apprentice-plus-v1.4-in-app-update-notification';
 const UPDATE_INFO={
  version:'V1.4',
  features:[
