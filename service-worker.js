@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.5.43-inline-answer-submit';
-const CURRENT_VERSION='V1.5.43';
+const CACHE='apprentice-plus-v1.5.44-video-page-bottom-clearance';
+const CURRENT_VERSION='V1.5.44';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,

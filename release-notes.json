@@ -1,6 +1,15 @@
 {
-  "latest": "V1.5.43",
+  "latest": "V1.5.44",
   "releases": [
+    {
+      "version": "V1.5.44",
+      "title": "Video submission bottom clearance",
+      "features": [
+        "Adds a dedicated blank section beneath video submission pages so the final video controls can scroll fully above the fixed navigation bar.",
+        "Applies the clearance to KSB and Learning Outcome Video Walkthrough pages without changing the video workflow.",
+        "Keeps the spacer transparent and removes it from printed or PDF output."
+      ]
+    },
     {
       "version": "V1.5.43",
       "features": [

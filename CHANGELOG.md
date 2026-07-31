@@ -1,3 +1,9 @@
+# V1.5.44
+
+- Added a dedicated blank section below video submission pages.
+- Video controls and Save Walkthrough can now scroll fully above the fixed navigation bar.
+- Applied to KSB and Learning Outcome video walkthrough screens.
+
 # V1.5.43
 
 - MCQ answers now select on first tap and submit from an arrow inside the selected answer row.
