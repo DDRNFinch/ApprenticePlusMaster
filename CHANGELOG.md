@@ -1,3 +1,8 @@
+# V1.5.63
+
+- Updated all visible and cached version references to V1.5.63.
+- Finalised analytics event cleanup release metadata.
+
 # V1.5.62
 
 - Added named anonymous course, assignment, search, Settings and certificate analytics events.

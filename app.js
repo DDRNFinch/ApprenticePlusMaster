@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.62';
+const APP_VERSION='V1.5.63';
 function analyticsEvent(name,params={}){
  try{
   const safe={};

@@ -1,6 +1,16 @@
 {
-  "latest": "V1.5.62",
+  "latest": "V1.5.63",
   "releases": [
+    {
+      "version": "V1.5.63",
+      "title": "Analytics Event Cleanup",
+      "date": "2026-07-31",
+      "items": [
+        "Updated the visible app build and service-worker cache to V1.5.63.",
+        "Reduced reliance on generic analytics events and prioritised named feature, completion, export and submission events.",
+        "Kept anonymous analytics only and continued excluding learner identity, evidence content, media and files."
+      ]
+    },
     {
       "version": "V1.5.62",
       "title": "Course Analytics Events",
@@ -299,7 +309,7 @@
       ]
     }
   },
-  "latestVersion": "V1.5.62",
+  "latestVersion": "V1.5.63",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",
@@ -356,6 +366,16 @@
         "Added course selection, Settings section, certificate view/export and learner profile events.",
         "Added one-time anonymous completion detection so completed assignments are counted without sending learner evidence.",
         "Only course identifiers, assignment numbers, feature names and non-personal status values are sent."
+      ]
+    },
+    "V1.5.63": {
+      "version": "V1.5.63",
+      "title": "Analytics Event Cleanup",
+      "date": "2026-07-31",
+      "items": [
+        "Updated the visible app build and service-worker cache to V1.5.63.",
+        "Reduced reliance on generic analytics events and prioritised named feature, completion, export and submission events.",
+        "Kept anonymous analytics only and continued excluding learner identity, evidence content, media and files."
       ]
     }
   }
