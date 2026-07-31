@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.4';
+const APP_VERSION='V1.5';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -668,7 +668,7 @@ async function load(){
 async function saveData(){await putStore('data',state.data)}
 async function saveProfile(){await putStore('profile',state.profile)}
 
-function shell(content){const active=state.view==='resources'||state.view==='notepad'||state.view==='tools'||state.view==='measuremate'||state.view==='materialmate'||state.view==='drawingmate'||state.view==='projectmate'||state.view==='learning-support'?'resources':state.view==='academy'||state.view==='library'||state.view==='trade-courses'||state.view==='trade-test'||state.view==='trade-result'||state.view==='functional-skills'||state.view==='certificates'||state.view==='academy-knowledge'||state.view==='knowledge-slides'?'academy':'course';return `<main class="shell"><header class="topbar"><div class="brand"><div class="logo update-logo-wrap"><img src="logo-apprentice-plus.png" alt="Apprentice+ logo"><button type="button" class="update-notification-badge no-print" id="updateNotificationButton" aria-label="1 app update ready" hidden>1</button></div><div><div class="brand-title-row"><h1>Apprentice<span class="brand-plus">+</span></h1></div><p class="subtitle brand-tagline">Your Course, Your Way</p></div>${state.branding?.logo?`<div class="college-header-brand"><img src="${state.branding.logo}" alt="${esc(state.branding.name||'College')} logo"><span>${esc(state.branding.name||'')}</span></div>`:''}</div>${state.profile?`<div class="learner-help-wrap"><button type="button" class="pill learner-progress-button" id="learnerProgressBtn" aria-label="Open course progress and course details">${esc(state.profile.fullName.split(' ')[0]||'Learner')}</button><button type="button" class="page-help-button no-print" id="pageHelpButton" aria-label="How to use this page">i</button></div>`:''}</header>${content}<div class="app-version-bottom no-print">${APP_VERSION}</div><nav class="bottom-nav no-print" aria-label="Main navigation"><button class="bottom-nav-item ${active==='resources'?'active':''}" data-nav="resources" aria-label="Toolbox"><span>${appIcon('toolbox','nav-icon')}</span><strong>Toolbox</strong></button><button class="bottom-nav-item ${active==='course'?'active':''}" data-nav="course" aria-label="Course"><span>${appIcon('course','nav-icon')}</span><strong>Course</strong></button><button class="bottom-nav-item ${active==='academy'?'active':''}" data-nav="academy" aria-label="Academy"><span>${appIcon('academy','nav-icon')}</span><strong>Academy</strong></button></nav></main>`}
+function shell(content){const active=state.view==='resources'||state.view==='notepad'||state.view==='tools'||state.view==='measuremate'||state.view==='materialmate'||state.view==='drawingmate'||state.view==='projectmate'||state.view==='learning-support'?'resources':state.view==='academy'||state.view==='library'||state.view==='trade-courses'||state.view==='trade-test'||state.view==='trade-result'||state.view==='functional-skills'||state.view==='certificates'||state.view==='academy-knowledge'||state.view==='knowledge-slides'?'academy':'course';return `<main class="shell"><header class="topbar"><div class="brand"><button type="button" class="logo update-logo-wrap app-logo-notifications" id="openNotificationCentre" aria-label="Open notifications"><img src="logo-apprentice-plus.png" alt="Apprentice+ logo"><span class="update-notification-badge no-print" id="updateNotificationButton" aria-label="Unread notifications" hidden></span></button><div><div class="brand-title-row"><h1>Apprentice<span class="brand-plus">+</span></h1></div><p class="subtitle brand-tagline">Your Course, Your Way</p></div>${state.branding?.logo?`<div class="college-header-brand"><img src="${state.branding.logo}" alt="${esc(state.branding.name||'College')} logo"><span>${esc(state.branding.name||'')}</span></div>`:''}</div>${state.profile?`<div class="learner-help-wrap"><button type="button" class="pill learner-progress-button" id="learnerProgressBtn" aria-label="Open course progress and course details">${esc(state.profile.fullName.split(' ')[0]||'Learner')}</button><button type="button" class="page-help-button no-print" id="pageHelpButton" aria-label="How to use this page">i</button></div>`:''}</header>${content}<div class="app-version-bottom no-print">${APP_VERSION}</div><nav class="bottom-nav no-print" aria-label="Main navigation"><button class="bottom-nav-item ${active==='resources'?'active':''}" data-nav="resources" aria-label="Toolbox"><span>${appIcon('toolbox','nav-icon')}</span><strong>Toolbox</strong></button><button class="bottom-nav-item ${active==='course'?'active':''}" data-nav="course" aria-label="Course"><span>${appIcon('course','nav-icon')}</span><strong>Course</strong></button><button class="bottom-nav-item ${active==='academy'?'active':''}" data-nav="academy" aria-label="Academy"><span>${appIcon('academy','nav-icon')}</span><strong>Academy</strong></button></nav></main>`}
 function courseHeader(){const p=courseProgressStats(),red=p.red??0;return `<section class="course-card"><div class="course-summary"><div class="course-copy"><div class="course-title-row"><h2>${COURSE.name}</h2><span class="target-status ${p.tone}">${p.label}</span></div><div class="meta"><span class="pill">${COURSE.standard}</span><span class="pill">Version ${COURSE.version}</span><span class="pill">Level ${COURSE.level}</span><span class="pill green">${courseAssignments().length} evidence packs</span></div></div><div class="progress-rings" id="courseProgressBtn" aria-label="Course progress summary" style="--green:${p.green*3.6}deg;--yellow:${p.yellow*3.6}deg;--red:${red*3.6}deg"><span class="ring ring-green"></span><span class="ring ring-yellow"></span><span class="ring ring-red"></span><strong>${p.green}%</strong></div></div><button type="button" class="course-search-launch no-print" id="openWorkSearch" aria-label="Find an assignment" title="Find an assignment"><svg class="search-silhouette" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M10.5 2a8.5 8.5 0 1 0 5.28 15.16l4.66 4.65a1.5 1.5 0 0 0 2.12-2.12l-4.66-4.65A8.5 8.5 0 0 0 10.5 2Zm0 3a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg></button></section>`}
 
 function showWorkSearchLauncher(){const modal=document.createElement('div');modal.className='modal work-search-launcher-modal';modal.id='workSearchLauncherModal';modal.innerHTML=`<section class="modal-card work-search-launcher" role="dialog" aria-modal="true" aria-labelledby="workSearchTitle"><button class="icon-close-button" id="closeWorkSearchLauncher" aria-label="Close assignment search">${appIcon('close')}</button><div class="work-search-launcher-icon">${appIcon('search')}</div><h2 id="workSearchTitle">What are you working on today?</h2><p class="work-search-help">Choose a common activity below or describe the work in your own words.</p><div class="work-search-row"><input class="input" id="workSearchInput" type="search" autocomplete="off" placeholder="e.g. cavity walling, mortices, CNC machine, fixing a tap"><button class="btn" id="workSearchButton">Search</button></div><div class="work-search-suggestions" id="workSearchSuggestions" aria-live="polite"></div></section>`;document.body.appendChild(modal);const close=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)close()};modal.querySelector('#closeWorkSearchLauncher').onclick=close;bindWorkSearch();setTimeout(()=>modal.querySelector('#workSearchInput')?.focus(),50)}
@@ -4864,12 +4864,68 @@ function normaliseUpdateInfo(info){
  const features=Array.isArray(info?.features)?info.features.filter(Boolean).map(String).slice(0,8):[];
  return {version:String(info?.version||DEFAULT_UPDATE_INFO.version),features:features.length?features:DEFAULT_UPDATE_INFO.features};
 }
+const NOTIFICATION_STORE_KEY='apprenticeplus.notifications.v1';
+function notificationState(){
+ try{return JSON.parse(localStorage.getItem(NOTIFICATION_STORE_KEY)||'{}')||{}}catch{return {}}
+}
+function saveNotificationState(value){try{localStorage.setItem(NOTIFICATION_STORE_KEY,JSON.stringify(value||{}))}catch{}}
+function baseNotifications(){
+ const items=[];
+ if(pendingAppUpdate)items.push({id:'app-update',type:'update',icon:'↑',title:`${pendingAppUpdate.info.version} update ready`,copy:'A new Apprentice+ update is ready to install.',time:'Ready now',action:'View update'});
+ items.push({id:'welcome-v15',type:'announcement',icon:'✦',title:'Notifications are ready',copy:'Updates and important Apprentice+ activity will appear here.',time:'New in V1.5'});
+ return items;
+}
+function notificationItems(){
+ const saved=notificationState();
+ return baseNotifications().filter(item=>!saved.deleted?.includes(item.id)).map(item=>({...item,read:!!saved.read?.includes(item.id)}));
+}
+function unreadNotificationCount(){return notificationItems().filter(item=>!item.read).length}
 function syncUpdateBadge(){
  const badge=document.getElementById('updateNotificationButton');
  if(!badge)return;
- badge.hidden=!pendingAppUpdate;
- badge.textContent=pendingAppUpdate?'1':'';
+ const count=unreadNotificationCount();
+ badge.hidden=count<1;
+ badge.textContent=count>9?'9+':String(count||'');
+ badge.setAttribute('aria-label',`${count} unread notification${count===1?'':'s'}`);
 }
+function markNotificationRead(id){const saved=notificationState();saved.read=[...new Set([...(saved.read||[]),id])];saveNotificationState(saved);syncUpdateBadge()}
+function markAllNotificationsRead(){const saved=notificationState();saved.read=[...new Set([...(saved.read||[]),...notificationItems().map(item=>item.id)])];saveNotificationState(saved);syncUpdateBadge()}
+function deleteNotification(id){const saved=notificationState();saved.deleted=[...new Set([...(saved.deleted||[]),id])];saveNotificationState(saved);syncUpdateBadge()}
+function clearReadNotifications(){const saved=notificationState();saved.deleted=[...new Set([...(saved.deleted||[]),...notificationItems().filter(item=>item.read).map(item=>item.id)])];saveNotificationState(saved);syncUpdateBadge()}
+function closeNotificationCentre(){document.getElementById('notificationCentreModal')?.remove()}
+function notificationCards(){
+ const items=notificationItems();
+ if(!items.length)return `<div class="notification-empty"><div>✓</div><h3>You’re all caught up</h3><p>New updates and important activity will appear here.</p></div>`;
+ return items.map(item=>`<article class="notification-card ${item.read?'is-read':'is-unread'}" data-notification-id="${esc(item.id)}"><button type="button" class="notification-main" data-notification-open="${esc(item.id)}"><span class="notification-icon notification-${esc(item.type)}">${esc(item.icon)}</span><span class="notification-copy"><strong>${esc(item.title)}</strong><small>${esc(item.copy)}</small><em>${esc(item.time)}</em></span>${item.read?'':'<span class="notification-dot" aria-label="Unread"></span>'}</button><button type="button" class="notification-delete" data-notification-delete="${esc(item.id)}" aria-label="Delete notification">×</button>${item.action?`<button type="button" class="notification-action" data-notification-open="${esc(item.id)}">${esc(item.action)} <span>›</span></button>`:''}</article>`).join('');
+}
+function openNotificationCentre(){
+ closeNotificationCentre();
+ document.body.insertAdjacentHTML('beforeend',`<div class="notification-centre-backdrop" id="notificationCentreModal"><section class="notification-centre" role="dialog" aria-modal="true" aria-labelledby="notificationCentreTitle"><header class="notification-centre-header"><button type="button" class="notification-close" id="closeNotificationCentre" aria-label="Close notifications">×</button><div><p>APPRENTICE+</p><h2 id="notificationCentreTitle">Notifications</h2></div><button type="button" class="notification-settings" id="openSettingsCentre" aria-label="Open settings">⚙</button></header><div class="notification-toolbar"><span>${unreadNotificationCount()} unread</span><button type="button" id="markAllNotificationsRead">Mark all as read</button></div><div class="notification-list">${notificationCards()}</div><footer class="notification-footer"><button type="button" id="clearReadNotifications">Clear read notifications</button></footer></section></div>`);
+ const modal=document.getElementById('notificationCentreModal');
+ modal.addEventListener('click',event=>{if(event.target===modal)closeNotificationCentre()});
+ modal.querySelector('#closeNotificationCentre').onclick=closeNotificationCentre;
+ modal.querySelector('#openSettingsCentre').onclick=()=>{closeNotificationCentre();openSettingsCentre('notifications')};
+ modal.querySelector('#markAllNotificationsRead').onclick=()=>{markAllNotificationsRead();openNotificationCentre()};
+ modal.querySelector('#clearReadNotifications').onclick=()=>{clearReadNotifications();openNotificationCentre()};
+ modal.querySelectorAll('[data-notification-delete]').forEach(button=>button.onclick=event=>{event.stopPropagation();deleteNotification(button.dataset.notificationDelete);openNotificationCentre()});
+ modal.querySelectorAll('[data-notification-open]').forEach(button=>button.onclick=()=>{const id=button.dataset.notificationOpen;markNotificationRead(id);if(id==='app-update'){closeNotificationCentre();openUpdateReadyModal()}else openNotificationCentre()});
+}
+const SETTINGS_TABS=[['notifications','Notifications'],['learning','Learning Support'],['display','Display'],['data','Data'],['app','App']];
+function settingsPlaceholder(tab){
+ const content={notifications:['Update alerts','Achievement alerts','EPA progress alerts'],learning:['Learning aids will move here in the next phase.'],display:['Display controls will be added in the next phase.'],data:['Backup, restore and portfolio export remain available.'],app:[`Current version: ${APP_VERSION}`,'Version history and app controls will be added here.']}[tab]||[];
+ return `<div class="settings-phase-card"><span class="settings-phase-badge">V1.5 framework</span><h3>${esc(SETTINGS_TABS.find(item=>item[0]===tab)?.[1]||'Settings')}</h3>${content.map(text=>`<div class="settings-preview-row"><span>${esc(text)}</span>${tab==='notifications'&&text!=='Update alerts'?'<span class="settings-switch-demo" aria-hidden="true"></span>':''}</div>`).join('')}</div>`;
+}
+function openSettingsCentre(activeTab='notifications'){
+ closeSettingsCentre();
+ document.body.insertAdjacentHTML('beforeend',`<div class="settings-centre-backdrop" id="settingsCentreModal"><section class="settings-centre" role="dialog" aria-modal="true" aria-labelledby="settingsCentreTitle"><header class="settings-centre-header"><button type="button" class="settings-back" id="settingsBackToNotifications" aria-label="Back to notifications">‹</button><div><p>APPRENTICE+</p><h2 id="settingsCentreTitle">Settings</h2></div><button type="button" class="settings-close" id="closeSettingsCentre" aria-label="Close settings">×</button></header><nav class="settings-tabs" aria-label="Settings pages">${SETTINGS_TABS.map(([id,label])=>`<button type="button" data-settings-tab="${id}" class="${id===activeTab?'active':''}">${esc(label)}</button>`).join('')}</nav><div class="settings-content">${settingsPlaceholder(activeTab)}</div></section></div>`);
+ const modal=document.getElementById('settingsCentreModal');
+ modal.onclick=event=>{if(event.target===modal)closeSettingsCentre()};
+ modal.querySelector('#closeSettingsCentre').onclick=closeSettingsCentre;
+ modal.querySelector('#settingsBackToNotifications').onclick=()=>{closeSettingsCentre();openNotificationCentre()};
+ modal.querySelectorAll('[data-settings-tab]').forEach(button=>button.onclick=()=>openSettingsCentre(button.dataset.settingsTab));
+}
+function closeSettingsCentre(){document.getElementById('settingsCentreModal')?.remove()}
+
 function requestWaitingWorkerInfo(worker){
  if(!worker)return;
  try{worker.postMessage({type:'GET_UPDATE_INFO'})}catch(error){console.warn('Unable to request update details',error)}
@@ -4923,7 +4979,7 @@ async function registerAutoUpdater(){
 
 const updateBadgeObserver=new MutationObserver(()=>syncUpdateBadge());
 updateBadgeObserver.observe(app,{childList:true,subtree:true});
-document.addEventListener('click',e=>{const badge=e.target.closest('#updateNotificationButton');if(!badge)return;e.preventDefault();e.stopPropagation();openUpdateReadyModal()});
+document.addEventListener('click',e=>{const logo=e.target.closest('#openNotificationCentre');if(!logo)return;e.preventDefault();e.stopPropagation();openNotificationCentre()});
 document.addEventListener('click',e=>{const help=e.target.closest('#pageHelpButton');if(!help)return;e.preventDefault();e.stopPropagation();openPageHelp()});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(document.getElementById('pageHelpModal'))closePageHelp();else if(helpTourRunning)finishHelpTour(false)});
 window.addEventListener('popstate',()=>{if(document.getElementById('pageHelpModal'))closePageHelp();else if(helpTourRunning)finishHelpTour(false)});
