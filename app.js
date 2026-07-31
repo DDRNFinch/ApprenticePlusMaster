@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.2';
+const APP_VERSION='V1.5.3';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -3589,7 +3589,7 @@ function renderResources(){
   ['openProjectMate','project','ProjectMate','Generate, quote and complete customer-style workshop jobs.']
  ];
  // Settings is appended separately so it always remains the final Toolbox tile.
- const allTools=[...regularTools,['openSettings','settings','Settings','Learning support, display and app preferences.']];
+ const allTools=[...regularTools,['openSettings','settings','Settings','App preferences and controls.']];
  const cards=allTools.map(([id,icon,title,copy,small])=>`<button class="tool-app-card ${id==='openSettings'?'settings-card':''}" id="${id}"><span class="tool-app-icon">${appIcon(icon)}</span><h3>${title}</h3><p>${copy}</p>${small?`<small>${small}</small>`:''}</button>`).join('');
  app.innerHTML=shell(`<div class="section-heading"><div><div class="number">Toolbox</div><h2>Workplace apps</h2><p class="muted">Fast, practical tools for use on site.</p></div></div><section class="tool-app-grid">${cards}</section>`);
  document.getElementById('openMeasureMate').onclick=()=>{state.view='measuremate';render();window.scrollTo(0,0)};
@@ -3600,9 +3600,11 @@ function renderResources(){
  document.getElementById('openSettings').onclick=()=>{state.view='settings';render();window.scrollTo(0,0)};
 }
 function renderSettings(){
- app.innerHTML=shell(`<button class="back no-print" id="backResources">← Toolbox</button><div class="section-heading"><div><div class="number">Settings</div><h2>App settings</h2><p class="muted">Manage learning support and app preferences.</p></div></div><section class="tool-app-grid"><button class="tool-app-card" id="openLearningSupport"><span class="tool-app-icon">${appIcon('supporting')}</span><h3>Learning Support</h3><p>Reading, writing, focus, hearing and memory tools.</p></button></section>`);
+ const active=state.settingsTab||'general';
+ const tabs=[['general','General'],['notifications','Notifications'],['learning-support','Learning Support']];
+ app.innerHTML=shell(`<button class="back no-print" id="backResources">← Toolbox</button><div class="section-heading settings-heading"><div><div class="number">Settings</div><h2>App settings</h2></div></div><div class="settings-tabs no-print" role="tablist" aria-label="Settings sections">${tabs.map(([id,label])=>`<button type="button" role="tab" aria-selected="${active===id}" class="${active===id?'active':''}" data-settings-tab="${id}">${label}</button>`).join('')}</div><section class="settings-tab-panel" data-active-settings-panel="${active}"></section>`);
  document.getElementById('backResources').onclick=()=>{state.view='resources';render();window.scrollTo(0,0)};
- document.getElementById('openLearningSupport').onclick=()=>{state.view='learning-support';state.learningSupportTab='home';render();window.scrollTo(0,0)};
+ document.querySelectorAll('[data-settings-tab]').forEach(button=>button.onclick=()=>{state.settingsTab=button.dataset.settingsTab;renderSettings();window.scrollTo(0,0)});
 }
 function renderTools(){state.view='resources';render()}
 function num(id){const el=document.getElementById(id);return el?Number(el.value)||0:0}

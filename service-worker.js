@@ -1,14 +1,13 @@
-const CACHE='apprentice-plus-v1.5.2-bell-notifications';
+const CACHE='apprentice-plus-v1.5.3-settings-tabs';
 const UPDATE_INFO={
- version:'V1.5.2',
+ version:'V1.5.3',
  features:[
-  'Makes the white bell silhouette 50% smaller to match the reduced button.',
-  'Allows notifications to be swiped either left or right to delete.',
-  'Shows app updates inside the bell with a What’s new list and a View update button.',
-  'Keeps update installation behind the existing Let’s go confirmation.'
+  'Removes the existing Learning Support card from Settings.',
+  'Adds General, Notifications and Learning Support tabs across the top of Settings.',
+  'Keeps the new Settings sections empty and ready to build next.'
  ]
 };
-const APP_SHELL=['./','./index.html','./styles.css?v=1.5.2','./functional-skills-bank.js?v=1.5.2','./trade-courses-bank.js?v=1.5.2','./app.js?v=1.5.2','./manifest.json','./pdf-generator.js?v=1.5.2','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
+const APP_SHELL=['./','./index.html','./styles.css?v=1.5.3','./functional-skills-bank.js?v=1.5.3','./trade-courses-bank.js?v=1.5.3','./app.js?v=1.5.3','./manifest.json','./pdf-generator.js?v=1.5.3','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
 
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)));
