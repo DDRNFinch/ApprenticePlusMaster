@@ -1,6 +1,17 @@
 {
-  "latest": "V1.5.47",
+  "latest": "V1.5.50",
   "releases": [
+    {
+      "version": "V1.5.50",
+      "title": "FeedbackMate idea and issue submissions",
+      "date": "2026-07-31",
+      "features": [
+        "Added FeedbackMate to the Toolbox.",
+        "Added Idea and Issue submission types with learner name, reply email, title, details and optional screenshot.",
+        "Submits feedback online to apprentice-plus@outlook.com and includes app version, course, date and device details.",
+        "Saves unfinished feedback locally and provides an email-app fallback if automatic delivery fails."
+      ]
+    },
     {
       "version": "V1.5.49",
       "title": "DrawingMate Two-Sided Scale Ruler",
@@ -129,5 +140,18 @@
       ]
     }
   },
-  "latestVersion": "V1.5.49"
+  "latestVersion": "V1.5.50",
+  "releaseDetails": {
+    "V1.5.50": {
+      "version": "V1.5.50",
+      "title": "FeedbackMate idea and issue submissions",
+      "date": "2026-07-31",
+      "features": [
+        "Added FeedbackMate to the Toolbox.",
+        "Added Idea and Issue submission types with learner name, reply email, title, details and optional screenshot.",
+        "Submits feedback online to apprentice-plus@outlook.com and includes app version, course, date and device details.",
+        "Saves unfinished feedback locally and provides an email-app fallback if automatic delivery fails."
+      ]
+    }
+  }
 }

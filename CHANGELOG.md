@@ -1,3 +1,11 @@
+# V1.5.50
+
+- Added FeedbackMate to the Toolbox.
+- Added Idea and Issue forms with name, reply email, title, details and optional screenshot.
+- Sends online submissions to apprentice-plus@outlook.com.
+- Includes app version, course, date and device information for issue reports.
+- Saves drafts locally and provides an email fallback when automatic submission fails.
+
 # V1.5.49
 
 - Upgraded DrawingMate with separate left and right scale selectors.
