@@ -1,3 +1,10 @@
+# V1.5.12
+
+- Kept the Text-to-Speech controller permanently visible whenever Read Aloud is enabled.
+- Fixed the controller to the bottom-left corner above the Toolbox tab.
+- Page changes now stop the current speech without removing the controller.
+- Updated the application and offline cache version.
+
 ## V1.5.10
 
 - Moved the floating text-to-speech controls to the bottom-left so they no longer overlap the notification bell.

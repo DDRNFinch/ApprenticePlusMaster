@@ -1974,3 +1974,7 @@ body.a11y-reduce-motion .reading-guide-mask,body.a11y-reduce-motion .reading-gui
  backdrop-filter:none!important;
  filter:none!important;
 }
+
+
+/* V1.5.12 persistent Text-to-Speech control */
+.read-aloud-controller{position:fixed!important;left:10px!important;right:auto!important;bottom:calc(78px + env(safe-area-inset-bottom))!important;z-index:10060!important}

@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.10';
+const APP_VERSION='V1.5.12';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -3560,11 +3560,12 @@ function noteDate(value){try{return new Intl.DateTimeFormat('en-GB',{day:'2-digi
 const ACCESSIBILITY_KEY='apprenticeplus.accessibility.v1';
 const ACCESSIBILITY_CHECK_KEY='apprenticeplus.accessibilityCheck.v1';
 let activeSpeechUtterance=null;
-function stopReadAloud(){
+function stopReadAloud({hide=false}={}){
  try{window.speechSynthesis?.cancel?.()}catch{}
  activeSpeechUtterance=null;
- document.getElementById('readAloudController')?.remove();
  document.body.classList.remove('read-aloud-active');
+ if(hide){document.getElementById('readAloudController')?.remove();return}
+ if(accessibilitySettings().readAloud)renderReadAloudController('ready');
 }
 function pageTextForReadAloud(){
  const scope=document.querySelector('#app main')||document.getElementById('app');
@@ -3595,11 +3596,11 @@ function startReadAloud(){
 }
 function syncReadAloudControl(){
  const enabled=!!accessibilitySettings().readAloud;
- if(!enabled){stopReadAloud();return}
+ if(!enabled){stopReadAloud({hide:true});return}
  renderReadAloudController(window.speechSynthesis?.speaking?'speaking':'ready');
 }
 function cleanupTransientUi(){
- stopVoiceToText();stopReadAloud();closeLearningSupportInfo();
+ stopVoiceToText();stopReadAloud({hide:false});closeLearningSupportInfo();
  document.body.classList.remove('learning-support-modal-open','page-help-open');
  document.querySelectorAll('#learningSupportInfoModal,.page-help-modal.closing,.help-tour-overlay[aria-hidden="true"],.modal[aria-hidden="true"],.modal.hidden').forEach(node=>node.remove());
  document.documentElement.style.pointerEvents='';document.body.style.pointerEvents='';app.style.pointerEvents='';
@@ -5069,7 +5070,7 @@ function activatePrimaryNavigation(target){
  if(target==='academy'){state.view='academy';state.assignment=null;state.section=null}
  else if(target==='resources'){state.view='resources';state.assignment=null;state.section=null;state.editingNoteId=null}
  else{state.view='home';state.assignment=null;state.section=null}
- render();requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'instant'}));
+ render();requestAnimationFrame(()=>{syncReadAloudControl();syncReadingGuide();window.scrollTo({top:0,left:0,behavior:'instant'})});
 }
 app.addEventListener('click',e=>{const nav=e.target.closest('[data-nav]');if(!nav)return;e.preventDefault();activatePrimaryNavigation(nav.dataset.nav)});
 // Android PWAs can occasionally lose the synthetic click after being resumed.
