@@ -1,13 +1,13 @@
-const CACHE='apprentice-plus-v1.5.7-learning-support';
+const CACHE='apprentice-plus-v1.5.8-stability-tts';
 const UPDATE_INFO={
- version:'V1.5.7',
+ version:'V1.5.8',
  features:[
-  'Adds Samsung-style notification on/off switches.',
-  'Adds notification controls for updates, EPA, assignments and certificates.',
-  'Adds app colour choices and light or dark appearance settings.'
+  'Fixes the Course navigation button becoming unresponsive.',
+  'Adds working page text-to-speech controls with play, pause and stop.',
+  'Improves popup cleanup and prevents invisible overlays blocking taps.'
  ]
 };
-const APP_SHELL=['./','./index.html','./styles.css?v=1.5.5','./functional-skills-bank.js?v=1.5.5','./trade-courses-bank.js?v=1.5.5','./app.js?v=1.5.5','./manifest.json','./pdf-generator.js?v=1.5.5','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
+const APP_SHELL=['./','./index.html','./styles.css?v=1.5.8','./functional-skills-bank.js?v=1.5.8','./trade-courses-bank.js?v=1.5.8','./app.js?v=1.5.8','./manifest.json','./pdf-generator.js?v=1.5.8','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
 
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)));

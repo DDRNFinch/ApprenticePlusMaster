@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.7';
+const APP_VERSION='V1.5.8';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -3556,10 +3556,55 @@ function noteDate(value){try{return new Intl.DateTimeFormat('en-GB',{day:'2-digi
 
 const ACCESSIBILITY_KEY='apprenticeplus.accessibility.v1';
 const ACCESSIBILITY_CHECK_KEY='apprenticeplus.accessibilityCheck.v1';
+let activeSpeechUtterance=null;
+function stopReadAloud(){
+ try{window.speechSynthesis?.cancel?.()}catch{}
+ activeSpeechUtterance=null;
+ document.getElementById('readAloudController')?.remove();
+ document.body.classList.remove('read-aloud-active');
+}
+function pageTextForReadAloud(){
+ const scope=document.querySelector('#app main')||document.getElementById('app');
+ if(!scope)return '';
+ const clone=scope.cloneNode(true);
+ clone.querySelectorAll('nav,button,input,textarea,select,svg,script,style,.no-print,.app-version-bottom,.read-aloud-controller').forEach(n=>n.remove());
+ return (clone.innerText||clone.textContent||'').replace(/\s+/g,' ').trim().slice(0,12000);
+}
+function renderReadAloudController(status='ready'){
+ let box=document.getElementById('readAloudController');
+ if(!box){
+  box=document.createElement('div');box.id='readAloudController';box.className='read-aloud-controller no-print';
+  box.innerHTML=`<button type="button" data-tts="play" aria-label="Read this page aloud">🔊</button><button type="button" data-tts="pause" aria-label="Pause or resume reading">⏯</button><button type="button" data-tts="stop" aria-label="Stop reading">■</button><span>Read aloud</span>`;
+  document.body.appendChild(box);
+  box.addEventListener('click',e=>{const action=e.target.closest('[data-tts]')?.dataset.tts;if(!action)return;if(action==='play')startReadAloud();else if(action==='pause'){const synth=window.speechSynthesis;if(!synth)return;if(synth.paused)synth.resume();else if(synth.speaking)synth.pause()}else stopReadAloud()});
+ }
+ box.dataset.status=status;
+ document.body.classList.toggle('read-aloud-active',status==='speaking'||status==='paused');
+}
+function startReadAloud(){
+ if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined')return toast('Read aloud is not supported on this device');
+ const text=pageTextForReadAloud();if(!text)return toast('There is no readable text on this page');
+ stopReadAloud();renderReadAloudController('speaking');
+ const u=new SpeechSynthesisUtterance(text);activeSpeechUtterance=u;u.lang='en-GB';u.rate=.92;
+ u.onend=()=>{activeSpeechUtterance=null;renderReadAloudController('ready')};
+ u.onerror=()=>{activeSpeechUtterance=null;renderReadAloudController('ready');toast('Read aloud stopped')};
+ try{window.speechSynthesis.cancel();window.speechSynthesis.speak(u)}catch{stopReadAloud();toast('Read aloud could not start')}
+}
+function syncReadAloudControl(){
+ const enabled=!!accessibilitySettings().readAloud;
+ if(!enabled){stopReadAloud();return}
+ renderReadAloudController(window.speechSynthesis?.speaking?'speaking':'ready');
+}
+function cleanupTransientUi(){
+ stopVoiceToText();stopReadAloud();closeLearningSupportInfo();
+ document.body.classList.remove('learning-support-modal-open','page-help-open');
+ document.querySelectorAll('#learningSupportInfoModal,.page-help-modal.closing,.help-tour-overlay[aria-hidden="true"],.modal[aria-hidden="true"],.modal.hidden').forEach(node=>node.remove());
+ document.documentElement.style.pointerEvents='';document.body.style.pointerEvents='';app.style.pointerEvents='';
+}
 function defaultAccessibilitySettings(){return {dyslexicFont:false,largeText:false,highContrast:false,reduceMotion:false,fontSize:100,lineSpacing:1.5,background:'default',readingRuler:false,focusMode:false,captions:false,largeCaptions:false,visualAlerts:true,vibration:false,readAloud:true,voiceInput:true,simplify:false}}
 function accessibilitySettings(){try{return {...defaultAccessibilitySettings(),...JSON.parse(localStorage.getItem(ACCESSIBILITY_KEY)||'{}')}}catch{return defaultAccessibilitySettings()}}
 function saveAccessibilitySettings(next){localStorage.setItem(ACCESSIBILITY_KEY,JSON.stringify(next));applyAccessibilitySettings();}
-function applyAccessibilitySettings(){const a=accessibilitySettings(),root=document.documentElement,body=document.body;if(!body)return;body.classList.toggle('a11y-dyslexic',!!a.dyslexicFont);body.classList.toggle('a11y-large-text',!!a.largeText);body.classList.toggle('a11y-high-contrast',!!a.highContrast);body.classList.toggle('a11y-reduce-motion',!!a.reduceMotion);body.classList.toggle('a11y-reading-ruler',!!a.readingRuler);body.classList.toggle('a11y-focus',!!a.focusMode);body.classList.toggle('a11y-simplified',!!a.simplify);body.classList.toggle('a11y-visual-alerts',!!a.visualAlerts);body.classList.toggle('a11y-large-captions',!!a.largeCaptions);body.classList.toggle('a11y-captions',!!a.captions);body.dataset.a11yBackground=a.background||'default';const effectiveFontSize=a.largeText?Math.max(115,Number(a.fontSize)||100):(Number(a.fontSize)||100);root.style.setProperty('--a11y-font-scale',String(effectiveFontSize/100));root.style.setProperty('--a11y-line-height',String(Number(a.lineSpacing)||1.5));applyAccessibilityToCurrentView();}
+function applyAccessibilitySettings(){const a=accessibilitySettings(),root=document.documentElement,body=document.body;if(!body)return;body.classList.toggle('a11y-dyslexic',!!a.dyslexicFont);body.classList.toggle('a11y-large-text',!!a.largeText);body.classList.toggle('a11y-high-contrast',!!a.highContrast);body.classList.toggle('a11y-reduce-motion',!!a.reduceMotion);body.classList.toggle('a11y-reading-ruler',!!a.readingRuler);body.classList.toggle('a11y-focus',!!a.focusMode);body.classList.toggle('a11y-simplified',!!a.simplify);body.classList.toggle('a11y-visual-alerts',!!a.visualAlerts);body.classList.toggle('a11y-large-captions',!!a.largeCaptions);body.classList.toggle('a11y-captions',!!a.captions);body.dataset.a11yBackground=a.background||'default';const effectiveFontSize=a.largeText?Math.max(115,Number(a.fontSize)||100):(Number(a.fontSize)||100);root.style.setProperty('--a11y-font-scale',String(effectiveFontSize/100));root.style.setProperty('--a11y-line-height',String(Number(a.lineSpacing)||1.5));applyAccessibilityToCurrentView();syncReadAloudControl();}
 function applyAccessibilityToCurrentView(){const a=accessibilitySettings(),scale=(a.largeText?Math.max(115,Number(a.fontSize)||100):(Number(a.fontSize)||100))/100,scope=document.getElementById('app');if(!scope)return;const selector='h1,h2,h3,h4,h5,h6,p,li,label,button,input,textarea,select,summary,small,.number,.pill,.muted,.meta,.status,.subtitle,.app-version-bottom';const nodes=[...scope.querySelectorAll(selector)].filter(el=>!el.closest('svg')&&!el.classList.contains('nav-icon'));const sizes=nodes.map(el=>{if(!el.dataset.a11yBaseFont){const px=parseFloat(getComputedStyle(el).fontSize);if(Number.isFinite(px))el.dataset.a11yBaseFont=String(px)}return [el,Number(el.dataset.a11yBaseFont)]});sizes.forEach(([el,base])=>{if(Number.isFinite(base))el.style.fontSize=`${Math.max(11,base*scale)}px`;el.style.lineHeight=String(Number(a.lineSpacing)||1.5)});scope.querySelectorAll('video').forEach(video=>{for(const track of video.textTracks){try{track.mode=a.captions?'showing':'disabled'}catch{}}});}
 function accessibilityCheckAnswers(){try{return JSON.parse(localStorage.getItem(ACCESSIBILITY_CHECK_KEY)||'{}')}catch{return {}}}
 function supportTabButton(id,label){return `<button class="support-tab ${state.learningSupportTab===id?'active':''}" data-support-tab="${id}">${label}</button>`}
@@ -3624,8 +3669,8 @@ const LEARNING_SUPPORT_INFO={
  simplify:{title:'Simplified layout',before:'Full page detail',after:'Reduced visual clutter',className:'preview-simplified',explanation:'Hides non-essential decorative information and places greater emphasis on the main task. No work, evidence or features are deleted.'}
 };
 function learningSupportPreview(label,mode,info){return `<div class="learning-preview-block"><span class="learning-preview-label">${label}</span><div class="learning-phone ${mode==='after'?info.className:''}"><div class="learning-phone-status"><b>9:41</b><span>● ● ●</span></div><div class="learning-phone-head"><span class="learning-mini-logo">A+</span><div><b>Apprentice+</b><small>Your Course, Your Way.</small></div></div><div class="learning-phone-card"><small>ASSIGNMENT 4</small><strong>Health and Safety</strong><p>Read the task instructions carefully and complete the required evidence.</p><button type="button">Open assignment</button></div><div class="learning-phone-lines"><i></i><i></i><i></i></div></div></div>`}
-function closeLearningSupportInfo(){document.getElementById('learningSupportInfoModal')?.remove();document.body.classList.remove('learning-support-modal-open')}
-function openLearningSupportInfo(key){const info=LEARNING_SUPPORT_INFO[key];if(!info)return;closeLearningSupportInfo();document.body.insertAdjacentHTML('beforeend',`<div class="learning-support-modal" id="learningSupportInfoModal" role="dialog" aria-modal="true" aria-labelledby="learningSupportInfoTitle"><div class="learning-support-modal-card"><div class="learning-support-modal-handle"></div><button type="button" class="learning-support-modal-close" aria-label="Close">×</button><h2 id="learningSupportInfoTitle">${info.title}</h2><div class="learning-support-demo">${learningSupportPreview('Before','before',info)}${learningSupportPreview('After','after',info)}</div><div class="learning-support-explanation"><h3>What this changes</h3><p>${info.explanation}</p><button type="button" class="btn learning-support-got-it">Got it</button></div></div></div>`);document.body.classList.add('learning-support-modal-open');const modal=document.getElementById('learningSupportInfoModal'),card=modal.querySelector('.learning-support-modal-card');modal.querySelector('.learning-support-modal-close').onclick=closeLearningSupportInfo;modal.querySelector('.learning-support-got-it').onclick=closeLearningSupportInfo;modal.onclick=e=>{if(e.target===modal)closeLearningSupportInfo()};let startY=0,lastY=0;card.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;startY=lastY=e.clientY;card.setPointerCapture?.(e.pointerId)});card.addEventListener('pointermove',e=>{if(!startY)return;lastY=e.clientY;const dy=Math.max(0,lastY-startY);card.style.transform=`translateY(${Math.min(dy,180)}px)`});card.addEventListener('pointerup',()=>{const dy=lastY-startY;if(dy>90)closeLearningSupportInfo();else card.style.transform='';startY=lastY=0});modal.querySelector('.learning-support-modal-close').focus()}
+function closeLearningSupportInfo(){document.querySelectorAll('#learningSupportInfoModal').forEach(node=>node.remove());document.body.classList.remove('learning-support-modal-open')}
+function openLearningSupportInfo(key){const info=LEARNING_SUPPORT_INFO[key];if(!info)return;closeLearningSupportInfo();document.body.insertAdjacentHTML('beforeend',`<div class="learning-support-modal" id="learningSupportInfoModal" role="dialog" aria-modal="true" aria-labelledby="learningSupportInfoTitle"><div class="learning-support-modal-card"><div class="learning-support-modal-handle"></div><button type="button" class="learning-support-modal-close" aria-label="Close">×</button><h2 id="learningSupportInfoTitle">${info.title}</h2><div class="learning-support-demo">${learningSupportPreview('Before','before',info)}${learningSupportPreview('After','after',info)}</div><div class="learning-support-explanation"><h3>What this changes</h3><p>${info.explanation}</p><button type="button" class="btn learning-support-got-it">Got it</button></div></div></div>`);document.body.classList.add('learning-support-modal-open');const modal=document.getElementById('learningSupportInfoModal'),card=modal.querySelector('.learning-support-modal-card');modal.querySelector('.learning-support-modal-close').onclick=closeLearningSupportInfo;modal.querySelector('.learning-support-got-it').onclick=closeLearningSupportInfo;modal.onclick=e=>{if(e.target===modal)closeLearningSupportInfo()};let startY=0,lastY=0;card.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;startY=lastY=e.clientY;try{card.setPointerCapture?.(e.pointerId)}catch{}});card.addEventListener('pointermove',e=>{if(!startY)return;lastY=e.clientY;const dy=Math.max(0,lastY-startY);card.style.transform=`translateY(${Math.min(dy,180)}px)`});const finishSwipe=e=>{if(!startY)return;try{card.releasePointerCapture?.(e.pointerId)}catch{}const dy=lastY-startY;if(dy>90)closeLearningSupportInfo();else card.style.transform='';startY=lastY=0};card.addEventListener('pointerup',finishSwipe);card.addEventListener('pointercancel',finishSwipe);card.addEventListener('lostpointercapture',()=>{if(startY){card.style.transform='';startY=lastY=0}});modal.querySelector('.learning-support-modal-close').focus()}
 function renderSettings(){
  const active=state.settingsTab||'general',settings=appSettings();
  const tabs=[['general','General'],['notifications','Notifications'],['learning-support','Learning Support']];
@@ -3640,7 +3685,7 @@ function renderSettings(){
  document.querySelectorAll('[data-accent]').forEach(button=>button.onclick=()=>{const next=appSettings();next.accent=button.dataset.accent;saveAppSettings(next);renderSettings()});
  const bindNotification=(id,key)=>{const input=document.getElementById(id);if(input)input.onchange=()=>{const next=appSettings();next.notifications[key]=input.checked;saveAppSettings(next);renderSettings()}};
  bindNotification('settingNotificationsEnabled','enabled');bindNotification('settingUpdates','updates');bindNotification('settingEpa','epa');bindNotification('settingAssignments','assignments');bindNotification('settingCertificates','certificates');
- const bindSupport=(id,key)=>{const el=document.getElementById(id);if(!el)return;el.onchange=()=>{const a=accessibilitySettings();a[key]=el.checked;saveAccessibilitySettings(a);if(key==='voiceInput')renderSettings();toast(`${el.checked?'Enabled':'Disabled'} ${el.closest('label')?.querySelector('strong')?.textContent||'support setting'}`)}};bindSupport('supportDyslexicFont','dyslexicFont');bindSupport('supportLargeText','largeText');bindSupport('supportHighContrast','highContrast');bindSupport('supportReduceMotion','reduceMotion');bindSupport('supportReadingGuide','readingRuler');bindSupport('supportReadAloud','readAloud');bindSupport('supportVoiceInput','voiceInput');bindSupport('supportSimplifiedLayout','simplify');document.querySelectorAll('[data-learning-support-info]').forEach(button=>button.onclick=e=>{e.preventDefault();e.stopPropagation();openLearningSupportInfo(button.dataset.learningSupportInfo)});const resetSupport=document.getElementById('resetLearningSupport');if(resetSupport)resetSupport.onclick=()=>{if(!confirm('Reset all Learning Support settings on this device?'))return;const current=accessibilitySettings(),defaults=defaultAccessibilitySettings();Object.assign(current,{dyslexicFont:defaults.dyslexicFont,largeText:defaults.largeText,highContrast:defaults.highContrast,reduceMotion:defaults.reduceMotion,readingRuler:defaults.readingRuler,readAloud:defaults.readAloud,voiceInput:defaults.voiceInput,simplify:defaults.simplify});saveAccessibilitySettings(current);renderSettings();toast('Learning Support reset')};
+ const bindSupport=(id,key)=>{const el=document.getElementById(id);if(!el)return;el.onchange=()=>{const a=accessibilitySettings();a[key]=el.checked;saveAccessibilitySettings(a);if(key==='voiceInput')renderSettings();if(key==='readAloud')syncReadAloudControl();toast(`${el.checked?'Enabled':'Disabled'} ${el.closest('label')?.querySelector('strong')?.textContent||'support setting'}`)}};bindSupport('supportDyslexicFont','dyslexicFont');bindSupport('supportLargeText','largeText');bindSupport('supportHighContrast','highContrast');bindSupport('supportReduceMotion','reduceMotion');bindSupport('supportReadingGuide','readingRuler');bindSupport('supportReadAloud','readAloud');bindSupport('supportVoiceInput','voiceInput');bindSupport('supportSimplifiedLayout','simplify');document.querySelectorAll('[data-learning-support-info]').forEach(button=>button.onclick=e=>{e.preventDefault();e.stopPropagation();openLearningSupportInfo(button.dataset.learningSupportInfo)});const resetSupport=document.getElementById('resetLearningSupport');if(resetSupport)resetSupport.onclick=()=>{if(!confirm('Reset all Learning Support settings on this device?'))return;const current=accessibilitySettings(),defaults=defaultAccessibilitySettings();Object.assign(current,{dyslexicFont:defaults.dyslexicFont,largeText:defaults.largeText,highContrast:defaults.highContrast,reduceMotion:defaults.reduceMotion,readingRuler:defaults.readingRuler,readAloud:defaults.readAloud,voiceInput:defaults.voiceInput,simplify:defaults.simplify});saveAccessibilitySettings(current);renderSettings();toast('Learning Support reset')};
 }
 function renderTools(){state.view='resources';render()}
 function num(id){const el=document.getElementById(id);return el?Number(el.value)||0:0}
@@ -4992,7 +5037,7 @@ window.addEventListener('popstate',()=>{if(document.getElementById('pageHelpModa
 let lastPrimaryNavigationAt=0;
 function activatePrimaryNavigation(target){
  const now=Date.now();if(now-lastPrimaryNavigationAt<350)return;lastPrimaryNavigationAt=now;
- stopVoiceToText();
+ cleanupTransientUi();
  if(target==='academy'){state.view='academy';state.assignment=null;state.section=null}
  else if(target==='resources'){state.view='resources';state.assignment=null;state.section=null;state.editingNoteId=null}
  else{state.view='home';state.assignment=null;state.section=null}
@@ -5007,7 +5052,7 @@ function restoreAppAfterResume(){
  document.documentElement.style.pointerEvents='';document.body.style.pointerEvents='';app.style.pointerEvents='';
  document.querySelectorAll('.bottom-nav-item').forEach(button=>{button.disabled=false;button.removeAttribute('aria-disabled')});
  // Remove only stale, hidden backdrops that can intercept the first tap after resume.
- document.querySelectorAll('.modal[aria-hidden="true"],.modal.hidden,.help-tour-overlay[aria-hidden="true"]').forEach(node=>node.remove());
+ document.querySelectorAll('.modal[aria-hidden="true"],.modal.hidden,.help-tour-overlay[aria-hidden="true"],#learningSupportInfoModal[aria-hidden="true"]').forEach(node=>node.remove());if(!document.getElementById('learningSupportInfoModal'))document.body.classList.remove('learning-support-modal-open');
  lastPrimaryNavigationAt=0;
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')requestAnimationFrame(restoreAppAfterResume)});
@@ -5040,5 +5085,5 @@ function updateTargetedRevision({title,assignment,source,score}){
 const EPA_INTERVIEW_FRAMEWORK=`You are an experienced End-Point Assessor for construction apprenticeships.`;
 const EPA_MCQ_FRAMEWORK=THEORY_MCQ_FRAMEWORK_V140;
 
-// V1.5.7 apply saved visual and Learning Support preferences on load.
+// V1.5.8 stability and working text-to-speech controls.
 applyAppSettings();
