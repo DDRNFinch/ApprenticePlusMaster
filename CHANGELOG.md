@@ -1,3 +1,7 @@
+# V1.5.22
+
+Fixed Settings help-tour highlighting so every tile and control is clearly shown.
+
 # Apprentice+ V1.5.21
 
 ## Search activity pill text fix

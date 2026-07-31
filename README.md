@@ -1,4 +1,4 @@
-# Apprentice+ V1.5.21
+# Apprentice+ V1.5.22
 
 This release fixes the missing first letters in the Popular Course Activities search pills.
 

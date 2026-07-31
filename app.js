@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.21';
+const APP_VERSION='V1.5.22';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -3721,8 +3721,8 @@ function applyAppSettings(settings=appSettings()){
  document.body.classList.toggle('app-dark-mode',settings.appearance==='dark');
  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',palette.green);
 }
-function samsungToggle(id,label,copy,checked){return `<label class="settings-switch-row" for="${id}"><span><strong>${label}</strong>${copy?`<small>${copy}</small>`:''}</span><input class="samsung-switch-input" type="checkbox" id="${id}" ${checked?'checked':''}><span class="samsung-switch" aria-hidden="true"><i></i></span></label>`}
-function learningSupportToggle(id,key,label,copy,checked){return `<div class="settings-switch-row learning-support-row"><button type="button" class="learning-support-info" data-learning-support-info="${key}" aria-label="About ${label}">i</button><label class="learning-support-toggle-label" for="${id}"><span><strong>${label}</strong>${copy?`<small>${copy}</small>`:''}</span><input class="samsung-switch-input" type="checkbox" id="${id}" ${checked?'checked':''}><span class="samsung-switch" aria-hidden="true"><i></i></span></label></div>`}
+function samsungToggle(id,label,copy,checked){return `<label class="settings-switch-row" data-help-setting="${id}" for="${id}"><span><strong>${label}</strong>${copy?`<small>${copy}</small>`:''}</span><input class="samsung-switch-input" type="checkbox" id="${id}" ${checked?'checked':''}><span class="samsung-switch" aria-hidden="true"><i></i></span></label>`}
+function learningSupportToggle(id,key,label,copy,checked){return `<div class="settings-switch-row learning-support-row" data-help-setting="${id}"><button type="button" class="learning-support-info" data-learning-support-info="${key}" aria-label="About ${label}">i</button><label class="learning-support-toggle-label" for="${id}"><span><strong>${label}</strong>${copy?`<small>${copy}</small>`:''}</span><input class="samsung-switch-input" type="checkbox" id="${id}" ${checked?'checked':''}><span class="samsung-switch" aria-hidden="true"><i></i></span></label></div>`}
 const LEARNING_SUPPORT_INFO={
  dyslexicFont:{title:'Dyslexia-friendly text',before:'Standard text',after:'Clearer letter shapes and wider spacing',className:'preview-dyslexia',explanation:'Changes the app typography to make letters easier to distinguish and increases comfortable spacing. It may help learners who find dense or similar-looking letters difficult to read.'},
  largeText:{title:'Larger text',before:'Standard text size',after:'Larger, easier-to-read text',className:'preview-large-text',explanation:'Increases text size across Apprentice+ while keeping the same content and controls. It may help anyone who prefers larger text or finds smaller labels difficult to read.'},
@@ -4757,31 +4757,31 @@ function currentHelp(){
   const settingsHelp={
    general:{title:'Settings · General',html:'',steps:[
     {selector:'.settings-tabs',title:'Settings sections',html:'<p>Use these tabs to move between General, Notifications and Learning Support settings.</p>'},
-    {selector:'[data-appearance]',focusIndex:0,title:'App appearance',html:'<p>Choose the appearance used by Apprentice+. The change applies immediately and is saved on this device.</p>'},
-    {selector:'[data-accent]',focusIndex:0,title:'App colour',html:'<p>Select the accent colour used for buttons, highlights and progress indicators throughout the app.</p>'},
+    {selector:'.settings-card',focusIndex:0,title:'App appearance',html:'<p>Choose the appearance used by Apprentice+. The change applies immediately and is saved on this device.</p>'},
+    {selector:'.settings-card',focusIndex:1,title:'App colour',html:'<p>Select the accent colour used for buttons, highlights and progress indicators throughout the app.</p>'},
     {selector:'#backResources',title:'Return to Toolbox',html:'<p>Use the back button to return to the Toolbox. Your settings remain saved.</p>'}
    ]},
    notifications:{title:'Settings · Notifications',html:'',steps:[
     {selector:'.settings-tabs',title:'Settings sections',html:'<p>Use the tabs to change another group of app settings.</p>'},
-    {selector:'#settingNotificationsEnabled',title:'Allow notifications',html:'<p>This is the main notification switch. Turning it off disables all Apprentice+ notification categories on this device.</p>'},
-    {selector:'#settingUpdates',title:'App updates',html:'<p>Choose whether the Notification Centre shows new Apprentice+ version and update information.</p>'},
-    {selector:'#settingEpa',title:'EPA reminders',html:'<p>Choose whether EPA preparation and readiness reminders are shown.</p>'},
-    {selector:'#settingAssignments',title:'Assignment reminders',html:'<p>Choose whether reminders about incomplete assignments and evidence are shown.</p>'},
-    {selector:'#settingCertificates',title:'Certificate reminders',html:'<p>Choose whether notifications are shown when a certificate or achievement is available.</p>'}
+    {selector:'[data-help-setting="settingNotificationsEnabled"]',title:'Allow notifications',html:'<p>This is the main notification switch. Turning it off disables all Apprentice+ notification categories on this device.</p>'},
+    {selector:'[data-help-setting="settingUpdates"]',title:'App updates',html:'<p>Choose whether the Notification Centre shows new Apprentice+ version and update information.</p>'},
+    {selector:'[data-help-setting="settingEpa"]',title:'EPA reminders',html:'<p>Choose whether EPA preparation and readiness reminders are shown.</p>'},
+    {selector:'[data-help-setting="settingAssignments"]',title:'Assignment reminders',html:'<p>Choose whether reminders about incomplete assignments and evidence are shown.</p>'},
+    {selector:'[data-help-setting="settingCertificates"]',title:'Certificate reminders',html:'<p>Choose whether notifications are shown when a certificate or achievement is available.</p>'}
    ]},
    'learning-support':{title:'Settings · Learning Support',html:'',steps:[
     {selector:'.settings-tabs',title:'Learning Support settings',html:'<p>These options change how Apprentice+ looks or behaves. Every choice is saved on this device and can be switched off again at any time.</p>'},
-    {selector:'#supportDyslexicFont',title:'Dyslexia-friendly text',html:'<p>Uses a clearer typeface and more distinct letter shapes throughout the app.</p>'},
-    {selector:'#supportLargeText',title:'Larger text',html:'<p>Increases text size across Apprentice+ to make content easier to read.</p>'},
-    {selector:'#supportHighContrast',title:'High contrast',html:'<p>Strengthens the difference between text, backgrounds and controls.</p>'},
-    {selector:'#supportReduceMotion',title:'Reduce motion',html:'<p>Removes most animations and moving transitions.</p>'},
-    {selector:'#supportReadingGuide',title:'Reading guide',html:'<p>Adds a movable horizontal reading window. Use the eye control for background blur and the move handle to position the guide.</p>'},
-    {selector:'#supportTintOverlay',title:'Dyslexia tint overlay',html:'<p>Places a glass-like colour tint over every page of Apprentice+. Turn it on, choose a colour and adjust the tint strength below.</p>'},
-    {selector:'#openTintColourPicker',title:'Overlay colour',html:'<p>Open the colour choices and select Yellow, Blue, Mint, Peach, Rose or Grey. The selected tint applies immediately.</p>'},
-    {selector:'#tintOpacityRange',title:'Tint strength',html:'<p>Move the slider to make the full-app glass tint lighter or stronger.</p>'},
-    {selector:'#supportReadAloud',title:'Text-to-speech',html:'<p>Shows a speaker button on built-in information tiles. Tap a speaker to read only that tile aloud.</p>'},
-    {selector:'#supportVoiceInput',title:'Voice-to-text',html:'<p>Shows microphone controls beside supported text fields so speech can be converted into writing.</p>'},
-    {selector:'#supportSimplifiedLayout',title:'Simplified layout',html:'<p>Reduces visual clutter and gives more emphasis to the main task and controls.</p>'},
+    {selector:'[data-help-setting="supportDyslexicFont"]',title:'Dyslexia-friendly text',html:'<p>Uses a clearer typeface and more distinct letter shapes throughout the app.</p>'},
+    {selector:'[data-help-setting="supportLargeText"]',title:'Larger text',html:'<p>Increases text size across Apprentice+ to make content easier to read.</p>'},
+    {selector:'[data-help-setting="supportHighContrast"]',title:'High contrast',html:'<p>Strengthens the difference between text, backgrounds and controls.</p>'},
+    {selector:'[data-help-setting="supportReduceMotion"]',title:'Reduce motion',html:'<p>Removes most animations and moving transitions.</p>'},
+    {selector:'[data-help-setting="supportReadingGuide"]',title:'Reading guide',html:'<p>Adds a movable horizontal reading window. Use the eye control for background blur and the move handle to position the guide.</p>'},
+    {selector:'[data-help-setting="supportTintOverlay"]',title:'Dyslexia tint overlay',html:'<p>Places a glass-like colour tint over every page of Apprentice+. Turn it on, choose a colour and adjust the tint strength below.</p>'},
+    {selector:'#tintOverlayOptions',title:'Overlay colour',html:'<p>Open the colour choices and select Yellow, Blue, Mint, Peach, Rose or Grey. The selected tint applies immediately.</p>'},
+    {selector:'#tintOverlayOptions',title:'Tint strength',html:'<p>Move the slider to make the full-app glass tint lighter or stronger.</p>'},
+    {selector:'[data-help-setting="supportReadAloud"]',title:'Text-to-speech',html:'<p>Shows a speaker button on built-in information tiles. Tap a speaker to read only that tile aloud.</p>'},
+    {selector:'[data-help-setting="supportVoiceInput"]',title:'Voice-to-text',html:'<p>Shows microphone controls beside supported text fields so speech can be converted into writing.</p>'},
+    {selector:'[data-help-setting="supportSimplifiedLayout"]',title:'Simplified layout',html:'<p>Reduces visual clutter and gives more emphasis to the main task and controls.</p>'},
     {selector:'#resetLearningSupport',title:'Reset Learning Support',html:'<p>Use this button to return all Learning Support options to their default settings.</p>'}
    ]}
   };
@@ -4900,7 +4900,8 @@ function closePageHelp(){
 function buildPageHelpPhone(selector='',focusIndex=0){
  const source=app.cloneNode(true);
  source.querySelectorAll('script,style,.page-help-modal,.help-tour-overlay').forEach(x=>x.remove());
- if(selector){const targets=[...source.querySelectorAll(selector)];const target=targets[Math.min(Math.max(0,focusIndex||0),Math.max(0,targets.length-1))];if(target)target.classList.add('page-help-phone-focus')}
+ if(state.view==='settings'){source.querySelectorAll('#tintOverlayOptions').forEach(el=>{el.hidden=false;el.removeAttribute('hidden');el.setAttribute('aria-hidden','false');el.classList.remove('disabled');el.classList.add('enabled')})}
+ if(selector){const targets=[...source.querySelectorAll(selector)];let target=targets[Math.min(Math.max(0,focusIndex||0),Math.max(0,targets.length-1))];if(target){const settingRow=target.closest?.('.settings-switch-row,[data-help-tile],.settings-card');if(state.view==='settings'&&settingRow)target=settingRow;target.classList.add('page-help-phone-focus')}}
  source.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
  source.querySelectorAll('button,input,select,textarea,a').forEach(el=>{el.tabIndex=-1;el.setAttribute('aria-hidden','true')});
  return source.innerHTML;
@@ -5044,6 +5045,7 @@ function renderTourView(step){
 function buildTourPhone(step){
  const source=app.cloneNode(true);
  source.querySelectorAll('script,style,.page-help-modal,.help-tour-overlay').forEach(x=>x.remove());
+ if(state.view==='settings'){source.querySelectorAll('#tintOverlayOptions').forEach(el=>{el.hidden=false;el.removeAttribute('hidden');el.setAttribute('aria-hidden','false');el.classList.remove('disabled');el.classList.add('enabled')})}
  const target=source.querySelector(step.selector);
  if(target){target.classList.add('tour-phone-focus');target.scrollIntoView?.({block:'center'})}
  source.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));

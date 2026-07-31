@@ -1,5 +1,5 @@
 {
-  "latest": "V1.5.21",
+  "latest": "V1.5.22",
   "releases": {
     "V1.5.20": {
       "title": "Instant dyslexia tint controls",
@@ -43,6 +43,15 @@
         "Restores the missing first letter on every Popular Course Activities search pill.",
         "Corrects the activity-title cleaning rule so normal titles such as Health & Safety and Cavity Walling remain complete.",
         "Keeps assignment-code removal working only when a genuine code separator is present."
+      ]
+    },
+    "V1.5.22": {
+      "title": "Complete Settings help highlights",
+      "features": [
+        "Makes the green help-tour highlight cover the complete Settings tile or switch row instead of only the hidden checkbox control.",
+        "Adds visible highlights for every General, Notifications and Learning Support setting.",
+        "Shows the Dyslexia tint colour and strength controls inside the tour even when the tint is currently switched off.",
+        "Keeps the phone preview scrolling to each highlighted Settings item."
       ]
     }
   }
