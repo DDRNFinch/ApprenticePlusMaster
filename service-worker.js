@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.5.44-video-page-bottom-clearance';
-const CURRENT_VERSION='V1.5.44';
+const CACHE='apprentice-plus-v1.5.45-progress-video-pdf-fixes';
+const CURRENT_VERSION='V1.5.45';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,

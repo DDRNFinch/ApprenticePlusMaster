@@ -2751,3 +2751,30 @@ html.keyboard-open .video-page-bottom-spacer{
   min-height:72px;
 }
 @media print{.video-page-bottom-spacer{display:none!important}}
+
+
+/* V1.5.45 — recorder clearance, compact progress timeline, and PDF-safe cover details */
+.walk-recorder-modal{
+  box-sizing:border-box!important;
+  padding-bottom:var(--bottom-nav-safe,96px)!important;
+  align-items:flex-start!important;
+}
+.walk-recorder-sheet{
+  height:calc(100dvh - var(--bottom-nav-safe,96px))!important;
+  max-height:calc(100dvh - var(--bottom-nav-safe,96px))!important;
+}
+.walk-recorder-prompt{
+  padding-bottom:32px!important;
+  scroll-padding-bottom:32px!important;
+}
+.walk-recorder-review{padding-bottom:24px!important}
+.walk-recorder-review .btn-row{position:relative;z-index:4;margin-bottom:10px!important}
+@media(max-height:760px){
+  .walk-recorder-sheet{grid-template-rows:minmax(34%,44%) minmax(0,1fr)!important}
+  .walk-recorder-review>video{max-height:190px!important}
+}
+.review-tracker.timeline .review-gradient-track{
+  background:linear-gradient(90deg,#35a936 0 87.5%,#dc2626 87.5% 100%)!important;
+}
+.review-tracker.timeline .review-gradient-track:after{background:rgba(255,255,255,.18)!important}
+.review-tracker.timeline{color:#218a2e!important}

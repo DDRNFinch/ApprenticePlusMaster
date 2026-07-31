@@ -1,6 +1,15 @@
 {
-  "latest": "V1.5.44",
+  "latest": "V1.5.45",
   "releases": [
+    {
+      "version": "V1.5.45",
+      "features": [
+        "Keeps video walkthrough review and Save video controls fully above the bottom navigation.",
+        "Keeps the Evidence items total inside the PDF cover panel.",
+        "Updates the learner progress review order and adds weeks remaining.",
+        "Shows the final 12.5% of the course timeline in red for the EPA period."
+      ]
+    },
     {
       "version": "V1.5.44",
       "title": "Video submission bottom clearance",

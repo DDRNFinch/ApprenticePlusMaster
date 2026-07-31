@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.44';
+const APP_VERSION='V1.5.45';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -4170,12 +4170,18 @@ function showCourseProgress(){
  const tracker=(label,value,target,display,detail='',variant='')=>{
   const ratio=target>0?value/target:(value>0?1:0),position=Math.max(0,Math.min(100,ratio*100));
   const tone=target===null?'neutral':ratio>=1?'green':ratio>=.8?'amber':'red';
-  return `<div class="review-tracker ${variant==='fixed-green'?'green fixed-green':tone}"><div class="review-tracker-head"><strong>${label}</strong><b>${display}</b></div><div class="review-gradient-track"><span class="review-target-marker" aria-hidden="true"></span><i style="left:${position}%" aria-hidden="true"></i></div>${detail?`<small>${detail}</small>`:''}</div>`;
+  const cls=variant==='fixed-green'?'green fixed-green':variant==='timeline'?'green timeline':tone;
+  return `<div class="review-tracker ${cls}"><div class="review-tracker-head"><strong>${label}</strong><b>${display}</b></div><div class="review-gradient-track"><span class="review-target-marker" aria-hidden="true"></span><i style="left:${position}%" aria-hidden="true"></i></div>${detail?`<small>${detail}</small>`:''}</div>`;
  };
  const assignmentDetail=expectedAssignments===null?'Add course dates to calculate today’s target':`${expectedAssignments} expected by today · ${p.total} total`;
  const ksbDetail=expectedKsbs===null?'Add course dates to calculate today’s target':`${expectedKsbs} expected by today · ${p.ksbTotal} total`;
  const otjDifference=otj.total-otj.expected;
  const otjDetail=`${otj.weeks.toFixed(1)} weeks × 8 hours · ${Math.abs(otjDifference).toFixed(1)} hrs ${otjDifference>=0?'ahead':'behind'}`;
+ const startDate=new Date(state.profile?.courseStartDate||'');
+ const endDate=new Date(state.profile?.plannedEndDate||'');
+ const now=new Date();
+ const weeksLeft=Number.isFinite(endDate.getTime())?Math.max(0,Math.ceil((endDate-now)/(7*24*60*60*1000))):null;
+ const timeDetail=elapsed===null?'Course dates not added':`${formatDateInput(state.profile?.courseStartDate)} to ${formatDateInput(state.profile?.plannedEndDate)}${weeksLeft===null?'':` · ${weeksLeft} weeks left`}`;
  const scores=[
   expectedAssignments===null?null:(expectedAssignments? p.submitted/expectedAssignments:1),
   expectedKsbs===null?null:(expectedKsbs? p.ksbCompleted/expectedKsbs:1),
@@ -4184,7 +4190,7 @@ function showCourseProgress(){
  const average=scores.length?scores.reduce((a,b)=>a+Math.min(1.2,b),0)/scores.length:0;
  const reviewLabel=elapsed===null?'Course dates needed':average>=1?'On or ahead of target':average>=.8?'Close to target':'Behind target';
  const reviewTone=elapsed===null?'neutral':average>=1?'green':average>=.8?'amber':'red';
- app.insertAdjacentHTML('beforeend',`<div class="modal progress-modal-layer" id="progressModal"><div class="modal-card progress-modal progress-review-card" role="dialog" aria-modal="true" aria-labelledby="progressReviewTitle"><div class="progress-review-title"><div><small>LEARNER PROGRESS</small><h2 id="progressReviewTitle">${esc(state.profile?.fullName||'Learner')}</h2></div><button type="button" class="progress-close" id="closeProgress" aria-label="Close">×</button></div><div class="review-tracker-list">${tracker('Assignments',p.submitted,expectedAssignments,p.submitted+' / '+(expectedAssignments===null?'—':expectedAssignments),assignmentDetail)}${tracker(ksbLabel,p.ksbCompleted,expectedKsbs,p.ksbCompleted+' / '+(expectedKsbs===null?'—':expectedKsbs),ksbDetail)}${tracker('Time elapsed',elapsed??0,100,elapsed===null?'—':elapsed+'%',elapsed===null?'Course dates not added':`${formatDateInput(state.profile?.courseStartDate)} to ${formatDateInput(state.profile?.plannedEndDate)}`,'fixed-green')}${tracker('Off-the-job',otj.total,otj.expected,`${otj.total.toFixed(1)} / ${otj.expected.toFixed(1)} hrs`,otjDetail)}${epa?tracker('EPA readiness',epa.overall,100,epa.overall+'%',`Collective best scores · MCQ ${epa.knowledge??0}% · Discussion ${epa.discussion??0}% · Practical ${epa.practical??0}%`):''}</div><div class="review-quick-status ${reviewTone}"><span>Review status</span><strong>${reviewLabel}</strong><small>${elapsed===null?'Set the learner’s course dates in Settings to activate time-based targets.':`Assignments, ${COURSE.nvqUnits?'learning outcomes':'KSBs'} and OTJ are compared only with where the learner should be today.`}</small></div><button class="btn progress-done" id="progressDone">Close</button></div></div>`);
+ app.insertAdjacentHTML('beforeend',`<div class="modal progress-modal-layer" id="progressModal"><div class="modal-card progress-modal progress-review-card" role="dialog" aria-modal="true" aria-labelledby="progressReviewTitle"><div class="progress-review-title"><div><small>LEARNER PROGRESS</small><h2 id="progressReviewTitle">${esc(state.profile?.fullName||'Learner')}</h2></div><button type="button" class="progress-close" id="closeProgress" aria-label="Close">×</button></div><div class="review-tracker-list">${tracker('Assignments',p.submitted,expectedAssignments,p.submitted+' / '+(expectedAssignments===null?'—':expectedAssignments),assignmentDetail)}${tracker(ksbLabel,p.ksbCompleted,expectedKsbs,p.ksbCompleted+' / '+(expectedKsbs===null?'—':expectedKsbs),ksbDetail)}${tracker('Off-the-job',otj.total,otj.expected,`${otj.total.toFixed(1)} / ${otj.expected.toFixed(1)} hrs`,otjDetail)}${tracker('Time elapsed',elapsed??0,100,elapsed===null?'—':elapsed+'%',timeDetail,'timeline')}${epa?tracker('EPA readiness',epa.overall,100,epa.overall+'%',`Collective best scores · MCQ ${epa.knowledge??0}% · Discussion ${epa.discussion??0}% · Practical ${epa.practical??0}%`):''}</div><div class="review-quick-status ${reviewTone}"><span>Review status</span><strong>${reviewLabel}</strong><small>${elapsed===null?'Set the learner’s course dates in Settings to activate time-based targets.':`Assignments, ${COURSE.nvqUnits?'learning outcomes':'KSBs'} and OTJ are compared only with where the learner should be today.`}</small></div><button class="btn progress-done" id="progressDone">Close</button></div></div>`);
  const modal=document.getElementById('progressModal'),close=()=>modal?.remove();
  document.getElementById('closeProgress').onclick=close;document.getElementById('progressDone').onclick=close;modal.onclick=e=>{if(e.target===modal)close()};
 }

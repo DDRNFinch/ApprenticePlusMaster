@@ -146,8 +146,8 @@ async function generateEvidencePackPDF({course, assignment, profile, sections, b
     x.fillStyle=MUTED;x.font='600 21px Arial';x.fillText(`${clean(course.standard||'')}  •  Level ${clean(course.level||'-')}`,M,302);
     x.fillStyle=INK;x.font='700 36px Arial';x.fillText('EVIDENCE PORTFOLIO',M,448);
     x.fillStyle=GREEN;x.fillRect(M,474,145,7);
-    let y=548;
-    [['Learner',profile.fullName],['Evidence',`Assignment ${assignment.n} - ${assignment.title}`],['Employer',profile.employer],['Training provider',branding?.name||profile.trainingProvider||profile.provider||'-'],['Assessor',profile.mentor],['Portfolio date',new Date().toLocaleDateString('en-GB')],['Evidence items',String(evidenceCatalogue.length)]].forEach(([a,b])=>{x.fillStyle=MUTED;x.font='700 15px Arial';x.fillText(clean(a).toUpperCase(),M+48,y);x.fillStyle=INK;x.font='700 25px Arial';fitText(x,clean(b||'-'),M+48,y+34,W-2*M-96,25);y+=96});
+    let y=526;
+    [['Learner',profile.fullName],['Evidence',`Assignment ${assignment.n} - ${assignment.title}`],['Employer',profile.employer],['Training provider',branding?.name||profile.trainingProvider||profile.provider||'-'],['Assessor',profile.mentor],['Portfolio date',new Date().toLocaleDateString('en-GB')],['Evidence items',String(evidenceCatalogue.length)]].forEach(([a,b])=>{x.fillStyle=MUTED;x.font='700 14px Arial';x.fillText(clean(a).toUpperCase(),M+48,y);x.fillStyle=INK;x.font='700 23px Arial';fitText(x,clean(b||'-'),M+48,y+30,W-2*M-96,23);y+=82});
     x.fillStyle=TEAL;x.font='700 21px Arial';x.fillText('APPRENTICE+',M,H-122);x.fillStyle=MUTED;x.font='600 18px Arial';x.fillText('Your Course, Your Way',M,H-88);
     pages.push({canvas:c,ctx:x,colour:TEAL,sectionName:'Portfolio',isCover:true});
   }
