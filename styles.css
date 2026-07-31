@@ -2013,3 +2013,27 @@ body.a11y-reduce-motion .reading-guide-mask,body.a11y-reduce-motion .reading-gui
 body.a11y-reduce-motion .tts-readable-tile.tts-speaking>.tts-tile-button{animation:none!important}
 body.a11y-high-contrast .tts-tile-button{background:#000;color:#fff;border:2px solid #fff}
 @media(max-width:430px){.tts-tile-button{right:10px;bottom:10px;width:34px;height:34px}}
+
+/* V1.5.16 full-app dyslexia tint overlay */
+.dyslexia-tint-overlay{
+ position:fixed;
+ inset:0;
+ z-index:2147483000;
+ pointer-events:none!important;
+ background:rgba(var(--tint-rgb,255,224,92),var(--tint-opacity,.28));
+ -webkit-backdrop-filter:saturate(.94) contrast(.99);
+ backdrop-filter:saturate(.94) contrast(.99);
+ transform:translateZ(0);
+ contain:strict;
+}
+.tint-overlay-options{margin:-2px 0 14px 48px;padding:12px;border:1px solid var(--line);border-radius:16px;background:color-mix(in srgb,var(--card) 88%,var(--green2));transition:opacity .18s ease}
+.tint-overlay-options.disabled{display:none}
+.tint-overlay-colours{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tint-colour-choice{border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);padding:8px 5px;display:grid;place-items:center;gap:4px;min-height:64px}
+.tint-colour-choice span{width:28px;height:28px;border-radius:50%;border:2px solid rgba(15,35,40,.18);box-shadow:inset 0 0 0 5px rgba(255,255,255,.38)}
+.tint-colour-choice small{font-size:10px;font-weight:800}
+.tint-colour-choice.active{border-color:var(--green);box-shadow:0 0 0 2px color-mix(in srgb,var(--green) 25%,transparent)}
+.tint-yellow span{background:rgba(255,224,92,.78)}.tint-blue span{background:rgba(112,190,255,.78)}.tint-mint span{background:rgba(126,226,178,.78)}.tint-peach span{background:rgba(255,177,128,.78)}.tint-rose span{background:rgba(255,150,177,.78)}.tint-grey span{background:rgba(170,180,184,.78)}
+.tint-opacity-control{display:grid;gap:8px;margin-top:12px}.tint-opacity-control>span{display:flex;justify-content:space-between;align-items:center;font-size:12px}.tint-opacity-control input{width:100%;accent-color:var(--green)}
+.learning-phone.preview-tint-overlay{position:relative}.learning-phone.preview-tint-overlay:after{content:'';position:absolute;inset:0;z-index:20;pointer-events:none;background:rgba(255,224,92,.3);border-radius:17px;backdrop-filter:saturate(.95)}
+@media(max-width:430px){.tint-overlay-options{margin-left:0}.tint-overlay-colours{grid-template-columns:repeat(3,1fr)}}

@@ -1,3 +1,11 @@
+# V1.5.16
+
+- Added a full-app dyslexia tint overlay in Settings → Learning Support.
+- The translucent glass-like tint covers every page, menu, navigation bar and tool without blocking taps.
+- Added Yellow, Blue, Mint, Peach, Rose and Grey tint choices.
+- Added an adjustable tint-strength slider from 10% to 55%.
+- Tint colour, strength and enabled state persist on the learner's device.
+
 # V1.5.15
 
 ## Contextual Text-to-Speech
