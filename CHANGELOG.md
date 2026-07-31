@@ -1,3 +1,10 @@
+# V1.5.66
+
+- Skills Card now groups tasks into concise trade skills.
+- Added demonstration counts such as Jointing (x3).
+- Highest grade is retained for each skill.
+- Skills are ranked by grade, then number of demonstrations.
+
 # V1.5.65
 
 - Added Skills Card to the Toolbox.

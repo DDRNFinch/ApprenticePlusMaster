@@ -1,6 +1,18 @@
 {
-  "latest": "V1.5.65",
+  "latest": "V1.5.66",
   "releases": [
+    {
+      "version": "V1.5.66",
+      "title": "Skills Card mapping and counts",
+      "summary": "Groups completed practical tasks into concise trade skills, counts each demonstration and shows the highest grade achieved.",
+      "items": [
+        "Concise course-specific skill names",
+        "Counts repeated demonstrations as x1, x2, x3 and so on",
+        "Highest grade retained for each skill",
+        "Distinction, Merit and Pass ranking",
+        "Practical Assessments and graded ProjectMate tasks included"
+      ]
+    },
     {
       "version": "V1.5.65",
       "title": "Skills Card",
@@ -344,9 +356,21 @@
         "Includes graded Practical Assessments and completed ProjectMate tasks.",
         "Added a Pass, Merit or Distinction selector when saving a completed ProjectMate task."
       ]
+    },
+    "V1.5.66": {
+      "version": "V1.5.66",
+      "title": "Skills Card mapping and counts",
+      "summary": "Groups completed practical tasks into concise trade skills, counts each demonstration and shows the highest grade achieved.",
+      "items": [
+        "Concise course-specific skill names",
+        "Counts repeated demonstrations as x1, x2, x3 and so on",
+        "Highest grade retained for each skill",
+        "Distinction, Merit and Pass ranking",
+        "Practical Assessments and graded ProjectMate tasks included"
+      ]
     }
   },
-  "latestVersion": "V1.5.65",
+  "latestVersion": "V1.5.66",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",

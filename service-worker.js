@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.5.65-skills-card';
-const CURRENT_VERSION='V1.5.65';
+const CACHE='apprentice-plus-v1.5.66-skills-card';
+const CURRENT_VERSION='V1.5.66';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,

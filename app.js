@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.65';
+const APP_VERSION='V1.5.66';
 function analyticsEvent(name,params={}){
  try{
   const safe={};
@@ -3780,25 +3780,91 @@ async function sendFeedbackMate(event){
 
 
 function skillsCardGradeRank(grade){return ({Distinction:3,Merit:2,Pass:1}[grade]||0)}
+const SKILLS_CARD_RULES={
+ 'bricklayer-st0095-v1-2':[
+  ['Cavity Walling',/cavity|cavities|wall tie|wall ties|insulation|cavity tray|weep hole|lintel/i],
+  ['Solid Walling',/solid wall|half[- ]brick wall|one[- ]brick wall|garden wall|boundary wall|stretcher bond|english bond|flemish bond/i],
+  ['Jointing',/jointing|joint finish|bucket[- ]handle|half round|weather struck|recessed joint|flush joint|pointing/i],
+  ['Mortar Mixing',/mix mortar|mortar mix|mixing mortar|gauge mortar|mortar production/i],
+  ['Brick Piers',/\bpier\b|piers/i],
+  ['Setting Out',/setting out|set out|profiles|gauge rod|datum|square the wall/i],
+  ['Blockwork',/blockwork|block wall|concrete block|aerated block/i],
+  ['Decorative Brickwork',/decorative|feature panel|contrasting brick|banding|soldier course|brick on edge|brick-on-edge/i],
+  ['Raked Walling',/raked|raking cut|gable|sloping wall/i],
+  ['Curved Brickwork',/curved|radius wall|circular wall/i],
+  ['Openings',/opening|window opening|door opening|sill|closure/i],
+  ['Brick Repairs',/repair|replace damaged brick|toothing|make good/i],
+  ['Brick Cutting',/cut brick|cutting brick|cut blocks|cutting blocks/i]
+ ],
+ 'site-carpentry-v1-4':[
+  ['Structural Walls',/structural wall|timber frame wall|loadbearing wall/i],
+  ['Partition Walls',/partition|stud wall|non[- ]loadbearing wall/i],
+  ['Floor Joists',/floor joist|joists|floor covering/i],
+  ['Roofing',/roof|rafter|truss|hip|valley|flat roof/i],
+  ['Doors',/door|door lining|door frame|hinge|lock|latch/i],
+  ['Windows',/window|casement/i],
+  ['Staircases',/stair|staircase|string|stringer|tread|riser/i],
+  ['Handrails & Spindles',/handrail|spindle|balustrade/i],
+  ['Skirting & Architrave',/skirting|architrave/i],
+  ['Wall & Floor Units',/wall unit|floor unit|kitchen unit|cabinet/i],
+  ['Cladding',/cladding|service encasement|boxing in/i],
+  ['Setting Out',/setting out|set out|marking out|laser level/i],
+  ['Timber Joints',/joint|mortise|tenon|halving|dovetail|bridle|splice|scribe/i],
+  ['Jigs',/\bjig\b|jigs/i]
+ ],
+ 'architectural-joiner-st0264-v1-4':[
+  ['Windows',/window|casement/i],
+  ['Door Frames & Linings',/door frame|door lining/i],
+  ['Timber Doors',/timber door|door leaf|panel door/i],
+  ['Staircases',/stair|staircase|string|stringer|tread|riser/i],
+  ['Spindles & Balustrades',/spindle|balustrade|handrail/i],
+  ['Wall & Floor Units',/wall unit|floor unit|cabinet|cupboard/i],
+  ['Timber Joints',/dovetail|mortise|tenon|bridle|halving joint|timber joint/i],
+  ['Connections',/dowel|biscuit|staple|adhesive|connection/i],
+  ['Setting Out',/setting out|set out|marking out|rod/i],
+  ['Machining',/machine|crosscut|band saw|planer|thicknesser|mortiser/i],
+  ['Jigs',/\bjig\b|jigs/i],
+  ['Finishing',/sand|paint|wax|polish|oil|preservative|finish/i]
+ ],
+ 'property-maintenance-operative-st0171-v1-1':[
+  ['Plumbing Repairs',/plumb|tap|toilet|cistern|pipe|leak|water supply/i],
+  ['Drainage Repairs',/drain|blockage|gully|waste pipe/i],
+  ['Doors & Windows',/door|window|glazing|hinge|lock|latch/i],
+  ['Plaster Repairs',/plaster|patch repair|render/i],
+  ['Painting & Decorating',/paint|decorate|wallpaper|finish coat/i],
+  ['Tiling',/tile|tiling|grout/i],
+  ['Flooring',/flooring|floor covering|vinyl|laminate/i],
+  ['Electrical Isolation',/electrical|isolate|socket|switch|light fitting/i],
+  ['Emergency Systems',/fire alarm|emergency light|extinguisher|emergency system/i],
+  ['Environmental Systems',/heating|ventilation|energy management|environmental system/i],
+  ['Building Fabric Repairs',/brick|masonry|roof|gutter|fabric repair|sealant/i],
+  ['Carpentry Repairs',/carpentry|joinery|timber repair/i]
+ ]
+};
 function skillsCardTaskName(value,fallback='Practical task'){
  const text=String(value||fallback||'Practical task').trim().replace(/\s+/g,' ');
  return text.replace(/^(build|construct|complete|make|install|fit|repair|replace|set out and build|manufacture)\s+/i,'').replace(/[.]+$/,'')||fallback;
 }
+function skillsCardMappedSkills(text,fallback){
+ const source=String(text||'').replace(/\s+/g,' ').trim();
+ const rules=SKILLS_CARD_RULES[COURSE.id]||[];
+ const found=[];
+ for(const [name,pattern] of rules)if(pattern.test(source))found.push(name);
+ if(found.length)return [...new Set(found)];
+ return [skillsCardTaskName(fallback||source,'Practical task')];
+}
 function skillsCardEntries(){
- const entries=[];
+ const demonstrations=[];
  if(!COURSE.nvqUnits){
   for(const a of courseAssignments()){
    const versions=sectionData(a.n,'practical').versions||[];
    versions.forEach((v,index)=>{
     const score=practicalScoringSummary(a,v),grade=score.percentage===null?'':gradeForPercentage(score.percentage);
     if(!skillsCardGradeRank(grade))return;
-    entries.push({
-     id:`assessment:${a.n}:${index}`,
-     title:skillsCardTaskName(v.activity,a.title),
-     grade,
-     percentage:score.percentage,
-     date:v.date||'',
-     source:'Practical assessment'
+    const taskText=[a.title,v.activity,v.taskTitle,v.description].filter(Boolean).join(' ');
+    for(const skill of skillsCardMappedSkills(taskText,v.activity||a.title))demonstrations.push({
+     id:`assessment:${a.n}:${index}:${skill}`,
+     skill,grade,percentage:score.percentage||0
     });
    });
   }
@@ -3806,32 +3872,34 @@ function skillsCardEntries(){
  for(const p of projectList()){
   const grade=String(p.skillGrade||'');
   if(p.status!=='complete'||!p.completionSaved||!skillsCardGradeRank(grade))continue;
-  entries.push({
-   id:`project:${p.id}`,
-   title:skillsCardTaskName(p.title,'ProjectMate task'),
-   grade,
-   percentage:grade==='Distinction'?90:grade==='Merit'?80:70,
-   date:p.completedAt?new Date(p.completedAt).toLocaleDateString('en-GB'):'',
-   source:'ProjectMate'
+  const taskText=[p.title,p.brief,p.dimensions,p.completionNote].filter(Boolean).join(' ');
+  for(const skill of skillsCardMappedSkills(taskText,p.title||'ProjectMate task'))demonstrations.push({
+   id:`project:${p.id}:${skill}`,
+   skill,grade,percentage:grade==='Distinction'?90:grade==='Merit'?80:70
   });
  }
- const best=new Map();
- for(const item of entries){
-  const key=item.title.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-  const current=best.get(key);
-  if(!current||skillsCardGradeRank(item.grade)>skillsCardGradeRank(current.grade)||
-    (skillsCardGradeRank(item.grade)===skillsCardGradeRank(current.grade)&&(item.percentage||0)>(current.percentage||0)))best.set(key,item);
+ const summary=new Map();
+ for(const item of demonstrations){
+  const key=item.skill.toLowerCase();
+  const current=summary.get(key)||{title:item.skill,count:0,grade:'',percentage:0};
+  current.count+=1;
+  if(skillsCardGradeRank(item.grade)>skillsCardGradeRank(current.grade)||
+    (skillsCardGradeRank(item.grade)===skillsCardGradeRank(current.grade)&&item.percentage>current.percentage)){
+   current.grade=item.grade;current.percentage=item.percentage;
+  }
+  summary.set(key,current);
  }
- return [...best.values()].sort((a,b)=>
+ return [...summary.values()].sort((a,b)=>
   skillsCardGradeRank(b.grade)-skillsCardGradeRank(a.grade)||
+  b.count-a.count||
   (b.percentage||0)-(a.percentage||0)||
   a.title.localeCompare(b.title)
  );
 }
 function renderSkillsCard(){
  const items=skillsCardEntries(),name=state.profile?.fullName||'Learner';
- const rows=items.map(item=>`<div class="skills-card-row skills-card-${item.grade.toLowerCase()}"><div><strong>${esc(item.title)}</strong><small>${esc(item.source)}${item.date?` · ${esc(item.date)}`:''}</small></div><span>${item.grade}</span></div>`).join('');
- app.innerHTML=shell(`<button class="back no-print" id="backSkillsCard">← Toolbox</button><div class="section-heading"><div><div class="number">Workplace app</div><h2>Skills Card</h2><p class="muted">A quick reference to practical tasks completed and the highest grade achieved.</p></div></div><section class="skills-card-phone"><div class="skills-card-head"><div><small>APPRENTICE+</small><h3>${esc(name)}</h3><p>${esc(COURSE.name)} apprentice</p></div><span>${items.length} skill${items.length===1?'':'s'}</span></div><div class="skills-card-list">${rows||`<div class="skills-card-empty"><strong>No graded practical tasks yet</strong><p>Pass, Merit and Distinction results from Practical Assessments and completed ProjectMate tasks will appear here.</p></div>`}</div></section><section class="accuracy-card skills-card-note"><strong>What employers see</strong><p>The task name and the learner’s highest recorded grade only. Assignments, evidence and personal files are not shown.</p></section>`);
+ const rows=items.map(item=>`<div class="skills-card-row skills-card-${item.grade.toLowerCase()}"><strong>${esc(item.title)} <small>(x${item.count})</small></strong><span>${item.grade}</span></div>`).join('');
+ app.innerHTML=shell(`<button class="back no-print" id="backSkillsCard">← Toolbox</button><div class="section-heading"><div><div class="number">Workplace app</div><h2>Skills Card</h2><p class="muted">A quick reference to practical skills demonstrated, how often they were completed and the highest grade achieved.</p></div></div><section class="skills-card-phone"><div class="skills-card-head"><div><small>APPRENTICE+</small><h3>${esc(name)}</h3><p>${esc(COURSE.name)} apprentice</p></div><span>${items.length} skill${items.length===1?'':'s'}</span></div><div class="skills-card-list">${rows||`<div class="skills-card-empty"><strong>No graded practical skills yet</strong><p>Completed Practical Assessments and graded ProjectMate tasks will build this card automatically.</p></div>`}</div></section><section class="accuracy-card skills-card-note"><strong>What employers see</strong><p>Each concise skill, the number of times demonstrated and the learner’s highest recorded grade. No assignments, evidence or personal files are shown.</p></section>`);
  document.getElementById('backSkillsCard').onclick=()=>{state.view='resources';render()};
  window.ApprenticeAnalytics?.trackEvent('skills_card_opened',{course_id:COURSE.id,skill_count:items.length});
 }
