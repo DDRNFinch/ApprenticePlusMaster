@@ -2314,3 +2314,80 @@ a:not(.danger-link),
 .phone-app-icon .app-icon [fill]:not([fill="none"]){
   fill:#fff !important;
 }
+
+
+/* V1.5.32 — white silhouettes on every solid green action surface */
+.btn:not(.secondary):not(.danger) svg,
+.btn:not(.secondary):not(.danger) .app-icon,
+.tab.active svg,
+.tab.active .app-icon,
+.tool-tabs button.active svg,
+.tool-tabs button.active .app-icon,
+.bottom-nav button.active svg,
+.bottom-nav button.active .app-icon,
+.quick-tour-next svg,
+.tour-next svg,
+.help-next svg,
+.modal .btn.primary svg,
+.score-button.active svg,
+.score-button.active .app-icon,
+.notification-bell svg,
+.tts-tile-button svg,
+.read-aloud-controller button svg,
+.mic-button.has-recording svg,
+.reminder-check.checked svg,
+.update-ready-icon svg,
+.phone-app-icon svg,
+.phone-app-icon .app-icon{
+  color:#fff!important;
+  stroke:#fff!important;
+  fill:none!important;
+  opacity:1!important;
+}
+.btn:not(.secondary):not(.danger) svg *,
+.tab.active svg *,
+.tool-tabs button.active svg *,
+.bottom-nav button.active svg *,
+.quick-tour-next svg *,
+.tour-next svg *,
+.help-next svg *,
+.modal .btn.primary svg *,
+.score-button.active svg *,
+.notification-bell svg *,
+.tts-tile-button svg *,
+.read-aloud-controller button svg *,
+.mic-button.has-recording svg *,
+.reminder-check.checked svg *,
+.update-ready-icon svg *,
+.phone-app-icon svg *{
+  stroke:#fff!important;
+  vector-effect:non-scaling-stroke;
+}
+.btn:not(.secondary):not(.danger) svg [fill]:not([fill="none"]),
+.tab.active svg [fill]:not([fill="none"]),
+.tool-tabs button.active svg [fill]:not([fill="none"]),
+.bottom-nav button.active svg [fill]:not([fill="none"]),
+.quick-tour-next svg [fill]:not([fill="none"]),
+.tour-next svg [fill]:not([fill="none"]),
+.help-next svg [fill]:not([fill="none"]),
+.modal .btn.primary svg [fill]:not([fill="none"]),
+.score-button.active svg [fill]:not([fill="none"]),
+.notification-bell svg [fill]:not([fill="none"]),
+.tts-tile-button svg [fill]:not([fill="none"]),
+.read-aloud-controller button svg [fill]:not([fill="none"]),
+.mic-button.has-recording svg [fill]:not([fill="none"]),
+.reminder-check.checked svg [fill]:not([fill="none"]),
+.update-ready-icon svg [fill]:not([fill="none"]),
+.phone-app-icon svg [fill]:not([fill="none"]){fill:#fff!important}
+
+/* Text/emoji glyphs used instead of SVGs on green controls also stay white. */
+.notification-bell,
+.tts-tile-button,
+.read-aloud-controller button,
+.mic-button.has-recording,
+.reminder-check.checked,
+.update-ready-icon,
+.save-confirm-icon,
+.phone-app-icon{
+  color:#fff!important;
+}
