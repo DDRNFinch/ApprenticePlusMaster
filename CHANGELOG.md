@@ -1,6 +1,5 @@
-# Apprentice+ V1.5.32
+# Apprentice+ V1.5.33
 
-- Made all silhouettes on solid green backgrounds white.
-- Covered SVG stroke and filled icon variants.
-- Applied the rule across primary actions, active tabs, navigation, notifications, text-to-speech, recording, reminders and Toolbox apps.
-- Updated application version and service-worker cache.
+- Counts every NVQ Learning Outcome separately by unit, including the selected optional unit.
+- Opens learner progress from the course progress ring instead of the learner name.
+- Keeps the time-elapsed tracker green at every stage.
