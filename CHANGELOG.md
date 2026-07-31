@@ -1,3 +1,10 @@
+# Apprentice+ V1.5.20
+
+- Fixed the Dyslexia tint overlay toggle so the full-app tint applies instantly without refreshing.
+- The colour picker and tint-strength controls now appear immediately when enabled.
+- The tint controls disappear immediately when disabled.
+- Updated cache/version references for V1.5.20.
+
 # V1.5.19
 
 - Replaced hard-coded service-worker update descriptions with a central `release-notes.json` file.

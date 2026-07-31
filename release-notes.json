@@ -1,6 +1,15 @@
 {
-  "latest": "V1.5.19",
+  "latest": "V1.5.20",
   "releases": {
+    "V1.5.20": {
+      "title": "Instant dyslexia tint controls",
+      "features": [
+        "Shows the tint colour and strength controls immediately when Dyslexia tint overlay is turned on.",
+        "Hides the tint controls immediately when the overlay is turned off.",
+        "Applies and removes the full-app glass tint instantly without refreshing the page.",
+        "Keeps the selected colour and strength saved on the learner’s device."
+      ]
+    },
     "V1.5.19": {
       "title": "Reliable update descriptions",
       "features": [
