@@ -1,6 +1,6 @@
-const CACHE='apprentice-plus-v1.5.17-full-app-tint-overlay';
+const CACHE='apprentice-plus-v1.5.18-full-app-tint-overlay';
 const UPDATE_INFO={
- version:'V1.5.17',
+ version:'V1.5.18',
  features:[
   'Places the reading-guide blur control below the reading box on the left.',
   'Places the reading-guide move control below the reading box on the right.',

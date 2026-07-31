@@ -25,3 +25,10 @@
 - The active tile and speaker are visually indicated while speech is playing.
 - Tapping the active speaker stops it; selecting another tile switches speech immediately.
 - Editable learner text and input controls are excluded.
+
+## V1.5.18 – Toolbox and Settings Help Tours
+- Updated the page information tour for every Toolbox tile.
+- Added dedicated guided steps for MeasureMate, MaterialMate, NoteMate, DrawingMate and ProjectMate.
+- Added separate tours for Settings: General, Notifications and Learning Support.
+- Added current guidance for the reading guide, contextual text-to-speech and full-app dyslexia tint controls.
+- Tour phone previews now highlight the exact control described in each step.

@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.17';
+const APP_VERSION='V1.5.18';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -4714,14 +4714,79 @@ function currentHelp(){
    {selector:'#openFunctionalSkills',title:'Functional Skills',html:'<p>Tap <strong>Functional Skills</strong> for English and maths revision and tests.</p><ol><li>Choose English or maths.</li><li>Select Level 1 or Level 2.</li><li>Answer every question and submit the test.</li><li>Review incorrect answers and repeat where needed.</li></ol>'},
    {selector:'#openCertificates',title:'Certificates',html:'<p>Tap <strong>Certificates</strong> to view achievements earned in the Academy.</p><ol><li>Open a saved certificate to check its details.</li><li>Download or print it where those controls are shown.</li><li>Certificates appear after the required course or assessment result has been achieved.</li></ol>'}
   ]},
-  resources:{title:'Toolbox',html:`<p>Select a mini app to support work in college or the workplace.</p><ol><li><strong>NoteMate:</strong> create searchable notes with text, photographs, videos and voice recordings.</li><li><strong>MeasureMate:</strong> choose a construction calculator, enter the measurements and read the calculated result.</li><li><strong>MaterialMate:</strong> choose a material, enter dimensions and wastage, then use the estimated quantity.</li><li><strong>ProjectMate:</strong> open or create a project, follow the customer brief, enter materials and labour, check wastage and save the completed plan.</li><li>Other support tools shown on this page open in the same way—tap the tile, enter the required information and save where a save button is provided.</li></ol>`},
-  notepad:{title:'NoteMate',html:`<p>Use NoteMate to keep workplace or college notes.</p><ol><li>Press the add button to create a note.</li><li>Enter a title and written note.</li><li>Add photographs, videos, a voice recording or gallery files using the media buttons.</li><li>Press <strong>Save Note</strong>.</li><li>Use the search icon to find saved notes. Tap a note to open, edit or delete it.</li></ol>`},
-  measuremate:{title:'MeasureMate',html:`<p>Choose the calculation you need, enter the requested measurements and units, then read the result shown. Change any value to recalculate. Check that all measurements use the same unit before using the answer on a job.</p>`},
-  materialmate:{title:'MaterialMate',html:`<p>Select the material calculator, enter the job dimensions and choose or enter the wastage allowance. The result estimates the quantity required. Review the dimensions and wastage before using the figure for ordering.</p>`},
-  projectmate:{title:'ProjectMate',html:`<p>Use this page to plan a job from a customer brief.</p><ol><li>Open a saved project or create a new one.</li><li>Read the brief and enter the required materials and labour.</li><li>Use the arrows and checks to review quantities and the 10% wastage allowance.</li><li>Add the project photograph where requested.</li><li>Save the project. Completed projects turn green and remain available in the project list.</li></ol>`},
+  resources:{title:'Toolbox',html:'',steps:[
+   {selector:'#openMeasureMate',title:'MeasureMate',html:'<p>Open construction calculators for conversions, area, volume, Pythagoras, stairs, roof pitch and falls. Choose the correct tab, enter measurements using consistent units and check the result before using it on a job.</p>'},
+   {selector:'#openMaterialMate',title:'MaterialMate',html:'<p>Estimate bricks, blocks, mortar, timber, paint, plaster and tiles. Enter the job dimensions, choose a wastage allowance and review the estimated quantity before ordering.</p>'},
+   {selector:'#openNotepad',title:'NoteMate',html:'<p>Create searchable workplace or college notes. Add writing, photographs, videos, voice recordings or gallery files, then save the note for later use.</p>'},
+   {selector:'#openDrawingMate',title:'DrawingMate',html:'<p>Use drawing symbols, hatching, scale and setting-out tools. Select the correct section and check every dimension before applying the result to practical work.</p>'},
+   {selector:'#openProjectMate',title:'ProjectMate',html:'<p>Create or open customer-style projects. Follow the brief, plan materials and labour, check wastage, add a project photograph and save the completed plan.</p>'},
+   {selector:'#openSettings',title:'Settings',html:'<p>Open General, Notifications and Learning Support settings. Changes are stored on this device and apply across Apprentice+.</p>'}
+  ]},
+  notepad:{title:'NoteMate',html:'',steps:[
+   {selector:'#addNote,.notepad-add',title:'Create a note',html:'<p>Tap the add control to start a new workplace or college note.</p>'},
+   {selector:'.note-editor,.notepad-form',title:'Add the note details',html:'<p>Enter a clear title and the written information you want to keep.</p>'},
+   {selector:'.note-media-actions,.media-buttons',title:'Attach evidence and media',html:'<p>Add photographs, video, a voice recording or gallery files. The icons shown on the saved note identify which media it contains.</p>'},
+   {selector:'#saveNote,.save-note',title:'Save the note',html:'<p>Save the note so it remains available on this device.</p>'},
+   {selector:'.note-search,.search-button',title:'Find saved notes',html:'<p>Use search to find a note by its title or content. Open a saved note to review, edit or delete it.</p>'}
+  ]},
+  measuremate:{title:'MeasureMate',html:'',steps:[
+   {selector:'.tool-tabs',title:'Choose a calculator',html:'<p>Select Convert, Area &amp; volume, Pythagoras, Stairs or Roof &amp; falls.</p>'},
+   {selector:'.calc-panel',focusIndex:0,title:'Enter the measurements',html:'<p>Enter the requested values and make sure the units match the job information.</p>'},
+   {selector:'.calc-action',focusIndex:0,title:'Calculate',html:'<p>Tap the calculation button after entering the required values.</p>'},
+   {selector:'.calc-result,#calcOut',title:'Check the result',html:'<p>Review the result and the supporting calculation. Treat it as a setting-out aid and confirm it against drawings or specifications.</p>'}
+  ]},
+  materialmate:{title:'MaterialMate',html:'',steps:[
+   {selector:'.tool-tabs,.material-tabs',title:'Choose the material',html:'<p>Select the material calculator that matches the work being planned.</p>'},
+   {selector:'.calc-panel,.material-card',focusIndex:0,title:'Enter job dimensions',html:'<p>Enter the measured length, width, height, area or other values requested by the calculator.</p>'},
+   {selector:'.wastage-control,.wastage,input[type="range"]',title:'Set wastage',html:'<p>Choose a suitable wastage allowance for cuts, damage and site conditions.</p>'},
+   {selector:'.calc-result,#calcOut',title:'Review the estimate',html:'<p>Check the estimated quantity before using it for ordering. Actual requirements can vary with product size, bond, coverage and site conditions.</p>'}
+  ]},
+  projectmate:{title:'ProjectMate',html:'',steps:[
+   {selector:'.project-card,.project-list,#newProject',title:'Open or create a project',html:'<p>Select a saved project or create a new customer-style job.</p>'},
+   {selector:'.project-brief,.customer-brief',title:'Read the customer brief',html:'<p>Review the task, dimensions, finish, acceptance requirements and any restrictions before planning the work.</p>'},
+   {selector:'.materials-section,.labour-section',title:'Plan materials and labour',html:'<p>Enter the materials, quantities, rates and labour needed to complete the project.</p>'},
+   {selector:'.wastage-check',title:'Check wastage',html:'<p>Use the arrows and check indicator to confirm that the required wastage allowance has been included.</p>'},
+   {selector:'.project-photo,.camera-button',title:'Add the project photograph',html:'<p>Add a clear project photograph where requested.</p>'},
+   {selector:'.save-project,.btn',title:'Save the project',html:'<p>Save the plan. Completed projects turn green and remain available in the project list.</p>'}
+  ]},
   walkthrough:{title:'Video Walkthrough',html:`<p>Record video evidence against the relevant KSB criteria.</p><ol><li>Tap <strong>Add Video</strong> beside a criterion.</li><li>Record in landscape and explain what you did, how you did it, safety controls and quality checks.</li><li>Review and save the video.</li><li>Repeat only for the criteria this walkthrough covers.</li><li>Press <strong>Save Walkthrough</strong>. Use View, Replace or Remove to manage saved clips.</li></ol>`},
   section:{title:'Evidence',html:`<p>Complete the fields and evidence shown on this page, select the criteria covered and add any required photographs or recording.</p><ol><li>Work through every visible field.</li><li>Save or submit using the button at the bottom.</li><li><strong>Submit and lock</strong> freezes that attempt as evidence.</li><li>After submission, use <strong>Start new attempt</strong> where available to create another separate piece of evidence.</li><li>Return to the assignment to check criterion coverage.</li></ol><p><strong>${helpCourseRule()}</strong></p>`}
  };
+ if(v==='settings'){
+  const active=state.settingsTab||'general';
+  const settingsHelp={
+   general:{title:'Settings · General',html:'',steps:[
+    {selector:'.settings-tabs',title:'Settings sections',html:'<p>Use these tabs to move between General, Notifications and Learning Support settings.</p>'},
+    {selector:'[data-appearance]',focusIndex:0,title:'App appearance',html:'<p>Choose the appearance used by Apprentice+. The change applies immediately and is saved on this device.</p>'},
+    {selector:'[data-accent]',focusIndex:0,title:'App colour',html:'<p>Select the accent colour used for buttons, highlights and progress indicators throughout the app.</p>'},
+    {selector:'#backResources',title:'Return to Toolbox',html:'<p>Use the back button to return to the Toolbox. Your settings remain saved.</p>'}
+   ]},
+   notifications:{title:'Settings · Notifications',html:'',steps:[
+    {selector:'.settings-tabs',title:'Settings sections',html:'<p>Use the tabs to change another group of app settings.</p>'},
+    {selector:'#settingNotificationsEnabled',title:'Allow notifications',html:'<p>This is the main notification switch. Turning it off disables all Apprentice+ notification categories on this device.</p>'},
+    {selector:'#settingUpdates',title:'App updates',html:'<p>Choose whether the Notification Centre shows new Apprentice+ version and update information.</p>'},
+    {selector:'#settingEpa',title:'EPA reminders',html:'<p>Choose whether EPA preparation and readiness reminders are shown.</p>'},
+    {selector:'#settingAssignments',title:'Assignment reminders',html:'<p>Choose whether reminders about incomplete assignments and evidence are shown.</p>'},
+    {selector:'#settingCertificates',title:'Certificate reminders',html:'<p>Choose whether notifications are shown when a certificate or achievement is available.</p>'}
+   ]},
+   'learning-support':{title:'Settings · Learning Support',html:'',steps:[
+    {selector:'.settings-tabs',title:'Learning Support settings',html:'<p>These options change how Apprentice+ looks or behaves. Every choice is saved on this device and can be switched off again at any time.</p>'},
+    {selector:'#supportDyslexicFont',title:'Dyslexia-friendly text',html:'<p>Uses a clearer typeface and more distinct letter shapes throughout the app.</p>'},
+    {selector:'#supportLargeText',title:'Larger text',html:'<p>Increases text size across Apprentice+ to make content easier to read.</p>'},
+    {selector:'#supportHighContrast',title:'High contrast',html:'<p>Strengthens the difference between text, backgrounds and controls.</p>'},
+    {selector:'#supportReduceMotion',title:'Reduce motion',html:'<p>Removes most animations and moving transitions.</p>'},
+    {selector:'#supportReadingGuide',title:'Reading guide',html:'<p>Adds a movable horizontal reading window. Use the eye control for background blur and the move handle to position the guide.</p>'},
+    {selector:'#supportTintOverlay',title:'Dyslexia tint overlay',html:'<p>Places a glass-like colour tint over every page of Apprentice+. Turn it on, choose a colour and adjust the tint strength below.</p>'},
+    {selector:'#openTintColourPicker',title:'Overlay colour',html:'<p>Open the colour choices and select Yellow, Blue, Mint, Peach, Rose or Grey. The selected tint applies immediately.</p>'},
+    {selector:'#tintOpacityRange',title:'Tint strength',html:'<p>Move the slider to make the full-app glass tint lighter or stronger.</p>'},
+    {selector:'#supportReadAloud',title:'Text-to-speech',html:'<p>Shows a speaker button on built-in information tiles. Tap a speaker to read only that tile aloud.</p>'},
+    {selector:'#supportVoiceInput',title:'Voice-to-text',html:'<p>Shows microphone controls beside supported text fields so speech can be converted into writing.</p>'},
+    {selector:'#supportSimplifiedLayout',title:'Simplified layout',html:'<p>Reduces visual clutter and gives more emphasis to the main task and controls.</p>'},
+    {selector:'#resetLearningSupport',title:'Reset Learning Support',html:'<p>Use this button to return all Learning Support options to their default settings.</p>'}
+   ]}
+  };
+  return settingsHelp[active]||settingsHelp.general;
+ }
  if(v==='section'&&s){
   const names={photos:'Photographic Evidence',statement:'Learner Statement',discussion:'Video Walkthrough',witness:'Witness Testimony',practical:COURSE.nvqUnits?'Assessor Observation':'Practical Assessment',professionalDiscussion:'Professional Discussion',supporting:'Supporting Evidence'};
   const sectionSteps={
@@ -4800,9 +4865,9 @@ function currentHelp(){
   return {title:names[s]||'Evidence',html:'',steps:sectionSteps[s]||common.section.steps};
  }
  const extraViews={
-  tools:{title:'Tools',html:'<p>Tap a tool tile to open it. Enter the requested measurements or job information, review the result and use the back button to return to the Toolbox.</p>'},
-  drawingmate:{title:'DrawingMate',html:'<p>Select the drawing or setting-out tool, enter the required dimensions and use the displayed guide or result. Check all dimensions before applying them to practical work.</p>'},
-  'learning-support':{title:'Learning Support',html:'<p>Select the support option you need and follow the controls shown. Accessibility changes apply to the app immediately and can be changed again at any time.</p>'},
+  tools:{title:'Tools',html:'',steps:[{selector:'.tool-tile,.tools-grid button',focusIndex:0,title:'Choose a tool',html:'<p>Tap the tool needed for the current task.</p>'},{selector:'.calculator-inputs,input',title:'Enter job information',html:'<p>Enter the measurements or details requested by the selected tool.</p>'},{selector:'.calculator-result,.result,.calc-result',title:'Check the result',html:'<p>Review the result and confirm it against the job drawings, specification or manufacturer information.</p>'}]},
+  drawingmate:{title:'DrawingMate',html:'',steps:[{selector:'.tool-tabs,.drawing-tabs',title:'Choose a drawing section',html:'<p>Select symbols, hatching, scale or the setting-out tool required.</p>'},{selector:'.drawing-tool,.calculator-card',focusIndex:0,title:'Use the selected tool',html:'<p>Enter the requested dimensions or choose the required construction symbol or hatch pattern.</p>'},{selector:'.drawing-result,.calc-result,.result',title:'Check before use',html:'<p>Review the displayed guide or result and confirm all dimensions before applying it to practical work.</p>'}]},
+  'learning-support':{title:'Learning Support',html:'',steps:[{selector:'.support-tile,.accessibility-option',focusIndex:0,title:'Choose support',html:'<p>Select the reading, writing, planning, focus, hearing or memory support needed.</p>'},{selector:'.support-tabs',title:'Move between support sections',html:'<p>Use the tabs to return Home or open Reading, Writing, Planner and Settings.</p>'},{selector:'[data-a11y-setting]',focusIndex:0,title:'Adjust accessibility',html:'<p>Switch options on or adjust their controls. Changes apply immediately and are stored on this device.</p>'}]},
   'trade-courses':{title:'Trade Courses',html:'<p>Select a course tile, read the learning content and start the test. Complete every question and submit to save the result and create a certificate where the pass requirement is met.</p>'},
   library:{title:'Trade Courses',html:'<p>Select a course tile, work through its content and complete the test. Saved results remain available in Academy.</p>'},
   'trade-test':{title:'Trade Course Test',html:'<p>Read each question, select one answer and move through the full test. Submit at the end to save the score. Review incorrect answers from the result page.</p>'},
