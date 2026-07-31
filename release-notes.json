@@ -1,6 +1,16 @@
 {
-  "latest": "V1.5.37",
+  "latest": "V1.5.40",
   "releases": [
+    {
+      "version": "V1.5.40",
+      "date": "2026-07-31",
+      "title": "OTJ styling and protected signatures",
+      "changes": [
+        "Restyled the College, Workplace and Other OTJ selectors to match the current Apprentice+ visual design.",
+        "All blank signature boxes now require a deliberate press to unlock before drawing, preventing accidental marks while scrolling.",
+        "Applied the same press-to-sign protection to learner onboarding and profile signatures."
+      ]
+    },
     {
       "version": "V1.5.39",
       "date": "2026-07-31",

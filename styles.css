@@ -2606,3 +2606,16 @@ a:not(.danger-link),
   .help-tour-dots{display:flex!important;margin-top:6px!important}
   .help-tour-actions{margin-top:6px!important}
 }
+
+
+/* V1.5.40: modern OTJ place selector and tap-to-unlock signatures */
+.otj-place-options{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:6px;border:1px solid rgba(15,118,110,.14);border-radius:18px;background:linear-gradient(180deg,#f7fbf5,#eef8e8);box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+.otj-place-options button{min-height:46px;border:0;border-radius:13px;background:transparent;color:var(--muted);font:inherit;font-size:.88rem;font-weight:850;cursor:pointer;transition:transform .16s ease,background .16s ease,color .16s ease,box-shadow .16s ease}
+.otj-place-options button:active{transform:scale(.98)}
+.otj-place-options button.active{background:linear-gradient(135deg,#75df22,#078338);color:#fff;box-shadow:0 7px 16px rgba(7,131,56,.22)}
+.signature-entry{position:relative;border-radius:17px;overflow:hidden;background:#fff}
+.signature-entry.locked .signature-pad{touch-action:pan-y;pointer-events:none;background:linear-gradient(180deg,#fff,#f8fbf8)}
+.signature-entry:not(.locked) .signature-pad{touch-action:none;pointer-events:auto;box-shadow:0 0 0 3px rgba(88,181,31,.13)}
+.signature-unlock{position:absolute;inset:0;width:100%;border:1px dashed #9faca2;border-radius:17px;background:rgba(255,255,255,.9);color:#0b2b23;font:inherit;font-weight:900;cursor:pointer;display:grid;place-items:center;padding:18px;text-align:center;backdrop-filter:blur(2px)}
+.signature-unlock::before{content:'✍';display:block;font-size:28px;margin-bottom:7px;color:var(--green)}
+@media(max-width:420px){.otj-place-options{gap:5px;padding:5px}.otj-place-options button{min-height:43px;font-size:.82rem}}

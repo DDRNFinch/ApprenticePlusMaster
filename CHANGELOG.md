@@ -1,3 +1,9 @@
+# V1.5.40
+
+- Modernised OTJ place selector tabs.
+- Added press-to-unlock protection to every blank signature box.
+- Prevented accidental signature marks while scrolling.
+
 # V1.5.39
 
 - Removed EPA readiness from the Review Status red/amber/green calculation.
