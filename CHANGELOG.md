@@ -1,3 +1,11 @@
+# V1.5.17
+
+- Added a clearly labelled Overlay colour row in Settings > Learning Support.
+- Tapping the row opens six large colour swatches: Yellow, Blue, Mint, Peach, Rose and Grey.
+- Colour changes apply instantly across the entire app and are saved on the device.
+- Tint strength remains adjustable with a live slider.
+- The selected colour is shown in the settings row.
+
 # V1.5.16
 
 - Added a full-app dyslexia tint overlay in Settings → Learning Support.
