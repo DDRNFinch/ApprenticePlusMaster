@@ -1849,3 +1849,28 @@ body.page-help-open,body.help-tour-open{overflow:hidden;touch-action:none}
 .update-ready-features ul{margin:0;padding-left:19px;color:#53635f;font-size:12px;line-height:1.5}
 .update-ready-action{width:100%;font-size:16px;min-height:49px}
 .update-ready-small{font-size:10px;color:#7a8884;margin:9px 0 0}
+
+
+/* V1.5 notifications centre - isolated first-stage update */
+.notification-centre-trigger{border:0;padding:0;background:transparent;cursor:pointer;display:block;position:relative;overflow:visible!important}
+.notification-centre-trigger img{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.notification-centre-modal{z-index:1210;padding:0;background:rgba(4,25,24,.62);backdrop-filter:blur(4px);align-items:flex-start}
+.notification-centre-card{width:min(100%,480px);max-height:min(82vh,720px);margin:72px auto 0;background:#f7faf8;border-radius:24px 24px 0 0;box-shadow:0 -8px 45px rgba(0,0,0,.24);overflow:hidden;animation:notificationCentreIn .24s ease-out}
+@keyframes notificationCentreIn{from{transform:translateY(32px);opacity:.5}to{transform:translateY(0);opacity:1}}
+.notification-centre-head{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 16px;background:#fff;border-bottom:1px solid #e2ebe5}
+.notification-centre-head small{display:block;color:#58a91d;font-size:10px;font-weight:900;letter-spacing:.12em;margin-bottom:3px}
+.notification-centre-head h2{margin:0;font-size:24px;color:#102f29}
+.notification-centre-close{width:38px;height:38px;border:0;border-radius:999px;background:#edf3ef;color:#173b31;font-size:26px;line-height:1;cursor:pointer}
+.notification-centre-list{padding:12px;overflow:auto;max-height:calc(82vh - 150px)}
+.notification-centre-item{display:grid;grid-template-columns:44px minmax(0,1fr) 10px;gap:11px;align-items:start;padding:14px;border-radius:17px;margin-bottom:9px;border:1px solid #e0e9e3;background:#fff}
+.notification-centre-item.is-unread{background:#f2fbe8;border-color:#cfe8ad}
+.notification-centre-item.is-read{opacity:.72}
+.notification-centre-icon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#0e3e32,#1c7657);color:#b6ef50;font-size:23px;font-weight:900}
+.notification-centre-copy{border:0;background:transparent;padding:0;text-align:left;color:inherit;cursor:pointer;min-width:0}
+.notification-centre-copy>span{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.notification-centre-copy strong{font-size:14px;color:#16372f;line-height:1.25}
+.notification-centre-copy small{font-size:10px;color:#7a8884;font-weight:800;white-space:nowrap}
+.notification-centre-copy p{margin:5px 0 0;color:#5d6e68;font-size:12px;line-height:1.42}
+.notification-unread-dot{width:9px;height:9px;border-radius:999px;background:#e32636;margin-top:5px}
+.notification-centre-footer{padding:11px 16px 16px;text-align:right;background:#fff;border-top:1px solid #e2ebe5}
+@media(max-width:520px){.notification-centre-card{margin-top:58px;max-height:calc(100vh - 58px);border-radius:24px 24px 0 0}.notification-centre-list{max-height:calc(100vh - 205px)}}
