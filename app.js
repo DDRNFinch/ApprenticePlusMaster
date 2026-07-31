@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.2';
+const APP_VERSION='V1.3';
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
 window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
@@ -707,7 +707,16 @@ function workSearchSuggestions(query){const q=normaliseWorkSearch(query);if(!q)r
 function renderWorkSearchSuggestions(){const input=document.getElementById('workSearchInput'),wrap=document.getElementById('workSearchSuggestions');if(!input||!wrap)return;const hasQuery=normaliseWorkSearch(input.value).length>0,suggestions=workSearchSuggestions(input.value);wrap.innerHTML=suggestions.length?`<span class="work-search-suggestion-label">${hasQuery?'Close suggestions':'Popular course activities'}</span><div class="work-search-pill-row">${suggestions.map(term=>`<button type="button" class="work-search-pill" data-work-suggestion="${esc(term)}">${esc(term)}</button>`).join('')}</div>${!hasQuery?'<span class="work-search-prehint">These options are generated from the current course assignments.</span>':''}`:'';wrap.querySelectorAll('[data-work-suggestion]').forEach(pill=>pill.onclick=()=>{input.value=pill.dataset.workSuggestion||pill.textContent;showWorkSearchResults(input.value.trim());document.getElementById('workSearchLauncherModal')?.remove()})}
 function bindWorkSearch(){const input=document.getElementById('workSearchInput'),button=document.getElementById('workSearchButton');if(!input||!button)return;const run=()=>{const q=input.value.trim();if(q.length<2)return toast('Type what you are doing today');showWorkSearchResults(q);document.getElementById('workSearchLauncherModal')?.remove()};button.onclick=run;input.oninput=renderWorkSearchSuggestions;input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();run()}};renderWorkSearchSuggestions()}
 
-function render(){recordNavigation();if(state.view==='resources')renderResources();else if(state.view==='notepad')renderNotepad();else if(state.view==='tools')renderTools();else if(state.view==='measuremate')renderMeasureMate();else if(state.view==='materialmate')renderMaterialMate();else if(state.view==='drawingmate')renderDrawingMate();else if(state.view==='projectmate')renderProjectMate();else if(state.view==='learning-support')renderLearningSupport();else if(state.view==='home')renderHome();else if(state.view==='assignment')renderAssignment();else if(state.view==='academy')renderAcademy();else if(state.view==='library'||state.view==='trade-courses')renderTradeCourses();else if(state.view==='trade-test')renderTradeCourseTest();else if(state.view==='trade-result')renderTradeCourseResult();else if(state.view==='functional-skills')renderFunctionalSkills();else if(state.view==='knowledge-slides')renderKnowledgeSlides();else if(state.view==='academy-knowledge')renderAcademyKnowledge();else if(state.view==='functional-test')renderFunctionalSkillsTest();else if(state.view==='functional-result')renderFunctionalSkillsResult();else if(state.view==='certificates')renderCertificates();else if(state.view==='lesson')renderAcademyLesson();else if(state.view==='epa')renderEpaMockHome();else if(state.view==='epa-results')renderEpaResults();else if(state.view==='epa-test')renderEpaMockTest();else if(state.view==='epa-result')renderEpaMockResult();else if(state.view==='epa-discussion')renderEpaDiscussion();else if(state.view==='epa-discussion-result')renderEpaDiscussionResult();else if(state.view==='epa-practical')renderEpaPractical();else if(state.view==='knowledge-test')renderAssignmentKnowledgeTest();else if(state.view==='knowledge-result')renderAssignmentKnowledgeResult();else if(state.view==='walkthrough')renderWalkthrough();else renderSection();enhanceVoiceToText(app);applyAccessibilityToCurrentView();attachPageHelp()}
+let lastRenderedPageSignature='';
+function currentPageSignature(){return JSON.stringify([ACTIVE_COURSE_ID,state.view,state.assignment,state.section,state.academyTopic,state.walkthroughCode,state.projectMateTab,state.learningSupportTab])}
+function scrollNewPageToTop(signature){
+ if(restoringNavigation)return;
+ if(lastRenderedPageSignature&&signature!==lastRenderedPageSignature){
+  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'instant'})));
+ }
+ lastRenderedPageSignature=signature;
+}
+function render(){const pageSignature=currentPageSignature();recordNavigation();if(state.view==='resources')renderResources();else if(state.view==='notepad')renderNotepad();else if(state.view==='tools')renderTools();else if(state.view==='measuremate')renderMeasureMate();else if(state.view==='materialmate')renderMaterialMate();else if(state.view==='drawingmate')renderDrawingMate();else if(state.view==='projectmate')renderProjectMate();else if(state.view==='learning-support')renderLearningSupport();else if(state.view==='home')renderHome();else if(state.view==='assignment')renderAssignment();else if(state.view==='academy')renderAcademy();else if(state.view==='library'||state.view==='trade-courses')renderTradeCourses();else if(state.view==='trade-test')renderTradeCourseTest();else if(state.view==='trade-result')renderTradeCourseResult();else if(state.view==='functional-skills')renderFunctionalSkills();else if(state.view==='knowledge-slides')renderKnowledgeSlides();else if(state.view==='academy-knowledge')renderAcademyKnowledge();else if(state.view==='functional-test')renderFunctionalSkillsTest();else if(state.view==='functional-result')renderFunctionalSkillsResult();else if(state.view==='certificates')renderCertificates();else if(state.view==='lesson')renderAcademyLesson();else if(state.view==='epa')renderEpaMockHome();else if(state.view==='epa-results')renderEpaResults();else if(state.view==='epa-test')renderEpaMockTest();else if(state.view==='epa-result')renderEpaMockResult();else if(state.view==='epa-discussion')renderEpaDiscussion();else if(state.view==='epa-discussion-result')renderEpaDiscussionResult();else if(state.view==='epa-practical')renderEpaPractical();else if(state.view==='knowledge-test')renderAssignmentKnowledgeTest();else if(state.view==='knowledge-result')renderAssignmentKnowledgeResult();else if(state.view==='walkthrough')renderWalkthrough();else renderSection();enhanceVoiceToText(app);applyAccessibilityToCurrentView();attachPageHelp();scrollNewPageToTop(pageSignature)}
 
 let activeSpeechRecognition=null;
 let activeSpeechButton=null;
@@ -4864,7 +4873,30 @@ async function registerAutoUpdater(){
 document.addEventListener('click',e=>{const help=e.target.closest('#pageHelpButton');if(!help)return;e.preventDefault();e.stopPropagation();openPageHelp()});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(document.getElementById('pageHelpModal'))closePageHelp();else if(helpTourRunning)finishHelpTour(false)});
 window.addEventListener('popstate',()=>{if(document.getElementById('pageHelpModal'))closePageHelp();else if(helpTourRunning)finishHelpTour(false)});
-app.addEventListener('click',e=>{const nav=e.target.closest('[data-nav]');if(!nav)return;const target=nav.dataset.nav;if(target==='academy'){state.view='academy';state.assignment=null;state.section=null}else if(target==='resources'){state.view='resources';state.assignment=null;state.section=null;state.editingNoteId=null}else{state.view='home';state.assignment=null;state.section=null}render();window.scrollTo({top:0,behavior:'smooth'})});
+let lastPrimaryNavigationAt=0;
+function activatePrimaryNavigation(target){
+ const now=Date.now();if(now-lastPrimaryNavigationAt<350)return;lastPrimaryNavigationAt=now;
+ stopVoiceToText();
+ if(target==='academy'){state.view='academy';state.assignment=null;state.section=null}
+ else if(target==='resources'){state.view='resources';state.assignment=null;state.section=null;state.editingNoteId=null}
+ else{state.view='home';state.assignment=null;state.section=null}
+ render();requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'instant'}));
+}
+app.addEventListener('click',e=>{const nav=e.target.closest('[data-nav]');if(!nav)return;e.preventDefault();activatePrimaryNavigation(nav.dataset.nav)});
+// Android PWAs can occasionally lose the synthetic click after being resumed.
+// Pointer-up provides a safe fallback while the timestamp guard prevents double navigation.
+app.addEventListener('pointerup',e=>{const nav=e.target.closest('[data-nav]');if(!nav||e.pointerType==='mouse')return;e.preventDefault();activatePrimaryNavigation(nav.dataset.nav)});
+function restoreAppAfterResume(){
+ if(document.visibilityState==='hidden')return;
+ document.documentElement.style.pointerEvents='';document.body.style.pointerEvents='';app.style.pointerEvents='';
+ document.querySelectorAll('.bottom-nav-item').forEach(button=>{button.disabled=false;button.removeAttribute('aria-disabled')});
+ // Remove only stale, hidden backdrops that can intercept the first tap after resume.
+ document.querySelectorAll('.modal[aria-hidden="true"],.modal.hidden,.help-tour-overlay[aria-hidden="true"]').forEach(node=>node.remove());
+ lastPrimaryNavigationAt=0;
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')requestAnimationFrame(restoreAppAfterResume)});
+window.addEventListener('pageshow',()=>requestAnimationFrame(restoreAppAfterResume));
+window.addEventListener('focus',()=>requestAnimationFrame(restoreAppAfterResume));
 
 (async()=>{db=await openDB();await load();await createUpdateSafetyBackup();await registerAutoUpdater()})().catch(e=>{console.error(e);app.innerHTML=shell(`<section class="card panel"><h2>Unable to open local storage</h2><p class="muted">Check that private browsing is off and reload the app.</p></section>`)})
 

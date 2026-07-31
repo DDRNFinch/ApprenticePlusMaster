@@ -1,3 +1,12 @@
+# V1.3 — Navigation Resume and Page-Top Fix
+
+- Fixed primary navigation occasionally becoming unresponsive after the installed app is resumed from the background.
+- Added a pointer-up fallback for Android PWA navigation while preventing duplicate activations.
+- Restores navigation controls and clears stale hidden overlays when the app becomes visible again.
+- Every newly opened page now starts at the top instead of inheriting the previous page's scroll position.
+- Browser back/forward restoration still returns to the saved scroll position.
+- Updated the app and offline cache version to V1.3.
+
 # V1.2 — Guide Phone Auto-Scroll Fix
 
 - Restored automatic scrolling inside the enlarged guide phone preview.
