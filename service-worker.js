@@ -1,14 +1,14 @@
-const CACHE='apprentice-plus-v1.5.1-notification-logo-tap-fix';
+const CACHE='apprentice-plus-v1.4-in-app-update-notification';
 const UPDATE_INFO={
- version:'V1.5.1',
+ version:'V1.4',
  features:[
-  'Fixes the Apprentice+ logo tap so it reliably opens Notifications on mobile.',
-  'Shows unread notifications in one simple panel.',
-  'Keeps the existing update installer unchanged.',
-  'Does not alter learner evidence or course data.'
+  'Adds an in-app update notification on the Apprentice+ logo.',
+  'Shows a short list of new features and fixes before installing.',
+  'Installs updates only after the learner presses “Let’s go”.',
+  'Keeps learner evidence and saved work on the device during updates.'
  ]
 };
-const APP_SHELL=['./','./index.html','./styles.css?v=1.5.1','./functional-skills-bank.js?v=1.4.0','./trade-courses-bank.js?v=1.4.0','./app.js?v=1.5.1','./manifest.json','./pdf-generator.js?v=1.4.0','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
+const APP_SHELL=['./','./index.html','./styles.css?v=1.4','./functional-skills-bank.js?v=1.4.0','./trade-courses-bank.js?v=1.4.0','./app.js?v=1.4','./manifest.json','./pdf-generator.js?v=1.4.0','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
 
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)));
