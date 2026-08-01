@@ -2,6 +2,15 @@
   "latest": "V1.5.75",
   "releases": [
     {
+      "version": "V1.5.76",
+      "title": "Technical Drawing Zoom & PDF Fix",
+      "items": [
+        "Added reliable two-finger pinch zoom and one-finger panning in the full-screen drawing viewer.",
+        "Double-tap now resets the drawing to fit the screen.",
+        "Reworked A4 PDF export to open in the device PDF viewer and trigger a download for better Android PWA support."
+      ]
+    },
+    {
       "version": "V1.5.75",
       "title": "Brick Drawing Specification & Time Calculator",
       "date": "2026-08-01",

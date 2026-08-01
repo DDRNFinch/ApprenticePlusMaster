@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.5.75-brick-time-and-spec-rules';
-const CURRENT_VERSION='V1.5.75';
+const CACHE='apprentice-plus-v1.5.76-brick-time-and-spec-rules';
+const CURRENT_VERSION='V1.5.76';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,

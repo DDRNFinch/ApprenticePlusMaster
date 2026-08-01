@@ -3009,3 +3009,7 @@ body.dual-ruler-open{overflow:hidden;overscroll-behavior:none}
 .brick-time-calculation span{font-size:12px;color:#6b7c78;font-weight:700}
 .brick-time-calculation strong{font-size:17px;color:#0f3c32}
 @media(max-width:620px){.brick-time-calculation{grid-template-columns:1fr}.brick-time-calculation>div{padding:10px 12px}}
+
+/* V1.5.76 reliable technical drawing pinch zoom */
+.technical-drawing-stage{touch-action:none!important;overflow:hidden!important;position:relative!important}
+.technical-drawing-stage img{position:absolute!important;left:50%!important;top:50%!important;width:auto;height:auto;max-width:none!important;max-height:none!important;object-fit:initial!important;transform-origin:center center!important;will-change:transform;touch-action:none!important;-webkit-user-drag:none}

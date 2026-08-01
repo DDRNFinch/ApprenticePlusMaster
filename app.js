@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.75';
+const APP_VERSION='V1.5.76';
 
 const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
 const TECHNICAL_DRAWING_PREFIX={
@@ -269,16 +269,19 @@ async function technicalDrawingImageData(info){
  const response=await fetch(info.url,{cache:'no-store'});if(!response.ok)throw new Error(`Drawing unavailable (${response.status})`);
  const blob=await response.blob();return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob)});
 }
-async function downloadTechnicalDrawingPDF(info,button){
+async function downloadTechnicalDrawingPDF(info,button,previewWindow){
  const original=button?.innerHTML;if(button){button.disabled=true;button.textContent='Creating PDF…'}
  try{
-  const source=await technicalDrawingImageData(info),image=await loadImage(source),W=1240,H=1754,M=0;
+  const source=await technicalDrawingImageData(info),image=await loadImage(source),W=1240,H=1754;
   const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
-  const scale=Math.min((W-M*2)/image.naturalWidth,(H-M*2)/image.naturalHeight),w=image.naturalWidth*scale,h=image.naturalHeight*scale,x=(W-w)/2,y=(H-h)/2;ctx.drawImage(image,x,y,w,h);
-  const jpeg=canvas.toDataURL('image/jpeg',.98),bytes=makeImagePDF([dataUrlBytes(jpeg)],W,H);
-  await downloadBlob(bytes,'application/pdf',info.file.replace(/\.png$/i,'.pdf'));
-  analyticsEvent('technical_drawing_pdf_downloaded',{course:COURSE.id,assignment:info.assignmentNumber});toast('A4 PDF downloaded');
- }catch(error){console.error('Technical drawing PDF failed',error);toast('Unable to download the PDF. Use Print and choose Save as PDF.')}finally{if(button){button.disabled=false;button.innerHTML=original}}
+  const scale=Math.min(W/image.naturalWidth,H/image.naturalHeight),w=image.naturalWidth*scale,h=image.naturalHeight*scale,x=(W-w)/2,y=(H-h)/2;ctx.drawImage(image,x,y,w,h);
+  const jpeg=canvas.toDataURL('image/jpeg',.98),bytes=makeImagePDF([dataUrlBytes(jpeg)],W,H),name=info.file.replace(/\.png$/i,'.pdf'),blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob);
+  // Opening the PDF in the device viewer is more reliable than a hidden download in installed Android PWAs.
+  if(previewWindow&&!previewWindow.closed){previewWindow.location.replace(url)}else window.open(url,'_blank');
+  const a=document.createElement('a');a.href=url;a.download=name;a.rel='noopener';a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),120000);
+  analyticsEvent('technical_drawing_pdf_downloaded',{course:COURSE.id,assignment:info.assignmentNumber});toast('A4 PDF opened. Use the download icon to save it.');
+ }catch(error){try{previewWindow?.close()}catch{}console.error('Technical drawing PDF failed',error);toast('Unable to create the PDF. Use Print and choose Save as PDF.')}finally{if(button){button.disabled=false;button.innerHTML=original}}
 }
 function printTechnicalDrawing(info){
  const win=window.open('','_blank');if(!win)return toast('Allow pop-ups to print this drawing');
@@ -294,7 +297,17 @@ function openTechnicalDrawing(assignmentNumber){
  image.onload=()=>{image.hidden=false;missing.hidden=true};
  image.onerror=()=>{image.hidden=true;missing.hidden=false;analyticsEvent('technical_drawing_missing',{course:COURSE.id,assignment:Number(assignmentNumber)})};
  const close=()=>{if(document.fullscreenElement===wrap)document.exitFullscreen?.().catch(()=>{});wrap.remove()};wrap.querySelector('#closeTechnicalDrawing').onclick=close;
- wrap.querySelector('#printTechnicalDrawing').onclick=()=>printTechnicalDrawing(info);const pdfButton=wrap.querySelector('#downloadTechnicalDrawingPDF');pdfButton.onclick=()=>downloadTechnicalDrawingPDF(info,pdfButton);
+ wrap.querySelector('#printTechnicalDrawing').onclick=()=>printTechnicalDrawing(info);const pdfButton=wrap.querySelector('#downloadTechnicalDrawingPDF');pdfButton.onclick=()=>{const previewWindow=window.open('about:blank','_blank');downloadTechnicalDrawingPDF(info,pdfButton,previewWindow)};
+ // Native-feeling two-finger pinch zoom and one-finger pan for installed PWAs.
+ const stage=wrap.querySelector('#technicalDrawingStage');let scale=1,minScale=1,maxScale=6,x=0,y=0,startX=0,startY=0,startPanX=0,startPanY=0,startDistance=0,startScale=1,pinchMidX=0,pinchMidY=0,lastTap=0;
+ const clamp=()=>{const rect=stage.getBoundingClientRect(),iw=image.naturalWidth*scale,ih=image.naturalHeight*scale;const limitX=Math.max(0,(iw-rect.width)/2),limitY=Math.max(0,(ih-rect.height)/2);x=Math.max(-limitX,Math.min(limitX,x));y=Math.max(-limitY,Math.min(limitY,y))};
+ const apply=()=>{clamp();image.style.transform=`translate3d(${x}px,${y}px,0) scale(${scale})`};
+ const fit=()=>{if(!image.naturalWidth)return;const r=stage.getBoundingClientRect();minScale=Math.min(r.width/image.naturalWidth,r.height/image.naturalHeight);scale=minScale;x=0;y=0;image.style.width=`${image.naturalWidth}px`;image.style.height=`${image.naturalHeight}px`;apply()};
+ const distance=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+ image.addEventListener('load',fit,{once:false});window.addEventListener('resize',fit,{passive:true});
+ stage.addEventListener('touchstart',e=>{if(e.touches.length===1){startX=e.touches[0].clientX;startY=e.touches[0].clientY;startPanX=x;startPanY=y;const now=Date.now();if(now-lastTap<280){fit();e.preventDefault()}lastTap=now}else if(e.touches.length===2){startDistance=distance(e.touches);startScale=scale;const r=stage.getBoundingClientRect();pinchMidX=(e.touches[0].clientX+e.touches[1].clientX)/2-r.left-r.width/2;pinchMidY=(e.touches[0].clientY+e.touches[1].clientY)/2-r.top-r.height/2;e.preventDefault()}},{passive:false});
+ stage.addEventListener('touchmove',e=>{if(e.touches.length===1&&scale>minScale+.001){x=startPanX+(e.touches[0].clientX-startX);y=startPanY+(e.touches[0].clientY-startY);apply();e.preventDefault()}else if(e.touches.length===2){const next=Math.max(minScale,Math.min(maxScale,startScale*(distance(e.touches)/Math.max(1,startDistance)))),ratio=next/scale;x=pinchMidX-(pinchMidX-x)*ratio;y=pinchMidY-(pinchMidY-y)*ratio;scale=next;apply();e.preventDefault()}},{passive:false});
+ stage.addEventListener('touchend',e=>{if(!e.touches.length&&scale<minScale*1.01)fit()},{passive:true});
  wrap.onclick=e=>{if(e.target===wrap)close()};document.addEventListener('keydown',function escapeDrawing(e){if(e.key==='Escape'&&document.body.contains(wrap)){close();document.removeEventListener('keydown',escapeDrawing)}});
  wrap.requestFullscreen?.().catch(()=>{});
 }
