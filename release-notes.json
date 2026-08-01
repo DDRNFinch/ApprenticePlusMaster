@@ -1,6 +1,18 @@
 {
-  "latest": "V1.5.71",
+  "latest": "V1.5.72",
   "releases": [
+    {
+      "version": "V1.5.72",
+      "title": "Developer drawing prompt builder",
+      "date": "2026-08-01",
+      "features": [
+        "Added a developer-only Create new drawing tool.",
+        "Course and assignment dropdowns load the correct task title and KSB or LO criteria.",
+        "Trade-specific fields adapt for bricklaying, site carpentry, architectural joinery and property maintenance.",
+        "Creates the correct drawing filename and a complete portrait A4 technical-drawing prompt.",
+        "Includes prompt preview, Copy all, save draft and clear form controls."
+      ]
+    },
     {
       "version": "V1.5.71",
       "title": "Practical drawing viewer fixes",
