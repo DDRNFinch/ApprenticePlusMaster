@@ -1,6 +1,18 @@
 {
-  "latest": "V1.5.70",
+  "latest": "V1.5.71",
   "releases": [
+    {
+      "version": "V1.5.71",
+      "title": "Practical drawing viewer fixes",
+      "date": "2026-08-01",
+      "features": [
+        "Technical drawings now use the assignment task title.",
+        "The full-screen viewer fits the complete drawing and uses native pinch zoom.",
+        "Removed loading and manual zoom controls.",
+        "Missing-drawing messaging now replaces the drawing area.",
+        "Improved A4 PDF download and print output."
+      ]
+    },
     {
       "version": "V1.5.70",
       "date": "2026-08-01",

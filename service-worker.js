@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.5.70-full-screen-practical-drawings';
-const CURRENT_VERSION='V1.5.70';
+const CACHE='apprentice-plus-v1.5.71-full-screen-practical-drawings';
+const CURRENT_VERSION='V1.5.71';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,
