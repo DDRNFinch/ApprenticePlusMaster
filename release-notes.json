@@ -1,6 +1,16 @@
 {
-  "latest": "V1.5.69",
+  "latest": "V1.5.70",
   "releases": [
+    {
+      "version": "V1.5.70",
+      "date": "2026-08-01",
+      "title": "Full-screen practical drawings",
+      "features": [
+        "Practical Assessment pages now display the issued technical drawing directly instead of generated task controls.",
+        "Technical drawings open in a locked full-screen viewer with fit, zoom, close, print and A4 PDF download controls.",
+        "Removed Activity assessed, generated-task guidance and Practical task details from KSB-course Practical Assessments."
+      ]
+    },
     {
       "version": "V1.5.69",
       "title": "External Technical Drawings",
@@ -412,7 +422,7 @@
       "Generated SVG drawings are no longer displayed in Practical Assessment specifications."
     ]
   },
-  "latestVersion": "V1.5.69",
+  "latestVersion": "V1.5.70",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",
