@@ -3001,3 +3001,11 @@ body.dual-ruler-open{overflow:hidden;overscroll-behavior:none}
 .drawing-builder-actions{position:static;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;background:transparent;padding:18px 0 0;margin-top:22px}
 .drawing-builder-launch .admin-primary{width:100%}
 @media(max-width:650px){.drawing-field-grid{grid-template-columns:1fr}.drawing-field-grid .field-span{grid-column:auto}.drawing-builder-summary{grid-template-columns:1fr}.drawing-builder-actions{grid-template-columns:1fr 1fr}.drawing-builder-actions #copyDrawingPrompt{grid-column:1/-1}.drawing-builder-form{padding:16px;border-radius:20px}.drawing-builder-page{padding:14px 12px}.drawing-builder-intro h2{font-size:26px}}
+
+
+/* V1.5.75 drawing quantity and time calculator */
+.brick-time-calculation{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:16px;border:1px solid #d9e5df;border-radius:20px;background:#f5faf7}
+.brick-time-calculation>div{display:flex;flex-direction:column;gap:5px;padding:12px;background:#fff;border-radius:14px;box-shadow:0 5px 16px rgba(15,35,40,.05)}
+.brick-time-calculation span{font-size:12px;color:#6b7c78;font-weight:700}
+.brick-time-calculation strong{font-size:17px;color:#0f3c32}
+@media(max-width:620px){.brick-time-calculation{grid-template-columns:1fr}.brick-time-calculation>div{padding:10px 12px}}

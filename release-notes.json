@@ -1,6 +1,19 @@
 {
-  "latest": "V1.5.74",
+  "latest": "V1.5.75",
   "releases": [
+    {
+      "version": "V1.5.75",
+      "title": "Brick Drawing Specification & Time Calculator",
+      "date": "2026-08-01",
+      "items": [
+        "Removed the Bricklaying mortar selector.",
+        "Separated practical features from fixings and construction components.",
+        "Added editable feature and fixing presets.",
+        "Calculates estimated brick quantity and build time at 25 bricks per hour.",
+        "Rounds to an editable recommended assessment time with complexity allowances.",
+        "Adds strict orthographic, plan and section rules to copied brickwork prompts."
+      ]
+    },
     {
       "version": "V1.5.74",
       "title": "Rapid Drawing Builder Presets",
