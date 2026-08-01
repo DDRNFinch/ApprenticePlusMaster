@@ -1,6 +1,16 @@
 {
-  "latest": "V1.5.73",
+  "latest": "V1.5.74",
   "releases": [
+    {
+      "version": "V1.5.74",
+      "title": "Rapid Drawing Builder Presets",
+      "date": "01/08/2026",
+      "changes": [
+        "Added editable preset dropdowns for trade-specific wall types, bonds, materials, joints, fixings, adhesives and finishes.",
+        "Added calculated brick-length and course-height dimension presets while keeping every value manually editable.",
+        "Added broader standard dimension and time presets for carpentry, joinery and property maintenance drawings."
+      ]
+    },
     {
       "version": "V1.5.73",
       "title": "Drawing builder button layout fix",
