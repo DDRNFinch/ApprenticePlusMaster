@@ -1,6 +1,18 @@
 {
-  "latest": "V1.5.68",
+  "latest": "V1.5.69",
   "releases": [
+    {
+      "version": "V1.5.69",
+      "title": "External Technical Drawings",
+      "date": "2026-08-01",
+      "changes": [
+        "Practical Assessments now use course and assignment-specific technical drawings from the GitHub drawing library.",
+        "Drawing filenames are generated automatically for Bricklaying, Site Carpentry, Architectural Joinery and Property Maintenance.",
+        "Technical drawings open in a full-screen viewer with zoom, browser and save options.",
+        "Missing drawings display a clear coming-soon message instead of a broken image.",
+        "Generated SVG drawings are no longer displayed in Practical Assessment specifications."
+      ]
+    },
     {
       "version": "V1.5.68",
       "title": "Concise Skills Card Evidence Details",
@@ -391,9 +403,16 @@
         "Distinction, Merit and Pass ranking",
         "Practical Assessments and graded ProjectMate tasks included"
       ]
-    }
+    },
+    "V1.5.69": [
+      "Practical Assessments now use course and assignment-specific technical drawings from the GitHub drawing library.",
+      "Drawing filenames are generated automatically for Bricklaying, Site Carpentry, Architectural Joinery and Property Maintenance.",
+      "Technical drawings open in a full-screen viewer with zoom, browser and save options.",
+      "Missing drawings display a clear coming-soon message instead of a broken image.",
+      "Generated SVG drawings are no longer displayed in Practical Assessment specifications."
+    ]
   },
-  "latestVersion": "V1.5.68",
+  "latestVersion": "V1.5.69",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",
@@ -473,6 +492,17 @@
         "Uses the highest grade recorded for each practical task.",
         "Includes graded Practical Assessments and completed ProjectMate tasks.",
         "Added a Pass, Merit or Distinction selector when saving a completed ProjectMate task."
+      ]
+    },
+    "V1.5.69": {
+      "title": "External Technical Drawings",
+      "date": "2026-08-01",
+      "features": [
+        "Practical Assessments now use course and assignment-specific technical drawings from the GitHub drawing library.",
+        "Drawing filenames are generated automatically for Bricklaying, Site Carpentry, Architectural Joinery and Property Maintenance.",
+        "Technical drawings open in a full-screen viewer with zoom, browser and save options.",
+        "Missing drawings display a clear coming-soon message instead of a broken image.",
+        "Generated SVG drawings are no longer displayed in Practical Assessment specifications."
       ]
     }
   }
