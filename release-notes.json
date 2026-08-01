@@ -1,6 +1,16 @@
 {
-  "latest": "V1.5.72",
+  "latest": "V1.5.73",
   "releases": [
+    {
+      "version": "V1.5.73",
+      "title": "Drawing builder button layout fix",
+      "date": "2026-08-01",
+      "features": [
+        "Moved Copy all, Save draft, Clear form and Close to the true end of the drawing form.",
+        "Removed the sticky action panel that covered fields while scrolling.",
+        "Kept the mobile two-column button layout with Copy all spanning the full width."
+      ]
+    },
     {
       "version": "V1.5.72",
       "title": "Developer drawing prompt builder",
