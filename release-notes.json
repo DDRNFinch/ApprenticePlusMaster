@@ -1,6 +1,17 @@
 {
-  "latest": "V1.5.75",
+  "latest": "V1.5.77",
   "releases": [
+    {
+      "version": "V1.5.77",
+      "title": "College Workshop Task Sheet Builder",
+      "date": "2026-08-01",
+      "features": [
+        "Replaced the previous multi-trade Create Drawing form with one focused Bricklaying workshop-sheet builder.",
+        "Uses the simple college handout structure: orthographic views, specification, task details and task instructions.",
+        "Includes brick, course and return presets with exact millimetre values and a 25-bricks-per-hour time estimate.",
+        "Copies a shorter, stricter prompt that avoids perspective views, invented details and unnecessary architectural schedules."
+      ]
+    },
     {
       "version": "V1.5.76",
       "title": "Technical Drawing Zoom & PDF Fix",
