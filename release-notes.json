@@ -1,6 +1,23 @@
 {
-  "latest": "V1.6.3",
+  "latest": "V1.6.4",
   "releases": [
+    {
+      "version": "V1.6.4",
+      "date": "2026-08-02",
+      "title": "Dedicated Technical Drawing Screen",
+      "features": [
+        "Technical drawings now leave the Practical Assessment page and open on a dedicated Apprentice+ viewer screen.",
+        "The assessment page can no longer remain visible, scroll or zoom underneath the drawing.",
+        "The drawing opens at Fit Width in landscape with custom pinch zoom and edge-clamped panning.",
+        "Portrait orientation is blocked until the phone returns to landscape.",
+        "Fit Page, Fit Width and 100% controls remain available."
+      ],
+      "items": [
+        "Added technical-drawing-viewer.html as a separate offline-cached app screen.",
+        "Close returns to the Practical Assessment page using browser history.",
+        "Removed the in-page overlay from the active drawing-opening path."
+      ]
+    },
     {
       "version": "V1.6.3",
       "date": "2026-08-02",
@@ -32,7 +49,7 @@
       ],
       "items": [
         "Existing Practical Assessment drawings and assessment content remain unchanged.",
-        "Zoom is limited from Fit Page to 6\u00d7.",
+        "Zoom is limited from Fit Page to 6×.",
         "The drawing remains in memory while the viewer is open."
       ]
     },

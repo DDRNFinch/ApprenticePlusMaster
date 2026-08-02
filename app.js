@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.6.3';
+const APP_VERSION='V1.6.4';
 
 const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
 const TECHNICAL_DRAWING_PREFIX={
@@ -293,61 +293,11 @@ function openTechnicalDrawing(assignmentNumber){
  const info=technicalDrawingInfo(assignmentNumber);
  if(!info)return toast('No technical drawing is configured for this course');
  analyticsEvent('technical_drawing_opened',{course:COURSE.id,assignment:Number(assignmentNumber)});
- const viewportMeta=document.querySelector('meta[name="viewport"]');
- const previousViewport=viewportMeta?.getAttribute('content')||'';
- if(viewportMeta)viewportMeta.setAttribute('content','width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover');
- const wrap=document.createElement('div');
- wrap.className='technical-drawing-screen';
- wrap.innerHTML=`<div class="technical-drawing-orientation" id="technicalDrawingOrientation">
-   <button type="button" class="technical-drawing-floating-close" id="closeDrawingPrompt" aria-label="Close">${appIcon('close')}</button>
-   <div class="technical-drawing-rotate-symbol">↻</div><div class="number">Technical drawing</div>
-   <h2>Rotate your phone</h2><p>Turn your phone to landscape to open the drawing.</p>
-   <button type="button" class="btn" id="openDrawingAnyway">Open drawing</button>
-  </div>
-  <div class="technical-drawing-view" id="technicalDrawingView" hidden>
-   <div class="technical-drawing-floating-title"><span>TECHNICAL DRAWING</span><strong>${esc(info.title)}</strong></div>
-   <button type="button" class="technical-drawing-floating-close" id="closeDrawingViewer" aria-label="Close drawing">${appIcon('close')}</button>
-   <div class="technical-drawing-image-boundary" id="technicalDrawingBoundary">
-    <div class="technical-drawing-transform" id="technicalDrawingTransform"><img id="technicalDrawingFullImage" src="${esc(info.url)}" alt="${esc(info.title)} technical drawing" draggable="false"></div>
-    <div class="technical-drawing-missing" id="technicalDrawingMissing" hidden><strong>Drawing coming soon</strong><span>${esc(info.file)} has not been uploaded yet.</span></div>
-    <div class="technical-drawing-return-landscape" id="technicalDrawingReturnLandscape" hidden><div class="technical-drawing-rotate-symbol">↻</div><h2>Return to landscape</h2></div>
-   </div>
-   <div class="technical-drawing-floating-tools">
-    <button type="button" data-view-mode="page">Fit Page</button><button type="button" data-view-mode="width">Fit Width</button><button type="button" data-view-mode="actual">100%</button><span id="technicalDrawingScale">Fit Width</span>
-   </div>
-  </div>`;
- document.body.appendChild(wrap);document.body.classList.add('technical-drawing-active');
- const orientation=wrap.querySelector('#technicalDrawingOrientation'),view=wrap.querySelector('#technicalDrawingView'),boundary=wrap.querySelector('#technicalDrawingBoundary'),transform=wrap.querySelector('#technicalDrawingTransform'),image=wrap.querySelector('#technicalDrawingFullImage'),missing=wrap.querySelector('#technicalDrawingMissing'),returnLandscape=wrap.querySelector('#technicalDrawingReturnLandscape'),scaleLabel=wrap.querySelector('#technicalDrawingScale');
- let baseW=0,baseH=0,scale=1,x=0,y=0,ready=false,opened=false,lastTap=0;
- const landscape=()=>window.innerWidth>window.innerHeight||window.matchMedia?.('(orientation: landscape)').matches;
- const limits=()=>({x:Math.max(0,(baseW*scale-boundary.clientWidth)/2),y:Math.max(0,(baseH*scale-boundary.clientHeight)/2)});
- const clamp=()=>{const l=limits();x=Math.max(-l.x,Math.min(l.x,x));y=Math.max(-l.y,Math.min(l.y,y))};
- const apply=(label)=>{clamp();transform.style.width=`${baseW}px`;transform.style.height=`${baseH}px`;transform.style.transform=`translate3d(${x}px,${y}px,0) scale(${scale})`;scaleLabel.textContent=label||`${Math.round(scale*100)}%`};
- const calculateBase=()=>{if(!ready)return;const ratio=Math.min(boundary.clientWidth/image.naturalWidth,boundary.clientHeight/image.naturalHeight);baseW=image.naturalWidth*ratio;baseH=image.naturalHeight*ratio;image.style.width=`${baseW}px`;image.style.height=`${baseH}px`};
- const fitPage=()=>{calculateBase();scale=1;x=0;y=0;apply('Fit Page')};
- const fitWidth=()=>{calculateBase();scale=Math.max(1,Math.min(6,boundary.clientWidth/Math.max(1,baseW)));x=0;y=0;apply('Fit Width')};
- const actual=()=>{calculateBase();scale=Math.max(1,Math.min(6,image.naturalWidth/Math.max(1,baseW)));x=0;y=0;apply('100%')};
- const zoomAt=(next,cx,cy)=>{next=Math.max(1,Math.min(6,next));const r=boundary.getBoundingClientRect(),px=cx-r.left-r.width/2,py=cy-r.top-r.height/2,ratio=next/scale;x=px-(px-x)*ratio;y=py-(py-y)*ratio;scale=next;apply()};
- const syncOrientation=()=>{if(!opened)return;const ok=landscape();returnLandscape.hidden=ok;transform.hidden=!ok||!ready;if(ok&&ready)requestAnimationFrame(()=>{calculateBase();apply()})};
- const enterFullscreen=async()=>{try{await document.documentElement.requestFullscreen?.()}catch{}try{await screen.orientation?.lock?.('landscape')}catch{}};
- const start=async()=>{opened=true;orientation.hidden=true;view.hidden=false;await enterFullscreen();syncOrientation();if(ready)requestAnimationFrame(fitWidth)};
- const close=()=>{window.removeEventListener('resize',resize);window.removeEventListener('orientationchange',resize);document.body.classList.remove('technical-drawing-active');if(viewportMeta)viewportMeta.setAttribute('content',previousViewport);try{screen.orientation?.unlock?.()}catch{}if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});wrap.remove()};
- const resize=()=>{syncOrientation();if(opened&&landscape()&&ready)requestAnimationFrame(()=>{calculateBase();apply()})};
- image.onload=()=>{ready=true;missing.hidden=true;transform.hidden=!landscape();if(opened)requestAnimationFrame(fitWidth)};
- image.onerror=()=>{ready=false;transform.hidden=true;missing.hidden=false;analyticsEvent('technical_drawing_missing',{course:COURSE.id,assignment:Number(assignmentNumber)})};
- wrap.querySelector('#openDrawingAnyway').onclick=start;wrap.querySelector('#closeDrawingPrompt').onclick=close;wrap.querySelector('#closeDrawingViewer').onclick=close;
- wrap.querySelectorAll('[data-view-mode]').forEach(b=>b.onclick=()=>b.dataset.viewMode==='page'?fitPage():b.dataset.viewMode==='actual'?actual():fitWidth());
- let touches=new Map(),gesture=null;
- const beginGesture=()=>{const pts=[...touches.values()];if(pts.length===1)gesture={kind:'pan',sx:pts[0].x,sy:pts[0].y,x,y};else if(pts.length>=2){gesture={kind:'pinch',distance:Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y),scale,x,y,mx:(pts[0].x+pts[1].x)/2,my:(pts[0].y+pts[1].y)/2}}};
- boundary.addEventListener('pointerdown',ev=>{if(!ready||!landscape())return;boundary.setPointerCapture?.(ev.pointerId);touches.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});beginGesture();ev.preventDefault()});
- boundary.addEventListener('pointermove',ev=>{if(!touches.has(ev.pointerId)||!gesture)return;touches.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});const pts=[...touches.values()];if(pts.length===1&&gesture.kind==='pan'&&scale>1){x=gesture.x+(pts[0].x-gesture.sx);y=gesture.y+(pts[0].y-gesture.sy);apply()}else if(pts.length>=2){if(gesture.kind!=='pinch')beginGesture();const dist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);zoomAt(gesture.scale*(dist/Math.max(1,gesture.distance)),gesture.mx,gesture.my)}ev.preventDefault()});
- const end=ev=>{touches.delete(ev.pointerId);if(touches.size)beginGesture();else{gesture=null;apply()}};boundary.addEventListener('pointerup',end);boundary.addEventListener('pointercancel',end);
- boundary.addEventListener('wheel',ev=>{zoomAt(scale*(ev.deltaY<0?1.15:1/1.15),ev.clientX,ev.clientY);ev.preventDefault()},{passive:false});
- boundary.addEventListener('dblclick',ev=>{scale>1.05?fitWidth():zoomAt(2.5,ev.clientX,ev.clientY);ev.preventDefault()});
- boundary.addEventListener('touchend',ev=>{if(ev.touches.length)return;const now=Date.now();if(now-lastTap<280){const t=ev.changedTouches?.[0];if(t)(scale>1.05?fitWidth():zoomAt(2.5,t.clientX,t.clientY));lastTap=0}else lastTap=now},{passive:true});
- window.addEventListener('resize',resize,{passive:true});window.addEventListener('orientationchange',resize,{passive:true});
- document.addEventListener('keydown',function escClose(ev){if(ev.key==='Escape'&&document.body.contains(wrap)){document.removeEventListener('keydown',escClose);close()}});
- if(landscape())start();
+ try{
+  sessionStorage.setItem('apprenticeplus.drawingReturn.v1',JSON.stringify({href:location.href,scrollY:window.scrollY||0,title:info.title}));
+ }catch{}
+ const params=new URLSearchParams({src:info.url,title:info.title,file:info.file||'',assignment:String(assignmentNumber)});
+ location.href=`technical-drawing-viewer.html?${params.toString()}`;
 }
 function bindTechnicalDrawingButtons(scope=document){
  scope.querySelectorAll('[data-technical-drawing-card]').forEach(card=>{const image=card.querySelector('img'),button=card.querySelector('.technical-drawing-preview-button'),missing=card.querySelector('.technical-drawing-preview-missing');if(!image||!button||!missing)return;const available=()=>{button.hidden=false;missing.hidden=true},unavailable=()=>{button.hidden=true;missing.hidden=false};image.onload=available;image.onerror=unavailable;if(image.complete)(image.naturalWidth?available:unavailable)()});
