@@ -1,6 +1,22 @@
 {
-  "latest": "V1.6.4",
+  "latest": "V1.6.5",
   "releases": [
+    {
+      "version": "V1.6.5",
+      "date": "2026-08-02",
+      "title": "Technical Drawing Edge Lock",
+      "features": [
+        "Fixed the drawing transform origin so the PNG is centred inside the physical screen edges.",
+        "Changed the viewer, viewport and screen containers to fixed edge-to-edge rectangles.",
+        "Hard-clipped the image stage to the device viewport so no content can sit outside the screen.",
+        "Kept pinch zoom, panning and image-boundary clamping."
+      ],
+      "items": [
+        "Corrected the missing -50% centring translation that caused the drawing to appear offset.",
+        "Added the dedicated viewer to the offline application cache.",
+        "Kept all practical assessment content unchanged."
+      ]
+    },
     {
       "version": "V1.6.4",
       "date": "2026-08-02",
