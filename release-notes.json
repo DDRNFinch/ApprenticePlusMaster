@@ -1,6 +1,23 @@
 {
-  "latest": "V1.6.11",
+  "latest": "V1.6.12",
   "releases": [
+    {
+      "version": "V1.6.12",
+      "date": "2026-08-02",
+      "title": "Learner-Only Apprentice+",
+      "features": [
+        "Completely removed Assessor Mode from Apprentice+.",
+        "Removed the purple assessor theme and Admin Mode application switch.",
+        "Removed registers, register templates, attendance records and assessor reports.",
+        "Removed assessor workspaces, routes, navigation states and document placeholders.",
+        "Restored the permanent three-tab learner navigation: Toolbox, Course and Academy."
+      ],
+      "items": [
+        "All learner evidence, EPA, Academy, Toolbox and CADMate features remain available.",
+        "Obsolete Assessor Mode and register local-storage keys are deleted when this version starts.",
+        "The codebase now operates solely as the Apprentice+ learner application."
+      ]
+    },
     {
       "version": "V1.6.11",
       "date": "2026-08-02",

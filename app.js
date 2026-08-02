@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.6.11';
+const APP_VERSION='V1.6.12';
 
 const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
 const TECHNICAL_DRAWING_PREFIX={
@@ -344,7 +344,7 @@ function saveNavigationSnapshot(snapshot=navigationSnapshot()){
  try{localStorage.setItem(NAV_STATE_KEY,JSON.stringify(snapshot))}catch{}
 }
 function validRestoredView(snapshot){
- const allowed=new Set(['home','assignment','academy','library','lesson','epa','epa-results','epa-result','epa-practical','walkthrough','section','resources','notepad','tools','measuremate','materialmate','drawingmate','cadmate','skillscard','feedbackmate','projectmate','otjmate','remindmate','learning-support','settings','assessor-workspace','assessor-section','assessor-reports','assessor-report-category','registers-home','register-create','register-live','register-templates','register-learners','register-history']);
+ const allowed=new Set(['home','assignment','academy','library','lesson','epa','epa-results','epa-result','epa-practical','walkthrough','section','resources','notepad','tools','measuremate','materialmate','drawingmate','cadmate','skillscard','feedbackmate','projectmate','otjmate','remindmate','learning-support','settings']);
  if(!snapshot||snapshot.courseId!==ACTIVE_COURSE_ID||!allowed.has(snapshot.view))return false;
  if(['assignment','walkthrough','section'].includes(snapshot.view)&&!assignment(Number(snapshot.assignment)))return false;
  if(snapshot.view==='section'&&!['practical','photos','statement','discussion','professionalDiscussion','witness','supporting'].includes(snapshot.section))return false;
@@ -752,23 +752,17 @@ async function load(){
  Object.keys(state.data).forEach(k=>{const match=k.match(/^(.+):(\d+):supporting$/);if(!match)return;const witnessKey=`${match[1]}:${match[2]}:witness`;if(state.data[witnessKey]===undefined&&state.data[k]){state.data[witnessKey]=structuredClone(state.data[k]);migrated=true}});
  if(migrated)await saveData();
  let restored=null;try{restored=JSON.parse(localStorage.getItem(NAV_STATE_KEY)||'null')}catch{}
- const savedMode=currentAppMode();
- syncAppModeTheme();
  const restoredApplied=restored?applyNavigationSnapshot(restored):false;
- if(savedMode==='assessor'){
-  const assessorViews=new Set(['assessor-workspace','assessor-section','assessor-reports','assessor-report-category','registers-home','register-create','register-live','register-templates','register-learners','register-history','resources','notepad','tools','measuremate','materialmate','drawingmate','cadmate','skillscard','feedbackmate','projectmate','otjmate','remindmate','learning-support','settings']);
-  if(!restoredApplied||!assessorViews.has(state.view)){
-   state.view='assessor-workspace';
-   state.assignment=null;
-   state.section=null;
-  }
- }else{
-  const assessorOnlyViews=new Set(['assessor-workspace','assessor-section','assessor-reports','assessor-report-category','registers-home','register-create','register-live','register-templates','register-learners','register-history']);
-  if(assessorOnlyViews.has(state.view)){
-   state.view='home';
-   state.assignment=null;
-   state.section=null;
-  }
+ try{
+  localStorage.removeItem('apprenticeplus.operatingMode.v1');
+  localStorage.removeItem('apprenticeplus.assessorRegisters.v1');
+  document.body.classList.remove('assessor-mode');
+ }catch{}
+ const assessorOnlyViews=new Set(['assessor-workspace','assessor-section','assessor-reports','assessor-report-category','registers-home','register-create','register-live','register-templates','register-learners','register-history']);
+ if(assessorOnlyViews.has(state.view)){
+  state.view='home';
+  state.assignment=null;
+  state.section=null;
  }
  navigationReady=true;
  const restoredScroll=restoredApplied?Number(restored?.scrollY)||0:0;
@@ -779,36 +773,12 @@ async function saveData(){await putStore('data',state.data)}
 async function saveProfile(){await putStore('profile',state.profile)}
 
 
-const APP_MODE_KEY='apprenticeplus.operatingMode.v1';
-function currentAppMode(){
- try{return localStorage.getItem(APP_MODE_KEY)==='assessor'?'assessor':'apprentice'}catch{return'apprentice'}
-}
-function assessorModeActive(){return currentAppMode()==='assessor'}
-function setAppMode(mode){
- const next=mode==='assessor'?'assessor':'apprentice';
- try{localStorage.setItem(APP_MODE_KEY,next)}catch{}
- document.body.classList.toggle('assessor-mode',next==='assessor');
- state.view=next==='assessor'?'assessor-workspace':'home';
- state.assignment=null;
- state.section=null;
- render();
- window.scrollTo(0,0);
-}
-function syncAppModeTheme(){
- document.body.classList.toggle('assessor-mode',assessorModeActive());
-}
-syncAppModeTheme();
 function shell(content){
- const assessor=assessorModeActive();
  const resourceViews=['resources','notepad','tools','measuremate','materialmate','drawingmate','cadmate','skillscard','feedbackmate','projectmate','otjmate','remindmate','learning-support','settings'];
- const reportViews=['academy','library','trade-courses','trade-test','trade-result','functional-skills','certificates','academy-knowledge','knowledge-slides','assessor-reports','assessor-report-category'];
+ const reportViews=['academy','library','trade-courses','trade-test','trade-result','functional-skills','certificates','academy-knowledge','knowledge-slides'];
  const active=resourceViews.includes(state.view)?'resources':reportViews.includes(state.view)?'academy':'course';
- const brandName=assessor?'Assessor':'Apprentice';
- const brandTagline=assessor?'Assess, Record, Report':'Your Course, Your Way';
- const middleLabel=assessor?'Assessor':'Course';
- const rightLabel=assessor?'Reports':'Academy';
- const firstName=state.profile?.fullName?.split(' ')?.[0]||(assessor?'Assessor':'Learner');
- return `<main class="shell ${assessor?'assessor-shell':''}"><header class="topbar"><div class="brand"><div class="logo update-logo-wrap"><img src="logo-apprentice-plus.png" alt="${brandName}+ logo"><button type="button" class="update-notification-badge no-print" id="updateNotificationButton" aria-label="1 app update ready" hidden>1</button></div><div><div class="brand-title-row"><h1>${brandName}<span class="brand-plus">+</span></h1></div><p class="subtitle brand-tagline">${brandTagline}</p></div>${state.branding?.logo?`<div class="college-header-brand"><img src="${state.branding.logo}" alt="${esc(state.branding.name||'College')} logo"><span>${esc(state.branding.name||'')}</span></div>`:''}</div>${state.profile?`<div class="learner-help-wrap"><span class="pill learner-progress-button" id="learnerProgressBtn">${esc(firstName)}</span><button type="button" class="page-help-button no-print" id="pageHelpButton" aria-label="How to use this page">i</button></div>`:''}</header>${content}<button type="button" class="app-version-bottom no-print" id="developerVersionTrigger" aria-label="App version">${APP_VERSION}</button><nav class="bottom-nav no-print" aria-label="Main navigation"><button class="bottom-nav-item ${active==='resources'?'active':''}" data-nav="resources" aria-label="Toolbox"><span>${appIcon('toolbox','nav-icon')}</span><strong>Toolbox</strong></button><button class="bottom-nav-item ${active==='course'?'active':''}" data-nav="course" aria-label="${middleLabel}"><span>${appIcon('course','nav-icon')}</span><strong>${middleLabel}</strong></button><button class="bottom-nav-item ${active==='academy'?'active':''}" data-nav="academy" aria-label="${rightLabel}"><span>${appIcon('academy','nav-icon')}</span><strong>${rightLabel}</strong></button></nav></main>`;
+ const firstName=state.profile?.fullName?.split(' ')?.[0]||'Learner';
+ return `<main class="shell"><header class="topbar"><div class="brand"><div class="logo update-logo-wrap"><img src="logo-apprentice-plus.png" alt="Apprentice+ logo"><button type="button" class="update-notification-badge no-print" id="updateNotificationButton" aria-label="1 app update ready" hidden>1</button></div><div><div class="brand-title-row"><h1>Apprentice<span class="brand-plus">+</span></h1></div><p class="subtitle brand-tagline">Your Course, Your Way</p></div>${state.branding?.logo?`<div class="college-header-brand"><img src="${state.branding.logo}" alt="${esc(state.branding.name||'College')} logo"><span>${esc(state.branding.name||'')}</span></div>`:''}</div>${state.profile?`<div class="learner-help-wrap"><span class="pill learner-progress-button" id="learnerProgressBtn">${esc(firstName)}</span><button type="button" class="page-help-button no-print" id="pageHelpButton" aria-label="How to use this page">i</button></div>`:''}</header>${content}<button type="button" class="app-version-bottom no-print" id="developerVersionTrigger" aria-label="App version">${APP_VERSION}</button><nav class="bottom-nav no-print" aria-label="Main navigation"><button class="bottom-nav-item ${active==='resources'?'active':''}" data-nav="resources" aria-label="Toolbox"><span>${appIcon('toolbox','nav-icon')}</span><strong>Toolbox</strong></button><button class="bottom-nav-item ${active==='course'?'active':''}" data-nav="course" aria-label="Course"><span>${appIcon('course','nav-icon')}</span><strong>Course</strong></button><button class="bottom-nav-item ${active==='academy'?'active':''}" data-nav="academy" aria-label="Academy"><span>${appIcon('academy','nav-icon')}</span><strong>Academy</strong></button></nav></main>`;
 }
 function courseHeader(){const p=courseProgressStats(),red=p.red??0;return `<section class="course-card"><div class="course-summary"><div class="course-copy"><div class="course-title-row"><h2>${COURSE.name}</h2><span class="target-status ${p.tone}">${p.label}</span></div><div class="meta"><span class="pill">${COURSE.standard}</span><span class="pill">Version ${COURSE.version}</span><span class="pill">Level ${COURSE.level}</span><span class="pill green">${courseAssignments().length} evidence packs</span></div></div><div class="progress-rings" id="courseProgressBtn" role="button" tabindex="0" aria-label="Open learner progress summary" style="--green:${p.green*3.6}deg;--yellow:${p.yellow*3.6}deg;--red:${red*3.6}deg"><span class="ring ring-green"></span><span class="ring ring-yellow"></span><span class="ring ring-red"></span><strong>${p.green}%</strong></div></div><button type="button" class="course-search-launch no-print" id="openWorkSearch" aria-label="Find an assignment" title="Find an assignment"><svg class="search-silhouette" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M10.5 2a8.5 8.5 0 1 0 5.28 15.16l4.66 4.65a1.5 1.5 0 0 0 2.12-2.12l-4.66-4.65A8.5 8.5 0 0 0 10.5 2Zm0 3a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg></button></section>`}
 
@@ -871,308 +841,7 @@ function ensureVideoSubmissionBottomSpacer(){
 const REMOVED_APPRENTICE_PASS_KEY='apprenticeplus.permanentPass.v1';
 try{localStorage.removeItem(REMOVED_APPRENTICE_PASS_KEY)}catch{}
 
-const ASSESSOR_WORKSPACE_ITEMS=[
- ['registers','Registers','Create registers, templates, live attendance and history.','course'],
- ['teaching-resources','Teaching Resources','Store blank lesson plans, worksheets, presentations and toolbox talks.','library'],
- ['observations','Observations','Create and save blank assessor observation documents.','observation'],
- ['assessment-documents','Assessment Documents','Practical assessment, witness testimony and discussion forms.','assignment'],
- ['reviews','Reviews','Blank progress-review documents and saved review records.','reviews'],
- ['epa-documents','EPA Documents','Blank EPA assessment and gateway paperwork.','academy']
-];
-const ASSESSOR_REPORT_ITEMS=[
- ['registers','Registers','Saved and exported register documents.','course'],
- ['attendance','Attendance','Attendance summaries, exceptions and hours reports.','progress'],
- ['observations','Observations','Saved observation PDFs.','observation'],
- ['assessments','Assessments','Practical and assessment documents.','assignment'],
- ['reviews','Reviews','Saved review reports.','reviews'],
- ['epa','EPA','EPA and gateway reports.','academy'],
- ['downloads','Downloads','Dated PDF and ZIP export packages.','download']
-];
-function assessorTile(item,prefix){
- const [id,title,copy,icon]=item;
- return `<button type="button" class="assignment-card assessor-workspace-tile" data-${prefix}-item="${id}"><div class="assignment-head"><div><div class="number">${prefix==='assessor'?'Assessor':'Reports'}</div><h3>${esc(title)}</h3></div><span class="assessor-tile-icon">${appIcon(icon)}</span></div><p class="muted">${esc(copy)}</p><span class="assessor-placeholder-badge">Blank framework</span></button>`;
-}
-
-const ASSESSOR_REGISTER_KEY='apprenticeplus.assessorRegisters.v1';
-function registerStore(){
- try{
-  const parsed=JSON.parse(localStorage.getItem(ASSESSOR_REGISTER_KEY)||'null');
-  const store=parsed&&typeof parsed==='object'?parsed:{templates:[],registers:[],learners:[]};
-  store.templates=Array.isArray(store.templates)?store.templates:[];
-  store.registers=Array.isArray(store.registers)?store.registers:[];
-  store.learners=Array.isArray(store.learners)?store.learners:[];
-  return store;
- }catch{return{templates:[],registers:[],learners:[]}}
-}
-function saveRegisterStore(store){
- localStorage.setItem(ASSESSOR_REGISTER_KEY,JSON.stringify(store));
-}
-function registerUid(prefix='reg'){
- return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
-}
-function registerNowTime(){
- return new Date().toTimeString().slice(0,5);
-}
-function minutesFromTime(value){
- if(!value||!/^\d\d:\d\d$/.test(value))return 0;
- const [h,m]=value.split(':').map(Number);return h*60+m;
-}
-function minutesBetween(start,end){
- return Math.max(0,minutesFromTime(end)-minutesFromTime(start));
-}
-function formatMinutes(total){
- total=Math.max(0,Math.round(Number(total)||0));
- const h=Math.floor(total/60),m=total%60;
- return h?`${h}h ${String(m).padStart(2,'0')}m`:`${m}m`;
-}
-function overlapMinutes(aStart,aEnd,bStart,bEnd){
- return Math.max(0,Math.min(minutesFromTime(aEnd),minutesFromTime(bEnd))-Math.max(minutesFromTime(aStart),minutesFromTime(bStart)));
-}
-function attendanceMinutes(entry,register){
- if(!entry.inTime||!entry.outTime)return 0;
- let total=minutesBetween(entry.inTime,entry.outTime);
- (register.breaks||[]).forEach(br=>{total-=overlapMinutes(entry.inTime,entry.outTime,br.start,br.end)});
- return Math.max(0,total);
-}
-
-
-function upsertRegisterLearner(store,learner){
- const index=store.learners.findIndex(l=>l.learnerKey===learner.learnerKey);
- const merged=index>=0?{...store.learners[index],...learner}:{...learner,addedAt:new Date().toISOString()};
- if(index>=0)store.learners[index]=merged;else store.learners.push(merged);
- return merged;
-}
-function activeRegister(){
- const store=registerStore();
- return store.registers.find(r=>r.status==='active')||null;
-}
-function registerStatus(entry,register){
- if(entry.reason)return entry.reason;
- if(entry.outTime&&minutesFromTime(entry.outTime)<minutesFromTime(register.endTime))return'Left early';
- if(entry.inTime&&minutesFromTime(entry.inTime)>minutesFromTime(register.lateAfter||register.startTime))return'Late';
- if(entry.inTime)return entry.outTime?'Complete':'Present';
- return'Awaiting';
-}
-function registerRowHtml(entry,register){
- const mins=attendanceMinutes(entry,register),status=registerStatus(entry,register);
- return `<article class="register-learner-row ${entry.reason?'has-reason':''}" data-register-entry="${esc(entry.learnerKey)}">
-  <div class="register-learner-main">
-   <strong>${esc(entry.name)}</strong>
-   <span>${esc(entry.course||'Course not recorded')}</span>
-   <small>${esc(entry.studentId?`Student ID ${entry.studentId} · `:'')}${esc(entry.college||'College not recorded')}</small>
-  </div>
-  <div class="register-times">
-   <span>In <b>${esc(entry.inTime||'—')}</b></span>
-   <span>Out <b>${esc(entry.outTime||'—')}</b></span>
-   <span>Hours <b>${entry.outTime?formatMinutes(mins):entry.inTime?'Live':'—'}</b></span>
-  </div>
-  <div class="register-status ${status.toLowerCase().replace(/\s+/g,'-')}">${esc(status)}</div>
-  <button type="button" class="register-entry-menu" data-edit-entry="${esc(entry.learnerKey)}">Edit</button>
- </article>`;
-}
-function renderRegistersHome(){
- const store=registerStore(),active=store.registers.find(r=>r.status==='active');
- const completed=store.registers.filter(r=>r.status==='closed').slice().reverse().slice(0,5);
- app.innerHTML=shell(`<button class="back no-print" id="backAssessorRegisters">← Assessor</button>
- <section class="assessor-section-hero"><span>${appIcon('course')}</span><div><div class="number">Assessor Mode</div><h2>Registers</h2><p class="muted">Scan Apprentice+ Passes, calculate attendance hours and export records.</p></div></section>
- ${active?`<section class="card register-active-card"><div><div class="number">Active register</div><h3>${esc(active.title)}</h3><p>${esc(active.date)} · ${esc(active.startTime)}–${esc(active.endTime)}</p></div><button class="btn" id="openActiveRegister">Open live register</button></section>`:''}
- <section class="register-action-grid">
-  <button class="assignment-card" id="createRegister"><div class="assignment-head"><div><div class="number">Registers</div><h3>Create Register</h3></div>${appIcon('course')}</div><p class="muted">Start a register from scratch or a saved template.</p></button>
-  <button class="assignment-card" id="registerTemplates"><div class="assignment-head"><div><div class="number">Reusable</div><h3>Templates & Classes</h3></div>${appIcon('library')}</div><p class="muted">${store.templates.length} saved template${store.templates.length===1?'':'s'}.</p></button>
-  <button class="assignment-card" id="registerLearners"><div class="assignment-head"><div><div class="number">Learner directory</div><h3>Learners</h3></div>${appIcon('qr')}</div><p class="muted">${store.learners.filter(l=>l.status!=='withdrawn').length} active learner${store.learners.filter(l=>l.status!=='withdrawn').length===1?'':'s'}.</p></button>
-  <button class="assignment-card" id="registerHistory"><div class="assignment-head"><div><div class="number">Saved</div><h3>Register History</h3></div>${appIcon('document')}</div><p class="muted">${store.registers.filter(r=>r.status==='closed').length} completed register${store.registers.filter(r=>r.status==='closed').length===1?'':'s'}.</p></button>
- </section>
- ${completed.length?`<div class="section-heading"><div><h2>Recent registers</h2></div></div><section class="register-history-list">${completed.map(r=>`<button class="assignment-card" data-open-register="${r.id}"><div class="assignment-head"><div><div class="number">${esc(r.date)}</div><h3>${esc(r.title)}</h3></div><span class="status-pill done">${r.entries.filter(e=>e.inTime).length} attended</span></div></button>`).join('')}</section>`:''}`);
- document.getElementById('backAssessorRegisters').onclick=()=>{state.view='assessor-workspace';render()};
- document.getElementById('createRegister').onclick=()=>{state.view='register-create';render()};
- document.getElementById('registerTemplates').onclick=()=>{state.view='register-templates';render()};
- document.getElementById('registerLearners').onclick=()=>{state.view='register-learners';render()};
- document.getElementById('registerHistory').onclick=()=>{state.view='register-history';render()};
- document.getElementById('openActiveRegister')?.addEventListener('click',()=>{state.activeRegisterId=active.id;state.view='register-live';render()});
- document.querySelectorAll('[data-open-register]').forEach(b=>b.onclick=()=>{state.activeRegisterId=b.dataset.openRegister;state.view='register-live';render()});
-}
-function breakRow(index,br={start:'',end:'',label:''}){
- return `<div class="register-break-row" data-break-row="${index}"><input class="input" data-break-label value="${esc(br.label||`Break ${index+1}`)}" placeholder="Break name"><input class="input" type="time" data-break-start value="${esc(br.start||'')}"><input class="input" type="time" data-break-end value="${esc(br.end||'')}"><button type="button" data-remove-break="${index}">×</button></div>`;
-}
-function renderRegisterCreate(){
- const store=registerStore(),template=store.templates.find(t=>t.id===state.selectedRegisterTemplate);
- const todayIso=new Date().toISOString().slice(0,10),breaks=template?.breaks||[{label:'Lunch',start:'12:30',end:'13:00'}];
- app.innerHTML=shell(`<button class="back no-print" id="backRegistersHome">← Registers</button><div class="section-heading"><div><div class="number">New register</div><h2>Create Register</h2></div></div>
- <section class="card panel register-form">
-  <div class="field"><label>Use template</label><select class="input" id="registerTemplate"><option value="">Start blank</option>${store.templates.map(t=>`<option value="${t.id}" ${template?.id===t.id?'selected':''}>${esc(t.name)}</option>`).join('')}</select></div>
-  <div class="field"><label>Register title / class</label><input class="input" id="registerTitle" value="${esc(template?.name||'')}" placeholder="e.g. Bricklaying Tuesday"></div>
-  <div class="register-form-grid"><div class="field"><label>Date</label><input class="input" id="registerDate" type="date" value="${todayIso}"></div><div class="field"><label>Session task</label><input class="input" id="registerTask" value="${esc(template?.task||'')}" placeholder="What are learners doing today?"></div><div class="field"><label>Start</label><input class="input" id="registerStart" type="time" value="${esc(template?.startTime||'09:00')}"></div><div class="field"><label>Finish</label><input class="input" id="registerEnd" type="time" value="${esc(template?.endTime||'16:00')}"></div><div class="field"><label>Late after</label><input class="input" id="registerLate" type="time" value="${esc(template?.lateAfter||'09:10')}"></div><div class="field"><label>Assessor</label><input class="input" id="registerAssessor" value="${esc(state.profile?.fullName||'Assessor')}"></div></div>
-  <div class="field"><label>Scheduled breaks</label><div id="registerBreaks">${breaks.map((b,i)=>breakRow(i,b)).join('')}</div><button type="button" class="btn secondary" id="addRegisterBreak">Add break</button></div>
-  <div class="field"><label>Class list</label><div class="register-roster-select">${store.learners.filter(l=>l.status!=='withdrawn').map(l=>`<label><input type="checkbox" data-roster-key="${esc(l.learnerKey)}" ${template?.learnerKeys?.includes(l.learnerKey)?'checked':''}><span><strong>${esc(l.name)}</strong><small>${esc(l.course||'')}</small></span></label>`).join('')||'<p class="muted">No known learners yet. Learners can be added manually or through saved register templates.</p>'}</div></div>
-  <label class="check"><input type="checkbox" id="saveAsTemplate"> Save these times, breaks and class list as a reusable template</label>
-  <button class="btn" id="startRegister">Start Register</button>
- </section>`);
- document.getElementById('backRegistersHome').onclick=()=>{state.view='registers-home';render()};
- document.getElementById('registerTemplate').onchange=e=>{state.selectedRegisterTemplate=e.target.value||null;render()};
- const bindBreaks=()=>{
-  document.querySelectorAll('[data-remove-break]').forEach(btn=>btn.onclick=()=>{btn.closest('[data-break-row]')?.remove()});
- };
- bindBreaks();
- document.getElementById('addRegisterBreak').onclick=()=>{const holder=document.getElementById('registerBreaks'),i=holder.children.length;holder.insertAdjacentHTML('beforeend',breakRow(i));bindBreaks()};
- document.getElementById('startRegister').onclick=()=>{
-  const title=document.getElementById('registerTitle').value.trim();
-  if(!title)return toast('Enter a register title');
-  const breaks=[...document.querySelectorAll('[data-break-row]')].map(row=>({label:row.querySelector('[data-break-label]').value.trim()||'Break',start:row.querySelector('[data-break-start]').value,end:row.querySelector('[data-break-end]').value})).filter(b=>b.start&&b.end);
-  const learnerKeys=[...document.querySelectorAll('[data-roster-key]:checked')].map(x=>x.dataset.rosterKey);
-  const register={id:registerUid(),title,date:document.getElementById('registerDate').value,startTime:document.getElementById('registerStart').value,endTime:document.getElementById('registerEnd').value,lateAfter:document.getElementById('registerLate').value,task:document.getElementById('registerTask').value.trim(),assessor:document.getElementById('registerAssessor').value.trim(),breaks,status:'active',createdAt:new Date().toISOString(),entries:learnerKeys.map(key=>{const l=store.learners.find(x=>x.learnerKey===key);return{...l,inTime:'',outTime:'',reason:'',note:'',audit:[]}})};
-  store.registers.forEach(r=>{if(r.status==='active')r.status='closed'});
-  store.registers.push(register);
-  if(document.getElementById('saveAsTemplate').checked){
-   store.templates.push({id:registerUid('tpl'),name:title,startTime:register.startTime,endTime:register.endTime,lateAfter:register.lateAfter,task:register.task,breaks,learnerKeys});
-  }
-  saveRegisterStore(store);state.activeRegisterId=register.id;state.selectedRegisterTemplate=null;state.view='register-live';render();
- };
-}
-function renderRegisterLive(){
- const store=registerStore(),register=store.registers.find(r=>r.id===state.activeRegisterId)||store.registers.find(r=>r.status==='active');
- if(!register){state.view='registers-home';return render()}
- state.activeRegisterId=register.id;
- const present=register.entries.filter(e=>e.inTime&&!e.outTime).length,complete=register.entries.filter(e=>e.outTime).length,missing=register.entries.filter(e=>!e.inTime&&!e.reason).length;
- app.innerHTML=shell(`<button class="back no-print" id="backRegistersHome">← Registers</button>
- <section class="register-live-head"><div><div class="number">${register.status==='active'?'Live register':'Completed register'}</div><h2>${esc(register.title)}</h2><p>${esc(register.date)} · ${esc(register.startTime)}–${esc(register.endTime)}${register.task?` · ${esc(register.task)}`:''}</p></div><span class="status-pill ${register.status==='active'?'done':''}">${register.status==='active'?'LIVE':'CLOSED'}</span></section>
- <section class="register-stat-grid"><div><strong>${present}</strong><span>Present now</span></div><div><strong>${complete}</strong><span>Signed out</span></div><div><strong>${missing}</strong><span>Awaiting / missing</span></div></section>
- ${register.status==='active'?`<section class="register-live-actions"><button class="btn register-scan-button" id="addLearnerManually">${appIcon('add')} Add learner</button></section>`:''}
- <section class="register-live-list">${register.entries.length?register.entries.map(e=>registerRowHtml(e,register)).join(''):'<div class="card assessor-empty-library"><h3>No learners added</h3><p class="muted">Add the first learner manually or start from a saved register template.</p></div>'}</section>
- <section class="register-footer-actions">
-  ${register.status==='active'?`<button class="btn danger" id="finishRegister">Finish Register</button>`:''}
-  <button class="btn secondary" id="downloadRegisterCsv">Download CSV</button>
-  <button class="btn secondary" id="printRegisterPdf">View / Save PDF</button>
- </section>`);
- document.getElementById('backRegistersHome').onclick=()=>{state.view='registers-home';render()};
- document.getElementById('addLearnerManually')?.addEventListener('click',()=>showManualLearner(register.id));
- document.querySelectorAll('[data-edit-entry]').forEach(btn=>btn.onclick=()=>showRegisterEntryEditor(register.id,btn.dataset.editEntry));
- document.getElementById('finishRegister')?.addEventListener('click',()=>finishAssessorRegister(register.id));
- document.getElementById('downloadRegisterCsv').onclick=()=>downloadRegisterCsv(register);
- document.getElementById('printRegisterPdf').onclick=()=>printRegisterPdf(register);
-}
-
-
-
-function showManualLearner(registerId){
- const modal=document.createElement('div');modal.className='modal';
- modal.innerHTML=`<section class="modal-card register-small-modal"><button class="icon-close-button" id="closeManualLearner">${appIcon('close')}</button><h2>Add learner</h2><div class="field"><label>Name</label><input class="input" id="manualLearnerName"></div><div class="field"><label>Course</label><input class="input" id="manualLearnerCourse"></div><div class="field"><label>College</label><input class="input" id="manualLearnerCollege"></div><div class="field"><label>Student ID</label><input class="input" id="manualLearnerId"></div><button class="btn" id="saveManualLearner">Add and sign in</button></section>`;
- document.body.appendChild(modal);const close=()=>modal.remove();modal.querySelector('#closeManualLearner').onclick=close;
- modal.querySelector('#saveManualLearner').onclick=()=>{
-  const name=modal.querySelector('#manualLearnerName').value.trim();if(!name)return toast('Enter the learner name');
-  const store=registerStore(),register=store.registers.find(r=>r.id===registerId),learner={learnerKey:registerUid('manual'),name,course:modal.querySelector('#manualLearnerCourse').value.trim(),college:modal.querySelector('#manualLearnerCollege').value.trim(),studentId:modal.querySelector('#manualLearnerId').value.trim(),courseStartDate:'',plannedEndDate:'',status:'active'};
-  upsertRegisterLearner(store,learner);register.entries.push({...learner,inTime:registerNowTime(),outTime:'',reason:'',note:'',audit:[{at:new Date().toISOString(),action:'Manually added and signed in'}]});saveRegisterStore(store);close();render();
- };
-}
-function showRegisterEntryEditor(registerId,learnerKey){
- const store=registerStore(),register=store.registers.find(r=>r.id===registerId),entry=register.entries.find(e=>e.learnerKey===learnerKey);if(!entry)return;
- const reasons=['','Sick','Annual leave','Medical appointment','Authorised absence','Unauthorised absence','Employer training','Off-site assessment','College holiday','Withdrawn','Unknown'];
- const modal=document.createElement('div');modal.className='modal';
- modal.innerHTML=`<section class="modal-card register-entry-editor"><button class="icon-close-button" id="closeEntryEditor">${appIcon('close')}</button><h2>${esc(entry.name)}</h2><div class="register-form-grid"><div class="field"><label>Sign in</label><input class="input" type="time" id="editEntryIn" value="${esc(entry.inTime||'')}"></div><div class="field"><label>Sign out / last seen</label><input class="input" type="time" id="editEntryOut" value="${esc(entry.outTime||'')}"></div></div><div class="field"><label>Missing / absence reason</label><select class="input" id="editEntryReason">${reasons.map(r=>`<option ${entry.reason===r?'selected':''}>${esc(r||'None')}</option>`).join('')}</select></div><div class="field"><label>Note</label><textarea id="editEntryNote">${esc(entry.note||'')}</textarea></div><button class="btn" id="saveEntryEdit">Save</button></section>`;
- document.body.appendChild(modal);const close=()=>modal.remove();modal.querySelector('#closeEntryEditor').onclick=close;
- modal.querySelector('#saveEntryEdit').onclick=()=>{
-  const old={inTime:entry.inTime,outTime:entry.outTime,reason:entry.reason};
-  entry.inTime=modal.querySelector('#editEntryIn').value;entry.outTime=modal.querySelector('#editEntryOut').value;
-  const selected=modal.querySelector('#editEntryReason').value;entry.reason=selected==='None'?'':selected;entry.note=modal.querySelector('#editEntryNote').value.trim();
-  entry.audit=entry.audit||[];entry.audit.push({at:new Date().toISOString(),action:'Assessor edited attendance',from:old,to:{inTime:entry.inTime,outTime:entry.outTime,reason:entry.reason},note:entry.note});
-  if(entry.reason==='Withdrawn'){
-   const learner=store.learners.find(l=>l.learnerKey===entry.learnerKey);if(learner)learner.status='withdrawn';
-   store.templates.forEach(t=>t.learnerKeys=(t.learnerKeys||[]).filter(k=>k!==entry.learnerKey));
-  }
-  saveRegisterStore(store);close();render();
- };
-}
-function finishAssessorRegister(registerId){
- const store=registerStore(),register=store.registers.find(r=>r.id===registerId);
- const missingOut=register.entries.filter(e=>e.inTime&&!e.outTime);
- if(missingOut.length){
-  const modal=document.createElement('div');modal.className='modal';
-  modal.innerHTML=`<section class="modal-card register-finish-modal"><h2>Missing sign-out scans</h2><p class="muted">Enter the last time each learner was seen. The planned finish time is filled in automatically.</p>${missingOut.map(e=>`<label><span>${esc(e.name)}</span><input class="input" type="time" data-last-seen="${esc(e.learnerKey)}" value="${esc(register.endTime)}"></label>`).join('')}<div class="btn-row"><button class="btn secondary" id="cancelFinishRegister">Cancel</button><button class="btn" id="confirmFinishRegister">Complete register</button></div></section>`;
-  document.body.appendChild(modal);modal.querySelector('#cancelFinishRegister').onclick=()=>modal.remove();modal.querySelector('#confirmFinishRegister').onclick=()=>{modal.querySelectorAll('[data-last-seen]').forEach(input=>{const e=register.entries.find(x=>x.learnerKey===input.dataset.lastSeen);e.outTime=input.value;e.audit=e.audit||[];e.audit.push({at:new Date().toISOString(),action:'Assessor entered missing sign-out',time:input.value})});register.status='closed';register.closedAt=new Date().toISOString();saveRegisterStore(store);modal.remove();render()};return;
- }
- if(!confirm('Close and lock this register?'))return;register.status='closed';register.closedAt=new Date().toISOString();saveRegisterStore(store);render();
-}
-function csvCell(value){return `"${String(value??'').replace(/"/g,'""')}"`}
-function downloadRegisterCsv(register){
- const rows=[['Learner','Course','College','Student ID','Start date','End date','Sign in','Sign out','Break minutes','Attended minutes','Attended hours','Status','Reason','Note']];
- register.entries.forEach(e=>rows.push([e.name,e.course,e.college,e.studentId,e.courseStartDate,e.plannedEndDate,e.inTime,e.outTime,(register.breaks||[]).reduce((n,b)=>n+overlapMinutes(e.inTime||register.startTime,e.outTime||register.endTime,b.start,b.end),0),attendanceMinutes(e,register),(attendanceMinutes(e,register)/60).toFixed(2),registerStatus(e,register),e.reason,e.note]));
- const blob=new Blob([rows.map(r=>r.map(csvCell).join(',')).join('\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`${register.date}-${register.title.replace(/[^a-z0-9]+/gi,'-')}-register.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
-}
-function printRegisterPdf(register){
- const w=window.open('','_blank');if(!w)return toast('Allow pop-ups to create the PDF');
- const rows=register.entries.map(e=>`<tr><td>${esc(e.name)}</td><td>${esc(e.course)}</td><td>${esc(e.inTime||'—')}</td><td>${esc(e.outTime||'—')}</td><td>${esc(formatMinutes(attendanceMinutes(e,register)))}</td><td>${esc(registerStatus(e,register))}</td><td>${esc(e.note||'')}</td></tr>`).join('');
- w.document.write(`<title>${esc(register.title)} Register</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial;color:#20132e}h1{margin:0}p{margin:5px 0 14px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #aaa;padding:6px;text-align:left}th{background:#eee7f8}.meta{display:flex;gap:22px;margin:12px 0}</style><h1>${esc(register.title)}</h1><p>${esc(register.date)} · ${esc(register.startTime)}–${esc(register.endTime)} · Assessor: ${esc(register.assessor||'')}</p><div class="meta"><b>Task: ${esc(register.task||'Not recorded')}</b><b>Breaks: ${(register.breaks||[]).map(b=>`${esc(b.label)} ${esc(b.start)}–${esc(b.end)}`).join(', ')||'None'}</b></div><table><thead><tr><th>Learner</th><th>Course</th><th>In</th><th>Out</th><th>Hours</th><th>Status</th><th>Note</th></tr></thead><tbody>${rows}</tbody></table><script>onload=()=>print()<\/script>`);w.document.close();
-}
-function renderRegisterTemplates(){
- const store=registerStore();
- app.innerHTML=shell(`<button class="back no-print" id="backRegistersHome">← Registers</button><div class="section-heading"><div><div class="number">Reusable</div><h2>Templates & Classes</h2></div></div><section class="register-history-list">${store.templates.length?store.templates.map(t=>`<article class="assignment-card"><div class="assignment-head"><div><h3>${esc(t.name)}</h3><p class="muted">${esc(t.startTime)}–${esc(t.endTime)} · ${(t.learnerKeys||[]).length} learners</p></div><button class="btn secondary" data-use-template="${t.id}">Use</button></div><button class="link-button" data-delete-template="${t.id}">Delete template</button></article>`).join(''):'<section class="card assessor-empty-library"><h3>No templates yet</h3><p class="muted">Tick “Save as template” when creating a register.</p></section>'}</section>`);
- document.getElementById('backRegistersHome').onclick=()=>{state.view='registers-home';render()};
- document.querySelectorAll('[data-use-template]').forEach(b=>b.onclick=()=>{state.selectedRegisterTemplate=b.dataset.useTemplate;state.view='register-create';render()});
- document.querySelectorAll('[data-delete-template]').forEach(b=>b.onclick=()=>{if(!confirm('Delete this template?'))return;store.templates=store.templates.filter(t=>t.id!==b.dataset.deleteTemplate);saveRegisterStore(store);render()});
-}
-function renderRegisterLearners(){
- const store=registerStore();
- app.innerHTML=shell(`<button class="back no-print" id="backRegistersHome">← Registers</button><div class="section-heading"><div><div class="number">Learner directory</div><h2>Learners</h2></div></div><section class="register-live-list">${store.learners.length?store.learners.map(l=>`<article class="register-learner-row"><div class="register-learner-main"><strong>${esc(l.name)}</strong><span>${esc(l.course||'')}</span><small>${esc(l.studentId?`Student ID ${l.studentId}`:'Manual learner')} · ${esc(l.college||'')}</small></div><div class="register-status ${l.status==='withdrawn'?'withdrawn':'complete'}">${esc(l.status||'active')}</div><button class="register-entry-menu" data-toggle-learner="${esc(l.learnerKey)}">${l.status==='withdrawn'?'Reactivate':'Withdraw'}</button></article>`).join(''):'<section class="card assessor-empty-library"><h3>No learners scanned yet</h3></section>'}</section>`);
- document.getElementById('backRegistersHome').onclick=()=>{state.view='registers-home';render()};
- document.querySelectorAll('[data-toggle-learner]').forEach(b=>b.onclick=()=>{const l=store.learners.find(x=>x.learnerKey===b.dataset.toggleLearner);l.status=l.status==='withdrawn'?'active':'withdrawn';if(l.status==='withdrawn')store.templates.forEach(t=>t.learnerKeys=(t.learnerKeys||[]).filter(k=>k!==l.learnerKey));saveRegisterStore(store);render()});
-}
-function renderRegisterHistory(){
- const store=registerStore(),from=state.registerHistoryFrom||'',to=state.registerHistoryTo||'';
- const list=store.registers.filter(r=>r.status==='closed'&&(!from||r.date>=from)&&(!to||r.date<=to)).slice().reverse();
- app.innerHTML=shell(`<button class="back no-print" id="backRegistersHome">← Registers</button><div class="section-heading"><div><div class="number">Saved</div><h2>Register History</h2></div></div><section class="card panel"><div class="register-form-grid"><div class="field"><label>From</label><input class="input" id="historyFrom" type="date" value="${esc(from)}"></div><div class="field"><label>To</label><input class="input" id="historyTo" type="date" value="${esc(to)}"></div></div><button class="btn" id="applyHistoryDates">Apply dates</button></section><section class="register-history-list">${list.length?list.map(r=>`<button class="assignment-card" data-open-register="${r.id}"><div class="assignment-head"><div><div class="number">${esc(r.date)}</div><h3>${esc(r.title)}</h3><p class="muted">${r.entries.filter(e=>e.inTime).length} attended · ${r.entries.filter(e=>e.reason).length} reasons recorded</p></div><span class="status-pill done">Closed</span></div></button>`).join(''):'<section class="card assessor-empty-library"><h3>No registers in this date range</h3></section>'}</section>`);
- document.getElementById('backRegistersHome').onclick=()=>{state.view='registers-home';render()};
- document.getElementById('applyHistoryDates').onclick=()=>{state.registerHistoryFrom=document.getElementById('historyFrom').value;state.registerHistoryTo=document.getElementById('historyTo').value;render()};
- document.querySelectorAll('[data-open-register]').forEach(b=>b.onclick=()=>{state.activeRegisterId=b.dataset.openRegister;state.view='register-live';render()});
-}
-
-function renderAssessorWorkspace(){
- app.innerHTML=shell(`<section class="assessor-profile-card"><div><div class="number">Assessor Mode</div><h2>${esc(state.profile?.fullName||'Assessor')}</h2><p>Assessor workspace</p></div><span class="assessor-mode-badge">Protected mode</span></section><div class="section-heading"><div><h2>Assessor</h2><p class="muted">Registers, teaching and assessment documents</p></div></div><section class="assignment-list assessor-workspace-grid">${ASSESSOR_WORKSPACE_ITEMS.map(item=>assessorTile(item,'assessor')).join('')}</section>`);
- document.querySelectorAll('[data-assessor-item]').forEach(button=>button.onclick=()=>{state.assessorSection=button.dataset.assessorItem;state.view='assessor-section';render();window.scrollTo(0,0)});
-}
-function assessorSectionDetails(id){
- return ASSESSOR_WORKSPACE_ITEMS.find(item=>item[0]===id)||['assessor','Assessor','Blank assessor workspace.','course'];
-}
-function renderAssessorSection(){
- if(state.assessorSection==='registers'){state.view='registers-home';return renderRegistersHome()}
- const item=assessorSectionDetails(state.assessorSection);
- const [id,title,copy,icon]=item;
- const actions=id==='registers'
-  ?['Create Register','Register Templates','Active Registers','Register History']
-  :id==='teaching-resources'
-   ?['Blank Lesson Plan','Blank Session Plan','Blank Worksheet','Blank Toolbox Talk']
-   :id==='observations'
-    ?['Blank Observation','Observation Templates','Saved Observations']
-    :id==='assessment-documents'
-     ?['Blank Practical Assessment','Blank Witness Testimony','Blank Professional Discussion','Blank Assessment Record']
-     :id==='reviews'
-      ?['Blank Progress Review','Review Templates','Saved Reviews']
-      :['Blank EPA Record','Blank Gateway Checklist','Blank EPA Assessment','Saved EPA Documents'];
- app.innerHTML=shell(`<button class="back no-print" id="backAssessorWorkspace">← Assessor</button><section class="assessor-section-hero"><span>${appIcon(icon)}</span><div><div class="number">Assessor workspace</div><h2>${esc(title)}</h2><p class="muted">${esc(copy)}</p></div></section><section class="assignment-list assessor-document-list">${actions.map((label,index)=>`<button type="button" class="assignment-card assessor-blank-document" data-blank-document="${esc(label)}"><div class="assignment-head"><div><div class="number">Blank document ${index+1}</div><h3>${esc(label)}</h3></div><span class="assessor-tile-icon">${appIcon('document')}</span></div><p class="muted">Framework ready for this document to be built.</p><span class="assessor-placeholder-badge">Coming next</span></button>`).join('')}</section>`);
- document.getElementById('backAssessorWorkspace').onclick=()=>{state.view='assessor-workspace';render();window.scrollTo(0,0)};
- document.querySelectorAll('[data-blank-document]').forEach(button=>button.onclick=()=>toast(`${button.dataset.blankDocument} framework is ready to build`));
-}
-function assessorReportSearchResults(query){
- const q=String(query||'').trim().toLowerCase();
- if(!q)return[];
- const source=[
-  ...ASSESSOR_REPORT_ITEMS.map(item=>({title:item[1],type:'Report category',detail:item[2]})),
-  ...ASSESSOR_WORKSPACE_ITEMS.map(item=>({title:item[1],type:'Assessor document',detail:item[2]}))
- ];
- return source.filter(item=>`${item.title} ${item.type} ${item.detail}`.toLowerCase().includes(q));
-}
-function renderAssessorReports(){
- app.innerHTML=shell(`<section class="academy-hero assessor-reports-hero"><div class="number">Assessor Mode</div><h2>Reports</h2><p class="muted">Search, view and export assessor documents.</p></section><section class="card assessor-master-search"><label for="assessorMasterSearch">Search all assessor records</label><div class="assessor-search-row"><input class="input" id="assessorMasterSearch" type="search" placeholder="Search registers, learners, observations, assessments or reviews"><button type="button" class="btn" id="runAssessorSearch">${appIcon('search')} Search</button></div><div id="assessorSearchResults" class="assessor-search-results" aria-live="polite"></div></section><section class="academy-grid academy-square-grid assessor-report-grid">${ASSESSOR_REPORT_ITEMS.map(([id,title,copy,icon])=>`<button class="academy-square-tile assessor-report-tile" data-report-item="${id}"><span class="academy-square-icon">${appIcon(icon)}</span><strong>${esc(title)}</strong><small>${esc(copy)}</small></button>`).join('')}</section>`);
- const input=document.getElementById('assessorMasterSearch'),results=document.getElementById('assessorSearchResults');
- const run=()=>{const matches=assessorReportSearchResults(input.value);results.innerHTML=input.value.trim()?(matches.length?matches.map(item=>`<button type="button" class="assessor-search-result"><strong>${esc(item.title)}</strong><span>${esc(item.type)}</span><small>${esc(item.detail)}</small></button>`).join(''):`<div class="assessor-empty-search">No assessor records match “${esc(input.value)}”.</div>`):''};
- document.getElementById('runAssessorSearch').onclick=run;
- input.onkeydown=e=>{if(e.key==='Enter')run()};
- document.querySelectorAll('[data-report-item]').forEach(button=>button.onclick=()=>{state.assessorReportCategory=button.dataset.reportItem;state.view='assessor-report-category';render();window.scrollTo(0,0)});
-}
-function renderAssessorReportCategory(){
- const item=ASSESSOR_REPORT_ITEMS.find(entry=>entry[0]===state.assessorReportCategory)||ASSESSOR_REPORT_ITEMS[0];
- app.innerHTML=shell(`<button class="back no-print" id="backAssessorReports">← Reports</button><section class="assessor-section-hero"><span>${appIcon(item[3])}</span><div><div class="number">Reports</div><h2>${esc(item[1])}</h2><p class="muted">${esc(item[2])}</p></div></section><section class="card assessor-empty-library"><span>${appIcon('document')}</span><h3>No saved ${esc(item[1].toLowerCase())} yet</h3><p class="muted">PDFs and dated ZIP packages will appear here as assessor tools are completed.</p></section>`);
- document.getElementById('backAssessorReports').onclick=()=>{state.view='assessor-reports';render();window.scrollTo(0,0)};
-}
-function render(){syncAppModeTheme();const pageSignature=currentPageSignature();recordNavigation();window.ApprenticeAnalytics?.trackScreen(state.view||'unknown');if(state.view==='registers-home')renderRegistersHome();else if(state.view==='register-create')renderRegisterCreate();else if(state.view==='register-live')renderRegisterLive();else if(state.view==='register-templates')renderRegisterTemplates();else if(state.view==='register-learners')renderRegisterLearners();else if(state.view==='register-history')renderRegisterHistory();else if(state.view==='assessor-workspace')renderAssessorWorkspace();else if(state.view==='assessor-section')renderAssessorSection();else if(state.view==='assessor-reports')renderAssessorReports();else if(state.view==='assessor-report-category')renderAssessorReportCategory();else if(state.view==='resources')renderResources();else if(state.view==='notepad')renderNotepad();else if(state.view==='tools')renderTools();else if(state.view==='measuremate')renderMeasureMate();else if(state.view==='materialmate')renderMaterialMate();else if(state.view==='drawingmate')renderDrawingMate();else if(state.view==='cadmate')renderCADMate();else if(state.view==='skillscard')renderSkillsCard();else if(state.view==='feedbackmate')renderFeedbackMate();else if(state.view==='projectmate')renderProjectMate();else if(state.view==='otjmate')renderOTJMate();else if(state.view==='remindmate')renderRemindMate();else if(state.view==='learning-support')renderLearningSupport();else if(state.view==='settings')renderSettings();else if(state.view==='home')renderHome();else if(state.view==='assignment')renderAssignment();else if(state.view==='academy')assessorModeActive()?renderAssessorReports():renderAcademy();else if(state.view==='library'||state.view==='trade-courses')renderTradeCourses();else if(state.view==='trade-test')renderTradeCourseTest();else if(state.view==='trade-result')renderTradeCourseResult();else if(state.view==='functional-skills')renderFunctionalSkills();else if(state.view==='knowledge-slides')renderKnowledgeSlides();else if(state.view==='academy-knowledge')renderAcademyKnowledge();else if(state.view==='functional-test')renderFunctionalSkillsTest();else if(state.view==='functional-result')renderFunctionalSkillsResult();else if(state.view==='certificates')renderCertificates();else if(state.view==='lesson')renderAcademyLesson();else if(state.view==='epa')renderEpaMockHome();else if(state.view==='epa-results')renderEpaResults();else if(state.view==='epa-test')renderEpaMockTest();else if(state.view==='epa-result')renderEpaMockResult();else if(state.view==='epa-discussion')renderEpaDiscussion();else if(state.view==='epa-discussion-result')renderEpaDiscussionResult();else if(state.view==='epa-practical')renderEpaPractical();else if(state.view==='knowledge-test')renderAssignmentKnowledgeTest();else if(state.view==='knowledge-result')renderAssignmentKnowledgeResult();else if(state.view==='walkthrough')renderWalkthrough();else if(assessorModeActive())renderAssessorWorkspace();else renderSection();ensureVideoSubmissionBottomSpacer();enhanceVoiceToText(app);applyAccessibilityToCurrentView();syncReadAloudControl();attachPageHelp();scrollNewPageToTop(pageSignature)}
+function render(){const pageSignature=currentPageSignature();recordNavigation();window.ApprenticeAnalytics?.trackScreen(state.view||'unknown');if(state.view==='resources')renderResources();else if(state.view==='notepad')renderNotepad();else if(state.view==='tools')renderTools();else if(state.view==='measuremate')renderMeasureMate();else if(state.view==='materialmate')renderMaterialMate();else if(state.view==='drawingmate')renderDrawingMate();else if(state.view==='cadmate')renderCADMate();else if(state.view==='skillscard')renderSkillsCard();else if(state.view==='feedbackmate')renderFeedbackMate();else if(state.view==='projectmate')renderProjectMate();else if(state.view==='otjmate')renderOTJMate();else if(state.view==='remindmate')renderRemindMate();else if(state.view==='learning-support')renderLearningSupport();else if(state.view==='settings')renderSettings();else if(state.view==='home')renderHome();else if(state.view==='assignment')renderAssignment();else if(state.view==='academy')renderAcademy();else if(state.view==='library'||state.view==='trade-courses')renderTradeCourses();else if(state.view==='trade-test')renderTradeCourseTest();else if(state.view==='trade-result')renderTradeCourseResult();else if(state.view==='functional-skills')renderFunctionalSkills();else if(state.view==='knowledge-slides')renderKnowledgeSlides();else if(state.view==='academy-knowledge')renderAcademyKnowledge();else if(state.view==='functional-test')renderFunctionalSkillsTest();else if(state.view==='functional-result')renderFunctionalSkillsResult();else if(state.view==='certificates')renderCertificates();else if(state.view==='lesson')renderAcademyLesson();else if(state.view==='epa')renderEpaMockHome();else if(state.view==='epa-results')renderEpaResults();else if(state.view==='epa-test')renderEpaMockTest();else if(state.view==='epa-result')renderEpaMockResult();else if(state.view==='epa-discussion')renderEpaDiscussion();else if(state.view==='epa-discussion-result')renderEpaDiscussionResult();else if(state.view==='epa-practical')renderEpaPractical();else if(state.view==='knowledge-test')renderAssignmentKnowledgeTest();else if(state.view==='knowledge-result')renderAssignmentKnowledgeResult();else if(state.view==='walkthrough')renderWalkthrough();else renderSection();ensureVideoSubmissionBottomSpacer();enhanceVoiceToText(app);applyAccessibilityToCurrentView();syncReadAloudControl();attachPageHelp();scrollNewPageToTop(pageSignature)}
 
 let activeSpeechRecognition=null;
 let activeSpeechButton=null;
@@ -5522,13 +5191,9 @@ function bindHiddenDeveloperTools(){
  document.getElementById('analyticsEnabled')?.addEventListener('change',e=>{window.ApprenticeAnalytics?.setEnabled?.(e.target.checked);toast(e.target.checked?'Anonymous analytics enabled':'Anonymous analytics disabled');refresh()});
  document.getElementById('analyticsSimulateOffline')?.addEventListener('change',e=>{window.ApprenticeAnalytics?.simulateOffline?.(e.target.checked);toast(e.target.checked?'Offline queue test enabled':'Offline queue test disabled');refresh()});
 }
-function developerPanel(){const rplItems=courseAssignments().filter(a=>assignmentRPL(a.n));return `<div class="admin-dashboard"><section class="admin-section assessor-mode-admin-section"><div class="admin-section-head"><div class="admin-section-icon assessor-admin-icon">${appIcon('course')}</div><div><h3>Application mode</h3><p>Switch the complete app between learner and assessor workspaces.</p></div></div><div class="admin-section-body"><div class="admin-mode-current"><span>Current mode</span><strong>${assessorModeActive()?'Assessor Mode':'Apprentice Mode'}</strong></div><div class="admin-action-grid two"><button class="btn ${assessorModeActive()?'admin-soft':'admin-primary'}" id="switchApprenticeMode" ${assessorModeActive()?'':'disabled'}>Apprentice Mode</button><button class="btn ${assessorModeActive()?'admin-primary assessor-admin-button':'admin-soft'}" id="switchAssessorMode" ${assessorModeActive()?'disabled':''}>Assessor Mode</button></div><p class="admin-note">Assessor Mode uses the purple interface and remains active until changed here again.</p></div></section><div class="admin-course-summary"><div><span>Active course</span><strong>${COURSE.name}</strong><small>${COURSE.standard} · Version ${COURSE.version} · Level ${COURSE.level}</small></div><span class="admin-status">Active</span></div><section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon">${appIcon('course')}</div><div><h3>Course management</h3><p>Switch courses or update the learner profile.</p></div></div><div class="admin-section-body"><div class="field"><label>Selected course</label><select class="input" id="courseSelect">${Object.values(COURSES).map(c=>`<option value="${c.id}" ${c.id===COURSE.id?'selected':''}>${c.name} ${c.version} (${c.standard})</option>`).join('')}</select></div><div class="admin-action-grid two"><button class="btn admin-primary" id="applyCourse">Open selected course</button><button class="btn admin-soft" id="editProfile">Edit learner details</button></div></div></section>${brandingAdminPanel()}<section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon warning">${appIcon('award')}</div><div><h3>Recognition of Prior Learning</h3><p>Mark an assignment as completed through verified prior learning.</p></div></div><div class="admin-section-body"><div class="admin-note">RPL assignments receive a red ribbon and count as a full completion in both progress rings.</div><div class="field"><label>Assignment</label><select class="input" id="rplAssignment">${courseAssignments().map(a=>`<option value="${a.n}" ${assignmentRPL(a.n)?'disabled':''}>Assignment ${a.n} — ${esc(a.title)}${assignmentRPL(a.n)?' (RPL)':''}</option>`).join('')}</select></div><button class="btn admin-danger" id="markRpl">Mark assignment as RPL</button>${rplItems.length?`<div class="rpl-list admin-rpl-list">${rplItems.map(a=>`<div class="rpl-item"><span><strong>Assignment ${a.n}</strong><br>${esc(a.title)}</span><button class="btn admin-soft remove-rpl" data-rpl-remove="${a.n}">Remove RPL</button></div>`).join('')}</div>`:''}</div></section>${selectedOptionalUnit()?`<section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon">${appIcon('settings')}</div><div><h3>Optional unit</h3><p>Evidence Pack 9 is Unit ${esc(selectedOptionalUnit().unit)} — ${esc(selectedOptionalUnit().title)}.</p></div></div><div class="admin-section-body"><button class="btn admin-soft" id="resetOptionalUnit">Reset optional unit selection</button></div></section>`:''}<section class="admin-section admin-danger-zone"><div class="admin-section-head"><div class="admin-section-icon danger">${appIcon('warning')}</div><div><h3>Data and security</h3><p>Lock Admin Mode or reset the current course evidence.</p></div></div><div class="admin-section-body"><div class="admin-action-grid two"><button class="btn admin-soft" id="lockDev">Lock Admin Mode</button><button class="btn admin-danger" id="resetEvidence">Reset course evidence</button></div></div></section></div>`}
+function developerPanel(){const rplItems=courseAssignments().filter(a=>assignmentRPL(a.n));return `<div class="admin-dashboard"><div class="admin-course-summary"><div><span>Active course</span><strong>${COURSE.name}</strong><small>${COURSE.standard} · Version ${COURSE.version} · Level ${COURSE.level}</small></div><span class="admin-status">Active</span></div><section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon">${appIcon('course')}</div><div><h3>Course management</h3><p>Switch courses or update the learner profile.</p></div></div><div class="admin-section-body"><div class="field"><label>Selected course</label><select class="input" id="courseSelect">${Object.values(COURSES).map(c=>`<option value="${c.id}" ${c.id===COURSE.id?'selected':''}>${c.name} ${c.version} (${c.standard})</option>`).join('')}</select></div><div class="admin-action-grid two"><button class="btn admin-primary" id="applyCourse">Open selected course</button><button class="btn admin-soft" id="editProfile">Edit learner details</button></div></div></section>${brandingAdminPanel()}<section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon warning">${appIcon('award')}</div><div><h3>Recognition of Prior Learning</h3><p>Mark an assignment as completed through verified prior learning.</p></div></div><div class="admin-section-body"><div class="admin-note">RPL assignments receive a red ribbon and count as a full completion in both progress rings.</div><div class="field"><label>Assignment</label><select class="input" id="rplAssignment">${courseAssignments().map(a=>`<option value="${a.n}" ${assignmentRPL(a.n)?'disabled':''}>Assignment ${a.n} — ${esc(a.title)}${assignmentRPL(a.n)?' (RPL)':''}</option>`).join('')}</select></div><button class="btn admin-danger" id="markRpl">Mark assignment as RPL</button>${rplItems.length?`<div class="rpl-list admin-rpl-list">${rplItems.map(a=>`<div class="rpl-item"><span><strong>Assignment ${a.n}</strong><br>${esc(a.title)}</span><button class="btn admin-soft remove-rpl" data-rpl-remove="${a.n}">Remove RPL</button></div>`).join('')}</div>`:''}</div></section>${selectedOptionalUnit()?`<section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon">${appIcon('settings')}</div><div><h3>Optional unit</h3><p>Evidence Pack 9 is Unit ${esc(selectedOptionalUnit().unit)} — ${esc(selectedOptionalUnit().title)}.</p></div></div><div class="admin-section-body"><button class="btn admin-soft" id="resetOptionalUnit">Reset optional unit selection</button></div></section>`:''}<section class="admin-section admin-danger-zone"><div class="admin-section-head"><div class="admin-section-icon danger">${appIcon('warning')}</div><div><h3>Data and security</h3><p>Lock Admin Mode or reset the current course evidence.</p></div></div><div class="admin-section-body"><div class="admin-action-grid two"><button class="btn admin-soft" id="lockDev">Lock Admin Mode</button><button class="btn admin-danger" id="resetEvidence">Reset course evidence</button></div></div></section></div>`}
 
 function bindDeveloper(){
- const switchAssessor=document.getElementById('switchAssessorMode');
- if(switchAssessor)switchAssessor.onclick=()=>{if(!confirm('Switch this device to Assessor Mode?'))return;document.getElementById('devModal')?.remove();state.dev=false;putStore('dev',false);setAppMode('assessor');toast('Assessor Mode enabled')};
- const switchApprentice=document.getElementById('switchApprenticeMode');
- if(switchApprentice)switchApprentice.onclick=()=>{if(!confirm('Return this device to Apprentice Mode?'))return;document.getElementById('devModal')?.remove();state.dev=false;putStore('dev',false);setAppMode('apprentice');toast('Apprentice Mode enabled')};
 const logoInput=document.getElementById('brandLogoInput');if(logoInput)logoInput.onchange=async()=>{const f=logoInput.files?.[0];if(!f)return;try{const logo=await prepareBrandLogo(f);state.branding={...(state.branding||{}),logo};await putStore(BRANDING_KEY,state.branding);document.getElementById('devModal').remove();showDeveloper();toast('College logo added')}catch(e){console.error(e);toast('Unable to prepare that logo')}};const saveBrand=document.getElementById('saveBranding');if(saveBrand)saveBrand.onclick=async()=>{const b=currentBrandingFromForm();if(!b.name||!b.logo)return toast('Add the college name and logo');state.branding=b;await putStore(BRANDING_KEY,b);render();document.getElementById('devModal')?.remove();showDeveloper();toast('College branding saved')};document.getElementById('generateBrandQR')?.addEventListener('click',()=>showBrandQR(false));document.getElementById('downloadBrandSheet')?.addEventListener('click',()=>showBrandQR(true));document.getElementById('removeBranding')?.addEventListener('click',async()=>{if(!confirm('Remove the college branding from this device?'))return;state.branding=null;await putStore(BRANDING_KEY,null);document.getElementById('devModal').remove();render();toast('College branding removed')});
 
  document.getElementById('markRpl').onclick=async()=>{const n=Number(document.getElementById('rplAssignment').value);const a=assignment(n);if(!a)return;if(!confirm(`Mark Assignment ${n} — ${a.title} as completed through RPL?`))return;state.data[packStatusKey(n)]={...(state.data[packStatusKey(n)]||{}),rpl:true,rplAt:new Date().toISOString(),uploaded:false,downloaded:false};await saveData();document.getElementById('devModal').remove();render();toast(`Assignment ${n} completed through RPL`)};
@@ -6163,10 +5828,9 @@ function activatePrimaryNavigation(target){
  if(primaryNavigationLocked)return;
  primaryNavigationLocked=true;
  cleanupTransientUi();
- const assessor=assessorModeActive();
- if(target==='academy'){state.view=assessor?'assessor-reports':'academy';state.assignment=null;state.section=null}
+ if(target==='academy'){state.view='academy';state.assignment=null;state.section=null}
  else if(target==='resources'){state.view='resources';state.assignment=null;state.section=null;state.editingNoteId=null}
- else{state.view=assessor?'assessor-workspace':'home';state.assignment=null;state.section=null}
+ else{state.view='home';state.assignment=null;state.section=null}
  try{render()}catch(error){
   console.error(`Unable to open ${target}`,error);
   app.innerHTML=shell(`<section class="card panel"><h2>This page could not open</h2><p class="muted">Apprentice+ kept your saved work. Tap another navigation button and try this page again.</p><button type="button" class="btn" id="retryCurrentPage">Try again</button></section>`);
