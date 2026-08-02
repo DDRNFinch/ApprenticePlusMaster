@@ -1,6 +1,22 @@
 {
-  "latest": "V1.5.80",
+  "latest": "V1.5.81",
   "releases": [
+    {
+      "version": "V1.5.81",
+      "date": "2026-08-02",
+      "title": "CADMate Solid Scrolling Page",
+      "features": [
+        "Changed CADMate into one continuous Apprentice+ scrolling page.",
+        "Removed the fixed-height nested CADMate scrolling area.",
+        "CADMate now automatically expands when controls or drawings change."
+      ],
+      "items": [
+        "Added automatic iframe height measurement.",
+        "Added ResizeObserver and content-change height updates.",
+        "Removed fixed desktop and mobile iframe heights.",
+        "Kept all CADMate drawing and bond logic unchanged."
+      ]
+    },
     {
       "version": "V1.5.80",
       "date": "2026-08-02",

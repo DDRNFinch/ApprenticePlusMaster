@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.80';
+const APP_VERSION='V1.5.81';
 
 const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
 const TECHNICAL_DRAWING_PREFIX={
@@ -4069,9 +4069,57 @@ function renderResources(){
 }
 
 function renderCADMate(){
- app.innerHTML=shell(`<button class="back no-print" id="backCADMate">← Toolbox</button><div class="section-heading cadmate-heading"><div><div class="number">Work tools</div><h2>CADMate</h2><p class="muted">Create technical drawings using the locked metric brickwork, concrete blockwork and English bond renderers.</p></div><span class="status-pill cadmate-coming-soon">Cavity walling · Coming soon</span></div><section class="card cadmate-host"><iframe id="cadmateFrame" class="cadmate-frame" src="cadmate.html?v=1.5.80" title="CADMate construction drawing designer" loading="eager"></iframe></section>`);
- document.getElementById('backCADMate').onclick=()=>{state.view='resources';render();window.scrollTo(0,0)};
+ app.innerHTML=shell(`<button class="back no-print" id="backCADMate">← Toolbox</button><div class="section-heading cadmate-heading"><div><div class="number">Work tools</div><h2>CADMate</h2><p class="muted">Create technical drawings using the locked metric brickwork, concrete blockwork and English bond renderers.</p></div><span class="status-pill cadmate-coming-soon">Cavity walling · Coming soon</span></div><section class="card cadmate-host"><iframe id="cadmateFrame" class="cadmate-frame" src="cadmate.html?v=1.5.81" title="CADMate construction drawing designer" loading="eager" scrolling="no"></iframe></section>`);
+ const frame=document.getElementById('cadmateFrame');
+ const resizeCADMate=()=>{
+  try{
+   const doc=frame.contentDocument||frame.contentWindow.document;
+   const body=doc.body;
+   const html=doc.documentElement;
+   const height=Math.max(
+    body?body.scrollHeight:0,
+    body?body.offsetHeight:0,
+    html?html.clientHeight:0,
+    html?html.scrollHeight:0,
+    html?html.offsetHeight:0
+   );
+   if(height>0)frame.style.height=`${height}px`;
+  }catch(error){}
+ };
+ frame.addEventListener('load',()=>{
+  resizeCADMate();
+  try{
+   const doc=frame.contentDocument||frame.contentWindow.document;
+   if(window.ResizeObserver){
+    const observer=new ResizeObserver(resizeCADMate);
+    observer.observe(doc.documentElement);
+    if(doc.body)observer.observe(doc.body);
+    frame._cadmateResizeObserver=observer;
+   }
+   doc.addEventListener('input',()=>requestAnimationFrame(resizeCADMate));
+   doc.addEventListener('change',()=>requestAnimationFrame(resizeCADMate));
+   doc.addEventListener('click',()=>setTimeout(resizeCADMate,30));
+  }catch(error){}
+  setTimeout(resizeCADMate,100);
+  setTimeout(resizeCADMate,500);
+ });
+ document.getElementById('backCADMate').onclick=()=>{
+  if(frame._cadmateResizeObserver)frame._cadmateResizeObserver.disconnect();
+  state.view='resources';
+  render();
+  window.scrollTo(0,0);
+ };
 }
+
+
+window.addEventListener('message',event=>{
+ if(!event.data||event.data.type!=='cadmate-height')return;
+ const frame=document.getElementById('cadmateFrame');
+ const height=Number(event.data.height);
+ if(frame&&Number.isFinite(height)&&height>0){
+  frame.style.height=`${height}px`;
+ }
+});
 
 const APP_SETTINGS_KEY='apprenticeplus.appSettings.v1';
 function defaultAppSettings(){return {appearance:'light',accent:'green',notifications:{enabled:true,updates:true,epa:true,assignments:true,certificates:true,otj:true,reminders:true,projects:true,reviews:true,learning:true}}}
