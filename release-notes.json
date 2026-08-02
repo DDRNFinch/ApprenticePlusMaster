@@ -1,6 +1,25 @@
 {
-  "latest": "V1.6.8",
+  "latest": "V1.6.9",
   "releases": [
+    {
+      "version": "V1.6.9",
+      "date": "2026-08-02",
+      "title": "Assessor Registers and Pass Scanner",
+      "features": [
+        "Added working register creation, reusable templates and class lists in Assessor Mode.",
+        "Added Apprentice+ Pass camera scanning with an 8-digit pass fallback.",
+        "First scan signs in and second scan signs out with confirmation.",
+        "Added scheduled break deduction and automatic attended-hours calculation.",
+        "Added missing sign-out warnings with last-seen time entry.",
+        "Added absence reasons, notes, audit history and withdrawn learner handling.",
+        "Added register history with date filtering, CSV download and landscape PDF printing."
+      ],
+      "items": [
+        "Learner name, course, college, student ID and course dates are read from the permanent Apprentice+ Pass.",
+        "All register and learner records are stored locally on the assessor device.",
+        "BarcodeDetector camera scanning is used where the browser supports it; manual pass entry remains available."
+      ]
+    },
     {
       "version": "V1.6.8",
       "date": "2026-08-02",
