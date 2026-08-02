@@ -1,6 +1,76 @@
 {
-  "latest": "V1.5.81",
+  "latest": "V1.6.3",
   "releases": [
+    {
+      "version": "V1.6.3",
+      "date": "2026-08-02",
+      "title": "True Full-Screen Drawing Viewer Fix",
+      "features": [
+        "Replaced the embedded-looking technical drawing view with a true fixed full-screen viewer.",
+        "The drawing now opens at Fit Width so it fills a landscape phone screen.",
+        "Browser page pinch zoom is disabled only while the viewer is open.",
+        "Drawing controls float over the image instead of reducing the viewing area.",
+        "Pinch zoom and panning remain clamped to the PNG boundaries."
+      ],
+      "items": [
+        "Requests browser full-screen and landscape orientation when supported.",
+        "Restores normal viewport behaviour after closing.",
+        "Existing practical assessment drawings remain unchanged."
+      ]
+    },
+    {
+      "version": "V1.6.2",
+      "date": "2026-08-02",
+      "title": "Practical Drawing Viewer",
+      "features": [
+        "Technical drawings now request landscape orientation before opening.",
+        "PNG drawings open in a dedicated full-screen landscape viewer.",
+        "Added pinch zoom, drag panning, double-tap zoom and mouse-wheel zoom.",
+        "Panning is clamped to the drawing edges so learners cannot move into empty space.",
+        "Added Fit Page, Fit Width and 100% viewing controls.",
+        "Returning to portrait pauses the drawing behind a rotate-to-landscape prompt."
+      ],
+      "items": [
+        "Existing Practical Assessment drawings and assessment content remain unchanged.",
+        "Zoom is limited from Fit Page to 6\u00d7.",
+        "The drawing remains in memory while the viewer is open."
+      ]
+    },
+    {
+      "version": "V1.6.1",
+      "date": "2026-08-02",
+      "title": "Apprentice+ Pass Demo",
+      "features": [
+        "Tapping the learner name in Apprentice Mode now opens a full-screen Apprentice+ Pass.",
+        "The pass includes the learner name, course, college, student ID when available, and course dates.",
+        "An automatic permanent eight-digit pass number is generated and stored on the learner device.",
+        "The scannable app-only payload remains fixed after the pass is first issued.",
+        "Added a demo panel showing the exact details Assessor Mode will receive."
+      ],
+      "items": [
+        "The pass is local-only and does not open a website.",
+        "Assessor Mode name tags are unchanged.",
+        "No register scanning has been added yet; this release demonstrates the learner pass."
+      ]
+    },
+    {
+      "version": "V1.6.0",
+      "date": "2026-08-02",
+      "title": "Assessor Mode Framework",
+      "features": [
+        "Added a password-protected switch between Apprentice Mode and Assessor Mode inside Admin Mode.",
+        "Added a complete purple Assessor Mode theme.",
+        "Kept the same three-tab navigation: Toolbox, Assessor and Reports.",
+        "Kept the full learner Toolbox available to assessors.",
+        "Added blank framework pages for Registers, Teaching Resources, Observations, Assessment Documents, Reviews and EPA Documents.",
+        "Added a Reports page with document categories and a master assessor search."
+      ],
+      "items": [
+        "Assessor Mode remains active until changed back through password-protected Admin Mode.",
+        "The Apprentice Mode interface and saved learner evidence remain unchanged.",
+        "Added empty report libraries ready for future PDFs and dated ZIP exports."
+      ]
+    },
     {
       "version": "V1.5.81",
       "date": "2026-08-02",

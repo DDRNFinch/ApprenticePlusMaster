@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.81';
+const APP_VERSION='V1.6.3';
 
 const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
 const TECHNICAL_DRAWING_PREFIX={
@@ -290,26 +290,64 @@ function printTechnicalDrawing(info){
  analyticsEvent('technical_drawing_printed',{course:COURSE.id,assignment:info.assignmentNumber});
 }
 function openTechnicalDrawing(assignmentNumber){
- const info=technicalDrawingInfo(assignmentNumber);if(!info)return toast('No technical drawing is configured for this course');
+ const info=technicalDrawingInfo(assignmentNumber);
+ if(!info)return toast('No technical drawing is configured for this course');
  analyticsEvent('technical_drawing_opened',{course:COURSE.id,assignment:Number(assignmentNumber)});
- const wrap=document.createElement('div');wrap.className='modal technical-drawing-modal';wrap.innerHTML=`<section class="technical-drawing-viewer" role="dialog" aria-modal="true" aria-label="Technical drawing"><header><div><span>TECHNICAL DRAWING</span><strong>${esc(info.title)}</strong></div><div class="technical-drawing-header-actions"><button type="button" class="icon-close-button" id="closeTechnicalDrawing" aria-label="Close">${appIcon('close')}</button></div></header><div class="technical-drawing-stage" id="technicalDrawingStage"><img id="technicalDrawingImage" src="${esc(info.url)}" alt="${esc(info.title)} technical drawing" draggable="false"><div class="technical-drawing-missing" id="technicalDrawingMissing" hidden><strong>Drawing coming soon</strong><span>${esc(info.file)} has not been uploaded yet.</span></div></div><footer><button type="button" class="btn secondary" id="printTechnicalDrawing">Print</button><button type="button" class="btn" id="downloadTechnicalDrawingPDF">Download A4 PDF</button></footer></section>`;document.body.appendChild(wrap);
- const image=wrap.querySelector('#technicalDrawingImage'),missing=wrap.querySelector('#technicalDrawingMissing');
- image.onload=()=>{image.hidden=false;missing.hidden=true};
- image.onerror=()=>{image.hidden=true;missing.hidden=false;analyticsEvent('technical_drawing_missing',{course:COURSE.id,assignment:Number(assignmentNumber)})};
- const close=()=>{if(document.fullscreenElement===wrap)document.exitFullscreen?.().catch(()=>{});wrap.remove()};wrap.querySelector('#closeTechnicalDrawing').onclick=close;
- wrap.querySelector('#printTechnicalDrawing').onclick=()=>printTechnicalDrawing(info);const pdfButton=wrap.querySelector('#downloadTechnicalDrawingPDF');pdfButton.onclick=()=>{const previewWindow=window.open('about:blank','_blank');downloadTechnicalDrawingPDF(info,pdfButton,previewWindow)};
- // Native-feeling two-finger pinch zoom and one-finger pan for installed PWAs.
- const stage=wrap.querySelector('#technicalDrawingStage');let scale=1,minScale=1,maxScale=6,x=0,y=0,startX=0,startY=0,startPanX=0,startPanY=0,startDistance=0,startScale=1,pinchMidX=0,pinchMidY=0,lastTap=0;
- const clamp=()=>{const rect=stage.getBoundingClientRect(),iw=image.naturalWidth*scale,ih=image.naturalHeight*scale;const limitX=Math.max(0,(iw-rect.width)/2),limitY=Math.max(0,(ih-rect.height)/2);x=Math.max(-limitX,Math.min(limitX,x));y=Math.max(-limitY,Math.min(limitY,y))};
- const apply=()=>{clamp();image.style.transform=`translate3d(${x}px,${y}px,0) scale(${scale})`};
- const fit=()=>{if(!image.naturalWidth)return;const r=stage.getBoundingClientRect();minScale=Math.min(r.width/image.naturalWidth,r.height/image.naturalHeight);scale=minScale;x=0;y=0;image.style.width=`${image.naturalWidth}px`;image.style.height=`${image.naturalHeight}px`;apply()};
- const distance=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
- image.addEventListener('load',fit,{once:false});window.addEventListener('resize',fit,{passive:true});
- stage.addEventListener('touchstart',e=>{if(e.touches.length===1){startX=e.touches[0].clientX;startY=e.touches[0].clientY;startPanX=x;startPanY=y;const now=Date.now();if(now-lastTap<280){fit();e.preventDefault()}lastTap=now}else if(e.touches.length===2){startDistance=distance(e.touches);startScale=scale;const r=stage.getBoundingClientRect();pinchMidX=(e.touches[0].clientX+e.touches[1].clientX)/2-r.left-r.width/2;pinchMidY=(e.touches[0].clientY+e.touches[1].clientY)/2-r.top-r.height/2;e.preventDefault()}},{passive:false});
- stage.addEventListener('touchmove',e=>{if(e.touches.length===1&&scale>minScale+.001){x=startPanX+(e.touches[0].clientX-startX);y=startPanY+(e.touches[0].clientY-startY);apply();e.preventDefault()}else if(e.touches.length===2){const next=Math.max(minScale,Math.min(maxScale,startScale*(distance(e.touches)/Math.max(1,startDistance)))),ratio=next/scale;x=pinchMidX-(pinchMidX-x)*ratio;y=pinchMidY-(pinchMidY-y)*ratio;scale=next;apply();e.preventDefault()}},{passive:false});
- stage.addEventListener('touchend',e=>{if(!e.touches.length&&scale<minScale*1.01)fit()},{passive:true});
- wrap.onclick=e=>{if(e.target===wrap)close()};document.addEventListener('keydown',function escapeDrawing(e){if(e.key==='Escape'&&document.body.contains(wrap)){close();document.removeEventListener('keydown',escapeDrawing)}});
- wrap.requestFullscreen?.().catch(()=>{});
+ const viewportMeta=document.querySelector('meta[name="viewport"]');
+ const previousViewport=viewportMeta?.getAttribute('content')||'';
+ if(viewportMeta)viewportMeta.setAttribute('content','width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover');
+ const wrap=document.createElement('div');
+ wrap.className='technical-drawing-screen';
+ wrap.innerHTML=`<div class="technical-drawing-orientation" id="technicalDrawingOrientation">
+   <button type="button" class="technical-drawing-floating-close" id="closeDrawingPrompt" aria-label="Close">${appIcon('close')}</button>
+   <div class="technical-drawing-rotate-symbol">↻</div><div class="number">Technical drawing</div>
+   <h2>Rotate your phone</h2><p>Turn your phone to landscape to open the drawing.</p>
+   <button type="button" class="btn" id="openDrawingAnyway">Open drawing</button>
+  </div>
+  <div class="technical-drawing-view" id="technicalDrawingView" hidden>
+   <div class="technical-drawing-floating-title"><span>TECHNICAL DRAWING</span><strong>${esc(info.title)}</strong></div>
+   <button type="button" class="technical-drawing-floating-close" id="closeDrawingViewer" aria-label="Close drawing">${appIcon('close')}</button>
+   <div class="technical-drawing-image-boundary" id="technicalDrawingBoundary">
+    <div class="technical-drawing-transform" id="technicalDrawingTransform"><img id="technicalDrawingFullImage" src="${esc(info.url)}" alt="${esc(info.title)} technical drawing" draggable="false"></div>
+    <div class="technical-drawing-missing" id="technicalDrawingMissing" hidden><strong>Drawing coming soon</strong><span>${esc(info.file)} has not been uploaded yet.</span></div>
+    <div class="technical-drawing-return-landscape" id="technicalDrawingReturnLandscape" hidden><div class="technical-drawing-rotate-symbol">↻</div><h2>Return to landscape</h2></div>
+   </div>
+   <div class="technical-drawing-floating-tools">
+    <button type="button" data-view-mode="page">Fit Page</button><button type="button" data-view-mode="width">Fit Width</button><button type="button" data-view-mode="actual">100%</button><span id="technicalDrawingScale">Fit Width</span>
+   </div>
+  </div>`;
+ document.body.appendChild(wrap);document.body.classList.add('technical-drawing-active');
+ const orientation=wrap.querySelector('#technicalDrawingOrientation'),view=wrap.querySelector('#technicalDrawingView'),boundary=wrap.querySelector('#technicalDrawingBoundary'),transform=wrap.querySelector('#technicalDrawingTransform'),image=wrap.querySelector('#technicalDrawingFullImage'),missing=wrap.querySelector('#technicalDrawingMissing'),returnLandscape=wrap.querySelector('#technicalDrawingReturnLandscape'),scaleLabel=wrap.querySelector('#technicalDrawingScale');
+ let baseW=0,baseH=0,scale=1,x=0,y=0,ready=false,opened=false,lastTap=0;
+ const landscape=()=>window.innerWidth>window.innerHeight||window.matchMedia?.('(orientation: landscape)').matches;
+ const limits=()=>({x:Math.max(0,(baseW*scale-boundary.clientWidth)/2),y:Math.max(0,(baseH*scale-boundary.clientHeight)/2)});
+ const clamp=()=>{const l=limits();x=Math.max(-l.x,Math.min(l.x,x));y=Math.max(-l.y,Math.min(l.y,y))};
+ const apply=(label)=>{clamp();transform.style.width=`${baseW}px`;transform.style.height=`${baseH}px`;transform.style.transform=`translate3d(${x}px,${y}px,0) scale(${scale})`;scaleLabel.textContent=label||`${Math.round(scale*100)}%`};
+ const calculateBase=()=>{if(!ready)return;const ratio=Math.min(boundary.clientWidth/image.naturalWidth,boundary.clientHeight/image.naturalHeight);baseW=image.naturalWidth*ratio;baseH=image.naturalHeight*ratio;image.style.width=`${baseW}px`;image.style.height=`${baseH}px`};
+ const fitPage=()=>{calculateBase();scale=1;x=0;y=0;apply('Fit Page')};
+ const fitWidth=()=>{calculateBase();scale=Math.max(1,Math.min(6,boundary.clientWidth/Math.max(1,baseW)));x=0;y=0;apply('Fit Width')};
+ const actual=()=>{calculateBase();scale=Math.max(1,Math.min(6,image.naturalWidth/Math.max(1,baseW)));x=0;y=0;apply('100%')};
+ const zoomAt=(next,cx,cy)=>{next=Math.max(1,Math.min(6,next));const r=boundary.getBoundingClientRect(),px=cx-r.left-r.width/2,py=cy-r.top-r.height/2,ratio=next/scale;x=px-(px-x)*ratio;y=py-(py-y)*ratio;scale=next;apply()};
+ const syncOrientation=()=>{if(!opened)return;const ok=landscape();returnLandscape.hidden=ok;transform.hidden=!ok||!ready;if(ok&&ready)requestAnimationFrame(()=>{calculateBase();apply()})};
+ const enterFullscreen=async()=>{try{await document.documentElement.requestFullscreen?.()}catch{}try{await screen.orientation?.lock?.('landscape')}catch{}};
+ const start=async()=>{opened=true;orientation.hidden=true;view.hidden=false;await enterFullscreen();syncOrientation();if(ready)requestAnimationFrame(fitWidth)};
+ const close=()=>{window.removeEventListener('resize',resize);window.removeEventListener('orientationchange',resize);document.body.classList.remove('technical-drawing-active');if(viewportMeta)viewportMeta.setAttribute('content',previousViewport);try{screen.orientation?.unlock?.()}catch{}if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});wrap.remove()};
+ const resize=()=>{syncOrientation();if(opened&&landscape()&&ready)requestAnimationFrame(()=>{calculateBase();apply()})};
+ image.onload=()=>{ready=true;missing.hidden=true;transform.hidden=!landscape();if(opened)requestAnimationFrame(fitWidth)};
+ image.onerror=()=>{ready=false;transform.hidden=true;missing.hidden=false;analyticsEvent('technical_drawing_missing',{course:COURSE.id,assignment:Number(assignmentNumber)})};
+ wrap.querySelector('#openDrawingAnyway').onclick=start;wrap.querySelector('#closeDrawingPrompt').onclick=close;wrap.querySelector('#closeDrawingViewer').onclick=close;
+ wrap.querySelectorAll('[data-view-mode]').forEach(b=>b.onclick=()=>b.dataset.viewMode==='page'?fitPage():b.dataset.viewMode==='actual'?actual():fitWidth());
+ let touches=new Map(),gesture=null;
+ const beginGesture=()=>{const pts=[...touches.values()];if(pts.length===1)gesture={kind:'pan',sx:pts[0].x,sy:pts[0].y,x,y};else if(pts.length>=2){gesture={kind:'pinch',distance:Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y),scale,x,y,mx:(pts[0].x+pts[1].x)/2,my:(pts[0].y+pts[1].y)/2}}};
+ boundary.addEventListener('pointerdown',ev=>{if(!ready||!landscape())return;boundary.setPointerCapture?.(ev.pointerId);touches.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});beginGesture();ev.preventDefault()});
+ boundary.addEventListener('pointermove',ev=>{if(!touches.has(ev.pointerId)||!gesture)return;touches.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});const pts=[...touches.values()];if(pts.length===1&&gesture.kind==='pan'&&scale>1){x=gesture.x+(pts[0].x-gesture.sx);y=gesture.y+(pts[0].y-gesture.sy);apply()}else if(pts.length>=2){if(gesture.kind!=='pinch')beginGesture();const dist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);zoomAt(gesture.scale*(dist/Math.max(1,gesture.distance)),gesture.mx,gesture.my)}ev.preventDefault()});
+ const end=ev=>{touches.delete(ev.pointerId);if(touches.size)beginGesture();else{gesture=null;apply()}};boundary.addEventListener('pointerup',end);boundary.addEventListener('pointercancel',end);
+ boundary.addEventListener('wheel',ev=>{zoomAt(scale*(ev.deltaY<0?1.15:1/1.15),ev.clientX,ev.clientY);ev.preventDefault()},{passive:false});
+ boundary.addEventListener('dblclick',ev=>{scale>1.05?fitWidth():zoomAt(2.5,ev.clientX,ev.clientY);ev.preventDefault()});
+ boundary.addEventListener('touchend',ev=>{if(ev.touches.length)return;const now=Date.now();if(now-lastTap<280){const t=ev.changedTouches?.[0];if(t)(scale>1.05?fitWidth():zoomAt(2.5,t.clientX,t.clientY));lastTap=0}else lastTap=now},{passive:true});
+ window.addEventListener('resize',resize,{passive:true});window.addEventListener('orientationchange',resize,{passive:true});
+ document.addEventListener('keydown',function escClose(ev){if(ev.key==='Escape'&&document.body.contains(wrap)){document.removeEventListener('keydown',escClose);close()}});
+ if(landscape())start();
 }
 function bindTechnicalDrawingButtons(scope=document){
  scope.querySelectorAll('[data-technical-drawing-card]').forEach(card=>{const image=card.querySelector('img'),button=card.querySelector('.technical-drawing-preview-button'),missing=card.querySelector('.technical-drawing-preview-missing');if(!image||!button||!missing)return;const available=()=>{button.hidden=false;missing.hidden=true},unavailable=()=>{button.hidden=true;missing.hidden=false};image.onload=available;image.onerror=unavailable;if(image.complete)(image.naturalWidth?available:unavailable)()});
@@ -772,7 +810,37 @@ async function load(){
 async function saveData(){await putStore('data',state.data)}
 async function saveProfile(){await putStore('profile',state.profile)}
 
-function shell(content){const active=state.view==='resources'||state.view==='notepad'||state.view==='tools'||state.view==='measuremate'||state.view==='materialmate'||state.view==='drawingmate'||state.view==='cadmate'||state.view==='skillscard'||state.view==='feedbackmate'||state.view==='projectmate'||state.view==='otjmate'||state.view==='remindmate'||state.view==='learning-support'||state.view==='settings'?'resources':state.view==='academy'||state.view==='library'||state.view==='trade-courses'||state.view==='trade-test'||state.view==='trade-result'||state.view==='functional-skills'||state.view==='certificates'||state.view==='academy-knowledge'||state.view==='knowledge-slides'?'academy':'course';return `<main class="shell"><header class="topbar"><div class="brand"><div class="logo update-logo-wrap"><img src="logo-apprentice-plus.png" alt="Apprentice+ logo"><button type="button" class="update-notification-badge no-print" id="updateNotificationButton" aria-label="1 app update ready" hidden>1</button></div><div><div class="brand-title-row"><h1>Apprentice<span class="brand-plus">+</span></h1></div><p class="subtitle brand-tagline">Your Course, Your Way</p></div>${state.branding?.logo?`<div class="college-header-brand"><img src="${state.branding.logo}" alt="${esc(state.branding.name||'College')} logo"><span>${esc(state.branding.name||'')}</span></div>`:''}</div>${state.profile?`<div class="learner-help-wrap"><span class="pill learner-progress-button" id="learnerProgressBtn">${esc(state.profile.fullName.split(' ')[0]||'Learner')}</span><button type="button" class="page-help-button no-print" id="pageHelpButton" aria-label="How to use this page">i</button></div>`:''}</header>${content}<button type="button" class="app-version-bottom no-print" id="developerVersionTrigger" aria-label="App version">${APP_VERSION}</button><nav class="bottom-nav no-print" aria-label="Main navigation"><button class="bottom-nav-item ${active==='resources'?'active':''}" data-nav="resources" aria-label="Toolbox"><span>${appIcon('toolbox','nav-icon')}</span><strong>Toolbox</strong></button><button class="bottom-nav-item ${active==='course'?'active':''}" data-nav="course" aria-label="Course"><span>${appIcon('course','nav-icon')}</span><strong>Course</strong></button><button class="bottom-nav-item ${active==='academy'?'active':''}" data-nav="academy" aria-label="Academy"><span>${appIcon('academy','nav-icon')}</span><strong>Academy</strong></button></nav></main>`}
+
+const APP_MODE_KEY='apprenticeplus.operatingMode.v1';
+function currentAppMode(){
+ try{return localStorage.getItem(APP_MODE_KEY)==='assessor'?'assessor':'apprentice'}catch{return'apprentice'}
+}
+function assessorModeActive(){return currentAppMode()==='assessor'}
+function setAppMode(mode){
+ const next=mode==='assessor'?'assessor':'apprentice';
+ try{localStorage.setItem(APP_MODE_KEY,next)}catch{}
+ document.body.classList.toggle('assessor-mode',next==='assessor');
+ state.view=next==='assessor'?'assessor-workspace':'home';
+ state.assignment=null;
+ state.section=null;
+ render();
+ window.scrollTo(0,0);
+}
+function syncAppModeTheme(){
+ document.body.classList.toggle('assessor-mode',assessorModeActive());
+}
+function shell(content){
+ const assessor=assessorModeActive();
+ const resourceViews=['resources','notepad','tools','measuremate','materialmate','drawingmate','cadmate','skillscard','feedbackmate','projectmate','otjmate','remindmate','learning-support','settings'];
+ const reportViews=['academy','library','trade-courses','trade-test','trade-result','functional-skills','certificates','academy-knowledge','knowledge-slides','assessor-reports','assessor-report-category'];
+ const active=resourceViews.includes(state.view)?'resources':reportViews.includes(state.view)?'academy':'course';
+ const brandName=assessor?'Assessor':'Apprentice';
+ const brandTagline=assessor?'Assess, Record, Report':'Your Course, Your Way';
+ const middleLabel=assessor?'Assessor':'Course';
+ const rightLabel=assessor?'Reports':'Academy';
+ const firstName=state.profile?.fullName?.split(' ')?.[0]||(assessor?'Assessor':'Learner');
+ return `<main class="shell ${assessor?'assessor-shell':''}"><header class="topbar"><div class="brand"><div class="logo update-logo-wrap"><img src="logo-apprentice-plus.png" alt="${brandName}+ logo"><button type="button" class="update-notification-badge no-print" id="updateNotificationButton" aria-label="1 app update ready" hidden>1</button></div><div><div class="brand-title-row"><h1>${brandName}<span class="brand-plus">+</span></h1></div><p class="subtitle brand-tagline">${brandTagline}</p></div>${state.branding?.logo?`<div class="college-header-brand"><img src="${state.branding.logo}" alt="${esc(state.branding.name||'College')} logo"><span>${esc(state.branding.name||'')}</span></div>`:''}</div>${state.profile?`<div class="learner-help-wrap"><button type="button" class="pill learner-progress-button ${assessor?'':'apprentice-pass-trigger'}" id="learnerProgressBtn" aria-label="${assessor?'Assessor profile':'Open Apprentice+ Pass'}">${esc(firstName)}${assessor?'':`<span class="name-tag-pass-mark">${appIcon('qr')}</span>`}</button><button type="button" class="page-help-button no-print" id="pageHelpButton" aria-label="How to use this page">i</button></div>`:''}</header>${content}<button type="button" class="app-version-bottom no-print" id="developerVersionTrigger" aria-label="App version">${APP_VERSION}</button><nav class="bottom-nav no-print" aria-label="Main navigation"><button class="bottom-nav-item ${active==='resources'?'active':''}" data-nav="resources" aria-label="Toolbox"><span>${appIcon('toolbox','nav-icon')}</span><strong>Toolbox</strong></button><button class="bottom-nav-item ${active==='course'?'active':''}" data-nav="course" aria-label="${middleLabel}"><span>${appIcon('course','nav-icon')}</span><strong>${middleLabel}</strong></button><button class="bottom-nav-item ${active==='academy'?'active':''}" data-nav="academy" aria-label="${rightLabel}"><span>${appIcon('academy','nav-icon')}</span><strong>${rightLabel}</strong></button></nav></main>`;
+}
 function courseHeader(){const p=courseProgressStats(),red=p.red??0;return `<section class="course-card"><div class="course-summary"><div class="course-copy"><div class="course-title-row"><h2>${COURSE.name}</h2><span class="target-status ${p.tone}">${p.label}</span></div><div class="meta"><span class="pill">${COURSE.standard}</span><span class="pill">Version ${COURSE.version}</span><span class="pill">Level ${COURSE.level}</span><span class="pill green">${courseAssignments().length} evidence packs</span></div></div><div class="progress-rings" id="courseProgressBtn" role="button" tabindex="0" aria-label="Open learner progress summary" style="--green:${p.green*3.6}deg;--yellow:${p.yellow*3.6}deg;--red:${red*3.6}deg"><span class="ring ring-green"></span><span class="ring ring-yellow"></span><span class="ring ring-red"></span><strong>${p.green}%</strong></div></div><button type="button" class="course-search-launch no-print" id="openWorkSearch" aria-label="Find an assignment" title="Find an assignment"><svg class="search-silhouette" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M10.5 2a8.5 8.5 0 1 0 5.28 15.16l4.66 4.65a1.5 1.5 0 0 0 2.12-2.12l-4.66-4.65A8.5 8.5 0 0 0 10.5 2Zm0 3a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg></button></section>`}
 
 function showWorkSearchLauncher(){const modal=document.createElement('div');modal.className='modal work-search-launcher-modal';modal.id='workSearchLauncherModal';modal.innerHTML=`<section class="modal-card work-search-launcher" role="dialog" aria-modal="true" aria-labelledby="workSearchTitle"><button class="icon-close-button" id="closeWorkSearchLauncher" aria-label="Close assignment search">${appIcon('close')}</button><div class="work-search-launcher-icon">${appIcon('search')}</div><h2 id="workSearchTitle">What are you working on today?</h2><p class="work-search-help">Choose a common activity below or describe the work in your own words.</p><div class="work-search-row"><input class="input" id="workSearchInput" type="search" autocomplete="off" placeholder="e.g. cavity walling, mortices, CNC machine, fixing a tap"><button class="btn" id="workSearchButton">Search</button></div><div class="work-search-suggestions" id="workSearchSuggestions" aria-live="polite"></div></section>`;document.body.appendChild(modal);const close=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)close()};modal.querySelector('#closeWorkSearchLauncher').onclick=close;bindWorkSearch();setTimeout(()=>modal.querySelector('#workSearchInput')?.focus(),50)}
@@ -829,7 +897,205 @@ function ensureVideoSubmissionBottomSpacer(){
  spacer.setAttribute('aria-hidden','true');
  app.appendChild(spacer);
 }
-function render(){const pageSignature=currentPageSignature();recordNavigation();window.ApprenticeAnalytics?.trackScreen(state.view||'unknown');if(state.view==='resources')renderResources();else if(state.view==='notepad')renderNotepad();else if(state.view==='tools')renderTools();else if(state.view==='measuremate')renderMeasureMate();else if(state.view==='materialmate')renderMaterialMate();else if(state.view==='drawingmate')renderDrawingMate();else if(state.view==='cadmate')renderCADMate();else if(state.view==='skillscard')renderSkillsCard();else if(state.view==='feedbackmate')renderFeedbackMate();else if(state.view==='projectmate')renderProjectMate();else if(state.view==='otjmate')renderOTJMate();else if(state.view==='remindmate')renderRemindMate();else if(state.view==='learning-support')renderLearningSupport();else if(state.view==='settings')renderSettings();else if(state.view==='home')renderHome();else if(state.view==='assignment')renderAssignment();else if(state.view==='academy')renderAcademy();else if(state.view==='library'||state.view==='trade-courses')renderTradeCourses();else if(state.view==='trade-test')renderTradeCourseTest();else if(state.view==='trade-result')renderTradeCourseResult();else if(state.view==='functional-skills')renderFunctionalSkills();else if(state.view==='knowledge-slides')renderKnowledgeSlides();else if(state.view==='academy-knowledge')renderAcademyKnowledge();else if(state.view==='functional-test')renderFunctionalSkillsTest();else if(state.view==='functional-result')renderFunctionalSkillsResult();else if(state.view==='certificates')renderCertificates();else if(state.view==='lesson')renderAcademyLesson();else if(state.view==='epa')renderEpaMockHome();else if(state.view==='epa-results')renderEpaResults();else if(state.view==='epa-test')renderEpaMockTest();else if(state.view==='epa-result')renderEpaMockResult();else if(state.view==='epa-discussion')renderEpaDiscussion();else if(state.view==='epa-discussion-result')renderEpaDiscussionResult();else if(state.view==='epa-practical')renderEpaPractical();else if(state.view==='knowledge-test')renderAssignmentKnowledgeTest();else if(state.view==='knowledge-result')renderAssignmentKnowledgeResult();else if(state.view==='walkthrough')renderWalkthrough();else renderSection();ensureVideoSubmissionBottomSpacer();enhanceVoiceToText(app);applyAccessibilityToCurrentView();syncReadAloudControl();attachPageHelp();scrollNewPageToTop(pageSignature)}
+
+
+const APPRENTICE_PASS_KEY='apprenticeplus.permanentPass.v1';
+function apprenticePassRandomId(){
+ try{return crypto.randomUUID()}catch{
+  return 'ap-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,14);
+ }
+}
+function apprenticePassNumber(){
+ const bytes=new Uint32Array(1);
+ try{crypto.getRandomValues(bytes)}catch{bytes[0]=Math.floor(Math.random()*0xffffffff)}
+ return String(10000000+(bytes[0]%90000000));
+}
+function apprenticePassCollege(){
+ return String(
+  state.profile?.college||
+  state.profile?.collegeName||
+  state.branding?.name||
+  'College not recorded'
+ ).trim();
+}
+function apprenticePassStudentId(){
+ return String(
+  state.profile?.studentId||
+  state.profile?.studentID||
+  state.profile?.learnerId||
+  ''
+ ).trim();
+}
+function issuePermanentApprenticePass(){
+ let saved=null;
+ try{saved=JSON.parse(localStorage.getItem(APPRENTICE_PASS_KEY)||'null')}catch{}
+ if(saved?.version===1&&saved?.learnerKey&&saved?.passNumber&&saved?.payload)return saved;
+
+ const issued={
+  version:1,
+  learnerKey:apprenticePassRandomId(),
+  passNumber:apprenticePassNumber(),
+  issuedAt:new Date().toISOString(),
+  details:{
+   name:String(state.profile?.fullName||'Learner').trim(),
+   course:String(COURSE?.name||'Course not recorded').trim(),
+   college:apprenticePassCollege(),
+   studentId:apprenticePassStudentId(),
+   courseStartDate:String(state.profile?.courseStartDate||''),
+   plannedEndDate:String(state.profile?.plannedEndDate||'')
+  }
+ };
+ const payloadObject={
+  t:'A+PASS',
+  v:1,
+  k:issued.learnerKey,
+  p:issued.passNumber,
+  n:issued.details.name,
+  c:issued.details.course,
+  g:issued.details.college,
+  s:issued.details.studentId,
+  a:issued.details.courseStartDate,
+  e:issued.details.plannedEndDate
+ };
+ issued.payload='A+PASS|1|'+btoa(unescape(encodeURIComponent(JSON.stringify(payloadObject))));
+ try{localStorage.setItem(APPRENTICE_PASS_KEY,JSON.stringify(issued))}catch{}
+ return issued;
+}
+function formatApprenticePassDate(value){
+ if(!value)return'Not recorded';
+ const d=new Date(`${value}T12:00:00`);
+ return Number.isNaN(d.getTime())?value:d.toLocaleDateString('en-GB');
+}
+function showApprenticePass(){
+ if(assessorModeActive())return;
+ const pass=issuePermanentApprenticePass();
+ const d=pass.details;
+ const overlay=document.createElement('div');
+ overlay.className='apprentice-pass-overlay';
+ overlay.id='apprenticePassOverlay';
+ overlay.innerHTML=`<section class="apprentice-pass-sheet" role="dialog" aria-modal="true" aria-labelledby="apprenticePassTitle">
+  <button type="button" class="apprentice-pass-close" id="closeApprenticePass" aria-label="Close Apprentice+ Pass">×</button>
+  <div class="apprentice-pass-brand"><span class="apprentice-pass-logo">A<span>+</span></span><div><div>APPRENTICE+</div><strong id="apprenticePassTitle">PASS</strong></div></div>
+  <div class="apprentice-pass-identity">
+   <h2>${esc(d.name)}</h2>
+   <p>${esc(d.course)}</p>
+   <strong>${esc(d.college)}</strong>
+  </div>
+  <div class="apprentice-pass-code-wrap">
+   <div class="apprentice-pass-code" id="apprenticePassCode" aria-label="Permanent Apprentice+ Pass code"></div>
+   <div class="apprentice-pass-scan-note">Scan in Apprentice+ Assessor Mode</div>
+  </div>
+  <div class="apprentice-pass-number-label">Permanent pass number</div>
+  <div class="apprentice-pass-number">${pass.passNumber.slice(0,4)} ${pass.passNumber.slice(4)}</div>
+  <div class="apprentice-pass-details">
+   ${d.studentId?`<div><span>Student ID</span><strong>${esc(d.studentId)}</strong></div>`:''}
+   <div><span>Course start</span><strong>${esc(formatApprenticePassDate(d.courseStartDate))}</strong></div>
+   <div><span>Planned end</span><strong>${esc(formatApprenticePassDate(d.plannedEndDate))}</strong></div>
+  </div>
+  <details class="apprentice-pass-demo-data">
+   <summary>Demo: details received by Assessor Mode</summary>
+   <div><span>Name</span><strong>${esc(d.name)}</strong></div>
+   <div><span>Course</span><strong>${esc(d.course)}</strong></div>
+   <div><span>College</span><strong>${esc(d.college)}</strong></div>
+   ${d.studentId?`<div><span>Student ID</span><strong>${esc(d.studentId)}</strong></div>`:''}
+   <div><span>Pass</span><strong>${esc(pass.passNumber)}</strong></div>
+  </details>
+  <p class="apprentice-pass-fixed-note">This pass was issued on ${esc(new Date(pass.issuedAt).toLocaleDateString('en-GB'))} and remains permanently linked to this learner on this device.</p>
+ </section>`;
+ document.body.appendChild(overlay);
+ const holder=overlay.querySelector('#apprenticePassCode');
+ try{
+  holder.appendChild(ApprenticeQR.toCanvas(pass.payload,420));
+ }catch(error){
+  console.error(error);
+  holder.innerHTML='<div class="apprentice-pass-code-error">Pass code could not be drawn.</div>';
+ }
+ const close=()=>overlay.remove();
+ overlay.querySelector('#closeApprenticePass').onclick=close;
+ overlay.onclick=e=>{if(e.target===overlay)close()};
+ document.addEventListener('keydown',function closePassOnEscape(e){
+  if(e.key!=='Escape'||!document.getElementById('apprenticePassOverlay'))return;
+  document.removeEventListener('keydown',closePassOnEscape);
+  close();
+ });
+}
+document.addEventListener('click',event=>{
+ const trigger=event.target?.closest?.('#learnerProgressBtn.apprentice-pass-trigger');
+ if(!trigger)return;
+ event.preventDefault();
+ event.stopPropagation();
+ showApprenticePass();
+},{capture:true});
+
+const ASSESSOR_WORKSPACE_ITEMS=[
+ ['registers','Registers','Create registers, templates, live attendance and history.','course'],
+ ['teaching-resources','Teaching Resources','Store blank lesson plans, worksheets, presentations and toolbox talks.','library'],
+ ['observations','Observations','Create and save blank assessor observation documents.','observation'],
+ ['assessment-documents','Assessment Documents','Practical assessment, witness testimony and discussion forms.','assignment'],
+ ['reviews','Reviews','Blank progress-review documents and saved review records.','reviews'],
+ ['epa-documents','EPA Documents','Blank EPA assessment and gateway paperwork.','academy']
+];
+const ASSESSOR_REPORT_ITEMS=[
+ ['registers','Registers','Saved and exported register documents.','course'],
+ ['attendance','Attendance','Attendance summaries, exceptions and hours reports.','progress'],
+ ['observations','Observations','Saved observation PDFs.','observation'],
+ ['assessments','Assessments','Practical and assessment documents.','assignment'],
+ ['reviews','Reviews','Saved review reports.','reviews'],
+ ['epa','EPA','EPA and gateway reports.','academy'],
+ ['downloads','Downloads','Dated PDF and ZIP export packages.','download']
+];
+function assessorTile(item,prefix){
+ const [id,title,copy,icon]=item;
+ return `<button type="button" class="assignment-card assessor-workspace-tile" data-${prefix}-item="${id}"><div class="assignment-head"><div><div class="number">${prefix==='assessor'?'Assessor':'Reports'}</div><h3>${esc(title)}</h3></div><span class="assessor-tile-icon">${appIcon(icon)}</span></div><p class="muted">${esc(copy)}</p><span class="assessor-placeholder-badge">Blank framework</span></button>`;
+}
+function renderAssessorWorkspace(){
+ app.innerHTML=shell(`<section class="assessor-profile-card"><div><div class="number">Assessor Mode</div><h2>${esc(state.profile?.fullName||'Assessor')}</h2><p>Assessor workspace</p></div><span class="assessor-mode-badge">Protected mode</span></section><div class="section-heading"><div><h2>Assessor</h2><p class="muted">Registers, teaching and assessment documents</p></div></div><section class="assignment-list assessor-workspace-grid">${ASSESSOR_WORKSPACE_ITEMS.map(item=>assessorTile(item,'assessor')).join('')}</section>`);
+ document.querySelectorAll('[data-assessor-item]').forEach(button=>button.onclick=()=>{state.assessorSection=button.dataset.assessorItem;state.view='assessor-section';render();window.scrollTo(0,0)});
+}
+function assessorSectionDetails(id){
+ return ASSESSOR_WORKSPACE_ITEMS.find(item=>item[0]===id)||['assessor','Assessor','Blank assessor workspace.','course'];
+}
+function renderAssessorSection(){
+ const item=assessorSectionDetails(state.assessorSection);
+ const [id,title,copy,icon]=item;
+ const actions=id==='registers'
+  ?['Create Register','Register Templates','Active Registers','Register History']
+  :id==='teaching-resources'
+   ?['Blank Lesson Plan','Blank Session Plan','Blank Worksheet','Blank Toolbox Talk']
+   :id==='observations'
+    ?['Blank Observation','Observation Templates','Saved Observations']
+    :id==='assessment-documents'
+     ?['Blank Practical Assessment','Blank Witness Testimony','Blank Professional Discussion','Blank Assessment Record']
+     :id==='reviews'
+      ?['Blank Progress Review','Review Templates','Saved Reviews']
+      :['Blank EPA Record','Blank Gateway Checklist','Blank EPA Assessment','Saved EPA Documents'];
+ app.innerHTML=shell(`<button class="back no-print" id="backAssessorWorkspace">← Assessor</button><section class="assessor-section-hero"><span>${appIcon(icon)}</span><div><div class="number">Assessor workspace</div><h2>${esc(title)}</h2><p class="muted">${esc(copy)}</p></div></section><section class="assignment-list assessor-document-list">${actions.map((label,index)=>`<button type="button" class="assignment-card assessor-blank-document" data-blank-document="${esc(label)}"><div class="assignment-head"><div><div class="number">Blank document ${index+1}</div><h3>${esc(label)}</h3></div><span class="assessor-tile-icon">${appIcon('document')}</span></div><p class="muted">Framework ready for this document to be built.</p><span class="assessor-placeholder-badge">Coming next</span></button>`).join('')}</section>`);
+ document.getElementById('backAssessorWorkspace').onclick=()=>{state.view='assessor-workspace';render();window.scrollTo(0,0)};
+ document.querySelectorAll('[data-blank-document]').forEach(button=>button.onclick=()=>toast(`${button.dataset.blankDocument} framework is ready to build`));
+}
+function assessorReportSearchResults(query){
+ const q=String(query||'').trim().toLowerCase();
+ if(!q)return[];
+ const source=[
+  ...ASSESSOR_REPORT_ITEMS.map(item=>({title:item[1],type:'Report category',detail:item[2]})),
+  ...ASSESSOR_WORKSPACE_ITEMS.map(item=>({title:item[1],type:'Assessor document',detail:item[2]}))
+ ];
+ return source.filter(item=>`${item.title} ${item.type} ${item.detail}`.toLowerCase().includes(q));
+}
+function renderAssessorReports(){
+ app.innerHTML=shell(`<section class="academy-hero assessor-reports-hero"><div class="number">Assessor Mode</div><h2>Reports</h2><p class="muted">Search, view and export assessor documents.</p></section><section class="card assessor-master-search"><label for="assessorMasterSearch">Search all assessor records</label><div class="assessor-search-row"><input class="input" id="assessorMasterSearch" type="search" placeholder="Search registers, learners, observations, assessments or reviews"><button type="button" class="btn" id="runAssessorSearch">${appIcon('search')} Search</button></div><div id="assessorSearchResults" class="assessor-search-results" aria-live="polite"></div></section><section class="academy-grid academy-square-grid assessor-report-grid">${ASSESSOR_REPORT_ITEMS.map(([id,title,copy,icon])=>`<button class="academy-square-tile assessor-report-tile" data-report-item="${id}"><span class="academy-square-icon">${appIcon(icon)}</span><strong>${esc(title)}</strong><small>${esc(copy)}</small></button>`).join('')}</section>`);
+ const input=document.getElementById('assessorMasterSearch'),results=document.getElementById('assessorSearchResults');
+ const run=()=>{const matches=assessorReportSearchResults(input.value);results.innerHTML=input.value.trim()?(matches.length?matches.map(item=>`<button type="button" class="assessor-search-result"><strong>${esc(item.title)}</strong><span>${esc(item.type)}</span><small>${esc(item.detail)}</small></button>`).join(''):`<div class="assessor-empty-search">No assessor records match “${esc(input.value)}”.</div>`):''};
+ document.getElementById('runAssessorSearch').onclick=run;
+ input.onkeydown=e=>{if(e.key==='Enter')run()};
+ document.querySelectorAll('[data-report-item]').forEach(button=>button.onclick=()=>{state.assessorReportCategory=button.dataset.reportItem;state.view='assessor-report-category';render();window.scrollTo(0,0)});
+}
+function renderAssessorReportCategory(){
+ const item=ASSESSOR_REPORT_ITEMS.find(entry=>entry[0]===state.assessorReportCategory)||ASSESSOR_REPORT_ITEMS[0];
+ app.innerHTML=shell(`<button class="back no-print" id="backAssessorReports">← Reports</button><section class="assessor-section-hero"><span>${appIcon(item[3])}</span><div><div class="number">Reports</div><h2>${esc(item[1])}</h2><p class="muted">${esc(item[2])}</p></div></section><section class="card assessor-empty-library"><span>${appIcon('document')}</span><h3>No saved ${esc(item[1].toLowerCase())} yet</h3><p class="muted">PDFs and dated ZIP packages will appear here as assessor tools are completed.</p></section>`);
+ document.getElementById('backAssessorReports').onclick=()=>{state.view='assessor-reports';render();window.scrollTo(0,0)};
+}
+function render(){syncAppModeTheme();const pageSignature=currentPageSignature();recordNavigation();window.ApprenticeAnalytics?.trackScreen(state.view||'unknown');if(state.view==='assessor-workspace')renderAssessorWorkspace();else if(state.view==='assessor-section')renderAssessorSection();else if(state.view==='assessor-reports')renderAssessorReports();else if(state.view==='assessor-report-category')renderAssessorReportCategory();else if(state.view==='resources')renderResources();else if(state.view==='notepad')renderNotepad();else if(state.view==='tools')renderTools();else if(state.view==='measuremate')renderMeasureMate();else if(state.view==='materialmate')renderMaterialMate();else if(state.view==='drawingmate')renderDrawingMate();else if(state.view==='cadmate')renderCADMate();else if(state.view==='skillscard')renderSkillsCard();else if(state.view==='feedbackmate')renderFeedbackMate();else if(state.view==='projectmate')renderProjectMate();else if(state.view==='otjmate')renderOTJMate();else if(state.view==='remindmate')renderRemindMate();else if(state.view==='learning-support')renderLearningSupport();else if(state.view==='settings')renderSettings();else if(state.view==='home')renderHome();else if(state.view==='assignment')renderAssignment();else if(state.view==='academy')assessorModeActive()?renderAssessorReports():renderAcademy();else if(state.view==='library'||state.view==='trade-courses')renderTradeCourses();else if(state.view==='trade-test')renderTradeCourseTest();else if(state.view==='trade-result')renderTradeCourseResult();else if(state.view==='functional-skills')renderFunctionalSkills();else if(state.view==='knowledge-slides')renderKnowledgeSlides();else if(state.view==='academy-knowledge')renderAcademyKnowledge();else if(state.view==='functional-test')renderFunctionalSkillsTest();else if(state.view==='functional-result')renderFunctionalSkillsResult();else if(state.view==='certificates')renderCertificates();else if(state.view==='lesson')renderAcademyLesson();else if(state.view==='epa')renderEpaMockHome();else if(state.view==='epa-results')renderEpaResults();else if(state.view==='epa-test')renderEpaMockTest();else if(state.view==='epa-result')renderEpaMockResult();else if(state.view==='epa-discussion')renderEpaDiscussion();else if(state.view==='epa-discussion-result')renderEpaDiscussionResult();else if(state.view==='epa-practical')renderEpaPractical();else if(state.view==='knowledge-test')renderAssignmentKnowledgeTest();else if(state.view==='knowledge-result')renderAssignmentKnowledgeResult();else if(state.view==='walkthrough')renderWalkthrough();else if(assessorModeActive())renderAssessorWorkspace();else renderSection();ensureVideoSubmissionBottomSpacer();enhanceVoiceToText(app);applyAccessibilityToCurrentView();syncReadAloudControl();attachPageHelp();scrollNewPageToTop(pageSignature)}
 
 let activeSpeechRecognition=null;
 let activeSpeechButton=null;
@@ -5179,9 +5445,14 @@ function bindHiddenDeveloperTools(){
  document.getElementById('analyticsEnabled')?.addEventListener('change',e=>{window.ApprenticeAnalytics?.setEnabled?.(e.target.checked);toast(e.target.checked?'Anonymous analytics enabled':'Anonymous analytics disabled');refresh()});
  document.getElementById('analyticsSimulateOffline')?.addEventListener('change',e=>{window.ApprenticeAnalytics?.simulateOffline?.(e.target.checked);toast(e.target.checked?'Offline queue test enabled':'Offline queue test disabled');refresh()});
 }
-function developerPanel(){const rplItems=courseAssignments().filter(a=>assignmentRPL(a.n));return `<div class="admin-dashboard"><div class="admin-course-summary"><div><span>Active course</span><strong>${COURSE.name}</strong><small>${COURSE.standard} · Version ${COURSE.version} · Level ${COURSE.level}</small></div><span class="admin-status">Active</span></div><section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon">${appIcon('course')}</div><div><h3>Course management</h3><p>Switch courses or update the learner profile.</p></div></div><div class="admin-section-body"><div class="field"><label>Selected course</label><select class="input" id="courseSelect">${Object.values(COURSES).map(c=>`<option value="${c.id}" ${c.id===COURSE.id?'selected':''}>${c.name} ${c.version} (${c.standard})</option>`).join('')}</select></div><div class="admin-action-grid two"><button class="btn admin-primary" id="applyCourse">Open selected course</button><button class="btn admin-soft" id="editProfile">Edit learner details</button></div></div></section>${brandingAdminPanel()}<section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon warning">${appIcon('award')}</div><div><h3>Recognition of Prior Learning</h3><p>Mark an assignment as completed through verified prior learning.</p></div></div><div class="admin-section-body"><div class="admin-note">RPL assignments receive a red ribbon and count as a full completion in both progress rings.</div><div class="field"><label>Assignment</label><select class="input" id="rplAssignment">${courseAssignments().map(a=>`<option value="${a.n}" ${assignmentRPL(a.n)?'disabled':''}>Assignment ${a.n} — ${esc(a.title)}${assignmentRPL(a.n)?' (RPL)':''}</option>`).join('')}</select></div><button class="btn admin-danger" id="markRpl">Mark assignment as RPL</button>${rplItems.length?`<div class="rpl-list admin-rpl-list">${rplItems.map(a=>`<div class="rpl-item"><span><strong>Assignment ${a.n}</strong><br>${esc(a.title)}</span><button class="btn admin-soft remove-rpl" data-rpl-remove="${a.n}">Remove RPL</button></div>`).join('')}</div>`:''}</div></section>${selectedOptionalUnit()?`<section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon">${appIcon('settings')}</div><div><h3>Optional unit</h3><p>Evidence Pack 9 is Unit ${esc(selectedOptionalUnit().unit)} — ${esc(selectedOptionalUnit().title)}.</p></div></div><div class="admin-section-body"><button class="btn admin-soft" id="resetOptionalUnit">Reset optional unit selection</button></div></section>`:''}<section class="admin-section admin-danger-zone"><div class="admin-section-head"><div class="admin-section-icon danger">${appIcon('warning')}</div><div><h3>Data and security</h3><p>Lock Admin Mode or reset the current course evidence.</p></div></div><div class="admin-section-body"><div class="admin-action-grid two"><button class="btn admin-soft" id="lockDev">Lock Admin Mode</button><button class="btn admin-danger" id="resetEvidence">Reset course evidence</button></div></div></section></div>`}
+function developerPanel(){const rplItems=courseAssignments().filter(a=>assignmentRPL(a.n));return `<div class="admin-dashboard"><section class="admin-section assessor-mode-admin-section"><div class="admin-section-head"><div class="admin-section-icon assessor-admin-icon">${appIcon('course')}</div><div><h3>Application mode</h3><p>Switch the complete app between learner and assessor workspaces.</p></div></div><div class="admin-section-body"><div class="admin-mode-current"><span>Current mode</span><strong>${assessorModeActive()?'Assessor Mode':'Apprentice Mode'}</strong></div><div class="admin-action-grid two"><button class="btn ${assessorModeActive()?'admin-soft':'admin-primary'}" id="switchApprenticeMode" ${assessorModeActive()?'':'disabled'}>Apprentice Mode</button><button class="btn ${assessorModeActive()?'admin-primary assessor-admin-button':'admin-soft'}" id="switchAssessorMode" ${assessorModeActive()?'disabled':''}>Assessor Mode</button></div><p class="admin-note">Assessor Mode uses the purple interface and remains active until changed here again.</p></div></section><div class="admin-course-summary"><div><span>Active course</span><strong>${COURSE.name}</strong><small>${COURSE.standard} · Version ${COURSE.version} · Level ${COURSE.level}</small></div><span class="admin-status">Active</span></div><section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon">${appIcon('course')}</div><div><h3>Course management</h3><p>Switch courses or update the learner profile.</p></div></div><div class="admin-section-body"><div class="field"><label>Selected course</label><select class="input" id="courseSelect">${Object.values(COURSES).map(c=>`<option value="${c.id}" ${c.id===COURSE.id?'selected':''}>${c.name} ${c.version} (${c.standard})</option>`).join('')}</select></div><div class="admin-action-grid two"><button class="btn admin-primary" id="applyCourse">Open selected course</button><button class="btn admin-soft" id="editProfile">Edit learner details</button></div></div></section>${brandingAdminPanel()}<section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon warning">${appIcon('award')}</div><div><h3>Recognition of Prior Learning</h3><p>Mark an assignment as completed through verified prior learning.</p></div></div><div class="admin-section-body"><div class="admin-note">RPL assignments receive a red ribbon and count as a full completion in both progress rings.</div><div class="field"><label>Assignment</label><select class="input" id="rplAssignment">${courseAssignments().map(a=>`<option value="${a.n}" ${assignmentRPL(a.n)?'disabled':''}>Assignment ${a.n} — ${esc(a.title)}${assignmentRPL(a.n)?' (RPL)':''}</option>`).join('')}</select></div><button class="btn admin-danger" id="markRpl">Mark assignment as RPL</button>${rplItems.length?`<div class="rpl-list admin-rpl-list">${rplItems.map(a=>`<div class="rpl-item"><span><strong>Assignment ${a.n}</strong><br>${esc(a.title)}</span><button class="btn admin-soft remove-rpl" data-rpl-remove="${a.n}">Remove RPL</button></div>`).join('')}</div>`:''}</div></section>${selectedOptionalUnit()?`<section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon">${appIcon('settings')}</div><div><h3>Optional unit</h3><p>Evidence Pack 9 is Unit ${esc(selectedOptionalUnit().unit)} — ${esc(selectedOptionalUnit().title)}.</p></div></div><div class="admin-section-body"><button class="btn admin-soft" id="resetOptionalUnit">Reset optional unit selection</button></div></section>`:''}<section class="admin-section admin-danger-zone"><div class="admin-section-head"><div class="admin-section-icon danger">${appIcon('warning')}</div><div><h3>Data and security</h3><p>Lock Admin Mode or reset the current course evidence.</p></div></div><div class="admin-section-body"><div class="admin-action-grid two"><button class="btn admin-soft" id="lockDev">Lock Admin Mode</button><button class="btn admin-danger" id="resetEvidence">Reset course evidence</button></div></div></section></div>`}
 
-function bindDeveloper(){const logoInput=document.getElementById('brandLogoInput');if(logoInput)logoInput.onchange=async()=>{const f=logoInput.files?.[0];if(!f)return;try{const logo=await prepareBrandLogo(f);state.branding={...(state.branding||{}),logo};await putStore(BRANDING_KEY,state.branding);document.getElementById('devModal').remove();showDeveloper();toast('College logo added')}catch(e){console.error(e);toast('Unable to prepare that logo')}};const saveBrand=document.getElementById('saveBranding');if(saveBrand)saveBrand.onclick=async()=>{const b=currentBrandingFromForm();if(!b.name||!b.logo)return toast('Add the college name and logo');state.branding=b;await putStore(BRANDING_KEY,b);render();document.getElementById('devModal')?.remove();showDeveloper();toast('College branding saved')};document.getElementById('generateBrandQR')?.addEventListener('click',()=>showBrandQR(false));document.getElementById('downloadBrandSheet')?.addEventListener('click',()=>showBrandQR(true));document.getElementById('removeBranding')?.addEventListener('click',async()=>{if(!confirm('Remove the college branding from this device?'))return;state.branding=null;await putStore(BRANDING_KEY,null);document.getElementById('devModal').remove();render();toast('College branding removed')});
+function bindDeveloper(){
+ const switchAssessor=document.getElementById('switchAssessorMode');
+ if(switchAssessor)switchAssessor.onclick=()=>{if(!confirm('Switch this device to Assessor Mode?'))return;document.getElementById('devModal')?.remove();state.dev=false;putStore('dev',false);setAppMode('assessor');toast('Assessor Mode enabled')};
+ const switchApprentice=document.getElementById('switchApprenticeMode');
+ if(switchApprentice)switchApprentice.onclick=()=>{if(!confirm('Return this device to Apprentice Mode?'))return;document.getElementById('devModal')?.remove();state.dev=false;putStore('dev',false);setAppMode('apprentice');toast('Apprentice Mode enabled')};
+const logoInput=document.getElementById('brandLogoInput');if(logoInput)logoInput.onchange=async()=>{const f=logoInput.files?.[0];if(!f)return;try{const logo=await prepareBrandLogo(f);state.branding={...(state.branding||{}),logo};await putStore(BRANDING_KEY,state.branding);document.getElementById('devModal').remove();showDeveloper();toast('College logo added')}catch(e){console.error(e);toast('Unable to prepare that logo')}};const saveBrand=document.getElementById('saveBranding');if(saveBrand)saveBrand.onclick=async()=>{const b=currentBrandingFromForm();if(!b.name||!b.logo)return toast('Add the college name and logo');state.branding=b;await putStore(BRANDING_KEY,b);render();document.getElementById('devModal')?.remove();showDeveloper();toast('College branding saved')};document.getElementById('generateBrandQR')?.addEventListener('click',()=>showBrandQR(false));document.getElementById('downloadBrandSheet')?.addEventListener('click',()=>showBrandQR(true));document.getElementById('removeBranding')?.addEventListener('click',async()=>{if(!confirm('Remove the college branding from this device?'))return;state.branding=null;await putStore(BRANDING_KEY,null);document.getElementById('devModal').remove();render();toast('College branding removed')});
 
  document.getElementById('markRpl').onclick=async()=>{const n=Number(document.getElementById('rplAssignment').value);const a=assignment(n);if(!a)return;if(!confirm(`Mark Assignment ${n} — ${a.title} as completed through RPL?`))return;state.data[packStatusKey(n)]={...(state.data[packStatusKey(n)]||{}),rpl:true,rplAt:new Date().toISOString(),uploaded:false,downloaded:false};await saveData();document.getElementById('devModal').remove();render();toast(`Assignment ${n} completed through RPL`)};
  document.querySelectorAll('[data-rpl-remove]').forEach(btn=>btn.onclick=async()=>{const n=Number(btn.dataset.rplRemove),a=assignment(n);if(!confirm(`Remove RPL completion from Assignment ${n} — ${a?.title||''}?`))return;const status={...(state.data[packStatusKey(n)]||{})};delete status.rpl;delete status.rplAt;state.data[packStatusKey(n)]=status;await saveData();document.getElementById('devModal').remove();render();toast(`RPL removed from Assignment ${n}`)});
@@ -5815,9 +6086,10 @@ function activatePrimaryNavigation(target){
  if(primaryNavigationLocked)return;
  primaryNavigationLocked=true;
  cleanupTransientUi();
- if(target==='academy'){state.view='academy';state.assignment=null;state.section=null}
+ const assessor=assessorModeActive();
+ if(target==='academy'){state.view=assessor?'assessor-reports':'academy';state.assignment=null;state.section=null}
  else if(target==='resources'){state.view='resources';state.assignment=null;state.section=null;state.editingNoteId=null}
- else{state.view='home';state.assignment=null;state.section=null}
+ else{state.view=assessor?'assessor-workspace':'home';state.assignment=null;state.section=null}
  try{render()}catch(error){
   console.error(`Unable to open ${target}`,error);
   app.innerHTML=shell(`<section class="card panel"><h2>This page could not open</h2><p class="muted">Apprentice+ kept your saved work. Tap another navigation button and try this page again.</p><button type="button" class="btn" id="retryCurrentPage">Try again</button></section>`);
