@@ -3013,3 +3013,16 @@ body.dual-ruler-open{overflow:hidden;overscroll-behavior:none}
 /* V1.5.76 reliable technical drawing pinch zoom */
 .technical-drawing-stage{touch-action:none!important;overflow:hidden!important;position:relative!important}
 .technical-drawing-stage img{position:absolute!important;left:50%!important;top:50%!important;width:auto;height:auto;max-width:none!important;max-height:none!important;object-fit:initial!important;transform-origin:center center!important;will-change:transform;touch-action:none!important;-webkit-user-drag:none}
+
+
+/* CADMate */
+.cadmate-heading{align-items:flex-start;gap:12px}
+.cadmate-coming-soon{white-space:nowrap;background:#fff7d6;color:#815b00;border:1px solid #efd378}
+.cadmate-host{padding:0;overflow:hidden;border-radius:22px;min-height:760px}
+.cadmate-frame{display:block;width:100%;height:calc(100vh - 210px);min-height:760px;border:0;background:#eef3f1}
+@media(max-width:720px){
+ .cadmate-heading{display:block}
+ .cadmate-coming-soon{display:inline-flex;margin-top:10px}
+ .cadmate-host{margin-left:-10px;margin-right:-10px;border-radius:16px;min-height:900px}
+ .cadmate-frame{height:calc(100vh - 170px);min-height:900px}
+}

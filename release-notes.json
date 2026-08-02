@@ -1,6 +1,24 @@
 {
-  "latest": "V1.5.79",
+  "latest": "V1.5.80",
   "releases": [
+    {
+      "version": "V1.5.80",
+      "date": "2026-08-02",
+      "title": "CADMate Toolbox",
+      "features": [
+        "Added CADMate to the Toolbox under Work tools.",
+        "Includes the locked metric brickwork, concrete blockwork and English bond drawing renderers.",
+        "Cavity walling is shown as Coming soon and cannot be selected.",
+        "CADMate opens inside Apprentice+ and is included in the offline app cache."
+      ],
+      "items": [
+        "Added CADMate to the Toolbox under Work tools.",
+        "Integrated the locked V96 CADMate renderer.",
+        "Removed Flemish bond from the available CADMate bond list.",
+        "Marked cavity walling as Coming soon.",
+        "Updated app and service-worker versions to V1.5.80."
+      ]
+    },
     {
       "version": "V1.5.79",
       "date": "2026-08-02",
