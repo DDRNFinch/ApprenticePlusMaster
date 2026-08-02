@@ -1,6 +1,40 @@
 {
-  "latest": "V1.6.9",
+  "latest": "V1.6.11",
   "releases": [
+    {
+      "version": "V1.6.11",
+      "date": "2026-08-02",
+      "title": "Apprentice+ Pass and Scanner Removed",
+      "features": [
+        "Removed the Apprentice+ Pass from the learner name tag.",
+        "Removed the permanent QR code and eight-digit pass number.",
+        "Removed the Assessor Mode camera scanner.",
+        "Removed the manual pass-number fallback.",
+        "Registers now use manual learner entry and saved register templates only.",
+        "Existing locally stored Apprentice+ Pass data is deleted automatically when this version starts."
+      ],
+      "items": [
+        "The rest of the Assessor register system remains available.",
+        "Historical register attendance records are preserved.",
+        "No learner details are encoded into or exposed through a QR code."
+      ]
+    },
+    {
+      "version": "V1.6.10",
+      "date": "2026-08-02",
+      "title": "Assessor Mode Refresh Persistence",
+      "features": [
+        "Assessor Mode now remains active after refreshing, closing or reopening Apprentice+.",
+        "The saved purple theme is applied before the first page render.",
+        "Assessor register pages can now be restored directly after a refresh.",
+        "Invalid learner-page navigation snapshots are ignored while Assessor Mode is active.",
+        "Switching back to Apprentice Mode prevents assessor-only pages from being restored."
+      ],
+      "items": [
+        "Fixed the issue where the app initially displayed Apprentice Mode until a navigation button was pressed.",
+        "Expanded navigation persistence to include Assessor workspace, Reports and all Register pages."
+      ]
+    },
     {
       "version": "V1.6.9",
       "date": "2026-08-02",

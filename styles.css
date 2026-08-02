@@ -3100,71 +3100,6 @@ body.assessor-mode .academy-square-tile{border-color:#e2d7ed}
 }
 
 
-/* Apprentice+ permanent pass demo V1.6.1 */
-.learner-progress-button.apprentice-pass-trigger{
- border:0;cursor:pointer;gap:7px
-}
-.name-tag-pass-mark{display:grid;place-items:center;width:18px;height:18px;color:var(--green)}
-.name-tag-pass-mark svg{width:17px;height:17px}
-.apprentice-pass-overlay{
- position:fixed;inset:0;z-index:100000;background:rgba(5,18,16,.88);
- display:flex;align-items:center;justify-content:center;padding:16px;
- overflow:auto
-}
-.apprentice-pass-sheet{
- position:relative;width:min(430px,100%);background:#f8fff5;color:#0b2b23;
- border:1px solid rgba(255,255,255,.35);border-radius:28px;padding:24px 22px 20px;
- box-shadow:0 28px 90px rgba(0,0,0,.35)
-}
-.apprentice-pass-close{
- position:absolute;right:14px;top:14px;width:42px;height:42px;border:0;border-radius:50%;
- background:#eaf4e6;color:#123d30;font-size:29px;line-height:1;cursor:pointer
-}
-.apprentice-pass-brand{display:flex;align-items:center;gap:12px;padding-right:48px}
-.apprentice-pass-logo{
- display:grid;place-items:center;width:54px;height:54px;border-radius:17px;
- background:#102f2a;color:#fff;font-size:29px;font-weight:950
-}
-.apprentice-pass-logo span{color:#76d43d}
-.apprentice-pass-brand>div>div{font-size:12px;font-weight:900;letter-spacing:.12em;color:#4d675f}
-.apprentice-pass-brand strong{display:block;font-size:24px;letter-spacing:.08em}
-.apprentice-pass-identity{text-align:center;margin:20px 0 14px}
-.apprentice-pass-identity h2{font-size:26px;margin-bottom:4px}
-.apprentice-pass-identity p{font-weight:850;margin-bottom:5px}
-.apprentice-pass-identity strong{font-size:13px;color:#536b63}
-.apprentice-pass-code-wrap{
- width:min(300px,82vw);margin:0 auto;padding:14px;border-radius:23px;background:#fff;
- border:2px solid #dcebd6;box-shadow:0 8px 24px rgba(15,47,42,.08)
-}
-.apprentice-pass-code{display:grid;place-items:center;aspect-ratio:1;background:#fff;overflow:hidden}
-.apprentice-pass-code canvas{display:block;width:100%!important;height:100%!important;image-rendering:pixelated}
-.apprentice-pass-scan-note{text-align:center;font-size:11px;font-weight:900;margin-top:9px;color:#587068}
-.apprentice-pass-number-label{text-align:center;margin-top:16px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#6b7c76}
-.apprentice-pass-number{text-align:center;font-size:29px;font-weight:950;letter-spacing:.12em;margin-top:3px}
-.apprentice-pass-details{
- display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:16px
-}
-.apprentice-pass-details>div,.apprentice-pass-demo-data>div{
- border:1px solid #dfe9db;border-radius:13px;padding:10px;background:#fff
-}
-.apprentice-pass-details span,.apprentice-pass-demo-data span{
- display:block;font-size:10px;font-weight:900;text-transform:uppercase;color:#6d7e77;margin-bottom:3px
-}
-.apprentice-pass-details strong,.apprentice-pass-demo-data strong{font-size:12px;overflow-wrap:anywhere}
-.apprentice-pass-demo-data{margin-top:13px;border:1px solid #dfe9db;border-radius:14px;padding:11px;background:#f1f8ee}
-.apprentice-pass-demo-data summary{font-size:12px;font-weight:900;cursor:pointer}
-.apprentice-pass-demo-data>div{margin-top:8px}
-.apprentice-pass-fixed-note{text-align:center;font-size:10px;color:#6a7c74;margin-top:13px;line-height:1.4}
-.apprentice-pass-code-error{display:grid;place-items:center;min-height:220px;text-align:center;color:#b42318;font-weight:850}
-@media(max-width:430px){
- .apprentice-pass-overlay{padding:8px;align-items:flex-start}
- .apprentice-pass-sheet{border-radius:22px;padding:18px 16px;margin:8px 0}
- .apprentice-pass-code-wrap{width:min(270px,80vw)}
- .apprentice-pass-identity h2{font-size:23px}
- .apprentice-pass-number{font-size:25px}
-}
-
-
 /* Practical Assessment technical drawing viewer V1.6.2 */
 body.technical-drawing-open{overflow:hidden;touch-action:none}
 .technical-drawing-fullscreen{
@@ -3360,8 +3295,7 @@ body.technical-drawing-active{overflow:hidden!important;position:fixed!important
 .register-status{border-radius:999px;padding:7px 9px;font-size:10px;font-weight:900;text-transform:uppercase;background:#eee;color:#555;white-space:nowrap}
 .register-status.present,.register-status.complete{background:#dcfce7;color:#166534}.register-status.late,.register-status.left-early{background:#fef3c7;color:#92400e}.register-status.withdrawn,.register-status.sick,.register-status.unauthorised-absence{background:#fee2e2;color:#991b1b}
 .register-entry-menu{border:1px solid var(--line);background:#f7f2fb;border-radius:10px;padding:8px;font-weight:800;color:#6d28d9}
-.pass-scanner-modal{z-index:130000}.pass-scanner-card{position:relative;width:min(520px,94vw);padding:18px}.pass-scanner-card video{display:block;width:100%;aspect-ratio:3/4;max-height:65vh;object-fit:cover;border-radius:16px;background:#111;margin:12px 0}
-.pass-scanner-status{text-align:center;font-size:12px;color:var(--muted);margin-bottom:10px}.register-small-modal,.register-entry-editor,.register-finish-modal{position:relative;width:min(520px,94vw);padding:20px}.register-finish-modal label{display:grid;grid-template-columns:1fr 130px;align-items:center;gap:10px;margin:8px 0}
+.register-small-modal,.register-entry-editor,.register-finish-modal{position:relative;width:min(520px,94vw);padding:20px}.register-finish-modal label{display:grid;grid-template-columns:1fr 130px;align-items:center;gap:10px;margin:8px 0}
 @media(max-width:680px){
  .register-action-grid,.register-form-grid{grid-template-columns:1fr 1fr}
  .register-break-row{grid-template-columns:1fr 1fr}.register-break-row [data-break-label]{grid-column:1/-1}
