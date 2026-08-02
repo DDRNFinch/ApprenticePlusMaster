@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.77';
+const APP_VERSION='V1.5.78';
 
 const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
 const TECHNICAL_DRAWING_PREFIX={
@@ -5099,7 +5099,17 @@ function showHiddenDeveloperTools(){
  bindHiddenDeveloperTools();
 }
 function bindHiddenDeveloperTools(){
- document.getElementById('openDrawingBuilder')?.addEventListener('click',showDrawingPromptBuilder);
+ const drawingButton=document.getElementById('openDrawingBuilder');
+ if(drawingButton){
+  drawingButton.onclick=()=>{
+   const developerModal=document.getElementById('developerToolsModal');
+   developerModal?.remove();
+   window.setTimeout(()=>{
+    try{showDrawingPromptBuilder()}
+    catch(error){console.error('Unable to open workshop sheet builder',error);toast('Unable to open the drawing builder')}
+   },30);
+  };
+ }
  const refresh=()=>{const modal=document.getElementById('developerToolsModal');if(!modal)return;modal.querySelector('.admin-modal-card').innerHTML=`<div class="admin-modal-head"><div><span class="admin-kicker">Hidden diagnostics</span><h2>Developer Mode</h2></div><button class="admin-close" id="closeDeveloperTools" aria-label="Close Developer Mode">×</button></div>${hiddenDeveloperPanel()}`;document.getElementById('closeDeveloperTools').onclick=()=>modal.remove();document.getElementById('closeDeveloperToolsBottom').onclick=()=>modal.remove();bindHiddenDeveloperTools()};
  document.getElementById('sendAnalyticsTest')?.addEventListener('click',()=>{window.ApprenticeAnalytics?.test?.();window.ApprenticeAnalytics?.flush?.();toast('Anonymous analytics test sent');setTimeout(refresh,250)});
  document.getElementById('flushAnalyticsQueue')?.addEventListener('click',()=>{const sent=window.ApprenticeAnalytics?.flush?.()||0;toast(sent?`${sent} queued event${sent===1?'':'s'} sent`:'No queued events to send');setTimeout(refresh,250)});
