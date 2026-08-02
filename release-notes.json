@@ -1,6 +1,20 @@
 {
-  "latest": "V1.6.5",
+  "latest": "V1.6.6",
   "releases": [
+    {
+      "version": "V1.6.6",
+      "date": "2026-08-02",
+      "title": "Clean Technical Drawing Viewer",
+      "features": [
+        "Removed all drawing-viewer overlays except the close button.",
+        "The landscape screen now shows only the PNG and a small floating X.",
+        "Pinch zoom, drag panning, double-tap zoom and edge locking remain active."
+      ],
+      "items": [
+        "Removed the drawing title, filename, zoom toolbar, zoom percentage and gesture hint.",
+        "Kept the initial rotate-to-landscape prompt."
+      ]
+    },
     {
       "version": "V1.6.5",
       "date": "2026-08-02",
