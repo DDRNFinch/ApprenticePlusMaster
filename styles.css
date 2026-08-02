@@ -3267,3 +3267,73 @@ body.technical-drawing-active{overflow:hidden!important;position:fixed!important
 .technical-drawing-floating-tools button{border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:7px 10px;background:rgba(255,255,255,.1);color:#fff;font-size:11px;font-weight:850}.technical-drawing-floating-tools span{min-width:58px;text-align:center;color:#a7ed79;font-size:10px;font-weight:900}
 .technical-drawing-return-landscape{position:absolute;inset:0;z-index:7;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#102f2a;color:#fff}.technical-drawing-return-landscape[hidden]{display:none!important}
 @media(max-height:420px){.technical-drawing-floating-title{padding:4px 8px}.technical-drawing-floating-close{width:36px;height:36px}.technical-drawing-floating-tools{bottom:4px;padding:3px}.technical-drawing-floating-tools button{padding:5px 8px}}
+
+
+/* V1.6.7 — working clean technical drawing viewer
+   Keep the proven viewer structure and controls in the DOM, but show only
+   the image and the close button. */
+.technical-drawing-internal-controls,
+.technical-drawing-landscape-header,
+.technical-drawing-toolbar,
+.technical-drawing-landscape-title{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  overflow:hidden!important;
+  clip:rect(0 0 0 0)!important;
+  clip-path:inset(50%)!important;
+  white-space:nowrap!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+.technical-drawing-landscape-shell{
+  display:block!important;
+  position:fixed!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  width:100dvw!important;
+  height:100dvh!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  background:#fff!important;
+}
+.technical-drawing-viewport{
+  position:fixed!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  width:100dvw!important;
+  height:100dvh!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  background:#fff!important;
+}
+.technical-drawing-viewer-close{
+  position:fixed!important;
+  top:max(10px,env(safe-area-inset-top))!important;
+  right:max(10px,env(safe-area-inset-right))!important;
+  z-index:30!important;
+  display:grid!important;
+  width:42px!important;
+  height:42px!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:rgba(8,20,18,.78)!important;
+  color:#fff!important;
+  pointer-events:auto!important;
+  opacity:1!important;
+  clip:auto!important;
+  clip-path:none!important;
+}
+.technical-drawing-viewer-close svg{
+  width:23px!important;
+  height:23px!important;
+}
+.technical-drawing-canvas{
+  left:50%!important;
+  top:50%!important;
+  margin:0!important;
+}
