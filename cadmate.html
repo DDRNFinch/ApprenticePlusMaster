@@ -8,11 +8,18 @@
       .preview{min-height:auto}
       .panel{padding:14px}
       #spec{height:160px}
-    }</style></head>
+    }
+.png-save-modal{position:fixed;inset:0;z-index:9999;background:rgba(7,23,20,.72);display:flex;align-items:center;justify-content:center;padding:18px}
+.png-save-card{width:min(420px,100%);background:#fff;border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.28)}
+.png-save-card h2{margin:0 0 6px}.png-save-card p{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.4}
+.png-save-card input{width:100%;padding:12px 13px;border:1px solid var(--border);border-radius:11px;background:#fff}
+.png-save-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:15px}.png-save-actions button{min-width:96px}
+.png-save-preview{margin-top:9px;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+</style></head>
 <body><header><div><h1>CADMate</h1><small>Brickwork and blockwork construction drawing designer</small></div><div>Apprentice+</div></header><main><div class="grid">
 <aside class="panel"><h2>Drawing setup</h2><label>Material</label><select id="material"><option value="brick">Metric brickwork</option><option value="block">Concrete blockwork</option><option value="cavity" disabled>Cavity wall — Coming soon</option></select><label>Bond</label><select id="bond"><option value="stretcher">Stretcher bond</option><option value="english">English bond</option></select><label>Display</label><select id="display"><option value="detail">Bond detail</option><option value="hatch">Material hatching</option><option value="outline">Outline only</option></select><div class="row"><div><label>Wall length</label><select id="length"></select></div><div><label>Courses</label><select id="courses"></select></div></div><label>Wall thickness</label><select id="thickness"><option value="102.5">102.5 mm half-brick</option><option value="215">215 mm one-brick</option></select><label>Jointing style</label><select id="jointing"><option value="Bucket handle">Bucket handle</option><option value="Flush">Flush</option><option value="Weather struck">Weather struck</option><option value="Recessed">Recessed</option></select><h3>Left return</h3><label class="check"><input type="checkbox" id="leftOn"> Enabled</label><div class="row"><div><label>Direction</label><select id="leftDir"><option value="front">Front</option><option value="back">Back</option></select></div><div><label>Length</label><select id="leftLen"></select></div></div><h3>Right return</h3><label class="check"><input type="checkbox" id="rightOn" checked> Enabled</label><div class="row"><div><label>Direction</label><select id="rightDir"><option value="front">Front</option><option value="back">Back</option></select></div><div><label>Length</label><select id="rightLen"></select></div></div><h3>Decorative feature</h3><label>Feature</label><select id="feature"><option value="none">None</option><option value="soldier">Soldier course</option><option value="band">Projecting band</option><option value="recess">Recessed panel</option><option value="corbel">Corbel course</option><option value="dentil">Dentil course</option></select><div class="row"><div><label>Course</label><select id="featureCourse"></select></div><div><label>Depth</label><select id="featureDepth"><option>25</option><option selected>50</option><option>75</option><option>102.5</option></select></div></div></aside>
 <section><div class="tabs"><button data-view="front" class="active">Front</button><button data-view="plan">Plan</button><button data-view="section">Section</button><button data-view="sheet">Sheet</button><button data-view="courses">Course layout</button></div><div class="preview"><svg id="svg" viewBox="0 0 1200 800"></svg><div id="courseList" class="hidden"></div></div><textarea id="spec" readonly></textarea></section>
-<aside class="panel"><h2>Validation</h2><div id="validation"></div><h2 style="margin-top:20px">Calculated</h2><div class="metric"><span>Length</span><b id="mLen"></b></div><div class="metric"><span>Height</span><b id="mHeight"></b></div><div class="metric"><span>Estimated units</span><b id="mUnits"></b></div><div class="metric"><span>Estimated time</span><b id="mTime"></b></div><button class="primary" id="downloadSvg" style="width:100%;margin-bottom:8px">Download SVG</button><button id="downloadJson" style="width:100%;margin-bottom:8px">Save project JSON</button><button id="loadJson" style="width:100%">Load project JSON</button><input id="jsonFile" type="file" accept=".json" class="hidden"><p class="small"><strong>Available:</strong> Metric stretcher bond, concrete blockwork and English bond.<br><strong>Cavity walling:</strong> Coming soon.</p></aside>
+<aside class="panel"><h2>Validation</h2><div id="validation"></div><h2 style="margin-top:20px">Calculated</h2><div class="metric"><span>Length</span><b id="mLen"></b></div><div class="metric"><span>Height</span><b id="mHeight"></b></div><div class="metric"><span>Estimated units</span><b id="mUnits"></b></div><div class="metric"><span>Estimated time</span><b id="mTime"></b></div><button class="primary" id="downloadPng" style="width:100%;margin-bottom:8px">Save PNG</button><button id="downloadJson" style="width:100%;margin-bottom:8px">Save project JSON</button><button id="loadJson" style="width:100%">Load project JSON</button><input id="jsonFile" type="file" accept=".json" class="hidden"><p class="small"><strong>Available:</strong> Metric stretcher bond, concrete blockwork and English bond.<br><strong>Cavity walling:</strong> Coming soon.</p></aside>
 </div></main>
 <script>
 const NS='http://www.w3.org/2000/svg',$=id=>document.getElementById(id);let activeView='front';const CFG={brick:{unitL:215,unitH:65,joint:10,course:75,label:'bricks',rate:25},block:{unitL:440,unitH:215,joint:10,course:225,label:'blocks',rate:12,planDepth:97.5,headerL:215,closerL:102.5},cavity:{unitL:215,unitH:65,joint:10,course:75,label:'bricks',rate:20}};function E(n,a={}){const e=document.createElementNS(NS,n);for(const[k,v]of Object.entries(a))e.setAttribute(k,v);return e}function clear(e){while(e.firstChild)e.removeChild(e.firstChild)}function T(svg,x,y,t,a={}){const e=E('text',{x,y,fill:'#111','font-size':22,'font-family':'Arial, sans-serif',...a});e.textContent=t;svg.appendChild(e)}function L(svg,x1,y1,x2,y2,w=2,d=''){svg.appendChild(E('line',{x1,y1,x2,y2,stroke:'#111','stroke-width':w,'stroke-dasharray':d}))}function dimH(svg,x1,x2,y,l){L(svg,x1,y,x2,y);L(svg,x1,y-8,x1,y+8);L(svg,x2,y-8,x2,y+8);T(svg,(x1+x2)/2,y-10,l,{'text-anchor':'middle','font-size':16})}function dimV(svg,x,y1,y2,l){L(svg,x,y1,x,y2);L(svg,x-8,y1,x+8,y1);L(svg,x-8,y2,x+8,y2);T(svg,x-16,(y1+y2)/2,l,{'text-anchor':'middle','font-size':16,transform:`rotate(-90 ${x-16} ${(y1+y2)/2})`})}
@@ -2393,7 +2400,123 @@ function validate(m){
 }
 function render(){const m=model();if(m.material==='brick'&&['english','flemish'].includes(m.bond)){$('thickness').value='215';m.thickness=215;$('thickness').disabled=true}else $('thickness').disabled=false;const ret=(m.left.on?m.left.units*m.courses:0)+(m.right.on?m.right.units*m.courses:0),units=m.modules*m.courses+ret,time=Math.ceil((units/m.c.rate)*2)/2;$('mLen').textContent=`${m.length} mm`;$('mHeight').textContent=`${m.height} mm`;$('mUnits').textContent=units;$('mTime').textContent=`${time} hours`;const svg=$('svg');clear(svg);$('courseList').classList.toggle('hidden',activeView!=='courses');svg.classList.toggle('hidden',activeView==='courses');if(activeView==='front')front(svg,m,{x:60,y:100,w:1080,h:600});if(activeView==='plan')plan(svg,m,{x:60,y:100,w:1080,h:600});if(activeView==='section')section(svg,m,{x:250,y:100,w:700,h:580});if(activeView==='sheet')sheet(svg,m);if(activeView==='courses')courseTemplates(m);const ready=validate(m);$('spec').value=`CADMATE SPECIFICATION\n\nMaterial: ${m.material==='cavity'?'Cavity wall — facing brick outer leaf / block inner leaf':m.material}\nBond: ${m.bond}\nDisplay: ${m.display}\nLength: ${m.modules} ${m.c.label} = ${m.length} mm\nHeight: ${m.courses} courses = ${m.height} mm\nThickness: ${m.thickness} mm\nJointing style: ${m.jointing}\nCavity construction: ${m.material==='cavity'?'102.5 mm facing brick + 100 mm clear cavity + 100 mm block':'Not applicable'}\nCavity A–A brick leaf: same half-brick stretcher section pattern used by the standard wall\nEnglish bond PC1 uses a true 215 mm one-brick wall. For the 4 × 4 corner, the main wall is 2S,2S,2S,S and the return is VQ,VS,VS,VS,VS,VS,VQ,VS. The right-rear PC1 return is the locked master geometry. Left and front variants mirror the complete finished return as one group; no internal offset, joint or unit position is recalculated. Front returns place one S directly in final coordinates, with its bottom edge exactly 10 mm above the top edge of the VQ. A single left return mirrors the complete PC1 corner, including the main-wall 2S,2S,2S,S arrangement and the full return geometry. PC2 right-back is drawn directly from fixed transformed primitives using the same scale as PC1, then rotated 180 degrees about its own centre. Queen-closer order is immutable from the wall junction outwards: VQ, repeated VS units, VQ, VS. No mirror may reorder these units. PC1 is centred vertically within its own plan-course box; its horizontal position and all internal geometry remain unchanged. The confirmed right-rear PC1 and PC2 geometries are the masters: right-front mirrors vertically, left-rear mirrors horizontally, and left-front applies both mirrors. Dual returns use the two complete proven single-return drawings. PC1 overlays their groups; PC2 renders the left-only and right-only plans directly into the SVG so neither return can disappear inside nested transforms. PC2 uses the opposite English-bond course. Right is the master geometry; left mirrors horizontally; front/back use the same geometry flipped vertically.\nBlockwork baseline: FE/RE Course 1 uses 440 × 215 mm stretchers; Course 2 uses 215 × 215 mm headers at both ends with stretchers through the centre. PV1 uses 440 × 97.5 mm stretchers; PV2 uses 215 × 97.5 mm headers at both ends. Closers are 102.5 mm. Block returns use the selected block count. For a three-block return: PV1 is S ... S | VC, VS, VS, VH. PV2 is H, S ... S, C, VS | VS, VS. Left returns mirror the right return and back returns flip the same geometry vertically. On blockwork elevation header courses, a return replaces the header at that end with two closers without changing the selected overall wall length. Example: four blocks with a right return = Course 1 S,S,S,S; Course 2 H,S,S,S,C,C. Blockwork plan is locked separately: without a return PC1 S,S,S,S and PC2 H,S,S,S,H; with a three-block right return PC1 S,S,S,S | VC,VS,VS,VH and PC2 H,S,S,S,C,VS | VS,VS. PC1 and PC2 always use one shared plan envelope, origin and scale, so both drawings display at exactly the same overall size. All blockwork returns use the locked right/front master geometry: left returns mirror horizontally, back returns flip vertically, and left/back returns apply both. For two returns on a four-block wall with two-block returns, PC2 reads left-to-right as VS,VS | C,S,S,S,C,VS | VS, with normal 10 mm joints and no distributed blank spaces. Two back returns use the exact vertical flip. Mixed front/back returns keep the same sequence on each side, with only the back-return side flipped vertically.\nStretcher return rule: retain the original straight-wall Plan Course 1 and Course 2 bonds. Course 1 adds a vertical stretcher beside the final horizontal stretcher. Course 2 uses H, S, S ... S, H for a straight wall. Where a return exists, the end H is removed from the horizontal course and replaced in the exact same footprint by the first vertical stretcher. The return then continues in vertical stretchers, with a header-sized final closure where required by the selected length.\nLeft return: ${m.left.on?m.left.units+' '+m.c.label+', '+m.left.dir:'none'}\nRight return: ${m.right.on?m.right.units+' '+m.c.label+', '+m.right.dir:'none'}\nBond end rule: each course is anchored to both wall ends first, then filled inward. English header courses use Header + Queen closer (46 mm) at both ends. Flemish Course 1 begins and ends with a stretcher; Course 2 begins Header + Queen closer (46 mm) and finishes Queen closer (46 mm) + Header. Any incompatible remainder is shown as a centre closure warning.
 Decorative feature: ${m.feature}\nFeature course: ${m.featureCourse}\nFeature depth: ${m.featureDepth} mm\nSection A–A rule: starts with a header course at the base. One-brick walls alternate H+H then one stretcher through the thickness.\nSheet layout: upper row is split 50:50 between front and rear elevations. Lower row is split 40:40:20 between Plan Course 1, Plan Course 2 and Section A–A. Rear elevation dimensions remain readable and are not mirrored. In one-brick walling, stretchers are mirrored on both faces while headers span the full thickness.\nEstimated units: ${units}\nEstimated time: ${time} hours\nValidation: ${ready?'READY FOR REVIEW':'REVIEW REQUIRED'}`}
-document.querySelectorAll('select,input[type=checkbox]').forEach(e=>e.addEventListener('change',()=>{if(e.id==='material')refill();render()}));document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{activeView=b.dataset.view;document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');render()}));$('downloadSvg').addEventListener('click',()=>{const s=$('svg').cloneNode(true);s.setAttribute('xmlns',NS);const blob=new Blob([new XMLSerializer().serializeToString(s)],{type:'image/svg+xml'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='CADMate-drawing.svg';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)});$('downloadJson').addEventListener('click',()=>{const data={material:$('material').value,bond:$('bond').value,display:$('display').value,length:$('length').value,courses:$('courses').value,thickness:$('thickness').value,jointing:$('jointing')?$('jointing').value:'Bucket handle',leftOn:$('leftOn').checked,leftDir:$('leftDir').value,leftLen:$('leftLen').value,rightOn:$('rightOn').checked,rightDir:$('rightDir').value,rightLen:$('rightLen').value,feature:$('feature').value,featureCourse:$('featureCourse').value,featureDepth:$('featureDepth').value},blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='CADMate-project.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)});$('loadJson').addEventListener('click',()=>$('jsonFile').click());$('jsonFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;const d=JSON.parse(await f.text());for(const[k,v]of Object.entries(d)){const q=$(k);if(!q)continue;if(q.type==='checkbox')q.checked=v;else q.value=v}refill();for(const[k,v]of Object.entries(d)){const q=$(k);if(q&&k!=='material'){if(q.type==='checkbox')q.checked=v;else q.value=v}}render()});refill();$('length').value='8';$('courses').value='8';$('rightLen').value='3';render();
+document.querySelectorAll('select,input[type=checkbox]').forEach(e=>e.addEventListener('change',()=>{if(e.id==='material')refill();render()}));document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{activeView=b.dataset.view;document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');render()}));
+function cadmateFilenamePart(value){
+ return String(value||'')
+  .trim()
+  .replace(/&/g,' and ')
+  .replace(/[\\/:*?"<>|#%{}[\]~`]/g,' ')
+  .replace(/\s+/g,' ')
+  .replace(/^\.+|\.+$/g,'')
+  .trim();
+}
+function cadmateSuggestedFilename(){
+ const materialLabel=$('material').selectedOptions?.[0]?.textContent||'Drawing';
+ const bondLabel=$('bond').selectedOptions?.[0]?.textContent||'Bond';
+ const lengthLabel=$('length').selectedOptions?.[0]?.textContent?.split('/')[0]?.trim()||'Wall';
+ const returns=[];
+ if($('leftOn').checked)returns.push(`Left ${$('leftDir').value}`);
+ if($('rightOn').checked)returns.push(`Right ${$('rightDir').value}`);
+ const viewLabel=activeView==='sheet'?'Drawing Sheet':activeView.charAt(0).toUpperCase()+activeView.slice(1);
+ return ['CADMate',materialLabel,bondLabel,lengthLabel,returns.join(' and '),viewLabel]
+  .map(cadmateFilenamePart).filter(Boolean).join(' - ');
+}
+function cadmateSafePngFilename(value){
+ let clean=cadmateFilenamePart(value||cadmateSuggestedFilename());
+ clean=clean.replace(/\.png$/i,'').trim();
+ if(!clean)clean='CADMate Drawing';
+ return `${clean}.png`;
+}
+function showCadmatePngSaveDialog(){
+ const modal=document.createElement('div');
+ modal.className='png-save-modal';
+ const suggested=cadmateSuggestedFilename();
+ modal.innerHTML=`<section class="png-save-card" role="dialog" aria-modal="true" aria-labelledby="pngSaveTitle">
+  <h2 id="pngSaveTitle">Save drawing as PNG</h2>
+  <p>The landscape image will match the current CADMate preview. Controls and menus are not included.</p>
+  <label for="pngFilename">File name</label>
+  <input id="pngFilename" value="${suggested.replace(/"/g,'&quot;')}" autocomplete="off" spellcheck="false">
+  <div class="png-save-preview" id="pngFilenamePreview">${cadmateSafePngFilename(suggested)}</div>
+  <div class="png-save-actions">
+   <button type="button" id="cancelPngSave">Cancel</button>
+   <button type="button" class="primary" id="confirmPngSave">Save PNG</button>
+  </div>
+ </section>`;
+ document.body.appendChild(modal);
+ const input=modal.querySelector('#pngFilename');
+ const preview=modal.querySelector('#pngFilenamePreview');
+ const close=()=>modal.remove();
+ const update=()=>preview.textContent=cadmateSafePngFilename(input.value);
+ input.addEventListener('input',update);
+ modal.querySelector('#cancelPngSave').onclick=close;
+ modal.onclick=e=>{if(e.target===modal)close()};
+ modal.querySelector('#confirmPngSave').onclick=async()=>{
+  const button=modal.querySelector('#confirmPngSave');
+  button.disabled=true;
+  button.textContent='Creating PNG…';
+  try{
+   await downloadCadmatePng(cadmateSafePngFilename(input.value));
+   close();
+  }catch(error){
+   console.error(error);
+   button.disabled=false;
+   button.textContent='Save PNG';
+   alert('The PNG could not be created on this device.');
+  }
+ };
+ input.addEventListener('keydown',e=>{
+  if(e.key==='Enter')modal.querySelector('#confirmPngSave').click();
+  if(e.key==='Escape')close();
+ });
+ setTimeout(()=>{input.focus();input.select()},30);
+}
+async function downloadCadmatePng(filename){
+ const source=$('svg');
+ const clone=source.cloneNode(true);
+ clone.setAttribute('xmlns',NS);
+ clone.setAttribute('width','2400');
+ clone.setAttribute('height','1600');
+ clone.setAttribute('viewBox',source.getAttribute('viewBox')||'0 0 1200 800');
+ clone.style.background='#fff';
+
+ const background=E('rect',{x:0,y:0,width:1200,height:800,fill:'#fff'});
+ clone.insertBefore(background,clone.firstChild);
+
+ const svgText=new XMLSerializer().serializeToString(clone);
+ const svgBlob=new Blob([svgText],{type:'image/svg+xml;charset=utf-8'});
+ const svgUrl=URL.createObjectURL(svgBlob);
+
+ try{
+  const image=await new Promise((resolve,reject)=>{
+   const img=new Image();
+   img.onload=()=>resolve(img);
+   img.onerror=reject;
+   img.src=svgUrl;
+  });
+  const canvas=document.createElement('canvas');
+  canvas.width=2400;
+  canvas.height=1600;
+  const context=canvas.getContext('2d',{alpha:false});
+  context.fillStyle='#fff';
+  context.fillRect(0,0,canvas.width,canvas.height);
+  context.drawImage(image,0,0,canvas.width,canvas.height);
+
+  const pngBlob=await new Promise((resolve,reject)=>{
+   canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('PNG encoding failed')),'image/png',1);
+  });
+  const pngUrl=URL.createObjectURL(pngBlob);
+  const link=document.createElement('a');
+  link.href=pngUrl;
+  link.download=filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(()=>URL.revokeObjectURL(pngUrl),1500);
+ }finally{
+  URL.revokeObjectURL(svgUrl);
+ }
+}
+$('downloadPng').addEventListener('click',showCadmatePngSaveDialog);$('downloadJson').addEventListener('click',()=>{const data={material:$('material').value,bond:$('bond').value,display:$('display').value,length:$('length').value,courses:$('courses').value,thickness:$('thickness').value,jointing:$('jointing')?$('jointing').value:'Bucket handle',leftOn:$('leftOn').checked,leftDir:$('leftDir').value,leftLen:$('leftLen').value,rightOn:$('rightOn').checked,rightDir:$('rightDir').value,rightLen:$('rightLen').value,feature:$('feature').value,featureCourse:$('featureCourse').value,featureDepth:$('featureDepth').value},blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='CADMate-project.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)});$('loadJson').addEventListener('click',()=>$('jsonFile').click());$('jsonFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;const d=JSON.parse(await f.text());for(const[k,v]of Object.entries(d)){const q=$(k);if(!q)continue;if(q.type==='checkbox')q.checked=v;else q.value=v}refill();for(const[k,v]of Object.entries(d)){const q=$(k);if(q&&k!=='material'){if(q.type==='checkbox')q.checked=v;else q.value=v}}render()});refill();$('length').value='8';$('courses').value='8';$('rightLen').value='3';render();
 
 function notifyCADMateHeight(){
   const height=Math.max(
