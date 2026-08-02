@@ -1,6 +1,17 @@
 {
-  "latest": "V1.5.78",
+  "latest": "V1.5.79",
   "releases": [
+    {
+      "version": "V1.5.79",
+      "date": "2026-08-02",
+      "title": "Developer drawing builder runtime fix",
+      "items": [
+        "Fixed the Create college task sheet button returning to the previous screen.",
+        "Restored the missing editable preset list helper required by the workshop-sheet builder.",
+        "Developer Mode now stays open if the builder encounters an error instead of closing silently.",
+        "Updated the app and service-worker cache versions to load the corrected files."
+      ]
+    },
     {
       "version": "V1.5.78",
       "date": "2026-08-02",
@@ -506,9 +517,20 @@
       "Technical drawings open in a full-screen viewer with zoom, browser and save options.",
       "Missing drawings display a clear coming-soon message instead of a broken image.",
       "Generated SVG drawings are no longer displayed in Practical Assessment specifications."
-    ]
+    ],
+    "V1.5.79": {
+      "version": "V1.5.79",
+      "date": "2026-08-02",
+      "title": "Developer drawing builder runtime fix",
+      "items": [
+        "Fixed the Create college task sheet button returning to the previous screen.",
+        "Restored the missing editable preset list helper required by the workshop-sheet builder.",
+        "Developer Mode now stays open if the builder encounters an error instead of closing silently.",
+        "Updated the app and service-worker cache versions to load the corrected files."
+      ]
+    }
   },
-  "latestVersion": "V1.5.70",
+  "latestVersion": "V1.5.79",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",
@@ -599,6 +621,17 @@
         "Technical drawings open in a full-screen viewer with zoom, browser and save options.",
         "Missing drawings display a clear coming-soon message instead of a broken image.",
         "Generated SVG drawings are no longer displayed in Practical Assessment specifications."
+      ]
+    },
+    "V1.5.79": {
+      "version": "V1.5.79",
+      "title": "Developer drawing builder runtime fix",
+      "date": "2026-08-02",
+      "features": [
+        "Fixed the Create college task sheet button returning to the previous screen.",
+        "Restored the missing editable preset list helper required by the workshop-sheet builder.",
+        "Developer Mode now stays open if the builder encounters an error instead of closing silently.",
+        "Updated the app and service-worker cache versions to load the corrected files."
       ]
     }
   }

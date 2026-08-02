@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.5.78';
+const APP_VERSION='V1.5.79';
 
 const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
 const TECHNICAL_DRAWING_PREFIX={
@@ -4980,6 +4980,7 @@ const WORKSHOP_BRICK_LENGTHS=Array.from({length:20},(_,i)=>{const n=i+1,mm=n*215
 const WORKSHOP_COURSES=Array.from({length:20},(_,i)=>{const n=i+1;return `${n} course${n===1?'':'s'} (${n*75} mm)`});
 const WORKSHOP_RETURNS=['None',...Array.from({length:10},(_,i)=>{const n=i+1,mm=n*215+Math.max(0,n-1)*10;return `${n} brick${n===1?'':'s'} (${mm} mm)`})];
 function workshopOptionList(items,value=''){return items.map(x=>`<option value="${esc(x)}" ${x===value?'selected':''}>${esc(x)}</option>`).join('')}
+function drawingDataList(id,items=[]){return `<datalist id="${esc(id)}">${items.map(item=>`<option value="${esc(item)}"></option>`).join('')}</datalist>`}
 function workshopAssignmentOptions(selected=1){const c=COURSES['bricklayer-st0095-v1-2'];return (c?.assignments||[]).map(a=>`<option value="${a.n}" ${a.n===Number(selected)?'selected':''}>Assignment ${a.n} — ${esc(a.title)}</option>`).join('')}
 function workshopEstimate(d){const num=v=>Number(String(v||'').match(/\d+/)?.[0]||0),len=num(d.length),courses=num(d.height),ret=d.return==='None'?0:num(d.return);const main=Math.max(0,len*courses),returnQty=Math.max(0,ret*courses);const shared=ret?courses:0;const quantity=Math.max(0,Math.round(main+returnQty-shared));const hours=quantity/25;const allowance=(ret?0.25:0)+(String(d.features||'').trim()?0.25:0)+(String(d.fixings||'').trim()?0.15:0);const recommended=Math.ceil((hours+allowance)*2)/2;return {quantity,hours,recommended}}
 function formatWorkshopHours(v){if(!v)return '—';return Number.isInteger(v)?`${v} hour${v===1?'':'s'}`:`${v.toFixed(1)} hours`}
@@ -5101,13 +5102,17 @@ function showHiddenDeveloperTools(){
 function bindHiddenDeveloperTools(){
  const drawingButton=document.getElementById('openDrawingBuilder');
  if(drawingButton){
-  drawingButton.onclick=()=>{
+  drawingButton.onclick=event=>{
+   event.preventDefault();
+   event.stopPropagation();
    const developerModal=document.getElementById('developerToolsModal');
-   developerModal?.remove();
-   window.setTimeout(()=>{
-    try{showDrawingPromptBuilder()}
-    catch(error){console.error('Unable to open workshop sheet builder',error);toast('Unable to open the drawing builder')}
-   },30);
+   try{
+    showDrawingPromptBuilder();
+    developerModal?.remove();
+   }catch(error){
+    console.error('Unable to open workshop sheet builder',error);
+    toast('Unable to open the drawing builder');
+   }
   };
  }
  const refresh=()=>{const modal=document.getElementById('developerToolsModal');if(!modal)return;modal.querySelector('.admin-modal-card').innerHTML=`<div class="admin-modal-head"><div><span class="admin-kicker">Hidden diagnostics</span><h2>Developer Mode</h2></div><button class="admin-close" id="closeDeveloperTools" aria-label="Close Developer Mode">×</button></div>${hiddenDeveloperPanel()}`;document.getElementById('closeDeveloperTools').onclick=()=>modal.remove();document.getElementById('closeDeveloperToolsBottom').onclick=()=>modal.remove();bindHiddenDeveloperTools()};
