@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.6.25';
+const APP_VERSION='V1.6.26';
 
 const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
 const TECHNICAL_DRAWING_PREFIX={
@@ -5836,6 +5836,7 @@ function showHelpTourStep(){
  const phone=buildTourPhone(step);
  document.body.insertAdjacentHTML('beforeend',`<div class="help-tour-overlay" id="helpTourOverlay" role="dialog" aria-modal="true" aria-labelledby="helpTourTitle"><div class="help-tour-layout"><div class="tour-phone" aria-label="Preview of the Apprentice Plus screen"><div class="tour-phone-speaker"></div><div class="tour-phone-screen"><div class="tour-phone-scale">${phone}</div></div><div class="tour-phone-home"></div></div><div class="help-tour-card"><div class="help-tour-top"><div class="help-tour-count">Step ${helpTourIndex+1} of ${HELP_TOUR_STEPS.length}</div><button type="button" class="help-tour-x" id="helpTourClose" aria-label="Close tour">×</button></div><h2 id="helpTourTitle">${esc(step.title)}</h2><p>${esc(step.text)}</p><div class="help-tour-dots">${HELP_TOUR_STEPS.map((_,i)=>`<span class="${i===helpTourIndex?'active':''}"></span>`).join('')}</div><div class="help-tour-actions"><button type="button" class="link-button" id="helpTourSkip">Skip tour</button><div class="help-tour-nav">${helpTourIndex?'<button type="button" class="btn secondary" id="helpTourPrevious">Back</button>':''}<button type="button" class="btn" id="helpTourNext">${helpTourIndex===HELP_TOUR_STEPS.length-1?'Finish':'Next'}</button></div></div></div></div></div>`);
  const overlay=document.getElementById('helpTourOverlay');
+ overlay.addEventListener('click',e=>{if(e.target===overlay)finishHelpTour(false)});
  overlay.querySelector('#helpTourClose').onclick=()=>finishHelpTour(false);
  overlay.querySelector('#helpTourSkip').onclick=()=>finishHelpTour(true);
  const prev=overlay.querySelector('#helpTourPrevious');if(prev)prev.onclick=()=>{helpTourIndex--;showHelpTourStep()};
@@ -5942,7 +5943,23 @@ const updateBadgeObserver=new MutationObserver(()=>syncUpdateBadge());
 updateBadgeObserver.observe(app,{childList:true,subtree:true});
 document.addEventListener('click',e=>{const badge=e.target.closest('#updateNotificationButton');if(!badge)return;e.preventDefault();e.stopPropagation();openUpdateReadyModal()});
 document.addEventListener('click',e=>{const help=e.target.closest('#pageHelpButton');if(!help)return;e.preventDefault();e.stopPropagation();openPageHelp()});
-document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(document.getElementById('pageHelpModal'))closePageHelp();else if(helpTourRunning)finishHelpTour(false)});
+document.addEventListener('keydown',e=>{
+ const pageHelp=document.getElementById('pageHelpModal');
+ const tour=document.getElementById('helpTourOverlay');
+ if(e.key==='Escape'){
+  if(pageHelp)closePageHelp();else if(helpTourRunning)finishHelpTour(false);
+  return;
+ }
+ if(pageHelp&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){
+  const button=document.getElementById(e.key==='ArrowLeft'?'pageHelpPrevious':'pageHelpNext');
+  if(button&&!button.disabled){e.preventDefault();button.click()}
+  return;
+ }
+ if(tour&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){
+  const button=tour.querySelector(e.key==='ArrowLeft'?'#helpTourPrevious':'#helpTourNext');
+  if(button&&!button.disabled){e.preventDefault();button.click()}
+ }
+});
 window.addEventListener('popstate',()=>{if(document.getElementById('pageHelpModal'))closePageHelp();else if(helpTourRunning)finishHelpTour(false)});
 let primaryNavigationLocked=false;
 function activatePrimaryNavigation(target){

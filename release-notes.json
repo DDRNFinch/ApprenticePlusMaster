@@ -1,6 +1,17 @@
 {
-  "latest": "V1.6.25",
+  "latest": "V1.6.26",
   "releases": [
+    {
+      "version": "V1.6.26",
+      "date": "2026-08-03",
+      "title": "Responsive Desktop Information Slides",
+      "changes": [
+        "Information slides automatically switch to a wide two-panel desktop layout while preserving the existing mobile presentation.",
+        "Desktop guides show a larger live Apprentice+ preview beside a scrollable explanation panel with persistent navigation controls.",
+        "Added Left and Right Arrow keyboard navigation, Escape to close, and backdrop-click closing on desktop.",
+        "First-run guided tours now use the same desktop-responsive presentation and remain unchanged on mobile."
+      ]
+    },
     {
       "version": "V1.6.25",
       "date": "2026-08-03",
