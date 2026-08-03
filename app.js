@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.6.23';
+const APP_VERSION='V1.6.24';
 
 const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
 const TECHNICAL_DRAWING_PREFIX={
@@ -706,28 +706,44 @@ function assignmentHasSavedPortfolioEvidence(n){
  return ['practical','photos','statement','discussion','professionalDiscussion','witness','supporting'].some(section=>sectionData(n,section).versions.length>0)||walkthroughSaved(n);
 }
 function completedKsbStats(){
- const outcomes=new Map();
- courseAssignments().filter(a=>!a.selectOptional).forEach(a=>(a.ksbs||[]).forEach(([code])=>{
-  // NVQ Learning Outcome numbers repeat across units, so each unit/outcome pair is separate.
-  // For KSB courses the code remains the unique course-wide identifier.
-  const outcomeKey=COURSE.nvqUnits?`${a.unit||a.n}:${code}`:code;
-  if(!outcomes.has(outcomeKey))outcomes.set(outcomeKey,false);
-  const required=COURSE.nvqUnits?3:2;
-  if(assignmentRPL(a.n)||evidenceCoverageCount(a.n,code)>=required)outcomes.set(outcomeKey,true);
- }));
- const total=outcomes.size||1,completed=[...outcomes.values()].filter(Boolean).length;
- return {total,completed,percentage:clampPct(completed/total*100)};
+ const required=COURSE.nvqUnits?3:2,outcomes=new Map();
+ courseAssignments().filter(a=>!a.selectOptional).forEach(a=>{
+  const coverage=COURSE.nvqUnits?nvqOutcomeCoverage(a.n):ksbEvidenceCoverage(a.n);
+  (a.ksbs||[]).forEach(([code])=>{
+   // NVQ Learning Outcome numbers repeat across units, so each unit/outcome pair is separate.
+   // KSB codes are course-wide and may collect distinct evidence across more than one assignment.
+   const outcomeKey=COURSE.nvqUnits?`${a.unit||a.n}:${code}`:code;
+   if(!outcomes.has(outcomeKey))outcomes.set(outcomeKey,{sources:new Set(),rpl:false});
+   const item=outcomes.get(outcomeKey);
+   if(assignmentRPL(a.n))item.rpl=true;
+   (coverage?.[code]?.sources||[]).forEach(source=>item.sources.add(source));
+  });
+ });
+ const values=[...outcomes.values()],total=values.length||1;
+ const evidenceSlots=values.reduce((sum,item)=>sum+(item.rpl?required:Math.min(required,item.sources.size)),0);
+ const requirementsTotal=total*required;
+ const completed=values.filter(item=>item.rpl||item.sources.size>=required).length;
+ return {
+  total,
+  completed,
+  evidenceSlots,
+  requirementsTotal,
+  percentage:clampPct(completed/total*100),
+  evidencePercentage:clampPct(evidenceSlots/requirementsTotal*100)
+ };
 }
 function courseProgressStats(){
  const total=courseAssignments().length||1;
  const submitted=courseAssignments().filter(a=>assignmentComplete(a.n)).length;
  const ksb=completedKsbStats();
- const green=clampPct(submitted/total*100);
- const yellow=ksb.percentage;
+ // Yellow shows every collected evidence slot (2 per KSB or 3 per Learning Outcome).
+ // Green shows only fully completed KSBs / Learning Outcomes.
+ const green=ksb.percentage;
+ const yellow=ksb.evidencePercentage;
  const red=courseTimePercent();
  let label='Add course dates',tone='neutral',difference=null;
  if(red!==null){difference=Math.max(green,yellow)-red;if(green>red+5){label='Ahead of target';tone='ahead'}else if(green>=red-5||yellow>=red){label='On target';tone='target'}else{label='Behind target';tone='behind'}}
- return {total,completed:submitted,submitted,ksbCompleted:ksb.completed,ksbTotal:ksb.total,green,yellow,red,label,tone,difference};
+ return {total,completed:submitted,submitted,ksbCompleted:ksb.completed,ksbTotal:ksb.total,ksbEvidenceSlots:ksb.evidenceSlots,ksbRequirementsTotal:ksb.requirementsTotal,green,yellow,red,label,tone,difference};
 }
 function formatDateInput(value){if(!value)return 'Not added';const d=new Date(`${value}T00:00:00`);return Number.isFinite(d.getTime())?new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}).format(d):value}
 
