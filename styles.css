@@ -3625,3 +3625,60 @@ html.video-recorder-open .phone-video-recorder{z-index:100000!important}
 
 @media(max-width:560px){.course-card .course-otj-link{left:13px!important;bottom:9px!important}}
 @media print{html:not(.desktop-mode) .shell{padding-bottom:0!important}}
+
+/* V1.0 — slimmer course title and compact AS / EP cards */
+.course-card.compact-course-card{
+  padding:11px 11px 46px!important;
+  margin-bottom:14px;
+}
+.compact-course-card .course-summary{min-height:66px!important}
+.compact-course-card .course-copy{padding-right:78px!important}
+.compact-course-card h2{font-size:19px!important;line-height:1.08!important}
+.compact-course-card .target-status{margin-top:6px;padding:4px 8px;font-size:9px}
+.compact-course-card .progress-rings{--size:66px!important;top:7px!important;right:8px!important}
+.compact-course-card .ring-yellow{inset:7px!important}
+.compact-course-card .ring-red{inset:14px!important}
+.compact-course-card .progress-rings strong{font-size:12px!important}
+.compact-course-card .course-search-launch{right:8px!important;bottom:7px!important;width:32px!important;height:32px!important}
+.compact-course-card .course-search-launch .search-silhouette{width:20px!important;height:20px!important}
+.compact-course-card .course-otj-link{left:11px!important;bottom:7px!important;min-height:30px;padding:5px 9px;font-size:10px;border-radius:10px}
+.compact-course-card .course-otj-link strong{font-size:9px}
+.compact-course-card .course-otj-arrow{font-size:16px}
+
+.assignment-list{gap:9px}
+.assignment-card.compact-assignment-card{
+  padding:12px 13px;
+  border-radius:17px;
+}
+.compact-assignment-card .assignment-head{display:block;min-width:0}
+.compact-assignment-card .assignment-head h3{
+  margin:0;
+  font-size:15px;
+  line-height:1.28;
+  font-weight:850;
+}
+.compact-assignment-card.rpl .assignment-head{padding-right:54px}
+.compact-assignment-card .icons{margin-top:9px!important;gap:4px!important}
+.compact-assignment-card .nvq-six-icons .icon-state{
+  min-height:40px!important;
+  padding:4px 1px!important;
+  border-radius:9px!important;
+}
+.compact-assignment-card .nvq-six-icons .icon-state .app-icon{width:18px!important;height:18px!important}
+.compact-assignment-card .modern-status{right:5px;width:12px;height:12px}
+.compact-assignment-card .ksb-row{gap:4px;margin-top:8px}
+.compact-assignment-card .ksb-mini{padding:4px 7px;font-size:10px;line-height:1.05}
+
+@media(max-width:420px){
+  .course-card.compact-course-card{padding:10px 10px 44px!important}
+  .compact-course-card .course-summary{min-height:62px!important}
+  .compact-course-card .course-copy{padding-right:72px!important}
+  .compact-course-card h2{font-size:18px!important}
+  .compact-course-card .progress-rings{--size:62px!important;top:7px!important;right:7px!important}
+  .compact-course-card .course-otj-link{left:10px!important;bottom:7px!important}
+  .compact-course-card .course-search-launch{right:7px!important;bottom:7px!important}
+  .assignment-card.compact-assignment-card{padding:11px 12px}
+  .compact-assignment-card .assignment-head h3{font-size:14px}
+  .compact-assignment-card .nvq-six-icons .icon-state{min-height:38px!important}
+  .compact-assignment-card .nvq-six-icons .icon-state .app-icon{width:17px!important;height:17px!important}
+}
