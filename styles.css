@@ -3434,7 +3434,7 @@ body.technical-drawing-active{overflow:hidden!important;position:fixed!important
 }
 
 
-/* V1.6.28 — adaptive desktop UI scale */
+/* V1.6.29 — adaptive desktop UI scale */
 @media (min-width:960px) and (pointer:fine){
   html.desktop-mode.desktop-scale-100 #app{zoom:1}
   html.desktop-mode.desktop-scale-90 #app{zoom:.9}

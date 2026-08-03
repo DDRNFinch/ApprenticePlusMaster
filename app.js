@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.6.28';
+const APP_VERSION='V1.6.29';
 
 const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
 const TECHNICAL_DRAWING_PREFIX={
@@ -5311,19 +5311,40 @@ function portfolioDelta(){
 function friendlyEvidenceSection(section){return ({practical:'Practical assessment',photos:'Photographic evidence',statement:'Learner statement',discussion:'Video walkthrough',walkthrough:'Video walkthrough',professionalDiscussion:'Professional discussion',witness:'Witness testimony',supporting:'Supporting evidence'})[section]||section}
 function monthlyPortfolioCard(){
  const d=portfolioDelta(),last=d.status.uploadedAt?new Date(d.status.uploadedAt).toLocaleDateString('en-GB'):'Not yet',downloaded=!!d.status.downloadedAt&&!!d.status.pendingSnapshot,newItems=d.newEvidence.reduce((n,x)=>n+x.added,0);
- return `<section class="card panel entire-portfolio-card monthly-portfolio-card compact-monthly-card"><div class="monthly-portfolio-head"><div><div class="number">Monthly upload</div><h3>New portfolio evidence</h3></div><span class="monthly-last-upload">Last: ${esc(last)}</span></div><div class="monthly-portfolio-stats compact"><div><span>Evidence</span><strong>${newItems}</strong></div><div><span>OTJMate</span><strong>${d.newOtjEntries.length} · ${d.otjHours.toFixed(1)} hrs</strong></div><div><span>KSBs</span><strong>+${d.ksbGain}</strong></div><div><span>RPL</span><strong>${d.newRplUnits.length}</strong></div></div><p class="monthly-portfolio-note">The ZIP includes new assignment evidence and only OTJMate entries added since the last confirmed upload.</p><div class="btn-row monthly-upload-actions"><button class="btn" id="downloadEntirePortfolio">${d.status.uploadedAt?'Download update':'Download first upload'}</button>${downloaded?'<button class="btn secondary" id="openMonthlyPortfolio">Open portfolio</button><button class="btn" id="confirmMonthlyUpload">Uploaded online</button>':''}</div></section>`;
+ return `<section class="card panel entire-portfolio-card monthly-portfolio-card compact-monthly-card"><div class="monthly-portfolio-head"><div><div class="number">Monthly upload</div><h3>New portfolio evidence</h3></div><span class="monthly-last-upload">Last: ${esc(last)}</span></div><div class="monthly-portfolio-stats compact"><div><span>Evidence</span><strong>${newItems}</strong></div><div><span>OTJMate</span><strong>${d.newOtjEntries.length} · ${d.otjHours.toFixed(1)} hrs</strong></div><div><span>KSBs</span><strong>+${d.ksbGain}</strong></div><div><span>RPL</span><strong>${d.newRplUnits.length}</strong></div></div><p class="monthly-portfolio-note">The compact ZIP includes only new evidence and OTJMate entries, with direct links inside Monthly-Summary.pdf.</p><div class="btn-row monthly-upload-actions"><button class="btn" id="downloadEntirePortfolio">${d.status.uploadedAt?'Download update':'Download first upload'}</button>${downloaded?'<button class="btn secondary" id="openMonthlyPortfolio">Open portfolio</button><button class="btn" id="confirmMonthlyUpload">Uploaded online</button>':''}</div></section>`;
 }
 function wrapPdfText(ctx,text,maxWidth,font){ctx.font=font;const words=String(text||'').split(/\s+/),lines=[];let line='';for(const word of words){const test=line?`${line} ${word}`:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);return lines}
-function createMonthlySummaryPdf(delta,ksbOnly=false){
- const W=1240,H=1754,M=84,pages=[];let c,x,y;
- const page=()=>{c=document.createElement('canvas');c.width=W;c.height=H;x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle='#0f766e';x.fillRect(0,0,W,20);x.fillStyle='#0f2328';x.font='800 44px Arial';x.fillText(ksbOnly?'New KSBs Met Since Last Upload':'Monthly Portfolio Update Summary',M,92);x.fillStyle='#5d6d67';x.font='18px Arial';x.fillText(`${state.profile?.fullName||'Learner'} · ${COURSE.name} · ${new Date().toLocaleDateString('en-GB')}`,M,132);x.fillStyle='#dff5e7';x.fillRect(M,165,W-2*M,4);y=210;pages.push(c)};page();
- const heading=t=>{if(y>H-180)page();x.fillStyle='#0f2328';x.font='800 25px Arial';x.fillText(t,M,y);y+=38};
- const line=(t,bold=false)=>{const lines=wrapPdfText(x,t,W-2*M,bold?'700 18px Arial':'18px Arial');for(const l of lines){if(y>H-100)page();x.fillStyle=bold?'#0f2328':'#344a42';x.font=bold?'700 18px Arial':'18px Arial';x.fillText(l,M,y);y+=27}y+=5};
- heading('Upload comparison');line(`Previous confirmed upload: ${delta.status.uploadedAt?new Date(delta.status.uploadedAt).toLocaleString('en-GB'):'First portfolio upload'}`);line(`New KSBs met: ${delta.newKsbs.length}`);line(`Course progress gained: ${delta.progressGain}%`);line(`New evidence items: ${delta.newEvidence.reduce((n,e)=>n+e.added,0)}`);line(`New RPL units: ${delta.newRplUnits.length}`);line(`New OTJMate entries: ${delta.newOtjEntries.length} (${delta.otjHours.toFixed(1)} hours)`);
- heading('New OTJMate evidence');if(delta.newOtjEntries.length)delta.newOtjEntries.forEach(e=>line(`${formatShortDate(e.date)} · ${String(e.place||'other').replace(/^./,c=>c.toUpperCase())} · ${Number(e.hours||0).toFixed(1)} hours — ${e.did||'OTJ activity'}`));else line('No new OTJMate entries were added since the previous confirmed upload.');heading('New KSBs met');if(delta.newKsbs.length)delta.newKsbs.forEach(k=>line(`${k.code} — ${k.summary} (Assignment ${k.assignment}: ${k.title})`));else line('No additional KSBs have become fully met since the previous confirmed upload.');heading('Recognition of Prior Learning (RPL)');if(delta.newRplUnits.length)delta.newRplUnits.forEach(r=>line(`RPL unit — ${r.unit?`Unit ${r.unit} · `:''}Assignment ${r.assignment}: ${r.title}${r.rplAt?` (awarded ${new Date(r.rplAt).toLocaleDateString('en-GB')})`:''}`));else line('No new RPL units have been awarded since the previous confirmed upload.');
- if(!ksbOnly){heading('New evidence and ZIP locations');if(delta.newEvidence.length)delta.newEvidence.forEach(e=>line(`Assignment ${e.assignment}: ${e.title} / ${friendlyEvidenceSection(e.section)} — ${e.added} new item${e.added===1?'':'s'} (attempt${e.added===1?'':'s'} ${e.newAttempts.join(', ')})`));else line('No new saved evidence was detected. The portfolio still contains the latest saved evidence in each assignment folder.');heading('ZIP structure');line('00 - Monthly Portfolio Update Summary.pdf');line('01 - New KSBs Met Since Last Upload.pdf');line('02 - New OTJMate Evidence.pdf (only when new OTJ entries exist)');line('Assignment 01 - [Assignment name] / evidence PDF and attached media');line('Assignment 02 - [Assignment name] / evidence PDF and attached media');line('New video and voice-recording filenames begin with NEW EVIDENCE - so they remain clearly identifiable outside the PDF.');}
- pages.forEach((canvas,i)=>{const cx=canvas.getContext('2d');cx.fillStyle='#0f766e';cx.fillRect(0,H-58,W,58);cx.fillStyle='#fff';cx.font='600 15px Arial';cx.fillText(`Apprentice+ ${APP_VERSION}`,M,H-23);cx.textAlign='right';cx.fillText(`Page ${i+1} of ${pages.length}`,W-M,H-23)});
- return makeImagePDF(pages.map(canvas=>dataUrlBytes(canvas.toDataURL('image/jpeg',.92))),W,H);
+function monthlyEvidenceCode(name){const m=String(name||'').match(/(?:^|[^A-Z0-9])((?:K|S|B|LO)\s*\d+(?:\.\d+)?)(?:[^A-Z0-9]|$)/i);return m?m[1].replace(/\s+/g,'').toUpperCase():''}
+function monthlyFileExtension(name,fallback='.bin'){const m=String(name||'').match(/(\.[a-z0-9]{2,5})$/i);return m?m[1].toLowerCase():fallback}
+function monthlyShortEntry(entry,assignmentNumber,counters){
+ const original=String(entry.name||''),lower=original.toLowerCase(),a=`A${String(assignmentNumber).padStart(2,'0')}`,code=monthlyEvidenceCode(original),codePart=code?`-${code}`:'';
+ let folder='Evidence/Files',prefix='EV',label='Evidence file',fallback='.bin';
+ if(lower.endsWith('.pdf')){folder='Evidence/PDF';prefix='PACK';label='Assignment evidence PDF';fallback='.pdf'}
+ else if(lower.includes('voice')||lower.includes('professional discussion')||/\.(m4a|mp3|wav|ogg)$/i.test(lower)){folder='Evidence/PD';prefix='PD';label='Professional discussion audio';fallback='.m4a'}
+ else if(lower.includes('walkthrough')||lower.includes('ksb video')){folder='Evidence/VW';prefix='VW';label='Video walkthrough';fallback='.mp4'}
+ else if(/\.(mp4|webm|mov|mkv)$/i.test(lower)){folder='Evidence/VID';prefix='VID';label='Supporting video';fallback='.mp4'}
+ else if(/\.(png|jpe?g|webp)$/i.test(lower)){folder='Evidence/PE';prefix='PE';label='Photographic evidence';fallback='.jpg'}
+ const key=`${prefix}-${a}${codePart}`,number=(counters[key]=(counters[key]||0)+1),suffix=prefix==='PACK'?'':`-${String(number).padStart(2,'0')}`,path=`${folder}/${key}${suffix}${monthlyFileExtension(original,fallback)}`;
+ return {path,label,code,assignment:assignmentNumber,data:entry.data};
+}
+function createMonthlySummaryPdf(delta,inventory=[]){
+ const W=1240,H=1754,M=72,pages=[],links=[];let c,x,y,pageIndex=-1;
+ const page=()=>{pageIndex++;c=document.createElement('canvas');c.width=W;c.height=H;x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle='#0f766e';x.fillRect(0,0,W,20);x.fillStyle='#0f2328';x.font='800 42px Arial';x.fillText('Monthly Upload Summary',M,84);x.fillStyle='#5d6d67';x.font='18px Arial';x.fillText(`${state.profile?.fullName||'Learner'} · ${COURSE.name}`,M,122);x.fillText(`${new Date().toLocaleDateString('en-GB')} · Apprentice+ ${APP_VERSION}`,M,150);x.fillStyle='#dff5e7';x.fillRect(M,176,W-2*M,4);y=218;pages.push(c)};page();
+ const ensure=h=>{if(y+h>H-90)page()};
+ const heading=t=>{ensure(70);x.fillStyle='#0f2328';x.font='800 25px Arial';x.fillText(t,M,y);y+=40};
+ const line=(t,bold=false)=>{const rows=wrapPdfText(x,t,W-2*M,bold?'700 18px Arial':'18px Arial');for(const row of rows){ensure(32);x.fillStyle=bold?'#0f2328':'#344a42';x.font=bold?'700 18px Arial':'18px Arial';x.fillText(row,M,y);y+=27}y+=5};
+ heading('Upload comparison');line(`Previous confirmed upload: ${delta.status.uploadedAt?new Date(delta.status.uploadedAt).toLocaleString('en-GB'):'First portfolio upload'}`);line(`New evidence items: ${delta.newEvidence.reduce((n,e)=>n+e.added,0)} · New KSBs/LOs met: ${delta.newKsbs.length} · Progress gained: ${delta.progressGain}%`);line(`New RPL units: ${delta.newRplUnits.length} · New OTJMate entries: ${delta.newOtjEntries.length} (${delta.otjHours.toFixed(1)} hours)`);
+ heading('New KSBs and learning outcomes');if(delta.newKsbs.length)delta.newKsbs.forEach(k=>line(`${k.code} — ${k.summary} · Assignment ${k.assignment}: ${k.title}`));else line('No additional criteria became fully met during this upload period.');
+ heading('New OTJMate evidence');if(delta.newOtjEntries.length)delta.newOtjEntries.forEach(e=>{line(`${formatShortDate(e.date)} · ${String(e.place||'other').replace(/^./,ch=>ch.toUpperCase())} · ${Number(e.hours||0).toFixed(1)} hours`,true);line(`Activity: ${e.did||'OTJ activity'}`);line(`Learning: ${e.learned||'—'}`)});else line('No new OTJMate entries were added during this upload period.');
+ heading('Recognition of Prior Learning');if(delta.newRplUnits.length)delta.newRplUnits.forEach(r=>line(`${r.unit?`Unit ${r.unit} · `:''}Assignment ${r.assignment}: ${r.title}`));else line('No new RPL units were awarded during this upload period.');
+ heading('Evidence index');line('Extract the ZIP first, then select OPEN. Local-file links may be blocked by some browser PDF viewers; the short path is also shown beside every item.');
+ if(!inventory.length)line('No separate evidence files are included in this upload.');
+ inventory.forEach((item,i)=>{
+   ensure(72);const top=y-23;x.fillStyle=i%2?'#f6faf8':'#eef7f2';x.fillRect(M,top,W-2*M,58);x.fillStyle='#0f2328';x.font='700 17px Arial';const title=`${item.label}${item.code?` · ${item.code}`:''} · Assignment ${item.assignment}`;x.fillText(title,M+14,y);x.fillStyle='#52655f';x.font='15px Arial';x.fillText(item.path,M+14,y+24);const bx=W-M-112,by=top+10,bw=96,bh=38;x.fillStyle='#0f766e';x.fillRect(bx,by,bw,bh);x.fillStyle='#fff';x.font='800 15px Arial';x.textAlign='center';x.fillText('OPEN',bx+bw/2,by+25);x.textAlign='left';links.push({page:pageIndex,x:bx,y:by,x2:bx+bw,y2:by+bh,target:item.path});y+=66;
+ });
+ heading('Compact ZIP structure');line('Monthly-Summary.pdf');line('Evidence/PDF — short assignment evidence PDFs');line('Evidence/PD — professional discussion audio');line('Evidence/VW — video walkthroughs');line('Evidence/VID — supporting videos');line('Evidence/PE — separate photographs, where available');
+ pages.forEach((canvas,i)=>{const cx=canvas.getContext('2d');cx.fillStyle='#0f766e';cx.fillRect(0,H-58,W,58);cx.fillStyle='#fff';cx.font='600 15px Arial';cx.fillText(`Apprentice+ ${APP_VERSION}`,M,H-23);cx.textAlign='right';cx.fillText(`Page ${i+1} of ${pages.length}`,W-M,H-23);cx.textAlign='left'});
+ return makeImagePDF(pages.map(canvas=>dataUrlBytes(canvas.toDataURL('image/jpeg',.92))),W,H,links);
 }
 function createMonthlyOtjPdf(entries){
  const W=1240,H=1754,M=72,top=165,bottom=82,lineH=26,pages=[];
@@ -5334,27 +5355,23 @@ function createMonthlyOtjPdf(entries){
 }
 function newEvidenceMapForAssignment(delta,n){const map={};delta.newEvidence.filter(e=>e.assignment===n).forEach(e=>map[e.section]=e.newAttempts);return map}
 async function downloadEntirePortfolio(){
- const assignments=courseAssignments().filter(a=>a&&!a.selectOptional&&(assignmentHasSavedPortfolioEvidence(a.n)||assignmentRPL(a.n)));
- const previewDelta=portfolioDelta();if(!assignments.length&&!previewDelta.newOtjEntries.length)return toast('No new assignment evidence, RPL units or OTJMate entries are available to download');
+ const delta=portfolioDelta(),changedAssignments=new Set(delta.newEvidence.map(e=>Number(e.assignment)));delta.newRplUnits.forEach(r=>changedAssignments.add(Number(r.assignment)));
+ const assignments=courseAssignments().filter(a=>a&&!a.selectOptional&&changedAssignments.has(Number(a.n))&&(assignmentHasSavedPortfolioEvidence(a.n)||assignmentRPL(a.n)));
+ if(!assignments.length&&!delta.newOtjEntries.length&&!delta.newKsbs.length&&!delta.newRplUnits.length)return toast('No new assignment evidence, RPL units or OTJMate entries are available to download');
  if(!window.generateEvidencePackPDF||!window.makeZipBlob)return toast('Portfolio generator unavailable');
- const delta=previewDelta,button=document.getElementById('downloadEntirePortfolio');if(button){button.disabled=true;button.textContent='Preparing monthly upload...'}
+ const button=document.getElementById('downloadEntirePortfolio');if(button){button.disabled=true;button.textContent='Preparing monthly upload...'}
  try{
-  toast(`Preparing ${assignments.length} assignment folder${assignments.length===1?'':'s'}...`);
-  const allEntries=[{name:'00 - Monthly Portfolio Update Summary.pdf',data:createMonthlySummaryPdf(delta,false)},{name:'01 - New KSBs Met Since Last Upload.pdf',data:createMonthlySummaryPdf(delta,true)}];if(delta.newOtjEntries.length)allEntries.push({name:'02 - New OTJMate Evidence.pdf',data:createMonthlyOtjPdf(delta.newOtjEntries)});
+  const packageEntries=[],inventory=[],counters={};toast(`Preparing ${assignments.length} updated assignment${assignments.length===1?'':'s'}...`);
   for(let index=0;index<assignments.length;index++){
-   const a=assignments[index],sections={};
-   PORTFOLIO_SECTIONS.forEach(section=>sections[section]=sectionData(a.n,section).versions.map(version=>structuredClone(version)));
-   sections.walkthrough=walkthroughSaved(a.n)?await collectWalkthroughEvidence(a.n,a):[];
+   const a=assignments[index],sections={};PORTFOLIO_SECTIONS.forEach(section=>sections[section]=sectionData(a.n,section).versions.map(version=>structuredClone(version)));sections.walkthrough=walkthroughSaved(a.n)?await collectWalkthroughEvidence(a.n,a):[];
    const result=await generateEvidencePackPDF({course:COURSE,assignment:a,profile:state.profile,sections,branding:state.branding,returnPackage:true,newEvidence:newEvidenceMapForAssignment(delta,a.n)});
-   const folder=`Assignment ${String(a.n).padStart(2,'0')} - ${safeZipName(a.title||'Evidence')}`;
-   for(const entry of result.entries||[])allEntries.push({name:`${folder}/${entry.name}`,data:entry.data});
+   for(const entry of result.entries||[]){const short=monthlyShortEntry(entry,a.n,counters);packageEntries.push({name:short.path,data:short.data});inventory.push(short)}
    toast(`Prepared assignment ${index+1} of ${assignments.length}`);
   }
-  const learner=safeZipName(state.profile?.fullName||'Learner'),course=safeZipName(COURSE.name||'Course'),date=new Date().toISOString().slice(0,10);
-  await downloadBlob(makeZipBlob(allEntries),'application/zip',`${learner}-${course}-Monthly-Portfolio-${date}.zip`);
+  packageEntries.unshift({name:'Monthly-Summary.pdf',data:createMonthlySummaryPdf(delta,inventory)});
+  const learner=safeZipName(state.profile?.fullName||'Learner').slice(0,24),date=new Date().toISOString().slice(0,10);await downloadBlob(makeZipBlob(packageEntries),'application/zip',`${learner}-Monthly-${date}.zip`);
   state.data[MONTHLY_PORTFOLIO_KEY()]={...delta.status,downloadedAt:new Date().toISOString(),pendingSnapshot:delta.current,pendingNewKsbs:delta.newKsbs.map(x=>x.key),pendingNewRplUnits:delta.newRplUnits.map(x=>x.assignment),pendingProgressGain:delta.progressGain,pendingOtjEntryIds:delta.newOtjEntries.map(e=>e.id)};
-  await saveData();analyticsEvent('monthly_portfolio_exported',{course_id:COURSE.id,assignment_count:assignments.length,file_count:allEntries.length,new_ksbs:delta.newKsbs.length,new_rpl_units:delta.newRplUnits.length,progress_gain:delta.progressGain,new_otj_entries:delta.newOtjEntries.length,otj_hours:delta.otjHours});
-  render();toast('Monthly portfolio downloaded — use Open Online Portfolio, then confirm Evidence Uploaded Online');
+  await saveData();analyticsEvent('monthly_portfolio_exported',{course_id:COURSE.id,assignment_count:assignments.length,file_count:packageEntries.length,new_ksbs:delta.newKsbs.length,new_rpl_units:delta.newRplUnits.length,progress_gain:delta.progressGain,new_otj_entries:delta.newOtjEntries.length,otj_hours:delta.otjHours});render();toast('Monthly upload downloaded — extract the ZIP and open Monthly-Summary.pdf');
  }catch(error){console.error('Monthly portfolio download failed',error);toast(`Unable to download monthly portfolio${error?.message?`: ${error.message}`:''}`)}finally{if(button){button.disabled=false;button.textContent='Download Monthly Update'}}
 }
 async function confirmMonthlyPortfolioUpload(){

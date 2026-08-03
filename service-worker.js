@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.6.28-adaptive-desktop-scale';
-const CURRENT_VERSION='V1.6.28';
+const CACHE='apprentice-plus-v1.6.29-linked-monthly-pack';
+const CURRENT_VERSION='V1.6.29';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,

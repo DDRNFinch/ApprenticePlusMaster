@@ -448,12 +448,25 @@ function makeZipBlob(entries){
 }
 function crc32(data){let c=0xffffffff;for(const b of data){c^=b;for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xedb88320:0)}return(c^0xffffffff)>>>0}
 
-function makeImagePDF(images,width,height){
+function makeImagePDF(images,width,height,links=[]){
   const enc=new TextEncoder(),parts=[],offsets=[0];let pos=0;const add=v=>{const u=typeof v==='string'?enc.encode(v):v;parts.push(u);pos+=u.length};
-  add('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');const count=2+images.length*3;
+  const pdfEscape=value=>String(value||'').replace(/\\/g,'/').replace(/([()])/g,'\\$1');
+  const pageLinks=images.map((_,i)=>(links||[]).filter(link=>Number(link.page||0)===i));
+  const annotationCount=pageLinks.reduce((n,list)=>n+list.length,0),baseCount=2+images.length*3,count=baseCount+annotationCount;
+  add('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
   function obj(n,head,stream){offsets[n]=pos;add(`${n} 0 obj\n${head}`);if(stream){add(`\nstream\n`);add(stream);add(`\nendstream`)}add(`\nendobj\n`)}
   obj(1,'<< /Type /Catalog /Pages 2 0 R >>');
   const pageIds=images.map((_,i)=>3+i*3+2);obj(2,`<< /Type /Pages /Count ${images.length} /Kids [${pageIds.map(n=>`${n} 0 R`).join(' ')}] >>`);
-  images.forEach((img,i)=>{const imageId=3+i*3,contentId=imageId+1,pageId=imageId+2;obj(imageId,`<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.length} >>`,img);const stream=enc.encode('q\n595.28 0 0 841.89 0 0 cm\n/Im0 Do\nQ');obj(contentId,`<< /Length ${stream.length} >>`,stream);obj(pageId,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im0 ${imageId} 0 R >> >> /Contents ${contentId} 0 R >>`)});
+  let nextAnnotation=baseCount+1;
+  images.forEach((img,i)=>{
+    const imageId=3+i*3,contentId=imageId+1,pageId=imageId+2,annots=[];
+    for(const link of pageLinks[i]){
+      const annotationId=nextAnnotation++,sx=595.28/width,sy=841.89/height,x1=Math.max(0,Number(link.x||0)*sx),x2=Math.min(595.28,Number(link.x2||link.x||0)*sx),y1=Math.max(0,841.89-Number(link.y2||link.y||0)*sy),y2=Math.min(841.89,841.89-Number(link.y||0)*sy),target=pdfEscape(link.target);
+      annots.push(`${annotationId} 0 R`);obj(annotationId,`<< /Type /Annot /Subtype /Link /Rect [${x1.toFixed(2)} ${y1.toFixed(2)} ${x2.toFixed(2)} ${y2.toFixed(2)}] /Border [0 0 0] /A << /S /URI /URI (${target}) >> >>`);
+    }
+    obj(imageId,`<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.length} >>`,img);
+    const stream=enc.encode('q\n595.28 0 0 841.89 0 0 cm\n/Im0 Do\nQ');obj(contentId,`<< /Length ${stream.length} >>`,stream);
+    obj(pageId,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im0 ${imageId} 0 R >> >> /Contents ${contentId} 0 R${annots.length?` /Annots [${annots.join(' ')}]`:''} >>`)
+  });
   const xref=pos;add(`xref\n0 ${count+1}\n0000000000 65535 f \n`);for(let i=1;i<=count;i++)add(`${String(offsets[i]).padStart(10,'0')} 00000 n \n`);add(`trailer\n<< /Size ${count+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);const total=parts.reduce((s,p)=>s+p.length,0),out=new Uint8Array(total);let at=0;parts.forEach(p=>{out.set(p,at);at+=p.length});return out;
 }
