@@ -3762,3 +3762,6 @@ body[data-a11y-background="dark"] .reviewmate-target{background:#24312c;color:#f
  .reviewmate-current-head,.reviewmate-setup-head{flex-direction:column}.reviewmate-target{grid-template-columns:38px minmax(0,1fr);padding:13px;gap:10px}.reviewmate-target-number{width:36px;height:36px}.reviewmate-target-actions{grid-column:1/-1;grid-template-columns:1fr 1fr;min-width:0}.reviewmate-target h3{font-size:16px}
 }
 @media(max-width:370px){.reviewmate-progress{grid-template-columns:1fr;text-align:center}.reviewmate-progress-copy{grid-row:2}.reviewmate-meters{grid-row:3}.reviewmate-target-actions{grid-template-columns:1fr}}
+
+/* V1.0 — identical evidence media blocker */
+.duplicate-evidence-media-modal{z-index:10120}.duplicate-evidence-media-card{width:min(460px,100%);padding:28px;text-align:center;border:2px solid #efb4b4}.duplicate-evidence-media-icon{width:70px;height:70px;display:grid;place-items:center;margin:0 auto 14px;border-radius:22px;background:#fee2e2;color:#a61919}.duplicate-evidence-media-icon .app-icon{width:34px;height:34px}.duplicate-evidence-media-card h2{margin:5px 0 12px}.duplicate-evidence-media-card p{margin:8px 0;line-height:1.5}.duplicate-evidence-media-card>strong{display:block;margin:12px 0;padding:12px;border-radius:13px;background:#fff4f4;color:#7f1d1d;line-height:1.45}.duplicate-evidence-media-card .btn{width:100%;margin-top:10px}

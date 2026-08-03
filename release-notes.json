@@ -6,6 +6,12 @@
       "date": "2026-08-03",
       "title": "ReviewMate Progress Reviews and Live Targets",
       "features": [
+        "Added one identical-media blocker across every course, assignment, evidence pack and formal photo or video evidence route.",
+        "Duplicate checking compares the actual processed media content rather than the filename, so renaming the same photo or video does not bypass the check.",
+        "The blocker covers KSB and Learning Outcome photographs, practical and observation photographs, KSB and Learning Outcome walkthrough videos, and supporting-evidence photos or videos.",
+        "Previously saved legacy evidence is checked as well as new evidence, including walkthrough clips stored separately for reliable mobile playback.",
+        "When identical media is found, the learner sees where it has already been evidenced, including the course, AS or EP, evidence type and linked KSB, Learning Outcome or evidence filename.",
+        "Multiple files selected together are checked against each other, while replacing the existing media in the same unsent evidence slot remains allowed.",
         "First-time learner setup now displays every learner profile field immediately and requires the learner to actively choose a course before continuing.",
         "No course is preselected on a new installation, preventing learners from accidentally starting with the wrong assignments or criteria.",
         "ReviewMate targets are now scheduled in order: Target 1 is due after one week, Target 2 after two weeks, through to Target 5 after five weeks.",
