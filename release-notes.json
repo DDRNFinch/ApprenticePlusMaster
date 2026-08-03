@@ -1,6 +1,17 @@
 {
-  "latest": "V1.6.21",
+  "latest": "V1.6.22",
   "releases": [
+    {
+      "version": "V1.6.22",
+      "date": "2026-08-03",
+      "title": "Compact Monthly Upload with OTJMate",
+      "changes": [
+        "Made the monthly portfolio upload card smaller and easier to scan.",
+        "Monthly ZIPs now include a separate OTJMate PDF containing only entries added since the last confirmed upload.",
+        "The confirmed monthly snapshot now records OTJMate entry IDs to prevent duplicate OTJ evidence in future ZIPs.",
+        "Monthly upload stats now show new OTJ entry count and hours."
+      ]
+    },
     {
       "version": "V1.6.21",
       "date": "2026-08-03",

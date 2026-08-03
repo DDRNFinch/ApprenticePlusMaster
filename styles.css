@@ -3224,3 +3224,8 @@ body.technical-drawing-active{overflow:hidden!important;position:fixed!important
 /* V1.6.21 professional discussion recorder */
 .pd-recording-timer{font-size:1.8rem;font-weight:800;letter-spacing:.08em;font-variant-numeric:tabular-nums;margin-top:4px}
 .recording-pulse.ready{animation:none;opacity:.45}
+
+
+/* V1.6.22 compact monthly portfolio and OTJMate delta */
+.compact-monthly-card{gap:11px;padding:15px 16px}.monthly-portfolio-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.compact-monthly-card h3{margin:2px 0 0;font-size:1.05rem}.monthly-last-upload{font-size:.72rem;font-weight:800;color:var(--muted);white-space:nowrap}.monthly-portfolio-stats.compact{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:0}.monthly-portfolio-stats.compact>div{padding:8px 9px;border-radius:11px}.monthly-portfolio-stats.compact span{font-size:10px;margin-bottom:2px}.monthly-portfolio-stats.compact strong{font-size:12px}.monthly-portfolio-note{margin:0;color:var(--muted);font-size:.78rem;line-height:1.35}.monthly-upload-actions{margin-top:0;gap:7px}.monthly-upload-actions .btn{padding:10px 12px;font-size:.8rem}
+@media(max-width:520px){.monthly-portfolio-stats.compact{grid-template-columns:repeat(2,minmax(0,1fr))}.monthly-portfolio-head{align-items:center}.monthly-upload-actions{display:grid;grid-template-columns:1fr}.monthly-upload-actions .btn{width:100%}}
