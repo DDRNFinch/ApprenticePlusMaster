@@ -1,6 +1,27 @@
 {
-  "latest": "V1.6.36",
+  "latest": "V1.6.37",
   "releases": [
+    {
+      "version": "V1.6.37",
+      "date": "2026-08-03",
+      "title": "Complete Portfolio PDF Evidence Records",
+      "features": [
+        "Learner Statement PDF pages now contain the learner's full submitted statement wording.",
+        "Added lossless Complete Submitted Details pages for learner, witness, employer and assessor evidence records.",
+        "Long statements, observations, summaries, development areas, comments and notes continue onto additional A4 pages instead of being shortened or clipped.",
+        "Every selected KSB or Learning Outcome and every awarded score is listed with the submitted evidence record.",
+        "Witness and employer identity, role, organisation, activity, testimony, generated feedback, additional comments and signatures are all included.",
+        "Practical and assessor records include task details, specification references, all marks, results, feedback, comments, photograph details and signatures.",
+        "Photographic evidence now includes notes, selected criteria, file names and saved captions.",
+        "Professional Discussion and Video Walkthrough records include the lead, activity, every recording, duration, date, media type and saved notes.",
+        "Supporting Evidence is now included in the PDF evidence catalogue with its complete descriptions, mappings, scores and attachment details.",
+        "NVQ supporting files are retained as separate files in the downloaded evidence package as well as being listed in the PDF."
+      ],
+      "items": [
+        "Normal evidence records are kept to one A4 page where readable; continuation pages are created automatically when needed.",
+        "The monthly progress page and Academy Activity PDF from V1.6.36 remain included."
+      ]
+    },
     {
       "version": "V1.6.36",
       "date": "2026-08-03",
