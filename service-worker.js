@@ -1,4 +1,4 @@
-const CACHE='apprentice-plus-v1.1-restore-coursework';
+const CACHE='apprentice-plus-v1.2-complete-monthly-portfolio';
 const CURRENT_VERSION='V1.1';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
