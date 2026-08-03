@@ -1,6 +1,24 @@
 {
-  "latest": "V1.6.33",
+  "latest": "V1.6.34",
   "releases": [
+    {
+      "version": "V1.6.34",
+      "date": "2026-08-03",
+      "title": "Locked Square Brick Pier Renderer",
+      "features": [
+        "Replaced the previous square-pier geometry with the approved standalone demo renderer.",
+        "Pier elevation bricks now retain their fixed 215 mm stretcher and 102.5 mm header face sizes.",
+        "Pier Plan Course 1 and Plan Course 2 use the approved alternating perimeter layouts.",
+        "The approved pier rules scale from 1×1 through the existing adjustable pier sizes by adding complete fixed-size bricks.",
+        "Removed S and H text labels from all pier bricks.",
+        "Renamed the pier-only Rear Elevation to Right Elevation."
+      ],
+      "items": [
+        "Wall rear elevations remain unchanged.",
+        "Metric wall, blockwork and English-bond return renderers were not modified.",
+        "The current CADMate PNG export and project save/load features remain available."
+      ]
+    },
     {
       "version": "V1.6.33",
       "date": "2026-08-03",

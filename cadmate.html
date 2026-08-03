@@ -323,59 +323,135 @@ function rows(m){
 function hatch(svg,id,kind){const defs=E('defs');let p;if(kind==='brick'||kind==='pier'){p=E('pattern',{id,width:16,height:16,patternUnits:'userSpaceOnUse',patternTransform:'rotate(45)'});p.appendChild(E('line',{x1:0,y1:0,x2:0,y2:16,stroke:'#111','stroke-width':1}));p.appendChild(E('line',{x1:8,y1:0,x2:8,y2:16,stroke:'#111','stroke-width':1}));}else{p=E('pattern',{id,width:18,height:18,patternUnits:'userSpaceOnUse'});p.appendChild(E('path',{d:'M0 18L18 0M-4 4L4 -4M14 22L22 14',stroke:'#111','stroke-width':1,fill:'none'}));p.appendChild(E('circle',{cx:5,cy:13,r:1.2,fill:'#111'}));}defs.appendChild(p);svg.appendChild(defs)}
 function feature(svg,m,x0,y0,s){if(m.feature==='none')return;const y=y0-m.featureCourse*m.c.course*s;if(m.feature==='soldier'||m.feature==='boe'){const featureH=(m.feature==='boe'?102.5:m.c.unitL)*s,step=m.c.unitH*s+m.c.joint*s;for(let x=0;x<m.length*s;x+=step)svg.appendChild(E('rect',{x:x0+x,y:y-featureH,width:Math.max(4,m.c.unitH*s),height:featureH,fill:'#fff',stroke:'#111','stroke-width':1.2}))}else if(['band','corbel'].includes(m.feature)){const d=m.featureDepth*s;svg.appendChild(E('rect',{x:x0-d,y:y-m.c.unitH*s,width:m.length*s+2*d,height:m.c.unitH*s,fill:'#fff',stroke:'#111','stroke-width':2.5}))}else if(m.feature==='recess'){svg.appendChild(E('rect',{x:x0+m.length*s*.2,y:y-2*m.c.course*s,width:m.length*s*.6,height:2*m.c.course*s,fill:'#fff',stroke:'#111','stroke-width':2,'stroke-dasharray':'7 5'}))}else if(m.feature==='dentil'){const step=m.length*s/12;for(let i=0;i<12;i+=2)svg.appendChild(E('rect',{x:x0+i*step,y:y-m.c.unitH*s,width:step,height:m.c.unitH*s,fill:'#fff',stroke:'#111','stroke-width':1.5}))}}
 
-function pierCoursePieces(course,m){
-  const pieces=[],n=Math.max(1,m.modules||1),joint=m.c.joint,brickL=m.c.unitL,brickD=102.5;
-  if(course%2===1){
-    for(let row=0;row<n*2;row++){
-      const y=row*(brickD+joint);
-      for(let col=0;col<n;col++)pieces.push({x:col*(brickL+joint),y,w:brickL,d:brickD});
-    }
-  }else{
-    for(let col=0;col<n*2;col++){
-      const x=col*(brickD+joint);
-      for(let row=0;row<n;row++)pieces.push({x,y:row*(brickL+joint),w:brickD,d:brickL});
-    }
-  }
-  return pieces;
+function pierElevationCourse(modules,course,face){
+  const stretchers=Math.max(0,modules-1);
+  const frontCourse1=Array(modules).fill('S');
+  const frontCourse2=['H',...Array(stretchers).fill('S'),'H'];
+  if(face==='front')return course%2===1?frontCourse1:frontCourse2;
+  return course%2===1?frontCourse2:frontCourse1;
 }
-function drawPierElevation(svg,m,b,title){
+function drawPierElevation(svg,m,b,title,face='front'){
   T(svg,b.x+4,b.y+18,title,{'font-size':20,'font-weight':'700'});
-  const size=m.pierSize||m.length,titleH=26,leftDimW=42,rightPad=10,topPad=8,bottomDimH=36;
-  const drawX=b.x+leftDimW,drawY=b.y+titleH+topPad,drawW=Math.max(10,b.w-leftDimW-rightPad),drawH=Math.max(10,b.h-titleH-topPad-bottomDimH);
-  const visualH=m.height+(m.feature==='soldier'?140:0)+(m.feature==='boe'?35:0);
-  const s=Math.min(drawW/size,drawH/visualH),wallW=size*s,wallH=m.height*s,x0=drawX+(drawW-wallW)/2,top=drawY+(drawH-wallH)/2,y0=top+wallH;
+
+  const S=215,H=102.5,J=10,brickH=65,courseH=75;
+  const modules=Math.max(1,Number(m.modules)||1);
+  const size=modules*S+(modules-1)*J;
+  const titleH=26,leftDimW=42,rightPad=10,topPad=8,bottomDimH=36;
+  const drawX=b.x+leftDimW,drawY=b.y+titleH+topPad;
+  const drawW=Math.max(10,b.w-leftDimW-rightPad);
+  const drawH=Math.max(10,b.h-titleH-topPad-bottomDimH);
+  const s=Math.min(drawW/size,drawH/m.height);
+  const wallW=size*s,wallH=m.height*s;
+  const x0=drawX+(drawW-wallW)/2;
+  const top=drawY+(drawH-wallH)/2;
+  const y0=top+wallH;
+
   if(m.display==='hatch'){
-    hatch(svg,`${title.replace(/\W/g,'')}PierHatch`,'pier');
-    svg.appendChild(E('rect',{x:x0,y:top,width:wallW,height:wallH,fill:`url(#${title.replace(/\W/g,'')}PierHatch)`,stroke:'#111','stroke-width':2.5}));
+    hatch(svg,`pierElevationHatch${face}`,'pier');
+    svg.appendChild(E('rect',{
+      x:x0,y:top,width:wallW,height:wallH,
+      fill:`url(#pierElevationHatch${face})`,
+      stroke:'#111','stroke-width':2
+    }));
   }else if(m.display==='outline'){
-    svg.appendChild(E('rect',{x:x0,y:top,width:wallW,height:wallH,fill:'#fff',stroke:'#111','stroke-width':2.5}));
+    svg.appendChild(E('rect',{
+      x:x0,y:top,width:wallW,height:wallH,
+      fill:'#fff',stroke:'#111','stroke-width':2
+    }));
   }else{
-    for(let c=0;c<m.courses;c++){
-      const y=y0-(c+1)*m.c.course*s;
-      const half=(size-m.c.joint)/2*s;
-      if(c%2===0){
-        svg.appendChild(E('rect',{x:x0,y,width:half,height:m.c.unitH*s,fill:'#fff',stroke:'#111','stroke-width':1.1}));
-        svg.appendChild(E('rect',{x:x0+half+m.c.joint*s,y,width:half,height:m.c.unitH*s,fill:'#fff',stroke:'#111','stroke-width':1.1}));
-      }else{
-        svg.appendChild(E('rect',{x:x0,y,width:size*s,height:m.c.unitH*s,fill:'#fff',stroke:'#111','stroke-width':1.1}));
-      }
+    for(let ci=0;ci<m.courses;ci++){
+      const pieces=pierElevationCourse(modules,ci+1,face);
+      let x=x0;
+      const y=y0-(ci+1)*courseH*s;
+      pieces.forEach((code,index)=>{
+        const width=(code==='S'?S:H)*s;
+        svg.appendChild(E('rect',{
+          x,y,width,height:brickH*s,
+          fill:'#fff',stroke:'#111','stroke-width':1
+        }));
+        x+=width;
+        if(index<pieces.length-1)x+=J*s;
+      });
     }
   }
-  const pm={...m,length:size};feature(svg,pm,x0,y0,s);
-  dimV(svg,drawX-18,y0,top,`${m.height} mm`);dimH(svg,x0,x0+wallW,drawY+drawH+18,`${size} mm`);
+
+  const pm={...m,length:size};
+  feature(svg,pm,x0,y0,s);
+  dimV(svg,drawX-18,y0,top,`${m.height} mm`);
+  dimH(svg,x0,x0+wallW,drawY+drawH+18,`${size} mm`);
 }
 function drawPierPlanCourse(svg,m,b,course){
   T(svg,b.x+2,b.y-8,`PIER PLAN – COURSE ${course}`,{'font-size':16,'font-weight':'700'});
-  const size=m.pierSize||m.length,pad=28,s=Math.min((b.w-pad*2)/size,(b.h-pad*2)/size),x=b.x+(b.w-size*s)/2,y=b.y+(b.h-size*s)/2;
+
+  const S=215,J=10,D=102.5;
+  const modules=Math.max(1,Number(m.modules)||1);
+  const size=modules*S+(modules-1)*J;
+  const pad=28;
+  const s=Math.min((b.w-pad*2)/size,(b.h-pad*2)/size);
+  const x=b.x+(b.w-size*s)/2;
+  const y=b.y+(b.h-size*s)/2;
+
   if(m.display==='hatch'){
     hatch(svg,`pierPlanHatch${course}`,'pier');
-    svg.appendChild(E('rect',{x,y,width:size*s,height:size*s,fill:`url(#pierPlanHatch${course})`,stroke:'#111','stroke-width':2}));
+    svg.appendChild(E('rect',{
+      x,y,width:size*s,height:size*s,
+      fill:`url(#pierPlanHatch${course})`,
+      stroke:'#111','stroke-width':2
+    }));
   }else if(m.display==='outline'){
-    svg.appendChild(E('rect',{x,y,width:size*s,height:size*s,fill:'#fff',stroke:'#111','stroke-width':2}));
+    svg.appendChild(E('rect',{
+      x,y,width:size*s,height:size*s,
+      fill:'#fff',stroke:'#111','stroke-width':2
+    }));
   }else{
-    pierCoursePieces(course,m).forEach(p=>svg.appendChild(E('rect',{x:x+p.x*s,y:y+p.y*s,width:p.w*s,height:p.d*s,fill:'#fff',stroke:'#111','stroke-width':1})));
+    // Mortar-joint field defines the exact selected square pier boundary.
+    svg.appendChild(E('rect',{
+      x,y,width:size*s,height:size*s,
+      fill:'#e7efec',stroke:'#111','stroke-width':1.8
+    }));
+
+    const rect=(rx,ry,rw,rh)=>svg.appendChild(E('rect',{
+      x:rx,y:ry,width:rw,height:rh,
+      fill:'#fff',stroke:'#111','stroke-width':1
+    }));
+
+    if(course===1){
+      // Locked PC1:
+      // N stretchers across bottom, N-1 up right,
+      // N across top, N-1 down left.
+      for(let i=0;i<modules;i++){
+        rect(x+i*(S+J)*s,y+(size-D)*s,S*s,D*s);
+      }
+      for(let i=0;i<Math.max(0,modules-1);i++){
+        rect(x+(size-D)*s,y+(D+J+i*(S+J))*s,D*s,S*s);
+      }
+      for(let i=0;i<modules;i++){
+        rect(x+(modules-1-i)*(S+J)*s,y,S*s,D*s);
+      }
+      for(let i=0;i<Math.max(0,modules-1);i++){
+        rect(x,y+(D+J+(modules-2-i)*(S+J))*s,D*s,S*s);
+      }
+    }else{
+      // Locked PC2:
+      // N vertical stretchers up right, N-1 across top,
+      // N vertical stretchers down left, N-1 across bottom.
+      for(let i=0;i<modules;i++){
+        rect(x+(size-D)*s,y+(modules-1-i)*(S+J)*s,D*s,S*s);
+      }
+      for(let i=0;i<Math.max(0,modules-1);i++){
+        rect(x+(D+J+i*(S+J))*s,y,S*s,D*s);
+      }
+      for(let i=0;i<modules;i++){
+        rect(x,y+i*(S+J)*s,D*s,S*s);
+      }
+      for(let i=0;i<Math.max(0,modules-1);i++){
+        rect(x+(D+J+(modules-2-i)*(S+J))*s,y+(size-D)*s,S*s,D*s);
+      }
+    }
   }
-  dimHCompact(svg,x,x+size*s,y+size*s+18,`${size} mm`);dimVCompact(svg,x-18,y,y+size*s,`${size} mm`);
+
+  dimHCompact(svg,x,x+size*s,y+size*s+18,`${size} mm`);
+  dimVCompact(svg,x-18,y,y+size*s,`${size} mm`);
 }
 function drawPierPlan(svg,m,b){
   T(svg,b.x,b.y-10,'DETAILED PIER PLAN',{'font-size':25,'font-weight':'700'});
@@ -397,7 +473,7 @@ function drawPierSection(svg,m,b){
   dimVCompact(svg,b.x+42,y+h,y,`${m.height} mm`);dimHCompact(svg,x,x+w,b.y+b.h-18,`${size} mm`);
 }
 function front(svg,m,b){
-  if(m.isPier)return drawPierElevation(svg,m,b,'FRONT ELEVATION');
+  if(m.isPier)return drawPierElevation(svg,m,b,'FRONT ELEVATION','front');
   T(svg,b.x+4,b.y+18,'FRONT ELEVATION',{'font-size':20,'font-weight':'700'});
 
   // These margins and scale calculations intentionally match rear().
@@ -2225,7 +2301,7 @@ function section(svg,m,b){
   dimHCompact(svg,x,x+wallW,b.y+b.h-18,`${m.material==='block'?97.5:m.thickness} mm`);
 }
 function rear(svg,m,b){
-  if(m.isPier)return drawPierElevation(svg,m,b,'REAR ELEVATION');
+  if(m.isPier)return drawPierElevation(svg,m,b,'RIGHT ELEVATION','right');
   T(svg,b.x+4,b.y+18,'REAR ELEVATION',{'font-size':20,'font-weight':'700'});
 
   const titleH=26;
@@ -2484,7 +2560,7 @@ function validate(m){
  return thick&&starts&&ends&&leftBoundary&&rightBoundary&&exactFit
 }
 function render(){const m=model();const isPier=m.isPier;['leftOn','leftDir','leftLen','rightOn','rightDir','rightLen'].forEach(id=>$(id).disabled=isPier);$('bond').disabled=isPier;if(isPier)$('bond').value='stretcher';if((m.material==='brick'&&['english','flemish'].includes(m.bond))||isPier){if(isPier){$('thickness').innerHTML=`<option value="${m.pierSize}">${m.pierSize} mm square pier (automatic)</option>`;$('thickness').value=String(m.pierSize)}else $('thickness').value=$('thickness').value;m.thickness=isPier?m.pierSize:215;$('thickness').disabled=true}else $('thickness').disabled=false;const ret=(m.left.on?m.left.units*m.courses:0)+(m.right.on?m.right.units*m.courses:0),units=isPier?Math.ceil((m.pierSize*m.pierSize*m.height)/(215*102.5*65)):m.modules*m.courses+ret,time=Math.ceil((units/m.c.rate)*2)/2;$('mLen').textContent=isPier?`${m.pierSize} × ${m.pierSize} mm`:`${m.length} mm`;$('mHeight').textContent=`${m.height} mm`;$('mUnits').textContent=units;$('mTime').textContent=`${time} hours`;const svg=$('svg');clear(svg);$('courseList').classList.toggle('hidden',activeView!=='courses');svg.classList.toggle('hidden',activeView==='courses');if(activeView==='front')front(svg,m,{x:60,y:100,w:1080,h:600});if(activeView==='plan')plan(svg,m,{x:60,y:100,w:1080,h:600});if(activeView==='section')section(svg,m,{x:250,y:100,w:700,h:580});if(activeView==='sheet')sheet(svg,m);if(activeView==='courses')courseTemplates(m);const ready=validate(m);$('spec').value=`CADMATE SPECIFICATION\n\nConstruction: ${m.material==='cavity'?'Cavity wall — facing brick outer leaf / block inner leaf':m.material==='pier'?'Brick pier':m.material}\nBond: ${m.bond}\nDisplay: ${m.display}\n${m.isPier?'Pier size': 'Length'}: ${m.modules} ${m.c.label} = ${m.length}${m.isPier?' × '+m.length:''} mm\nHeight: ${m.courses} courses = ${m.height} mm\nThickness: ${m.thickness} mm\nJointing style: ${m.jointing}\nCavity construction: ${m.material==='cavity'?'102.5 mm facing brick + 100 mm clear cavity + 100 mm block':'Not applicable'}\nCavity A–A brick leaf: same half-brick stretcher section pattern used by the standard wall\nEnglish bond PC1 uses a true 215 mm one-brick wall. For the 4 × 4 corner, the main wall is 2S,2S,2S,S and the return is VQ,VS,VS,VS,VS,VS,VQ,VS. The right-rear PC1 return is the locked master geometry. Left and front variants mirror the complete finished return as one group; no internal offset, joint or unit position is recalculated. Front returns place one S directly in final coordinates, with its bottom edge exactly 10 mm above the top edge of the VQ. A single left return mirrors the complete PC1 corner, including the main-wall 2S,2S,2S,S arrangement and the full return geometry. PC2 right-back is drawn directly from fixed transformed primitives using the same scale as PC1, then rotated 180 degrees about its own centre. Queen-closer order is immutable from the wall junction outwards: VQ, repeated VS units, VQ, VS. No mirror may reorder these units. PC1 is centred vertically within its own plan-course box; its horizontal position and all internal geometry remain unchanged. The confirmed right-rear PC1 and PC2 geometries are the masters: right-front mirrors vertically, left-rear mirrors horizontally, and left-front applies both mirrors. Dual returns use the two complete proven single-return drawings. PC1 overlays their groups; PC2 renders the left-only and right-only plans directly into the SVG so neither return can disappear inside nested transforms. PC2 uses the opposite English-bond course. Right is the master geometry; left mirrors horizontally; front/back use the same geometry flipped vertically.\nBlockwork baseline: FE/RE Course 1 uses 440 × 215 mm stretchers; Course 2 uses 215 × 215 mm headers at both ends with stretchers through the centre. PV1 uses 440 × 97.5 mm stretchers; PV2 uses 215 × 97.5 mm headers at both ends. Closers are 102.5 mm. Block returns use the selected block count. For a three-block return: PV1 is S ... S | VC, VS, VS, VH. PV2 is H, S ... S, C, VS | VS, VS. Left returns mirror the right return and back returns flip the same geometry vertically. On blockwork elevation header courses, a return replaces the header at that end with two closers without changing the selected overall wall length. Example: four blocks with a right return = Course 1 S,S,S,S; Course 2 H,S,S,S,C,C. Blockwork plan is locked separately: without a return PC1 S,S,S,S and PC2 H,S,S,S,H; with a three-block right return PC1 S,S,S,S | VC,VS,VS,VH and PC2 H,S,S,S,C,VS | VS,VS. PC1 and PC2 always use one shared plan envelope, origin and scale, so both drawings display at exactly the same overall size. All blockwork returns use the locked right/front master geometry: left returns mirror horizontally, back returns flip vertically, and left/back returns apply both. For two returns on a four-block wall with two-block returns, PC2 reads left-to-right as VS,VS | C,S,S,S,C,VS | VS, with normal 10 mm joints and no distributed blank spaces. Two back returns use the exact vertical flip. Mixed front/back returns keep the same sequence on each side, with only the back-return side flipped vertically.\nStretcher return rule: retain the original straight-wall Plan Course 1 and Course 2 bonds. Course 1 adds a vertical stretcher beside the final horizontal stretcher. Course 2 uses H, S, S ... S, H for a straight wall. Where a return exists, the end H is removed from the horizontal course and replaced in the exact same footprint by the first vertical stretcher. The return then continues in vertical stretchers, with a header-sized final closure where required by the selected length.\nLeft return: ${m.left.on?m.left.units+' '+m.c.label+', '+m.left.dir:'none'}\nRight return: ${m.right.on?m.right.units+' '+m.c.label+', '+m.right.dir:'none'}\nBond end rule: each course is anchored to both wall ends first, then filled inward. English header courses use Header + Queen closer (46 mm) at both ends. Flemish Course 1 begins and ends with a stretcher; Course 2 begins Header + Queen closer (46 mm) and finishes Queen closer (46 mm) + Header. Any incompatible remainder is shown as a centre closure warning.
-Decorative feature: ${m.feature}\nFeature course: ${m.featureCourse}\nFeature depth: ${m.featureDepth} mm\nSection A–A rule: starts with a header course at the base. One-brick walls alternate H+H then one stretcher through the thickness.\nSheet layout: upper row is split 50:50 between front and rear elevations. Lower row is split 40:40:20 between Plan Course 1, Plan Course 2 and Section A–A. Rear elevation dimensions remain readable and are not mirrored. In one-brick walling, stretchers are mirrored on both faces while headers span the full thickness.\nEstimated units: ${units}\nEstimated time: ${time} hours\nValidation: ${ready?'READY FOR REVIEW':'REVIEW REQUIRED'}`}
+Decorative feature: ${m.feature}\nFeature course: ${m.featureCourse}\nFeature depth: ${m.featureDepth} mm\nSection A–A rule: starts with a header course at the base. One-brick walls alternate H+H then one stretcher through the thickness.\nSheet layout: upper row is split 50:50 between front and rear elevations. Lower row is split 40:40:20 between Plan Course 1, Plan Course 2 and Section A–A. For piers, the second elevation is the right elevation. Wall rear elevations remain readable and are not mirrored. In one-brick walling, stretchers are mirrored on both faces while headers span the full thickness.\nEstimated units: ${units}\nEstimated time: ${time} hours\nValidation: ${ready?'READY FOR REVIEW':'REVIEW REQUIRED'}`}
 document.querySelectorAll('select,input[type=checkbox]').forEach(e=>e.addEventListener('change',()=>{if(e.id==='material')refill();render()}));document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{activeView=b.dataset.view;document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');render()}));
 function cadmateFilenamePart(value){
  return String(value||'')
