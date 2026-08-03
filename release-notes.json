@@ -1,6 +1,22 @@
 {
-  "latest": "V1.0",
+  "latest": "V1.1",
   "releases": [
+    {
+      "version": "V1.1",
+      "date": "2026-08-04",
+      "title": "Restore Coursework",
+      "features": [
+        "Added Restore Coursework to the password-protected Admin Mode.",
+        "Every monthly portfolio ZIP now includes a compressed ApprenticePlus-Coursework-Restore.aplus recovery file.",
+        "The recovery file preserves learner details, selected course, all course evidence, Academy and EPA test history, RPL, ReviewMate, OTJ or GLH activity, settings, college branding and separately stored recordings.",
+        "A learner can select their latest monthly ZIP on a blank or replacement device and restore the complete Apprentice+ installation.",
+        "Restore validates the backup before making changes and requires two confirmations before replacing local data.",
+        "After a successful restore, Apprentice+ restarts using the recovered learner profile and coursework state."
+      ],
+      "items": [
+        "Existing monthly evidence PDFs and organised portfolio files remain unchanged alongside the new recovery file."
+      ]
+    },
     {
       "version": "V1.0",
       "date": "2026-08-03",

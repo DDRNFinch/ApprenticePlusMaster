@@ -3779,3 +3779,9 @@ body[data-a11y-background="dark"] .reviewmate-main-tabs,body[data-a11y-backgroun
 
 /* V1.0 — identical evidence media blocker */
 .duplicate-evidence-media-modal{z-index:10120}.duplicate-evidence-media-card{width:min(460px,100%);padding:28px;text-align:center;border:2px solid #efb4b4}.duplicate-evidence-media-icon{width:70px;height:70px;display:grid;place-items:center;margin:0 auto 14px;border-radius:22px;background:#fee2e2;color:#a61919}.duplicate-evidence-media-icon .app-icon{width:34px;height:34px}.duplicate-evidence-media-card h2{margin:5px 0 12px}.duplicate-evidence-media-card p{margin:8px 0;line-height:1.5}.duplicate-evidence-media-card>strong{display:block;margin:12px 0;padding:12px;border-radius:13px;background:#fff4f4;color:#7f1d1d;line-height:1.45}.duplicate-evidence-media-card .btn{width:100%;margin-top:10px}
+
+/* V1.1 — complete monthly coursework backup and Admin restore */
+.restore-coursework-section{border-color:#b9ddc7}.restore-coursework-note{border-left-color:#2f8f1c;background:#f0faeb;color:#31563a}.restore-coursework-section .admin-primary{width:100%;min-height:48px}.restore-coursework-help{display:block;margin-top:10px;color:#687770;line-height:1.45}
+
+/* V1.1 — complete monthly coursework backup and Admin restore */
+.restore-coursework-section{border-color:#b9ddc7}.restore-coursework-note{border-left-color:#2f8f1c;background:#f0faeb;color:#31563a}.restore-coursework-section .admin-primary{width:100%;min-height:48px}.restore-coursework-help{display:block;margin-top:10px;color:#687770;line-height:1.45}

@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.0-reviewmate-plus-glhmate';
-const CURRENT_VERSION='V1.0';
+const CACHE='apprentice-plus-v1.1-restore-coursework';
+const CURRENT_VERSION='V1.1';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,
