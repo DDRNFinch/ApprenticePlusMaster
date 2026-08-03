@@ -1,6 +1,17 @@
 {
-  "latest": "V1.6.24",
+  "latest": "V1.6.25",
   "releases": [
+    {
+      "version": "V1.6.25",
+      "date": "2026-08-03",
+      "title": "Automatic Desktop Mode",
+      "changes": [
+        "Automatically enables desktop mode on mouse or trackpad screens at least 960 pixels wide.",
+        "Moves the main navigation into a permanent left-hand desktop rail while preserving the existing mobile bottom navigation.",
+        "Expands assignment, evidence, Toolbox and Academy grids to use the available desktop width.",
+        "Returns to the mobile layout automatically when the browser window is narrowed or opened on a touch-first device."
+      ]
+    },
     {
       "version": "V1.6.24",
       "date": "2026-08-03",
