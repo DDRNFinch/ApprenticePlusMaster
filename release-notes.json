@@ -4,8 +4,13 @@
     {
       "version": "V1.0",
       "date": "2026-08-03",
-      "title": "Multi-select KSB RPL and Course OTJ Shortcut",
+      "title": "Landscape Full-screen Video Recorder",
       "features": [
+        "All in-app video capture now uses a full-screen phone-camera layout that responds cleanly when the phone is turned to landscape.",
+        "Recorder controls are compact overlays instead of a large panel, with the record button centred in portrait and moved to the right edge in landscape.",
+        "Video Walkthrough questions and criterion wording now sit in a small top prompt drawer that can be expanded or collapsed without covering most of the camera.",
+        "The record button now switches clearly between Record and Stop, followed by a full-screen review with Retake and Save controls.",
+        "NoteMate, Supporting Evidence and both KSB and NVQ Video Walkthrough recording use the same consistent recorder layout.",
         "Individual RPL now supports selecting and marking multiple KSBs together in one saved action.",
         "The individual RPL checklist and recorded list are ordered numerically as Knowledge, Skills and Behaviours.",
         "Every apprenticeship-standard course now has an OTJMate shortcut directly below its standard number in the Course title tile, including the learner's live OTJ total.",

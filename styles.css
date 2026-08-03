@@ -3494,3 +3494,59 @@ body.technical-drawing-active{overflow:hidden!important;position:fixed!important
 .rpl-empty-selection{padding:13px;border:1px dashed #d8b4fe;border-radius:13px;background:#faf7ff;color:#6d28d9;font-size:13px;font-weight:750}
 .individual-rpl-list > h4{margin:16px 0 8px;color:#5b21b6;font-size:13px}
 @media(max-width:460px){.rpl-criterion-groups{max-height:370px}.rpl-criterion-choice{padding:10px}.course-otj-link{min-height:28px;padding:5px 8px}}
+
+/* V1.0 — native-style full-screen video recorder */
+html.video-recorder-open,html.video-recorder-open body{overflow:hidden!important;background:#000!important;overscroll-behavior:none}
+.phone-video-recorder{position:fixed;inset:0;z-index:10000;width:100vw;height:100dvh;overflow:hidden;background:#000;color:#fff;touch-action:manipulation}
+.phone-video-surface{position:absolute;inset:0;overflow:hidden;background:#000}
+.phone-video-preview,.phone-video-playback{display:block;width:100%;height:100%;object-fit:cover;background:#000}
+.phone-video-playback{object-fit:contain}
+.phone-video-topbar{position:absolute;z-index:5;top:0;left:0;right:0;display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:start;gap:8px;padding:calc(9px + env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 28px max(10px,env(safe-area-inset-left));background:linear-gradient(180deg,rgba(0,0,0,.72),rgba(0,0,0,.34) 66%,transparent);pointer-events:none}
+.phone-video-topbar>*{pointer-events:auto}
+.phone-video-close{width:38px;height:38px;border:1px solid rgba(255,255,255,.2);border-radius:50%;background:rgba(0,0,0,.48);color:#fff;font:300 28px/1 Arial;display:grid;place-items:center;padding:0;cursor:pointer;backdrop-filter:blur(8px)}
+.phone-video-prompt-drawer{align-self:start;justify-self:center;width:min(100%,620px);max-width:100%;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:rgba(0,0,0,.5);color:#fff;overflow:hidden;backdrop-filter:blur(10px);box-shadow:0 6px 18px rgba(0,0,0,.22)}
+.phone-video-prompt-drawer[open]{background:rgba(0,0,0,.76)}
+.phone-video-prompt-drawer summary{list-style:none;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:7px;min-height:36px;padding:6px 8px;cursor:pointer}
+.phone-video-prompt-drawer summary::-webkit-details-marker{display:none}
+.phone-video-prompt-code{padding:4px 6px;border-radius:7px;background:rgba(152,220,37,.22);color:#dfffa8;font-size:9px;font-weight:950;letter-spacing:.06em;line-height:1}
+.phone-video-prompt-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;font-size:11px;font-weight:850;line-height:1.15}
+.phone-video-prompt-toggle{color:#d9e1dc;font-size:9px;font-weight:800;white-space:nowrap}
+.phone-video-prompt-drawer[open] .phone-video-prompt-toggle{font-size:0}
+.phone-video-prompt-drawer[open] .phone-video-prompt-toggle::after{content:'Close⌃';font-size:9px}
+.phone-video-prompt-body{max-height:34dvh;overflow:auto;padding:8px 10px 10px;border-top:1px solid rgba(255,255,255,.13);overscroll-behavior:contain}
+.phone-video-prompt-body strong{display:block;color:#fff;font-size:12px;line-height:1.35;font-weight:800}
+.phone-video-prompt-body p{margin:6px 0 0;color:#d9e1dc;font-size:10px;line-height:1.4;font-weight:550}
+.phone-video-state{display:inline-flex;align-items:center;gap:5px;min-height:31px;margin-top:3px;padding:0 9px;border:1px solid rgba(255,255,255,.17);border-radius:999px;background:rgba(0,0,0,.48);color:#fff;font-size:9px;font-weight:850;white-space:nowrap;backdrop-filter:blur(8px)}
+.phone-video-state span{width:7px;height:7px;border-radius:50%;background:#9ca3af}
+.phone-video-recorder.is-recording .phone-video-state span{background:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.2);animation:phoneVideoBlink 1s steps(1) infinite}
+@keyframes phoneVideoBlink{50%{opacity:.25}}
+.phone-video-quality{position:absolute;z-index:4;left:max(13px,env(safe-area-inset-left));bottom:calc(112px + env(safe-area-inset-bottom));padding:5px 8px;border-radius:999px;background:rgba(0,0,0,.46);color:#dce5df;font-size:9px;font-weight:750;backdrop-filter:blur(7px)}
+.phone-video-controls{position:absolute;z-index:6;left:0;right:0;bottom:0;display:grid;grid-template-columns:1fr 82px 1fr;align-items:end;gap:12px;padding:10px max(18px,env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));background:linear-gradient(0deg,rgba(0,0,0,.68),rgba(0,0,0,.24) 72%,transparent);pointer-events:none}
+.phone-video-controls>*{pointer-events:auto}
+.phone-video-record-button{justify-self:center;width:82px;height:88px;padding:0;border:0;background:transparent;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:5px;font:inherit;font-size:9px;font-weight:850;cursor:pointer}
+.phone-video-record-button>span{width:64px;height:64px;box-sizing:border-box;border:4px solid #fff;border-radius:50%;background:#ef3f3f;box-shadow:0 0 0 2px rgba(0,0,0,.22);transition:.16s ease}
+.phone-video-record-button.recording>span{width:34px;height:34px;margin:15px;border-radius:8px;background:#ef3f3f}
+.phone-video-record-button small{color:#fff;font-size:9px;font-weight:850;text-shadow:0 1px 3px #000}
+.phone-video-library{justify-self:start;width:52px;min-height:64px;padding:6px 3px;border:0;border-radius:14px;background:rgba(0,0,0,.46);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font:inherit;cursor:pointer;backdrop-filter:blur(7px)}
+.phone-video-library svg{width:23px;height:23px}
+.phone-video-library small{font-size:9px;font-weight:800}
+.phone-video-control-space{display:block;width:52px;height:1px;justify-self:end}
+.phone-video-recorder.is-recording .phone-video-library{opacity:.28;pointer-events:none}
+.phone-video-review{position:absolute;z-index:7;left:0;right:0;bottom:0;display:flex;justify-content:space-between;gap:14px;padding:16px max(18px,env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));background:linear-gradient(0deg,rgba(0,0,0,.76),transparent)}
+.phone-video-review-button{min-width:104px;padding:11px 16px;border:1px solid rgba(255,255,255,.3);border-radius:999px;background:rgba(0,0,0,.54);color:#fff;font:inherit;font-size:12px;font-weight:900;cursor:pointer;backdrop-filter:blur(8px)}
+.phone-video-review-button.primary{border-color:rgba(152,220,37,.55);background:#65b927;color:#fff}
+@media(orientation:landscape){
+ .phone-video-topbar{grid-template-columns:42px minmax(0,1fr) auto;padding-bottom:18px}
+ .phone-video-prompt-drawer{width:min(58vw,560px)}
+ .phone-video-prompt-body{max-height:45dvh}
+ .phone-video-controls{inset:0;display:block;padding:0;background:linear-gradient(270deg,rgba(0,0,0,.52),transparent 22%)}
+ .phone-video-record-button{position:absolute;right:calc(12px + env(safe-area-inset-right));top:50%;width:74px;height:80px;transform:translateY(-50%)}
+ .phone-video-record-button>span{width:58px;height:58px}
+ .phone-video-record-button.recording>span{width:30px;height:30px;margin:14px}
+ .phone-video-library{position:absolute;left:calc(12px + env(safe-area-inset-left));bottom:calc(10px + env(safe-area-inset-bottom));width:48px;min-height:54px}
+ .phone-video-control-space{display:none}
+ .phone-video-quality{left:50%;bottom:calc(9px + env(safe-area-inset-bottom));transform:translateX(-50%)}
+ .phone-video-review{padding:12px calc(18px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left))}
+ .phone-video-review-button{min-width:94px;padding:9px 14px}
+}
+@media(max-width:390px) and (orientation:portrait){.phone-video-topbar{grid-template-columns:38px minmax(0,1fr) 34px}.phone-video-state{width:31px;min-width:31px;padding:0;justify-content:center;font-size:0}.phone-video-state span{width:8px;height:8px}.phone-video-prompt-toggle{display:none}.phone-video-prompt-body{max-height:28dvh}}
