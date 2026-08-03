@@ -4,8 +4,12 @@
     {
       "version": "V1.0",
       "date": "2026-08-03",
-      "title": "Portfolio Building Off-the-Job Time",
+      "title": "Optimised Portfolio Media and Upload Safety",
       "features": [
+        "All video recorded inside Apprentice+ now uses a consistent quality-controlled 720p profile at approximately 11 MB per minute.",
+        "Professional Discussion and NoteMate voice recordings now use efficient mono speech audio at approximately 0.4 MB per minute.",
+        "The Monthly Upload card now estimates the complete portfolio size against a 900 MB safety target and checks the exact ZIP against Aptem's 1 GB limit before download.",
+        "Saved video, voice and supporting media now display their actual file size, while gallery videos are clearly identified as original-size files.",
         "Every saved assignment evidence item now adds 0.2 hours automatically to the learner's off-the-job total.",
         "Each separately saved Video Walkthrough criterion also adds its own 0.2-hour Portfolio building record.",
         "OTJMate now has a dedicated Portfolio building section showing the evidence source, date, automatic hours and export status.",
