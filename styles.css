@@ -3333,7 +3333,7 @@ body.technical-drawing-active{overflow:hidden!important;position:fixed!important
 }
 
 .desktop-mode-indicator{display:none;align-items:center;gap:6px;margin-left:10px;padding:6px 10px;border-radius:999px;background:#e6f5e9;color:#176c3d;font-size:10px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
-\n\n/* V1.6.26 — responsive desktop information slides and guided tours */
+\n\n/* V1.6.27 — responsive desktop information slides and guided tours */
 @media (min-width:960px) and (pointer:fine){
   html.desktop-mode .page-help-modal,
   html.desktop-mode .help-tour-overlay{

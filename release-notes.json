@@ -2,6 +2,18 @@
   "latest": "V1.6.26",
   "releases": [
     {
+      "version": "V1.6.27",
+      "title": "CADMate Brick Pier and Display Modes",
+      "date": "2026-08-03",
+      "changes": [
+        "Renamed Material to Construction and added Brick Pier.",
+        "Added isolated simple 1\u00bd-brick square pier rendering without changing the existing wall engine.",
+        "Disabled returns and locked stretcher bond while Brick Pier is selected.",
+        "Added Brick on Edge at 102.5 mm high and rendered Soldier Course on both front and rear elevations.",
+        "Applied Bond Detail, Material Hatching and Outline Only consistently across pier front, rear, plan, section and sheet views."
+      ]
+    },
+    {
       "version": "V1.6.26",
       "date": "2026-08-03",
       "title": "Responsive Desktop Information Slides",
