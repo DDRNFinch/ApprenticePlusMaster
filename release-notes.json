@@ -4,8 +4,16 @@
     {
       "version": "V1.0",
       "date": "2026-08-03",
-      "title": "ReviewMate Progress Reviews and Live Targets",
+      "title": "LO Video Walkthrough and App Reliability Audit",
       "features": [
+        "Learning Outcome Video Walkthrough now records video instead of audio and uses the same responsive recorder, landscape layout, compact prompt drawer, gallery fallback, review controls and saved-video presentation as the KSB walkthrough.",
+        "Every LO walkthrough tile shows the Learning Outcome code and official wording, and submitted attempts remain available for playback, replacement and new walkthrough versions.",
+        "Legacy audio accidentally saved in the LO Video Walkthrough is preserved by moving it into Professional Discussion and no longer counts as video evidence.",
+        "LO progress, planner and ReviewMate calculations now count only genuine walkthrough video and use the correct Supporting Evidence section.",
+        "LO Video Walkthrough PDFs and portfolio ZIPs now list and export genuine videos without blank audio-only assessor, activity or signature fields.",
+        "Fixed technical-drawing PDF creation and switched packaged drawings to local offline files instead of an external repository.",
+        "Fixed assignment knowledge-assessment loading and ReviewMate retake routes by loading and caching the question bank and assessment engine.",
+        "Fixed restored navigation state and completed an offline asset, manifest, KSB-course and LO-course runtime audit.",
         "Added one identical-media blocker across every course, assignment, evidence pack and formal photo or video evidence route.",
         "Duplicate checking compares the actual processed media content rather than the filename, so renaming the same photo or video does not bypass the check.",
         "The blocker covers KSB and Learning Outcome photographs, practical and observation photographs, KSB and Learning Outcome walkthrough videos, and supporting-evidence photos or videos.",

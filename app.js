@@ -254,7 +254,7 @@ const APP_VOICE_BITS_PER_SECOND=48_000;
 const APP_VIDEO_MINUTE_ESTIMATE_BYTES=Math.round((APP_VIDEO_BITS_PER_SECOND+APP_VIDEO_AUDIO_BITS_PER_SECOND)*60/8);
 const APP_VOICE_MINUTE_ESTIMATE_BYTES=Math.round(APP_VOICE_BITS_PER_SECOND*60/8);
 
-const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
+const TECHNICAL_DRAWING_BASE='./drawings/';
 const TECHNICAL_DRAWING_PREFIX={
  'bricklayer-st0095-v1-2':'BWK',
  'site-carpentry-v1-4':'SC',
@@ -276,10 +276,11 @@ async function technicalDrawingImageData(info){
  const response=await fetch(info.url,{cache:'no-store'});if(!response.ok)throw new Error(`Drawing unavailable (${response.status})`);
  const blob=await response.blob();return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob)});
 }
+function loadAppImage(src){return new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=reject;image.src=src})}
 async function downloadTechnicalDrawingPDF(info,button,previewWindow){
  const original=button?.innerHTML;if(button){button.disabled=true;button.textContent='Creating PDF…'}
  try{
-  const source=await technicalDrawingImageData(info),image=await loadImage(source),W=1240,H=1754;
+  const source=await technicalDrawingImageData(info),image=await loadAppImage(source),W=1240,H=1754;
   const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
   const scale=Math.min(W/image.naturalWidth,H/image.naturalHeight),w=image.naturalWidth*scale,h=image.naturalHeight*scale,x=(W-w)/2,y=(H-h)/2;ctx.drawImage(image,x,y,w,h);
   const jpeg=canvas.toDataURL('image/jpeg',.98),bytes=makeImagePDF([dataUrlBytes(jpeg)],W,H),name=info.file.replace(/\.png$/i,'.pdf'),blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob);
@@ -350,8 +351,9 @@ function navigationSignature(snapshot){return JSON.stringify([snapshot.courseId,
 function saveNavigationSnapshot(snapshot=navigationSnapshot()){
  try{localStorage.setItem(NAV_STATE_KEY,JSON.stringify(snapshot))}catch{}
 }
+function loadNavigationSnapshot(){try{return JSON.parse(localStorage.getItem(NAV_STATE_KEY)||'null')}catch{return null}}
 function validRestoredView(snapshot){
- const allowed=new Set(['home','assignment','academy','library','lesson','epa','epa-results','epa-result','epa-practical','walkthrough','section','resources','notepad','tools','measuremate','materialmate','drawingmate','cadmate','skillscard','feedbackmate','projectmate','otjmate','remindmate','reviewmate','learning-support','settings']);
+ const allowed=new Set(['home','assignment','academy','library','trade-courses','functional-skills','knowledge-slides','certificates','lesson','epa','epa-results','epa-result','epa-practical','walkthrough','section','resources','notepad','tools','measuremate','materialmate','drawingmate','cadmate','skillscard','feedbackmate','projectmate','otjmate','remindmate','reviewmate','learning-support','settings']);
  if(!snapshot||snapshot.courseId!==ACTIVE_COURSE_ID||!allowed.has(snapshot.view))return false;
  if(['assignment','walkthrough','section'].includes(snapshot.view)&&!assignment(Number(snapshot.assignment)))return false;
  if(snapshot.view==='section'&&!['practical','photos','statement','discussion','professionalDiscussion','witness','supporting'].includes(snapshot.section))return false;
@@ -629,7 +631,7 @@ async function evidenceMediaHash(source){
  let a=2166136261,b=0x9e3779b9;for(const value of bytes){a=Math.imul(a^value,16777619);b=Math.imul(b+(value^a),2246822519)}return`fnv:${(a>>>0).toString(16).padStart(8,'0')}${(b>>>0).toString(16).padStart(8,'0')}:${bytes.length}`;
 }
 function evidenceMediaSize(source,item={}){if(typeof source==='string')return dataUrlStoredBytes(source);if(source instanceof Blob)return source.size;if(source instanceof ArrayBuffer)return source.byteLength;if(ArrayBuffer.isView(source))return source.byteLength;if(source?.buffer)return source.buffer.byteLength||0;return Number(item.size)||0}
-function evidenceSectionLabel(section){return({photos:'Photographic evidence',practical:'Practical assessment / observation',discussion:'Video walkthrough',walkthrough:'Video walkthrough',supporting:'Supporting evidence',witness:'Witness testimony'})[section]||section}
+function evidenceSectionLabel(section){return({photos:'Photographic evidence',practical:'Practical assessment / observation',discussion:'Video walkthrough',walkthrough:'Video walkthrough',professionalDiscussion:'Professional discussion',supporting:'Supporting evidence',witness:'Witness testimony'})[section]||section}
 function evidenceMediaLocation(courseId,assignmentNumber,section,detail='',attempt=''){
  const course=COURSES[courseId],a=[...(course?.assignments||[]),...(course?.optionalUnits||[])].find(item=>Number(item.n)===Number(assignmentNumber)),code=course?.nvqUnits?`EP${assignmentNumber}`:`AS${assignmentNumber}`,title=a?.title?` - ${a.title}`:'',courseName=course?.name||courseId;
  return`${courseName} · ${code}${title} · ${evidenceSectionLabel(section)}${detail?` · ${detail}`:''}${attempt?` · ${attempt}`:''}`;
@@ -739,13 +741,15 @@ function evidenceCapability(section){
  if(COURSE.nvqUnits)return 'ALL LO';
  return ({photos:'S',statement:'K-B',walkthrough:'K-S-B',witness:'S-B',practical:'S-B',professionalDiscussion:'K-B'}[section]||'');
 }
+function isVideoEvidenceRecording(record){return !!record&&(String(record.type||'').toLowerCase().startsWith('video/')||String(record.data||'').toLowerCase().startsWith('data:video/'))}
 function evidenceCodesFromVersion(a,section,v){
  if(!v)return [];
  if(section==='photos')return selectedKsbCodes(a,v);
  if(section==='statement')return COURSE.nvqUnits?statementSelectedKsbCodes(a,v):statementSelectedKsbCodes(a,v).filter(code=>/^[KB]/i.test(code));
  if(section==='witness')return COURSE.nvqUnits?selectedNvqOutcomes(a,v).map(([code])=>code):selectedKsbCodes(a,v).filter(code=>/^[SB]/i.test(code));
  if(section==='practical')return COURSE.nvqUnits?selectedNvqOutcomes(a,v).map(([code])=>code):selectedPracticalSkillCodes(a,v);
- if(section==='discussion'||section==='professionalDiscussion')return Object.keys(v.recordings||{}).filter(code=>!!v.recordings?.[code]?.data);
+ if(section==='discussion')return Object.keys(v.recordings||{}).filter(code=>isVideoEvidenceRecording(v.recordings?.[code]));
+ if(section==='professionalDiscussion')return Object.keys(v.recordings||{}).filter(code=>!!v.recordings?.[code]?.data);
  return [];
 }
 function previouslyUsedCodesForEvidenceType(n,section){
@@ -776,7 +780,7 @@ function nvqOutcomeCoverage(n){
  sectionData(n,'practical').versions.forEach(v=>selectedNvqOutcomes(a,v).forEach(([code])=>add(code,'Assessor observation')));
  sectionData(n,'photos').versions.forEach(v=>selectedKsbCodes(a,v).forEach(code=>add(code,'Photographic evidence')));
  sectionData(n,'statement').versions.forEach(v=>selectedKsbCodes(a,v).forEach(code=>add(code,'Learner statement')));
- sectionData(n,'discussion').versions.forEach(v=>Object.keys(v.recordings||{}).filter(code=>!!v.recordings?.[code]?.data).forEach(code=>add(code,'Video walkthrough')));
+ sectionData(n,'discussion').versions.forEach(v=>Object.keys(v.recordings||{}).filter(code=>isVideoEvidenceRecording(v.recordings?.[code])).forEach(code=>add(code,'Video walkthrough')));
  sectionData(n,'professionalDiscussion').versions.forEach(v=>Object.keys(v.recordings||{}).filter(code=>!!v.recordings?.[code]?.data).forEach(code=>add(code,'Professional discussion')));
  sectionData(n,'witness').versions.forEach(v=>selectedNvqOutcomes(a,v).forEach(([code])=>add(code,'Witness testimony')));
  a.ksbs.forEach(([code])=>{if(criterionRPL(n,code))result[code]={count:3,sources:['RPL'],rpl:true}});
@@ -883,6 +887,18 @@ async function openDB(){
 async function getStore(k){return new Promise((res,rej)=>{const r=db.transaction('store').objectStore('store').get(k);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
 async function putStore(k,v){return new Promise((res,rej)=>{const r=db.transaction('store','readwrite').objectStore('store').put(v,k);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
 async function deleteStore(k){return new Promise((res,rej)=>{const r=db.transaction('store','readwrite').objectStore('store').delete(k);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+function migrateLegacyNvqWalkthroughAudio(){
+ let migrated=false;
+ for(const [dataKey,section] of Object.entries(state.data||{})){
+  const match=dataKey.match(/^(.+):(\d+):discussion$/);if(!match||!COURSES[match[1]]?.nvqUnits||!section)continue;
+  const [,courseId,assignmentNumber]=match,pdKey=`${courseId}:${assignmentNumber}:professionalDiscussion`,target=state.data[pdKey]||{draft:blankSection('professionalDiscussion'),versions:[]};target.versions=Array.isArray(target.versions)?target.versions:[];
+  const splitRecord=(record,token)=>{const entries=Object.entries(record?.recordings||{}).filter(([,item])=>item?.data),audio=entries.filter(([,item])=>!isVideoEvidenceRecording(item)),video=entries.filter(([,item])=>isVideoEvidenceRecording(item));if(!audio.length)return {record,audio:null};const migrationId=`${courseId}:${assignmentNumber}:${token}`;const moved={...record,recordings:Object.fromEntries(audio),migrationId,migratedFrom:'Legacy LO Video Walkthrough audio'};return {record:{...record,recordings:Object.fromEntries(video)},audio:moved,migrationId}};
+  const retained=[];for(let index=0;index<(Array.isArray(section.versions)?section.versions:[]).length;index++){const result=splitRecord(section.versions[index],`version:${index}:${section.versions[index]?.id||section.versions[index]?.date||''}`);if(result.audio&&!target.versions.some(item=>item?.migrationId===result.migrationId)){target.versions.push(result.audio);migrated=true}if(Object.keys(result.record?.recordings||{}).length)retained.push(result.record);else if(result.audio)migrated=true;else retained.push(result.record)}section.versions=retained;
+  const draftResult=splitRecord(section.draft||blankSection('discussion'),`draft:${section.draft?.id||section.draft?.date||''}`);if(draftResult.audio){const targetDraft=target.draft||blankSection('professionalDiscussion'),targetDraftUsed=!!(targetDraft.submitted||targetDraft.assessor||targetDraft.activity||targetDraft.signature||Object.keys(targetDraft.recordings||{}).length);if(!targetDraftUsed||targetDraft.migrationId===draftResult.migrationId)target.draft=draftResult.audio;section.draft=Object.keys(draftResult.record.recordings||{}).length?draftResult.record:blankSection('discussion');migrated=true}
+  state.data[dataKey]=section;state.data[pdKey]=target;
+ }
+ return migrated;
+}
 async function load(){
  state.profile=await getStore('profile')||null;
  state.data=await getStore('data')||{};
@@ -897,6 +913,7 @@ async function load(){
  let migrated=false;
  Object.keys(state.data).forEach(k=>{if(/^\d+:(practical|photos|statement|supporting)$/.test(k)){const nk=`site-carpentry-v1-4:${k}`;if(state.data[nk]===undefined){state.data[nk]=state.data[k];migrated=true}}});
  Object.keys(state.data).forEach(k=>{const match=k.match(/^(.+):(\d+):supporting$/);if(!match)return;const witnessKey=`${match[1]}:${match[2]}:witness`;if(state.data[witnessKey]===undefined&&state.data[k]){state.data[witnessKey]=structuredClone(state.data[k]);migrated=true}});
+ if(migrateLegacyNvqWalkthroughAudio())migrated=true;
  if(migrated)await saveData();
  let restored=null;try{restored=JSON.parse(localStorage.getItem(NAV_STATE_KEY)||'null')}catch{}
  const restoredApplied=restored?applyNavigationSnapshot(restored):false;
@@ -3449,14 +3466,14 @@ function assignmentTheoryKsbs(a){
 function approvedAssignmentQuestionBank(a){
  if(!a||!window.MCQQuestionBank||!window.MCQEngine)return[];
  const allowed=new Set(assignmentTheoryKsbs(a).map(([code])=>code));
- return MCQQuestionBank.get(COURSE.id,a.n).filter(q=>allowed.has(q.ksb));
+ return window.MCQQuestionBank.get(COURSE.id,a.n).filter(q=>allowed.has(q.ksb));
 }
 function buildAssignmentKnowledgeQuestions(a){
  const ksbs=assignmentTheoryKsbs(a);
  if(!ksbs.length)return[];
  const bank=approvedAssignmentQuestionBank(a);
  const recent=knowledgeAttempts(a.n).slice(-2).flatMap(attempt=>attempt.questionIds||attempt.questions?.map(q=>q.id)||[]);
- return MCQEngine.assembleAssessment({questions:bank,count:bank.length,allowedKsbs:ksbs.map(([code])=>code),recentIds:recent});
+ return window.MCQEngine.assembleAssessment({questions:bank,count:bank.length,allowedKsbs:ksbs.map(([code])=>code),recentIds:recent});
 }
 function startAssignmentKnowledge(a){
  let questions=[];
@@ -3468,7 +3485,7 @@ function startAssignmentKnowledge(a){
  state.knowledgeTest={assignment:a.n,questions,answers:{},index:0};state.view='knowledge-test';render();window.scrollTo(0,0);
 }
 function renderAssignmentKnowledgeTest(){
- const test=state.knowledgeTest,a=currentAssignment();if(!test?.questions?.length||!a){state.view='assignment';render();return}
+ const test=state.knowledgeTest,a=assignment(Number(test?.assignment));if(!test?.questions?.length||!a){state.view='assignment';render();return}
  const i=test.index,q=test.questions[i],committed=test.answers[i],picked=test.pendingAnswer?.index===i?test.pendingAnswer.value:committed,total=test.questions.length;
  const options=q.options.map((o,n)=>`<label class="epa-option ${picked===n?'selected':''}"><input type="radio" name="knowledgeAnswer" value="${n}" ${picked===n?'checked':''}><span><b>${String.fromCharCode(65+n)}</b>${esc(o)}</span></label>`).join('');
  app.innerHTML=shell(`<button class="back no-print" id="quitKnowledge">← Assignment ${a.n}</button><section class="epa-test-head"><div><div class="number">Question ${i+1} of ${total}</div><h2>${esc(q.ksb||q.code)} · Knowledge & Behaviour assessment</h2></div><span class="status-pill">${Object.keys(test.answers).length}/${total} answered</span></section><div class="epa-progress"><span style="width:${((i+1)/total)*100}%"></span></div><section class="card panel epa-question"><small>${esc(q.ksb||q.code)} · ${esc(q.sourceText||q.wording||q.concept)}</small><h3>${esc(q.question)}</h3><div class="epa-options">${options}</div></section><div class="mcq-question-actions"><button class="btn secondary" id="knowledgePrev" ${i===0?'disabled':''}>Previous</button><button class="btn" id="knowledgeSubmit" ${picked===undefined?'disabled':''}>${i===total-1?'Submit assessment':'Submit answer'}</button></div>`);
@@ -3950,7 +3967,7 @@ function accessibilityCheckView(){const q=[['listen','I prefer listening rather 
 function recommendationsFor(a){const r=[];if(a.listen)r.push('Read Aloud');if(a.place||a.blocks)r.push('Reading Ruler','Coloured Reading Background');if(a.writing)r.push('Voice-to-Text','Assignment Planner');if(a.pictures)r.push('Cue Cards');if(a.steps)r.push('Focus Mode','Assignment Planner');if(a.captions)r.push('Captions and Transcripts');if(a.large)r.push('Larger Text');return [...new Set(r)]}
 function readingToolsView(){const a=accessibilitySettings();return `<section class="card panel"><h3>Reading Tools</h3><div class="support-setting-list"><label><span>OpenDyslexic-style readable font</span><input type="checkbox" data-a11y-setting="dyslexicFont" ${a.dyslexicFont?'checked':''}></label><label><span>Text size <b id="fontSizeValue">${a.fontSize}%</b></span><input type="range" min="90" max="140" step="5" value="${a.fontSize}" data-a11y-setting="fontSize"></label><label><span>Line spacing <b id="lineSpacingValue">${a.lineSpacing}</b></span><input type="range" min="1.3" max="2.2" step="0.1" value="${a.lineSpacing}" data-a11y-setting="lineSpacing"></label><label><span>Reading ruler</span><input type="checkbox" data-a11y-setting="readingRuler" ${a.readingRuler?'checked':''}></label><label><span>Reading background</span><select class="input" data-a11y-setting="background"><option value="default" ${a.background==='default'?'selected':''}>Default</option><option value="cream" ${a.background==='cream'?'selected':''}>Cream</option><option value="blue" ${a.background==='blue'?'selected':''}>Pale blue</option><option value="green" ${a.background==='green'?'selected':''}>Pale green</option><option value="dark" ${a.background==='dark'?'selected':''}>Dark</option></select></label></div><div class="support-preview"><strong>Live reading preview</strong><p>Clear instructions, comfortable spacing and a background that works for you can make evidence tasks easier to follow.</p></div></section>`}
 function writingToolsView(){return `<section class="card panel"><h3>Writing Tools</h3><p class="muted">Type or use the microphone. The buttons below work with this practice area.</p><textarea class="input support-writing-box" id="supportWritingText" rows="8" placeholder="Write or dictate here..."></textarea><div class="support-writing-stats"><span><b id="supportWordCount">0</b> words</span><span><b id="supportSentenceCount">0</b> sentences</span><span><b id="supportReadingTime">0</b> min read</span></div><div class="btn-row"><button class="btn secondary" id="readSupportText">Read aloud</button><button class="btn secondary" id="clearSupportText">Clear</button></div><p class="muted support-tip">Spelling support remains available through the device keyboard and browser.</p></section>`}
-function plannerStatus(n){const steps=[['Read assignment',true],['Complete practical assessment',sectionData(n,'practical').versions.length>0],['Collect workplace photos',sectionData(n,'photos').versions.length>0],['Complete learner statement',sectionData(n,'statement').versions.length>0],['Record walkthrough',walkthroughCount(n).done>0],['Complete supporting evidence',sectionData(n,'witness').versions.length>0||sectionData(n,'discussion').versions.length>0],['Download evidence pack',!!state.data[packStatusKey(n)]?.downloaded],['Upload evidence pack',!!state.data[packStatusKey(n)]?.uploaded]];return steps}
+function plannerStatus(n){const walkthroughDone=COURSE.nvqUnits?sectionData(n,'discussion').versions.some(version=>Object.values(version.recordings||{}).some(isVideoEvidenceRecording)):walkthroughCount(n).done>0;const steps=[['Read assignment',true],['Complete practical assessment',sectionData(n,'practical').versions.length>0],['Collect workplace photos',sectionData(n,'photos').versions.length>0],['Complete learner statement',sectionData(n,'statement').versions.length>0],['Record walkthrough',walkthroughDone],['Complete supporting evidence',sectionData(n,'witness').versions.length>0||sectionData(n,'supporting').versions.length>0],['Download evidence pack',!!state.data[packStatusKey(n)]?.downloaded],['Upload evidence pack',!!state.data[packStatusKey(n)]?.uploaded]];return steps}
 function plannerView(){const n=Number(state.assignment)||courseAssignments()[0]?.n||1,a=assignment(n),steps=plannerStatus(n);return `<section class="card panel"><h3>Assignment Planner</h3><label class="field"><span>Assignment</span><select class="input" id="supportPlannerAssignment">${courseAssignments().filter(x=>!x.selectOptional).map(x=>`<option value="${x.n}" ${x.n===n?'selected':''}>${x.n}. ${esc(x.title)}</option>`).join('')}</select></label><h4>${esc(a?.title||'Assignment')}</h4><div class="support-planner-list">${steps.map(([t,d])=>`<div class="${d?'complete':''}"><span>${d?'✓':'○'}</span><strong>${t}</strong></div>`).join('')}</div><p class="muted">The checklist updates automatically from saved evidence.</p></section>`}
 function focusView(){const a=accessibilitySettings();return `<section class="card panel"><h3>Focus Mode</h3><p class="muted">Focus Mode reduces visual clutter, enlarges important controls and keeps attention on the current task.</p><button class="focus-toggle ${a.focusMode?'active':''}" id="toggleFocusMode"><span>${a.focusMode?'✓':'○'}</span><strong>${a.focusMode?'Focus Mode is on':'Turn on Focus Mode'}</strong></button><p class="muted">Use the same button to return to the full interface.</p></section>`}
 function hearingView(){const a=accessibilitySettings();return `<section class="card panel"><h3>Hearing Support</h3><div class="support-setting-list"><label><span>Show captions when available</span><input type="checkbox" data-a11y-setting="captions" ${a.captions?'checked':''}></label><label><span>Use large captions</span><input type="checkbox" data-a11y-setting="largeCaptions" ${a.largeCaptions?'checked':''}></label><label><span>Visual confirmations and alerts</span><input type="checkbox" data-a11y-setting="visualAlerts" ${a.visualAlerts?'checked':''}></label><label><span>Vibration confirmation on supported devices</span><input type="checkbox" data-a11y-setting="vibration" ${a.vibration?'checked':''}></label></div><p class="muted">Uploaded videos can only show a transcript when one has been provided or generated on the device.</p></section>`}
@@ -4051,7 +4068,7 @@ function reviewEvidenceBalance(){
  let photos=0,videos=0,voice=0;
  courseAssignments().filter(a=>!a.selectOptional).forEach(a=>{
   photos+=reviewPhotoCount(a.n);
-  if(COURSE.nvqUnits)videos+=sectionData(a.n,'discussion').versions.reduce((sum,v)=>sum+Object.values(v.recordings||{}).filter(r=>r?.data).length,0);
+  if(COURSE.nvqUnits)videos+=sectionData(a.n,'discussion').versions.reduce((sum,v)=>sum+Object.values(v.recordings||{}).filter(isVideoEvidenceRecording).length,0);
   else videos+=walkthroughCount(a.n).done;
   voice+=sectionData(a.n,'professionalDiscussion').versions.reduce((sum,v)=>sum+Object.values(v.recordings||{}).filter(r=>r?.data).length,0);
  });
@@ -4062,7 +4079,7 @@ function reviewEvidenceStatistics(){
  courseAssignments().filter(a=>!a.selectOptional).forEach(a=>{let has=reviewPhotoCount(a.n)+reviewVideoCount(a.n)>0;for(const [section,label] of [['statement','learnerStatements'],['witness','witnessTestimonies'],['practical','practicalAssessments'],['supporting','supportingEvidence']]){const count=sectionData(a.n,section).versions.length;byType[label]+=count;if(count)has=true}if(sectionData(a.n,'professionalDiscussion').versions.length)has=true;if(has)assignments.add(a.n)});
  return {...balance,byType,items:Object.values(byType).reduce((sum,value)=>sum+Number(value||0),0),assignmentsWithEvidence:assignments.size};
 }
-function reviewVideoCount(n){return COURSE.nvqUnits?sectionData(n,'discussion').versions.reduce((sum,v)=>sum+Object.values(v.recordings||{}).filter(r=>r?.data).length,0):walkthroughCount(n).done}
+function reviewVideoCount(n){return COURSE.nvqUnits?sectionData(n,'discussion').versions.reduce((sum,v)=>sum+Object.values(v.recordings||{}).filter(isVideoEvidenceRecording).length,0):walkthroughCount(n).done}
 function reviewRecommendedEvidence(record,balance){
  const used=new Set(record.sources||[]),videoLabel='Video walkthrough',sets=COURSE.nvqUnits?
   [['Photographic evidence','photos'],['Learner statement','statement'],[videoLabel,'discussion'],['Witness testimony','witness'],['Assessor observation','practical'],['Professional discussion','professionalDiscussion']]:
@@ -5254,10 +5271,10 @@ function renderSection(){const a=assignment(state.assignment),s=state.section,sd
  if(s==='photos')body=photosPage(a,d,locked,sd);
  if(s==='statement')body=statementPage(a,d,locked,sd);
  if(s==='witness')body=witnessPage(a,d,locked,sd);
- if(s==='discussion')body=professionalDiscussionPage(a,d,locked,sd);
+ if(s==='discussion')body=COURSE.nvqUnits?nvqVideoWalkthroughPage(a,d,locked,sd):professionalDiscussionPage(a,d,locked,sd);
  if(s==='professionalDiscussion')body=nvqProfessionalDiscussionPage(a,d,locked,sd);
  if(s==='supporting')body=supportingPage(a,d,locked,sd);
- app.innerHTML=shell(`<button class="back no-print" id="back">← ${COURSE.nvqUnits?`Unit ${a.unit}`:`Assignment ${a.n}`}</button><div class="assignment-title"><div class="number">${COURSE.nvqUnits?`Unit ${a.unit}`:`Assignment ${a.n}`}</div><h2>${sectionTitle(s)}</h2><p class="muted">${esc(a.title)}</p></div>${body}`);
+ app.innerHTML=shell(`<button class="back no-print" id="back">← ${COURSE.nvqUnits?`Unit ${a.unit}`:`Assignment ${a.n}`}</button>${COURSE.nvqUnits&&s==='discussion'?body:`<div class="assignment-title"><div class="number">${COURSE.nvqUnits?`Unit ${a.unit}`:`Assignment ${a.n}`}</div><h2>${sectionTitle(s)}</h2><p class="muted">${esc(a.title)}</p></div>${body}`}`);
  document.getElementById('back').onclick=()=>{state.view='assignment';render()};if(!locked)applyEvidenceReuseLocks(a,s,d);bindSection(a,s,sd,d,locked);
 }
 function sectionTitle(s){const titles={practical:[COURSE.nvqUnits?'observation':'hammer',COURSE.nvqUnits?'Assessor observation':'Practical assessment'],photos:['camera','Photographic Evidence'],statement:['statement','Learner statement'],discussion:['video','Video Walkthrough'],professionalDiscussion:['microphone','Professional Discussion'],witness:['witness','Witness testimony'],supporting:['supporting','Supporting evidence']};const [icon,label]=titles[s],cap=evidenceCapability(s);return `<span class="section-title-icon">${appIcon(icon)}</span>${cap?`<span class="section-title-capability">${cap}</span>`:''}<span class="section-title-label">${label}</span>`}
@@ -5279,6 +5296,15 @@ function statementPage(a,d,locked,sd){d.ksbEvidence=d.ksbEvidence||[];if(!COURSE
 function photosPage(a,d,locked,sd){
  if(COURSE.nvqUnits){d.outcomePhotos=d.outcomePhotos||{};d.ksbEvidence=d.ksbEvidence||[];const selected=selectedKsbCodes(a,d);return `<div class="locked-wrap ${locked?'read-only':''}">${locked?lockedTop(sd.versions.length,'photos'):''}<section class="card panel"><div class="panel-body"><div class="field"><label>Learning outcomes evidenced</label><p class="help">Select each learning outcome shown by the photographs and add one clear landscape photograph for every selected outcome.</p><div class="outcome-list">${a.ksbs.map(([code,text])=>{const chosen=d.ksbEvidence.includes(code);return `<article class="outcome-card with-photo statement-ksb-card ${chosen?'selected':''}"><button type="button" class="statement-ksb-toggle" data-ksb-evidence-toggle="${esc(code)}" ${locked?'disabled':''}><span class="tick-box">${chosen?'✓':''}</span><span class="outcome-card-copy"><span class="outcome-code">${esc(code)} ${evidenceCoverageBadge(a.n,code)}</span><strong>${esc(text)}</strong><em>${chosen?'Included in photographic evidence':'Tap to include'}</em></span></button>${outcomePhotoControl(a,code,d,locked)}</article>`}).join('')}</div></div>${signatureHTML(d,locked,'Apprentice',true)}</div>${locked?'':`<div class="btn-row"><button class="btn" id="submitSection" ${!canSubmit(a,'photos',d)?'disabled':''}>Submit and lock photographic evidence</button></div>`}</section></div>${versionHistory(sd,'photos')}`}
  d.skillPhotos=d.skillPhotos||{};d.ksbEvidence=d.ksbEvidence||[];const skills=a.ksbs.filter(([code])=>String(code).toUpperCase().startsWith('S'));return `<div class="locked-wrap ${locked?'read-only':''}">${locked?lockedTop(sd.versions.length,'photos'):''}<section class="card panel"><div class="panel-body"><div class="field"><label>Skills evidenced</label><p class="help">Photographic Evidence is linked to Skill units only. Select a Skill and add three clear landscape photographs. A completed submission gives that Skill one evidence credit toward its 2/2 requirement.</p><div class="outcome-list">${skills.map(([code,text])=>{const chosen=d.ksbEvidence.includes(code),photos=(d.skillPhotos[code]||[]).filter(Boolean);return `<article class="outcome-card statement-ksb-card skill-photo-card ${chosen?'selected':''}"><button type="button" class="statement-ksb-toggle" data-ksb-evidence-toggle="${esc(code)}" ${locked?'disabled':''}><span class="tick-box">${chosen?'✓':''}</span><span class="outcome-card-copy"><span class="outcome-code">${esc(code)} ${evidenceCoverageBadge(a.n,code)}</span><strong>${esc(learnerPromptTitle(a.n,code,text))}</strong><span class="criteria-numbers">${esc(text)}</span><em>${chosen?`${photos.length}/3 photos added`:'Tap to include this Skill'}</em></span></button>${chosen?`<div class="practical-photo-row skill-photo-row">${[0,1,2].map(i=>{const ph=d.skillPhotos[code]?.[i],filename=evidencePhotoFileName(a,code,i);return `<button type="button" class="practical-photo-slot ${ph?'filled':''}" data-skill-photo-code="${esc(code)}" data-skill-photo-index="${i}" aria-label="${ph?'Open':'Add'} ${code} photo ${i+1}">${ph?`<img src="${ph.data}" alt="${esc(code)} photographic evidence ${i+1}"><span class="linked-photo-filename">${esc(filename)}</span>`:`<span class="camera-mark">${appIcon('camera')}</span><span>Photo ${i+1}</span>`}</button>`}).join('')}</div>`:''}</article>`}).join('')}</div></div>${signatureHTML(d,locked,'Apprentice',true)}</div>${locked?'':`<div class="btn-row"><button class="btn" id="submitSection" ${!canSubmit(a,'photos',d)?'disabled':''}>Submit and lock photographic evidence</button></div>`}</section></div>${versionHistory(sd,'photos')}`
+}
+function nvqVideoWalkthroughPage(a,d,locked,sd){
+ d.recordings=d.recordings||{};
+ const items=a.ksbs||[],completed=items.filter(([code])=>isVideoEvidenceRecording(d.recordings[code])).length;
+ const rows=items.map(([code,summary])=>{
+  const rec=isVideoEvidenceRecording(d.recordings[code])?d.recordings[code]:null,title=learnerPromptTitle(a.n,code,summary);
+  return `<article class="walkthrough-mini-tile ${rec?'complete':''}"><div class="walkthrough-mini-copy"><strong class="walkthrough-mini-code">${esc(code)} ${evidenceCoverageBadge(a.n,code)}</strong><h3>${esc(title)}</h3><p>${esc(summary)}</p>${rec?`<div class="walkthrough-mini-saved">✓ Video saved${rec.date?` · ${esc(rec.date)}`:''}${rec.duration?` · ${esc(rec.duration)}`:''}${rec.type?` · ${esc(mediaExtensionForMime(rec.type,'video').toUpperCase())}`:''}${rec.size?` · ${formatMediaSize(rec.size)}`:''}</div><div class="walkthrough-mini-actions"><button type="button" class="link-button" data-view-lo-walk="${esc(code)}">View</button>${locked?'':`<button type="button" class="link-button" data-delete-recording="${esc(code)}">Remove</button>`}</div>`:''}</div>${locked?'':`<input class="sr-only" id="loWalkVideoInput-${esc(code)}" data-lo-walk-input="${esc(code)}" type="file" accept="video/*"><button type="button" class="walkthrough-video-button ${rec?'has-thumbnail':''}" data-record-code="${esc(code)}" aria-label="${rec?'Replace':'Record'} ${esc(code)} video">${rec?`<video class="walkthrough-video-thumbnail" src="${esc(rec.data)}" muted playsinline webkit-playsinline preload="metadata"></video><span class="walkthrough-thumbnail-label">REPLACE</span>`:`${walkthroughRecorderIcon()}<span>ADD VIDEO</span>`}</button>`}</article>`;
+ }).join('');
+ return `${locked?lockedTop(sd.versions.length,'discussion'):''}<section class="walkthrough-head"><div><div class="number">Video Walkthrough</div><h2>${esc(a.title)}</h2><p>${completed} of ${items.length} Learning Outcomes recorded · app recordings use optimised 720p</p></div><span class="status-pill ${locked?'done':''}">${completed}/${items.length}</span></section><div class="walkthrough-progress"><span style="width:${items.length?(completed/items.length)*100:0}%"></span></div><section class="walkthrough-tile-list">${rows}</section><section class="card panel walkthrough-save-panel ${locked?'complete':''}"><div><h3>${locked?'Walkthrough submitted':'Submit walkthrough'}</h3><p class="muted">${locked?`${completed} of ${items.length} Learning Outcomes are included. Further evidence can be added in a new attempt.`:'Record only the relevant Learning Outcomes, then submit the walkthrough. Every outcome does not need a video.'}</p></div>${locked?'':`<button class="btn" id="submitSection" ${completed?'':'disabled'}>Submit and lock walkthrough</button>`}</section>${versionHistory(sd,'discussion')}`;
 }
 function professionalDiscussionAudioPage(a,d,locked,sd){
  d.recordings=d.recordings||{};d.notes=d.notes||{};
@@ -5328,7 +5354,9 @@ function bindSection(a,s,sd,d,locked){
  });
  document.querySelectorAll('[data-statement-ksb-toggle]').forEach(b=>b.onclick=async()=>{const code=b.dataset.statementKsbToggle;d.ksbEvidence=d.ksbEvidence||[];d.ksbEvidence=d.ksbEvidence.includes(code)?d.ksbEvidence.filter(x=>x!==code):[...d.ksbEvidence,code];await commit(a.n,s,sd);renderSection()});
  document.querySelectorAll('[data-lo-photo]').forEach(b=>b.onclick=()=>showOutcomePhotoModal(a.n,s,sd,d,b.dataset.loPhoto,locked));
- document.querySelectorAll('[data-record-code]').forEach(b=>b.onclick=()=>recordDiscussionOutcome(a.n,s,sd,d,b.dataset.recordCode));
+ document.querySelectorAll('[data-record-code]').forEach(b=>b.onclick=()=>recordDiscussionOutcome(a.n,s,sd,d,b.dataset.recordCode,document.getElementById(`loWalkVideoInput-${b.dataset.recordCode}`)));
+ document.querySelectorAll('[data-lo-walk-input]').forEach(input=>input.onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{await saveNvqWalkthroughVideo(a.n,s,sd,d,input.dataset.loWalkInput,file,{name:file.name,type:file.type})}catch(error){console.error('LO walkthrough gallery video save failed',error);toast('The selected video could not be saved')}});
+ document.querySelectorAll('[data-view-lo-walk]').forEach(b=>b.onclick=()=>showNvqWalkthroughVideo(b.dataset.viewLoWalk,d.recordings?.[b.dataset.viewLoWalk]));
  document.querySelectorAll('[data-record-pd-code]').forEach(b=>b.onclick=()=>recordProfessionalDiscussionOutcome(a.n,s,sd,d,b.dataset.recordPdCode));
  document.querySelectorAll('[data-delete-recording]').forEach(b=>b.onclick=async()=>{delete d.recordings[b.dataset.deleteRecording];await commit(a.n,s,sd);renderSection();toast('Recording deleted')});
  const ng=document.getElementById('generateNvqNarrative');if(ng)ng.onclick=async()=>{d.narrativeRevision=Number(d.narrativeRevision||0)+1;d.feedback=generateNvqNarrative(a,d,s==='practical'?'assessor':'witness');if(!d.feedback)return toast('Select at least one learning outcome');await commit(a.n,s,sd);renderSection()};
@@ -5408,10 +5436,26 @@ async function recordProfessionalDiscussionOutcome(n,s,sd,d,code){
  stopButton.onclick=()=>{if(recorder?.state!=='recording')return;stopButton.disabled=true;stateEl.textContent='Stopping…';recorder.stop()};
 }
 
-async function recordDiscussionOutcome(n,s,sd,d,code){
+async function saveNvqWalkthroughVideo(n,s,sd,d,code,source,{name='',type='',duration='',optimised=false}={}){
+ if(!source||!String(type||source.type||'').startsWith('video/'))throw new Error('A valid video recording is required');
+ let blob=source instanceof Blob?source:new Blob([source],{type:type||'video/webm'});if(!blob.size)throw new Error('The recording is empty');
+ blob=await normaliseRecordedBlob(blob,type||blob.type||'video/webm');
+ const media=await uniqueEvidenceMedia(blob,{kind:'video',excludeToken:`${key(n,s)}:draft:recording:${code}`});if(!media)return false;
+ const mime=String(blob.type||type||'video/webm').split(';')[0].trim()||'video/webm',ext=mediaExtensionForMime(mime,'video'),data=await blobToDataUrl(blob);
+ d.recordings=d.recordings||{};d.recordings[code]={data,type:mime,format:ext,name:name||`${code}-walkthrough-${Date.now()}.${ext}`,size:blob.size,mediaHash:media.hash,date:today(),duration,optimised};
+ await commit(n,s,sd);analyticsEvent('video_walkthrough_clip_saved',{assignment_number:n,criterion_type:'LO',course_id:COURSE.id});renderSection();toast(`${code} video autosaved · ${formatMediaSize(blob.size)}`);return true;
+}
+function showNvqWalkthroughVideo(code,recording){
+ if(!isVideoEvidenceRecording(recording))return toast('Video file could not be opened');
+ app.insertAdjacentHTML('beforeend',`<div class="modal" id="loWalkVideoModal"><div class="modal-card video-modal"><video id="loWalkSavedPlayback" controls playsinline webkit-playsinline preload="metadata"><source src="${esc(recording.data)}" type="${esc(recording.type||'video/webm')}"></video><p class="muted hide" id="loWalkPlaybackError">This device cannot play the saved format in the browser. Use the button below to open or save the original video.</p><div class="btn-row"><button class="btn secondary" id="openLoWalkVideoFile">Open / save video</button><button class="btn secondary" id="closeLoWalkVideo">Close</button></div></div></div>`);
+ const modal=document.getElementById('loWalkVideoModal'),player=document.getElementById('loWalkSavedPlayback');player.onerror=()=>document.getElementById('loWalkPlaybackError')?.classList.remove('hide');
+ document.getElementById('openLoWalkVideoFile').onclick=()=>{const link=document.createElement('a');link.href=recording.data;link.download=recording.name||`${code}-walkthrough.${mediaExtensionForMime(recording.type,'video')}`;document.body.appendChild(link);link.click();link.remove()};
+ document.getElementById('closeLoWalkVideo').onclick=()=>{player.pause();player.removeAttribute('src');player.load();modal.remove()};
+}
+async function recordDiscussionOutcome(n,s,sd,d,code,fallbackInput=null){
  const a=assignment(n),criterion=(a?.ksbs||[]).find(([itemCode])=>String(itemCode)===String(code)),description=criterion?.[1]||'Explain or demonstrate how this learning outcome was completed.',prompt=walkthroughPrompt(code,description,a);
- const result=await recordOptimisedVideo({title:'Video Walkthrough',instruction:prompt,detail:description,criterionCode:code,saveLabel:'Save video'});if(!result)return;
- try{const media=await uniqueEvidenceMedia(result.blob,{kind:'video',excludeToken:`${key(n,s)}:draft:recording:${code}`});if(!media)return;const data=await blobToDataUrl(result.blob);d.recordings=d.recordings||{};d.recordings[code]={data,type:result.type,format:mediaExtensionForMime(result.type,'video'),size:result.size,mediaHash:media.hash,date:today(),duration:result.duration,optimised:true};await commit(n,s,sd);analyticsEvent('professional_discussion_recording_saved',{assignment_number:n,criterion_type:String(code||'').charAt(0),duration_seconds:result.seconds,course_id:COURSE.id});renderSection();toast(`${code} video autosaved · ${formatMediaSize(result.size)}`)}catch(error){console.error('LO walkthrough video save failed',error);toast('The video could not be saved')}
+ const result=await recordOptimisedVideo({title:'Video Walkthrough',instruction:prompt,detail:description,criterionCode:code,fallbackInput,saveLabel:'Save video'});if(!result)return;
+ try{await saveNvqWalkthroughVideo(n,s,sd,d,code,result.blob,{type:result.type,duration:result.duration,optimised:true})}catch(error){console.error('LO walkthrough video save failed',error);toast('The video could not be saved')}
 }
 function blobToDataUrl(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob)})}
 function formatDuration(seconds){const m=Math.floor(seconds/60),s=seconds%60;return `${m}:${String(s).padStart(2,'0')}`}
@@ -5438,7 +5482,7 @@ function supportReady(a,d){if(d.tab==='files'||d.type==='Supporting evidence')re
 function updateSubmit(a,d){const b=document.getElementById('submitSection');if(b)b.disabled=!supportReady(a,d)}
 function updateSectionSubmit(a,s,d){const b=document.getElementById('submitSection');if(b)b.disabled=!canSubmit(a,s,d)}
 function observationReady(a,d){const selected=selectedNvqOutcomes(a,d);return !!(d.tutor&&d.activity&&d.feedback?.trim()&&d.signature&&selected.length>=1&&hasOutcomePhotos(selected,d))}
-function canSubmit(a,s,d){if(COURSE.nvqUnits&&s==='practical')return observationReady(a,d);if(s==='practical')return !!(d.tutor&&d.activity&&d.signature&&(d.photos||[]).length>=1&&selectedPracticalSkillCodes(a,d).length>0);if(s==='photos'){if(COURSE.nvqUnits){const selected=selectedKsbCodes(a,d);return selected.length>0&&selected.every(code=>!!d.outcomePhotos?.[code]?.data)&&!!d.signature}const selected=selectedKsbCodes(a,d).filter(code=>String(code).toUpperCase().startsWith('S'));return selected.length>0&&selected.every(code=>(d.skillPhotos?.[code]||[]).filter(Boolean).length===3)&&!!d.signature;}if(s==='statement')return statementReady(a,d);if(s==='discussion'||s==='professionalDiscussion')return !!(d.assessor&&d.activity&&d.signature&&Object.keys(d.recordings||{}).length);return supportReady(a,d)}
+function canSubmit(a,s,d){if(COURSE.nvqUnits&&s==='practical')return observationReady(a,d);if(s==='practical')return !!(d.tutor&&d.activity&&d.signature&&(d.photos||[]).length>=1&&selectedPracticalSkillCodes(a,d).length>0);if(s==='photos'){if(COURSE.nvqUnits){const selected=selectedKsbCodes(a,d);return selected.length>0&&selected.every(code=>!!d.outcomePhotos?.[code]?.data)&&!!d.signature}const selected=selectedKsbCodes(a,d).filter(code=>String(code).toUpperCase().startsWith('S'));return selected.length>0&&selected.every(code=>(d.skillPhotos?.[code]||[]).filter(Boolean).length===3)&&!!d.signature;}if(s==='statement')return statementReady(a,d);if(COURSE.nvqUnits&&s==='discussion')return Object.values(d.recordings||{}).some(isVideoEvidenceRecording);if(s==='discussion'||s==='professionalDiscussion')return !!(d.assessor&&d.activity&&d.signature&&Object.keys(d.recordings||{}).length);return supportReady(a,d)}
 async function submitSection(a,s,sd,d){if(!canSubmit(a,s,d)){if(COURSE.nvqUnits&&s==='practical')return toast('Complete the assessor details, signature and at least one selected Learning Outcome with a photograph');return toast('Complete all required fields first')}d.submitted=true;d.date=today();const frozen=structuredClone(d);sd.versions.push(frozen);sd.draft=frozen;await commit(a.n,s,sd);const pack=state.data[packStatusKey(a.n)];if(pack?.uploaded){state.data[packStatusKey(a.n)]={...pack,downloaded:false,uploaded:false,changedAt:new Date().toISOString()};await saveData()}renderSection();const assessed=!COURSE.nvqUnits&&(s==='practical'||(s==='supporting'&&d.tab!=='files'));
  const eventName=EVIDENCE_EVENT_NAMES[s]||'evidence_submitted';
  analyticsEvent(eventName,{assignment_number:a.n,course_id:COURSE.id,evidence_type:s,version_number:sd.versions.length,criterion_count:Array.isArray(d.ksbEvidence)?d.ksbEvidence.length:0,photo_count:Array.isArray(d.photos)?d.photos.filter(Boolean).length:0});
@@ -6466,7 +6510,7 @@ async function registerAutoUpdater(){
 
 const updateBadgeObserver=new MutationObserver(()=>syncUpdateBadge());
 updateBadgeObserver.observe(app,{childList:true,subtree:true});
-document.addEventListener('click',e=>{const badge=e.target.closest('#updateNotificationButton');if(!badge)return;e.preventDefault();e.stopPropagation();openUpdateReadyModal()});
+document.addEventListener('click',e=>{const badge=e.target.closest('#updateNotificationButton');if(!badge)return;e.preventDefault();e.stopPropagation();window.openUpdateReadyModal()});
 document.addEventListener('click',e=>{const help=e.target.closest('#pageHelpButton');if(!help)return;e.preventDefault();e.stopPropagation();openPageHelp()});
 document.addEventListener('keydown',e=>{
  const pageHelp=document.getElementById('pageHelpModal');
