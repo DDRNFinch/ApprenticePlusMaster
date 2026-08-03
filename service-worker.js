@@ -1,4 +1,4 @@
-const CACHE='apprentice-plus-v1.0-lo-evidence-rules';
+const CACHE='apprentice-plus-v1.0-toolbox-accuracy-notifications';
 const CURRENT_VERSION='V1.0';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
@@ -69,4 +69,15 @@ self.addEventListener('fetch',event=>{
    return response;
   }))
  );
+});
+
+self.addEventListener('notificationclick',event=>{
+ event.notification.close();
+ if(event.notification.data?.type!=='remindmate')return;
+ event.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(async windows=>{
+  const existing=windows.find(client=>'focus'in client);
+  if(existing){await existing.focus();existing.postMessage({type:'OPEN_REMINDMATE'});return}
+  const opened=await self.clients.openWindow('./');
+  opened?.postMessage?.({type:'OPEN_REMINDMATE'});
+ }));
 });

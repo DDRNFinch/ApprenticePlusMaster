@@ -126,6 +126,8 @@
       const total = list.querySelectorAll('.notification-bell-item:not([hidden])').length;
       count.textContent = String(total);
       count.hidden = total === 0;
+      count.setAttribute('aria-label', `${total} notification${total === 1 ? '' : 's'}`);
+      bell.setAttribute('aria-label', total ? `Open notifications, ${total} available` : 'Open notifications');
       const empty = list.querySelector('.notification-bell-empty');
       if (!total && !empty) list.insertAdjacentHTML('beforeend', '<div class="notification-bell-empty"><strong>No notifications</strong><p>New Apprentice+ messages will appear here.</p></div>');
       if (total && empty) empty.remove();
@@ -181,6 +183,14 @@
       item.addEventListener('lostpointercapture', () => { if (dragging) reset(); });
     };
     list.querySelectorAll('.notification-bell-item').forEach(attachSwipe);
+    const refreshDynamicNotifications = () => {
+      list.querySelectorAll('[data-notification-id]').forEach(item => {
+        if (deleted.includes(item.dataset.notificationId)) item.remove();
+        else attachSwipe(item);
+      });
+      updateCount();
+    };
+    window.addEventListener('apprenticeplus:notifications-refresh', refreshDynamicNotifications);
 
     const closeNotifications = (immediate = false) => {
       clearTimeout(closeTimer); panelOpen = false;
@@ -217,8 +227,8 @@
       window.setTimeout(() => { if (typeof window.openUpdateReadyModal === 'function') window.openUpdateReadyModal(); }, 190);
     });
     applyNotificationSettings();
-    window.addEventListener('apprenticeplus:settings-changed', applyNotificationSettings);
-    window.addEventListener('storage', event => { if (event.key === settingsKey) applyNotificationSettings(); });
+    window.addEventListener('apprenticeplus:settings-changed', () => { applyNotificationSettings(); queueMicrotask(() => window.refreshAppNotifications?.()); });
+    window.addEventListener('storage', event => { if (event.key === settingsKey) { applyNotificationSettings(); window.refreshAppNotifications?.(); } });
 
     bell.addEventListener('click', openNotifications);
     closeButton.addEventListener('click', () => closeNotifications());

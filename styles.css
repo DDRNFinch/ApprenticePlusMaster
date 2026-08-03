@@ -3682,3 +3682,52 @@ html.video-recorder-open .phone-video-recorder{z-index:100000!important}
   .compact-assignment-card .nvq-six-icons .icon-state{min-height:38px!important}
   .compact-assignment-card .nvq-six-icons .icon-state .app-icon{width:17px!important;height:17px!important}
 }
+
+/* V1.0 — compact OTJ disclosures, recurring reminders and trade CAD tabs */
+.otj-date-entry{
+  border:1px solid rgba(15,118,110,.16);
+  border-radius:12px;
+  background:var(--card,#fff);
+  overflow:hidden;
+}
+.otj-date-entry.exported{background:#f8faf9}
+.otj-date-entry>summary{
+  min-height:34px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:7px 11px;
+  cursor:pointer;
+  list-style:none;
+  color:var(--ink,#0b2b23);
+  -webkit-tap-highlight-color:transparent;
+}
+.otj-date-entry>summary::-webkit-details-marker{display:none}
+.otj-date-entry>summary time{font-size:.74rem;font-weight:750;letter-spacing:.01em}
+.otj-date-entry>summary::after{content:'›';font-size:17px;color:var(--muted);transition:transform .15s ease}
+.otj-date-entry[open]>summary::after{transform:rotate(90deg)}
+.otj-date-entry-content{padding:4px 12px 12px;border-top:1px solid rgba(15,118,110,.12)}
+.otj-entry-meta{display:flex;justify-content:space-between;gap:12px;padding:9px 0 7px;color:var(--muted);font-size:.76rem}
+.otj-entry-meta small{font-weight:850;text-transform:uppercase;letter-spacing:.05em}
+.portfolio-building-entry.otj-date-entry{border-color:#d8b4fe}
+.portfolio-building-entry.otj-date-entry>summary time{color:#6d28d9}
+.portfolio-building-entry.otj-date-entry .otj-date-entry-content{border-top-color:#e9d5ff}
+.reminder-repeat{color:var(--greenDeep);font-weight:850;white-space:nowrap}
+.device-notification-setting{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--green2)}
+.device-notification-setting>div{display:grid;gap:4px}
+.device-notification-setting small{color:var(--muted);line-height:1.4}
+.device-notification-setting.granted strong{color:var(--greenDeep)}
+.device-notification-setting.denied{background:#fff6f4;border-color:#fecaca}
+.cadmate-trade-tabs{margin:0 0 14px}
+.cadmate-trade-tabs button{min-width:0;flex:1}
+.cadmate-trade-coming-soon{min-height:360px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:42px 22px;background:linear-gradient(150deg,var(--card,#fff),var(--green2,#eefbdc))}
+.cadmate-trade-coming-soon .cadmate-coming-icon{width:74px;height:74px;display:grid;place-items:center;border-radius:24px;background:var(--green);color:#fff;font-size:38px;font-weight:900;box-shadow:0 14px 30px var(--greenGlow)}
+.cadmate-trade-coming-soon>span{margin-top:18px;font-size:.72rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--greenDark)}
+.cadmate-trade-coming-soon h2{margin:6px 0 8px;font-size:1.7rem}
+.cadmate-trade-coming-soon p{margin:0;color:var(--muted)}
+.cadmate-trade-coming-soon>strong{margin-top:20px;padding:8px 14px;border-radius:999px;background:#fff7d6;color:#815b00;border:1px solid #efd378;font-size:.8rem}
+@media(max-width:520px){
+  .cadmate-trade-tabs button{font-size:11px;padding:10px 5px}
+  .device-notification-setting{align-items:flex-start;flex-direction:column}
+}
