@@ -3220,3 +3220,7 @@ body.technical-drawing-active{overflow:hidden!important;position:fixed!important
 .assignment-title > .submitted-ribbon.page-ribbon:not(.rpl-ribbon) {
   display: none !important;
 }
+
+/* V1.6.21 professional discussion recorder */
+.pd-recording-timer{font-size:1.8rem;font-weight:800;letter-spacing:.08em;font-variant-numeric:tabular-nums;margin-top:4px}
+.recording-pulse.ready{animation:none;opacity:.45}

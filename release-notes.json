@@ -1,6 +1,17 @@
 {
-  "latest": "V1.6.20",
+  "latest": "V1.6.21",
   "releases": [
+    {
+      "version": "V1.6.21",
+      "date": "2026-08-03",
+      "title": "Evidence Controls and Discussion Recorder",
+      "changes": [
+        "Witness testimony S and B scoring now activates immediately after the evidence tick is selected.",
+        "Photographic Evidence selections now refresh immediately so photo controls appear without leaving the page.",
+        "Practical Assessment 1\u20135 marking remains locked until the related Skill or Behaviour tick is selected.",
+        "Professional Discussion now has separate Start recording and Stop recording controls with a live timer and no pause function."
+      ]
+    },
     {
       "version": "V1.6.20",
       "date": "2026-08-03",

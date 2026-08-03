@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.6.20';
+const APP_VERSION='V1.6.21';
 
 const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
 const TECHNICAL_DRAWING_PREFIX={
@@ -4787,7 +4787,7 @@ function generateNvqNarrative(a,d,perspective='assessor'){
  return `${opening}\n\n${evidenceText}\n\n${process}\n\n${quality}\n\n${closing}`;
 }
 
-function scoreRows(a,d,readonly=false){d.ksbEvidence=d.ksbEvidence||[];d.scores=d.scores||{};const skills=skillCriteriaFor(a).map(skill=>{const selected=d.ksbEvidence.includes(skill.code);return `<div class="skill-assessment ${selected?'skill-selected':''}"><button type="button" class="skill-heading skill-evidence-toggle" data-ksb-evidence-toggle="${esc(skill.code)}" ${readonly?'disabled':''}><span class="tick-box">${selected?'✓':''}</span><span class="skill-heading-copy"><small>${esc(skill.code)} · Skill unit ${evidenceCoverageBadge(a.n,skill.code)}</small><strong>${esc(skill.summary)}</strong></span></button>${skill.criteria.map((criterion,i)=>{const key=`${skill.code}::${i+1}`;return `<div class="score-card criterion-row"><div class="criterion-text"><small>Practical mark ${i+1}</small>${esc(criterion)}</div><div class="score-buttons">${[1,2,3,4,5].map(n=>`<button type="button" class="score-button ${+d.scores[key]===n?'active':''}" data-score-code="${key}" data-score="${n}" ${readonly?'disabled':''}>${n}</button>`).join('')}</div></div>`}).join('')}</div>`}).join('');const behaviours=a.ksbs.filter(([code])=>/^B/i.test(code)).map(([code,text])=>{const selected=d.ksbEvidence.includes(code);return `<div class="skill-assessment ${selected?'skill-selected':''}"><button type="button" class="skill-heading skill-evidence-toggle" data-ksb-evidence-toggle="${esc(code)}" ${readonly?'disabled':''}><span class="tick-box">${selected?'✓':''}</span><span class="skill-heading-copy"><small>${esc(code)} · Behaviour unit ${evidenceCoverageBadge(a.n,code)}</small><strong>${esc(text)}</strong></span></button><div class="score-card criterion-row"><div class="criterion-text"><small>Practical behaviour mark</small>Rate how consistently this behaviour was demonstrated during the practical activity.</div><div class="score-buttons">${[1,2,3,4,5].map(n=>`<button type="button" class="score-button ${+d.scores[code]===n?'active':''}" data-score-code="${esc(code)}" data-score="${n}" ${readonly||!selected?'disabled':''}>${n}</button>`).join('')}</div></div></div>`}).join('');return skills+behaviours}
+function scoreRows(a,d,readonly=false){d.ksbEvidence=d.ksbEvidence||[];d.scores=d.scores||{};const skills=skillCriteriaFor(a).map(skill=>{const selected=d.ksbEvidence.includes(skill.code);return `<div class="skill-assessment ${selected?'skill-selected':''}"><button type="button" class="skill-heading skill-evidence-toggle" data-ksb-evidence-toggle="${esc(skill.code)}" ${readonly?'disabled':''}><span class="tick-box">${selected?'✓':''}</span><span class="skill-heading-copy"><small>${esc(skill.code)} · Skill unit ${evidenceCoverageBadge(a.n,skill.code)}</small><strong>${esc(skill.summary)}</strong></span></button>${skill.criteria.map((criterion,i)=>{const key=`${skill.code}::${i+1}`;return `<div class="score-card criterion-row"><div class="criterion-text"><small>Practical mark ${i+1}</small>${esc(criterion)}</div><div class="score-buttons">${[1,2,3,4,5].map(n=>`<button type="button" class="score-button ${+d.scores[key]===n?'active':''}" data-score-code="${key}" data-score="${n}" ${readonly||!selected?'disabled':''}>${n}</button>`).join('')}</div></div>`}).join('')}</div>`}).join('');const behaviours=a.ksbs.filter(([code])=>/^B/i.test(code)).map(([code,text])=>{const selected=d.ksbEvidence.includes(code);return `<div class="skill-assessment ${selected?'skill-selected':''}"><button type="button" class="skill-heading skill-evidence-toggle" data-ksb-evidence-toggle="${esc(code)}" ${readonly?'disabled':''}><span class="tick-box">${selected?'✓':''}</span><span class="skill-heading-copy"><small>${esc(code)} · Behaviour unit ${evidenceCoverageBadge(a.n,code)}</small><strong>${esc(text)}</strong></span></button><div class="score-card criterion-row"><div class="criterion-text"><small>Practical behaviour mark</small>Rate how consistently this behaviour was demonstrated during the practical activity.</div><div class="score-buttons">${[1,2,3,4,5].map(n=>`<button type="button" class="score-button ${+d.scores[code]===n?'active':''}" data-score-code="${esc(code)}" data-score="${n}" ${readonly||!selected?'disabled':''}>${n}</button>`).join('')}</div></div></div>`}).join('');return skills+behaviours}
 function ksbTypeLabel(code){const c=String(code||'').toUpperCase();return c.startsWith('K')?'Knowledge':c.startsWith('S')?'Skill':c.startsWith('B')?'Behaviour':'KSB'}
 function ksbsScoreRows(a,d,readonly=false){
  d.ksbEvidence=d.ksbEvidence||[];
@@ -4887,13 +4887,15 @@ function bindSection(a,s,sd,d,locked){
  });
  document.querySelectorAll('[data-nvq-toggle]').forEach(b=>b.onclick=async()=>{const code=b.dataset.nvqToggle;d.scores=d.scores||{};d.scores[code]=+d.scores[code]===5?0:5;d.feedback=generateNvqNarrative(a,d,s==='practical'?'assessor':'witness');await commit(a.n,s,sd);renderSection()});
  document.querySelectorAll('[data-ksb-evidence-toggle]').forEach(b=>b.onclick=async()=>{
-  const code=b.dataset.ksbEvidenceToggle,card=b.closest('.skill-assessment');
+  const code=b.dataset.ksbEvidenceToggle,card=b.closest('.skill-assessment')||b.closest('.outcome-card');
   d.ksbEvidence=d.ksbEvidence||[];const selected=!d.ksbEvidence.includes(code);
   d.ksbEvidence=selected?[...d.ksbEvidence,code]:d.ksbEvidence.filter(x=>x!==code);
-  card?.classList.toggle('skill-selected',selected);b.setAttribute('aria-pressed',String(selected));
+  if(!selected&&d.scores){Object.keys(d.scores).filter(key=>String(key).split('::')[0]===code).forEach(key=>delete d.scores[key])}
+  card?.classList.toggle('skill-selected',selected);card?.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));
   const tick=b.querySelector('.tick-box');if(tick)tick.textContent=selected?'✓':'';
-  if(/^B/i.test(code))card?.querySelectorAll('[data-score-code]').forEach(button=>button.disabled=!selected);
+  card?.querySelectorAll('[data-score-code]').forEach(button=>button.disabled=!selected);
   b.blur();updateSectionSubmit(a,s,d);await commit(a.n,s,sd);
+  if(s==='photos'||s==='witness'||s==='practical')renderSection();
  });
  document.querySelectorAll('[data-statement-ksb-toggle]').forEach(b=>b.onclick=async()=>{const code=b.dataset.statementKsbToggle;d.ksbEvidence=d.ksbEvidence||[];d.ksbEvidence=d.ksbEvidence.includes(code)?d.ksbEvidence.filter(x=>x!==code):[...d.ksbEvidence,code];await commit(a.n,s,sd);renderSection()});
  document.querySelectorAll('[data-lo-photo]').forEach(b=>b.onclick=()=>showOutcomePhotoModal(a.n,s,sd,d,b.dataset.loPhoto,locked));
@@ -4950,13 +4952,32 @@ function professionalDiscussionPrompts(code,description){
  ];
 }
 async function recordProfessionalDiscussionOutcome(n,s,sd,d,code){
- if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined')return toast('Audio recording is not supported on this device');
  const a=assignment(n),criterion=(a?.ksbs||[]).find(([itemCode])=>String(itemCode)===String(code)),description=criterion?.[1]||'No criterion description is available.',prompts=professionalDiscussionPrompts(code,description),criterionType=/^K/i.test(code)?'Knowledge':/^B/i.test(code)?'Behaviour':'Learning outcome';
- let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}catch{return toast('Microphone permission is required')};
- const options=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t=>MediaRecorder.isTypeSupported?.(t))||'',recorder=new MediaRecorder(stream,options?{mimeType:options}:undefined),chunks=[],started=Date.now();
- app.insertAdjacentHTML('beforeend',`<div class="modal" id="recordingModal"><div class="modal-card recording-modal professional-discussion-recording-modal"><div class="pd-recording-heading"><span>${esc(criterionType)} · ${esc(code)}</span><h2>Professional Discussion</h2></div><section class="pd-recording-criterion"><strong>${esc(code)} description</strong><p>${esc(description)}</p></section><section class="pd-assessor-prompts"><strong>Assessor prompts</strong><ul>${prompts.map(prompt=>`<li>${esc(prompt)}</li>`).join('')}</ul></section><div class="recording-status-row"><div class="recording-pulse"></div><p class="muted">Recording in progress. Use the prompts as guidance and ask suitable follow-up questions.</p></div><button class="btn danger" id="stopRecording">Stop recording</button><button class="btn secondary" id="cancelRecording">Cancel</button></div></div>`);
- let cancelled=false;document.getElementById('cancelRecording').onclick=()=>{cancelled=true;recorder.stop()};document.getElementById('stopRecording').onclick=()=>recorder.stop();recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());document.getElementById('recordingModal')?.remove();if(cancelled)return;const type=String(recorder.mimeType||options||'audio/webm').split(';')[0],blob=new Blob(chunks,{type}),data=await blobToDataUrl(blob),seconds=Math.max(1,Math.round((Date.now()-started)/1000));d.recordings=d.recordings||{};d.recordings[code]={data,type:blob.type,date:today(),duration:formatDuration(seconds)};await commit(n,s,sd);renderSection();toast(`${code} discussion autosaved`)};recorder.start(1000)
+ app.insertAdjacentHTML('beforeend',`<div class="modal" id="recordingModal"><div class="modal-card recording-modal professional-discussion-recording-modal"><div class="pd-recording-heading"><span>${esc(criterionType)} · ${esc(code)}</span><h2>Professional Discussion</h2></div><section class="pd-recording-criterion"><strong>${esc(code)} description</strong><p>${esc(description)}</p></section><section class="pd-assessor-prompts"><strong>Assessor prompts</strong><ul>${prompts.map(prompt=>`<li>${esc(prompt)}</li>`).join('')}</ul></section><div class="recording-status-row" id="pdRecordingStatus"><div class="recording-pulse ready" id="pdRecordingPulse"></div><div><strong id="pdRecordingState">Ready to record</strong><div class="pd-recording-timer" id="pdRecordingTimer">00:00</div></div></div><p class="muted" id="pdRecordingHelp">Press Start recording when the assessor and learner are ready. Recording continues until Stop recording is pressed.</p><div class="btn-row"><button class="btn" id="startRecording">Start recording</button><button class="btn danger hide" id="stopRecording">Stop recording</button><button class="btn secondary" id="cancelRecording">Cancel</button></div></div></div>`);
+ const modal=document.getElementById('recordingModal'),startButton=document.getElementById('startRecording'),stopButton=document.getElementById('stopRecording'),cancelButton=document.getElementById('cancelRecording'),timerEl=document.getElementById('pdRecordingTimer'),stateEl=document.getElementById('pdRecordingState'),pulse=document.getElementById('pdRecordingPulse');
+ let stream=null,recorder=null,chunks=[],started=0,timer=null,cancelled=false,closing=false;
+ const stopTracks=()=>{stream?.getTracks?.().forEach(track=>track.stop());stream=null};
+ const clearTimer=()=>{if(timer){clearInterval(timer);timer=null}};
+ const updateTimer=()=>{const seconds=Math.max(0,Math.floor((Date.now()-started)/1000));timerEl.textContent=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`};
+ const closeWithoutSaving=()=>{if(closing)return;cancelled=true;closing=true;clearTimer();if(recorder?.state==='recording'){try{recorder.stop()}catch{stopTracks();modal.remove()}}else{stopTracks();modal.remove()}};
+ cancelButton.onclick=closeWithoutSaving;
+ modal.onclick=e=>{if(e.target===modal&&recorder?.state!=='recording')closeWithoutSaving()};
+ startButton.onclick=async()=>{
+  if(recorder?.state==='recording')return;
+  if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined')return toast('Audio recording is not supported on this device');
+  startButton.disabled=true;stateEl.textContent='Requesting microphone access…';
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}catch{startButton.disabled=false;stateEl.textContent='Ready to record';return toast('Microphone permission is required')}
+  const options=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t=>MediaRecorder.isTypeSupported?.(t))||'';
+  try{recorder=new MediaRecorder(stream,options?{mimeType:options}:undefined)}catch{stopTracks();startButton.disabled=false;stateEl.textContent='Ready to record';return toast('Unable to start audio recording')}
+  chunks=[];cancelled=false;started=Date.now();timerEl.textContent='00:00';stateEl.textContent='Recording';pulse.classList.remove('ready');startButton.classList.add('hide');stopButton.classList.remove('hide');cancelButton.disabled=true;
+  recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
+  recorder.onerror=error=>{console.error('Professional discussion recorder error',error);toast('The recording could not be completed on this device')};
+  recorder.onstop=async()=>{clearTimer();stopTracks();if(closing||cancelled){modal.remove();return}stopButton.disabled=true;stateEl.textContent='Saving recording…';const type=String(recorder.mimeType||options||'audio/webm').split(';')[0],blob=new Blob(chunks,{type}),data=await blobToDataUrl(blob),seconds=Math.max(1,Math.round((Date.now()-started)/1000));d.recordings=d.recordings||{};d.recordings[code]={data,type:blob.type,date:today(),duration:formatDuration(seconds)};await commit(n,s,sd);modal.remove();renderSection();toast(`${code} discussion autosaved`)};
+  recorder.start(1000);timer=setInterval(updateTimer,250);
+ };
+ stopButton.onclick=()=>{if(recorder?.state!=='recording')return;stopButton.disabled=true;stateEl.textContent='Stopping…';recorder.stop()};
 }
+
 async function recordDiscussionOutcome(n,s,sd,d,code){
  if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined')return toast('Video recording is not supported in this browser');
  let stream;try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:true})}catch{return toast('Camera and microphone permission were not granted')}
