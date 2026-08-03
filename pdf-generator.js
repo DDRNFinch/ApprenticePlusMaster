@@ -299,8 +299,8 @@ async function generateEvidencePackPDF({course, assignment, profile, sections, b
   if(videos.length||walkthroughVideos.length||audios.length){
     const entries=[{name:pdfName,data:pdf}],used=new Set();
     videos.forEach((f,i)=>{const original=String(f.name||''),dot=original.lastIndexOf('.'),ext=dot>0?original.slice(dot):'.mp4',prefix=(f.ksbCodes||[]).join('-'),attempt=Number(f._supportingAttempt||i+1),newMark=isNewEvidence('supporting',attempt)?'NEW EVIDENCE - ':'',base=safeZipName(`${newMark}${prefix?prefix+' - ':''}${(f.evidenceName||`Supporting video ${i+1}`).trim()}`);let name=uniqueMediaName(base,ext,used);entries.push({name:`Supporting Videos/${name}`,data:dataUrlBytes(f.data)})});
-    walkthroughVideos.forEach((f,i)=>{const ext=mediaExtension(f.type,f.name,'video'),newMark=isNewEvidence('walkthrough',i+1)?'NEW EVIDENCE - ':'',base=safeZipName(`${newMark}${f.code} - ${f.summary||'Video evidence'}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Video Evidence/${name}`,data:dataUrlBytes(f.data)})});
-    audios.forEach(({code,rec,attempt},i)=>{const ext=mediaExtension(rec.type,'','audio'),newMark=isNewEvidence('professionalDiscussion',attempt)?'NEW EVIDENCE - ':'',base=safeZipName(`${newMark}${code} - Professional Discussion - Attempt ${attempt}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Voice Notes/${name}`,data:dataUrlBytes(rec.data)})});
+    walkthroughVideos.forEach((f,i)=>{const ext=mediaExtension(f.type,f.name,'video',f.data),newMark=isNewEvidence('walkthrough',i+1)?'NEW EVIDENCE - ':'',base=safeZipName(`${newMark}${f.code} - ${f.summary||'Video evidence'}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Video Evidence/${name}`,data:dataUrlBytes(f.data)})});
+    audios.forEach(({code,rec,attempt},i)=>{const ext=mediaExtension(rec.type,'','audio',rec.data),newMark=isNewEvidence('professionalDiscussion',attempt)?'NEW EVIDENCE - ':'',base=safeZipName(`${newMark}${code} - Professional Discussion - Attempt ${attempt}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Voice Notes/${name}`,data:dataUrlBytes(rec.data)})});
     const packageName=`${safe||'Learner'}-Assignment-${assignment.n}-Complete-Evidence-Package.zip`;
     if(returnPackage)return {assignmentNumber:assignment.n,pdfName,entries,packageName};
     await downloadBlob(makeZipBlob(entries),'application/zip',packageName);
@@ -315,12 +315,15 @@ function selectedKsbCodesForMedia(assignment,version){
   const available=new Set((assignment?.ksbs||[]).map(([code])=>String(code)));
   return Object.entries(version?.scores||{}).filter(([code,score])=>available.has(String(code))&&Number(score)>0).map(([code])=>String(code));
 }
-function mediaExtension(type,name,kind='video'){
+function mediaExtension(type,name,kind='video',data=''){
   const original=String(name||''),dot=original.lastIndexOf('.');if(dot>0&&dot>original.length-8)return original.slice(dot);
-  const mime=String(type||'').toLowerCase();if(mime.includes('mp4'))return kind==='audio'?'.m4a':'.mp4';if(mime.includes('ogg'))return '.ogg';if(mime.includes('mpeg'))return '.mp3';if(mime.includes('wav'))return '.wav';return '.webm';
+  let mime=String(type||'').toLowerCase();
+  const header=String(data||'').match(/^data:([^;,]+)/i);if(header?.[1])mime=header[1].toLowerCase();
+  try{const bytes=dataUrlBytes(data).slice(0,16),text=(a,b)=>String.fromCharCode(...bytes.slice(a,b));if(bytes[0]===0x1a&&bytes[1]===0x45&&bytes[2]===0xdf&&bytes[3]===0xa3)mime=kind==='audio'?'audio/webm':'video/webm';else if(text(0,4)==='OggS')mime=kind==='audio'?'audio/ogg':'video/ogg';else if(text(0,4)==='RIFF'&&text(8,12)==='WAVE')mime='audio/wav';else if(text(4,8)==='ftyp')mime=kind==='audio'?'audio/mp4':'video/mp4';else if(text(0,3)==='ID3')mime='audio/mpeg'}catch{}
+  if(mime.includes('mp4'))return kind==='audio'?'.m4a':'.mp4';if(mime.includes('ogg'))return '.ogg';if(mime.includes('mpeg'))return '.mp3';if(mime.includes('wav'))return '.wav';return '.webm';
 }
 function uniqueMediaName(base,ext,used){let name=`${base}${ext}`,n=2;while(used.has(name.toLowerCase()))name=`${base} (${n++})${ext}`;used.add(name.toLowerCase());return name}
-function ksbMediaFileName(f){return `${safeZipName(`${f.code||'KSB'} - ${f.summary||'Video evidence'}`)}${mediaExtension(f.type,f.name,'video')}`}
+function ksbMediaFileName(f){return `${safeZipName(`${f.code||'KSB'} - ${f.summary||'Video evidence'}`)}${mediaExtension(f.type,f.name,'video',f.data)}`}
 
 /* NVQ-only portfolio PDF. This branch is intentionally isolated so the original
    Bricklaying, Site Carpentry, Architectural Joiner and Property Maintenance

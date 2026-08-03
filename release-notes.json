@@ -1,6 +1,19 @@
 {
-  "latest": "V1.6.31",
+  "latest": "V1.6.32",
   "releases": [
+    {
+      "version": "V1.6.32",
+      "date": "2026-08-03",
+      "title": "Recording Format Compatibility",
+      "changes": [
+        "Professional Discussion recordings now use the real media container created by the browser.",
+        "Audio exports use matching WebM, OGG, M4A, MP3 or WAV file extensions instead of forcing M4A.",
+        "Video Walkthrough exports use matching WebM or MP4 extensions.",
+        "Recorded media is checked for a valid container, non-zero size and recording duration before being saved.",
+        "Audio and video evidence displays its detected format beside the built-in playback controls.",
+        "Monthly assignment folders preserve the correct recording extension for Windows and browser playback."
+      ]
+    },
     {
       "version": "V1.6.31",
       "date": "2026-08-03",
@@ -966,7 +979,7 @@
       ]
     }
   },
-  "latestVersion": "V1.5.79",
+  "latestVersion": "V1.6.32",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",
@@ -1068,6 +1081,19 @@
         "Restored the missing editable preset list helper required by the workshop-sheet builder.",
         "Developer Mode now stays open if the builder encounters an error instead of closing silently.",
         "Updated the app and service-worker cache versions to load the corrected files."
+      ]
+    },
+    "V1.6.32": {
+      "version": "V1.6.32",
+      "date": "2026-08-03",
+      "title": "Recording Format Compatibility",
+      "changes": [
+        "Professional Discussion recordings now use the real media container created by the browser.",
+        "Audio exports use matching WebM, OGG, M4A, MP3 or WAV file extensions instead of forcing M4A.",
+        "Video Walkthrough exports use matching WebM or MP4 extensions.",
+        "Recorded media is checked for a valid container, non-zero size and recording duration before being saved.",
+        "Audio and video evidence displays its detected format beside the built-in playback controls.",
+        "Monthly assignment folders preserve the correct recording extension for Windows and browser playback."
       ]
     }
   }
