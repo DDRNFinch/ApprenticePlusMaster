@@ -4,8 +4,13 @@
     {
       "version": "V1.0",
       "date": "2026-08-03",
-      "title": "LO Video Walkthrough and App Reliability Audit",
+      "title": "ReviewMate+ Meetings and GLHMate",
       "features": [
+        "Added ReviewMate+ as a second ReviewMate tab for conducting and recording the complete learner progress-review meeting while preserving the existing live-target workflow.",
+        "ReviewMate+ automatically compares the current portfolio with the previous signed review to show progress gained, new evidence, newly completed KSBs or Learning Outcomes, learning-hours activity, Academy results and previous targets completed or outstanding.",
+        "Review meetings capture attendance, reviewer and employer details, learner voice-to-text reflection, employer comments, barriers, support actions, the next five weekly ReviewMate targets and both learner and employer signatures.",
+        "Every completed meeting is retained in dated ReviewMate+ history and produces a professional signed single-page A4 review PDF.",
+        "Learning Outcome courses now show a fixed GLHMate shortcut in the Course title tile and use GLHMate, GLH and guided-learning wording throughout the learner-facing hours workflow; apprenticeship-standard courses remain OTJMate.",
         "Learning Outcome Video Walkthrough now records video instead of audio and uses the same responsive recorder, landscape layout, compact prompt drawer, gallery fallback, review controls and saved-video presentation as the KSB walkthrough.",
         "Every LO walkthrough tile shows the Learning Outcome code and official wording, and submitted attempts remain available for playback, replacement and new walkthrough versions.",
         "Legacy audio accidentally saved in the LO Video Walkthrough is preserved by moving it into Professional Discussion and no longer counts as video evidence.",
