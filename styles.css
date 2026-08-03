@@ -151,6 +151,9 @@
 .outcome-coverage-panel{margin-top:16px}
 .ksb-mini.coverage-partial{background:#fff4c7;border-color:#e0bd48;color:#705500}
 .ksb-mini.coverage-complete{background:#eefbdc;border-color:#79d22f;color:#075f2f}
+.ksb-mini.coverage-rpl,.evidence-status-pill.evidence-rpl-note{background:#f1e7ff!important;border:1px solid #9b5de5!important;color:#5b21b6!important}
+.assignment-card.individual-rpl{border-color:#9b5de5;box-shadow:0 5px 20px rgba(91,33,182,.13)}
+.individual-rpl-admin{border-color:#d8b4fe!important}.individual-rpl-icon{background:#f1e7ff!important;color:#6d28d9!important}.individual-rpl-note{background:#f6f0ff!important;border:1px solid #d8b4fe;color:#5b21b6}.individual-rpl-button{background:#7c3aed!important}.individual-rpl-item{border-color:#d8b4fe!important;background:#faf7ff!important}.individual-rpl-item strong{color:#5b21b6}
 
 
 /* v1.3.25 Learning Outcome traffic-light tracking */

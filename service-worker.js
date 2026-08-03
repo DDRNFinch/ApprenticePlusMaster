@@ -1,11 +1,11 @@
-const CACHE='apprentice-plus-v1.6.37-complete-pdf-details';
-const CURRENT_VERSION='V1.6.37';
+const CACHE='apprentice-plus-v1.6.38-rpl-pdf-and-monthly-otj';
+const CURRENT_VERSION='V1.6.38';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,
  features:['This update includes Apprentice+ improvements and fixes.']
 };
-const APP_SHELL=['./','./index.html','./styles.css?v=1.6.37','./functional-skills-bank.js?v=1.5.20','./trade-courses-bank.js?v=1.5.20','./analytics-foundation.js?v=1.5.64','./analytics-integration.js?v=1.5.64','./app.js?v=1.6.37','./release-notes.json','./technical-drawing-viewer.html','./cadmate.html','./manifest.json','./pdf-generator.js?v=1.6.37','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
+const APP_SHELL=['./','./index.html','./styles.css?v=1.6.38','./functional-skills-bank.js?v=1.5.20','./trade-courses-bank.js?v=1.5.20','./analytics-foundation.js?v=1.5.64','./analytics-integration.js?v=1.5.64','./app.js?v=1.6.38','./release-notes.json','./technical-drawing-viewer.html','./cadmate.html','./manifest.json','./pdf-generator.js?v=1.6.38','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
 
 async function loadUpdateInfo(){
  try{
@@ -14,7 +14,7 @@ async function loadUpdateInfo(){
   if(!response||!response.ok)response=await caches.match(RELEASE_NOTES_URL);
   if(!response)return FALLBACK_UPDATE_INFO;
   const data=await response.json();
-  const release=data?.releases?.[CURRENT_VERSION];
+  const release=Array.isArray(data?.releases)?data.releases.find(item=>item?.version===CURRENT_VERSION):data?.releases?.[CURRENT_VERSION];
   const features=Array.isArray(release?.features)?release.features.filter(Boolean).map(String).slice(0,8):[];
   return {
    version:CURRENT_VERSION,

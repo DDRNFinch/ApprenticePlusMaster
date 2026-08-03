@@ -1,6 +1,26 @@
 {
-  "latest": "V1.6.37",
+  "latest": "V1.6.38",
   "releases": [
+    {
+      "version": "V1.6.38",
+      "date": "2026-08-03",
+      "title": "Individual RPL and Monthly OTJ Portfolio",
+      "features": [
+        "Added individual Recognition of Prior Learning controls for every KSB and NVQ Learning Outcome in each course.",
+        "Individual RPL criteria appear purple in Assignments and count as fully completed in evidence coverage and learner progress.",
+        "Individual KSB or Learning Outcome RPL is marked with a red RPL label and RPL evidence reference in assignment PDFs.",
+        "Assignments completed entirely through RPL receive a large central RECORDED PRIOR LEARNING stamp on every page of their evidence PDF.",
+        "Monthly uploads now combine every new OTJ entry for the upload period into one OTJMate Monthly Evidence PDF.",
+        "The combined OTJ PDF shows the learner, current total hours, hours required by today and the dates between the previous and current upload.",
+        "Removed the redundant separate Contents PDF from each monthly assignment folder because the assignment evidence pack already contains its contents and mapping.",
+        "Monthly summaries list new full-assignment and individual-criterion RPL records and include the Academy and learner-progress pages.",
+        "Complete learner, witness, employer and assessor details continue to flow across A4 PDF pages without clipping."
+      ],
+      "items": [
+        "RPL changes are included in the next monthly delta and invalidate affected assignment upload status.",
+        "Assignment folders contain only the evidence pack and any related media files."
+      ]
+    },
     {
       "version": "V1.6.37",
       "date": "2026-08-03",
