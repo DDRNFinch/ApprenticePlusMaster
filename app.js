@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.6.16';
+const APP_VERSION='V1.6.18';
 
 const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
 const TECHNICAL_DRAWING_PREFIX={
@@ -5276,7 +5276,7 @@ function portfolioDelta(){
 }
 function friendlyEvidenceSection(section){return ({practical:'Practical assessment',photos:'Photographic evidence',statement:'Learner statement',discussion:'Video walkthrough',walkthrough:'Video walkthrough',professionalDiscussion:'Professional discussion',witness:'Witness testimony',supporting:'Supporting evidence'})[section]||section}
 function monthlyPortfolioCard(){
- const d=portfolioDelta(),last=d.status.uploadedAt?new Date(d.status.uploadedAt).toLocaleString('en-GB'):'Not uploaded yet',downloaded=!!d.status.downloadedAt&&!d.status.uploadedAt;
+ const d=portfolioDelta(),last=d.status.uploadedAt?new Date(d.status.uploadedAt).toLocaleString('en-GB'):'Not uploaded yet',downloaded=!!d.status.downloadedAt&&!!d.status.pendingSnapshot;
  return `<section class="card panel entire-portfolio-card monthly-portfolio-card"><div><div class="number">Monthly portfolio upload</div><h3>Upload this month's new evidence</h3><p class="muted">The ZIP is organised into one folder per assignment and starts with update-summary PDFs showing what has changed since the previous confirmed upload.</p><div class="monthly-portfolio-stats"><div><span>Last uploaded</span><strong>${esc(last)}</strong></div><div><span>Additional KSBs met</span><strong>+${d.ksbGain}</strong></div><div><span>Progress gained</span><strong>+${d.progressGain}%</strong></div><div><span>New evidence items</span><strong>${d.newEvidence.reduce((n,x)=>n+x.added,0)}</strong></div><div><span>New RPL units</span><strong>${d.newRplUnits.length}</strong></div></div></div><div class="btn-row"><button class="btn" id="downloadEntirePortfolio">${d.status.uploadedAt?'Download Monthly Update':'Download First Portfolio Upload'}</button>${downloaded?'<button class="btn secondary" id="openMonthlyPortfolio">Open Online Portfolio</button><button class="btn" id="confirmMonthlyUpload">Evidence Uploaded Online</button>':''}</div></section>`;
 }
 function wrapPdfText(ctx,text,maxWidth,font){ctx.font=font;const words=String(text||'').split(/\s+/),lines=[];let line='';for(const word of words){const test=line?`${line} ${word}`:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);return lines}
@@ -5287,7 +5287,7 @@ function createMonthlySummaryPdf(delta,ksbOnly=false){
  const line=(t,bold=false)=>{const lines=wrapPdfText(x,t,W-2*M,bold?'700 18px Arial':'18px Arial');for(const l of lines){if(y>H-100)page();x.fillStyle=bold?'#0f2328':'#344a42';x.font=bold?'700 18px Arial':'18px Arial';x.fillText(l,M,y);y+=27}y+=5};
  heading('Upload comparison');line(`Previous confirmed upload: ${delta.status.uploadedAt?new Date(delta.status.uploadedAt).toLocaleString('en-GB'):'First portfolio upload'}`);line(`New KSBs met: ${delta.newKsbs.length}`);line(`Course progress gained: ${delta.progressGain}%`);line(`New evidence items: ${delta.newEvidence.reduce((n,e)=>n+e.added,0)}`);line(`New RPL units: ${delta.newRplUnits.length}`);
  heading('New KSBs met');if(delta.newKsbs.length)delta.newKsbs.forEach(k=>line(`${k.code} — ${k.summary} (Assignment ${k.assignment}: ${k.title})`));else line('No additional KSBs have become fully met since the previous confirmed upload.');heading('Recognition of Prior Learning (RPL)');if(delta.newRplUnits.length)delta.newRplUnits.forEach(r=>line(`RPL unit — ${r.unit?`Unit ${r.unit} · `:''}Assignment ${r.assignment}: ${r.title}${r.rplAt?` (awarded ${new Date(r.rplAt).toLocaleDateString('en-GB')})`:''}`));else line('No new RPL units have been awarded since the previous confirmed upload.');
- if(!ksbOnly){heading('New evidence and ZIP locations');if(delta.newEvidence.length)delta.newEvidence.forEach(e=>line(`Assignment ${e.assignment}: ${e.title} / ${friendlyEvidenceSection(e.section)} — ${e.added} new item${e.added===1?'':'s'} (attempt${e.added===1?'':'s'} ${e.newAttempts.join(', ')})`));else line('No new saved evidence was detected. The portfolio still contains the latest saved evidence in each assignment folder.');heading('ZIP structure');line('00 - Monthly Portfolio Update Summary.pdf');line('01 - New KSBs Met Since Last Upload.pdf');line('Assignment 01 - [Assignment name] / evidence PDF and attached media');line('Assignment 02 - [Assignment name] / evidence PDF and attached media');}
+ if(!ksbOnly){heading('New evidence and ZIP locations');if(delta.newEvidence.length)delta.newEvidence.forEach(e=>line(`Assignment ${e.assignment}: ${e.title} / ${friendlyEvidenceSection(e.section)} — ${e.added} new item${e.added===1?'':'s'} (attempt${e.added===1?'':'s'} ${e.newAttempts.join(', ')})`));else line('No new saved evidence was detected. The portfolio still contains the latest saved evidence in each assignment folder.');heading('ZIP structure');line('00 - Monthly Portfolio Update Summary.pdf');line('01 - New KSBs Met Since Last Upload.pdf');line('Assignment 01 - [Assignment name] / evidence PDF and attached media');line('Assignment 02 - [Assignment name] / evidence PDF and attached media');line('New video and voice-recording filenames begin with NEW EVIDENCE - so they remain clearly identifiable outside the PDF.');}
  pages.forEach((canvas,i)=>{const cx=canvas.getContext('2d');cx.fillStyle='#0f766e';cx.fillRect(0,H-58,W,58);cx.fillStyle='#fff';cx.font='600 15px Arial';cx.fillText(`Apprentice+ ${APP_VERSION}`,M,H-23);cx.textAlign='right';cx.fillText(`Page ${i+1} of ${pages.length}`,W-M,H-23)});
  return makeImagePDF(pages.map(canvas=>dataUrlBytes(canvas.toDataURL('image/jpeg',.92))),W,H);
 }
@@ -5296,7 +5296,7 @@ async function downloadEntirePortfolio(){
  const assignments=courseAssignments().filter(a=>a&&!a.selectOptional&&(assignmentHasSavedPortfolioEvidence(a.n)||assignmentRPL(a.n)));
  if(!assignments.length)return toast('No saved assignment evidence or RPL units are available to download');
  if(!window.generateEvidencePackPDF||!window.makeZipBlob)return toast('Portfolio generator unavailable');
- const delta=portfolioDelta(),button=document.getElementById('downloadEntirePortfolio'),portfolioUrl=normalisePortfolioUrl(state.profile?.portfolioUrl),portfolioWindow=portfolioUrl?window.open('about:blank','_blank'):null;if(portfolioWindow)portfolioWindow.opener=null;if(button){button.disabled=true;button.textContent='Preparing monthly upload...'}
+ const delta=portfolioDelta(),button=document.getElementById('downloadEntirePortfolio');if(button){button.disabled=true;button.textContent='Preparing monthly upload...'}
  try{
   toast(`Preparing ${assignments.length} assignment folder${assignments.length===1?'':'s'}...`);
   const allEntries=[{name:'00 - Monthly Portfolio Update Summary.pdf',data:createMonthlySummaryPdf(delta,false)},{name:'01 - New KSBs Met Since Last Upload.pdf',data:createMonthlySummaryPdf(delta,true)}];
@@ -5313,8 +5313,8 @@ async function downloadEntirePortfolio(){
   await downloadBlob(makeZipBlob(allEntries),'application/zip',`${learner}-${course}-Monthly-Portfolio-${date}.zip`);
   state.data[MONTHLY_PORTFOLIO_KEY()]={...delta.status,downloadedAt:new Date().toISOString(),pendingSnapshot:delta.current,pendingNewKsbs:delta.newKsbs.map(x=>x.key),pendingNewRplUnits:delta.newRplUnits.map(x=>x.assignment),pendingProgressGain:delta.progressGain};
   await saveData();analyticsEvent('monthly_portfolio_exported',{course_id:COURSE.id,assignment_count:assignments.length,file_count:allEntries.length,new_ksbs:delta.newKsbs.length,new_rpl_units:delta.newRplUnits.length,progress_gain:delta.progressGain});
-  render();toast('Monthly portfolio downloaded — upload it to your online portfolio');if(portfolioWindow)portfolioWindow.location.href=portfolioUrl;else if(!portfolioUrl)toast('Add the online portfolio link in Learner Details to open it automatically');
- }catch(error){if(portfolioWindow)portfolioWindow.close();console.error('Monthly portfolio download failed',error);toast(`Unable to download monthly portfolio${error?.message?`: ${error.message}`:''}`)}finally{if(button){button.disabled=false;button.textContent='Download Monthly Update'}}
+  render();toast('Monthly portfolio downloaded — use Open Online Portfolio, then confirm Evidence Uploaded Online');
+ }catch(error){console.error('Monthly portfolio download failed',error);toast(`Unable to download monthly portfolio${error?.message?`: ${error.message}`:''}`)}finally{if(button){button.disabled=false;button.textContent='Download Monthly Update'}}
 }
 async function confirmMonthlyPortfolioUpload(){
  const status=monthlyPortfolioState();if(!status.downloadedAt||!status.pendingSnapshot)return toast('Download the latest monthly portfolio first');

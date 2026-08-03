@@ -259,7 +259,7 @@ async function generateEvidencePackPDF({course, assignment, profile, sections, b
   // Video evidence index - list every attached video title together on one page.
   {
     const videoTitles=[];
-    for(const f of sections.walkthrough||[])videoTitles.push(ksbMediaFileName(f));
+    for(let i=0;i<(sections.walkthrough||[]).length;i++){const f=sections.walkthrough[i],mark=isNewEvidence('walkthrough',i+1)?'NEW EVIDENCE - ':'';videoTitles.push(`${mark}${ksbMediaFileName(f)}`)}
     if(videoTitles.length){
       const p=meta(newPage('Video Evidence Files','Attached media'),'Attached media','Video Evidence Index');const x=p.x;let y=sectionHeading(x,'Attached video files',p.y);
       x.fillStyle=MUTED;x.font='400 17px Arial';x.fillText('The playable files below are included in the downloaded evidence package.',M,y);y+=42;
@@ -275,7 +275,7 @@ async function generateEvidencePackPDF({course, assignment, profile, sections, b
     for(let vi=0;vi<(sections.professionalDiscussion||[]).length;vi++){
       const version=sections.professionalDiscussion[vi];
       for(const [code,rec] of Object.entries(version.recordings||{})){
-        if(rec?.data)audioTitles.push(`${code} - Professional Discussion - Attempt ${vi+1}${rec.duration?` (${rec.duration})`:''}`);
+        if(rec?.data){const mark=isNewEvidence('professionalDiscussion',vi+1)?'NEW EVIDENCE - ':'';audioTitles.push(`${mark}${code} - Professional Discussion - Attempt ${vi+1}${rec.duration?` (${rec.duration})`:''}`);}
       }
     }
     if(audioTitles.length){
@@ -293,14 +293,14 @@ async function generateEvidencePackPDF({course, assignment, profile, sections, b
   const pdf=makeImagePDF(jpegPages,W,H);
   const safe=clean(profile.fullName).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'');
   const pdfName=`${safe||'Learner'}-Assignment-${assignment.n}-Evidence-Pack.pdf`;
-  const videos=[];for(const version of sections.supporting||[]){const codes=selectedKsbCodesForMedia(assignment,version);for(const f of version.files||[])if((f.type||'').startsWith('video/')&&f.data)videos.push({...f,ksbCodes:codes})}
+  const videos=[];for(let supportingIndex=0;supportingIndex<(sections.supporting||[]).length;supportingIndex++){const version=sections.supporting[supportingIndex],codes=selectedKsbCodesForMedia(assignment,version);for(const f of version.files||[])if((f.type||'').startsWith('video/')&&f.data)videos.push({...f,ksbCodes:codes,_supportingAttempt:supportingIndex+1})}
   const walkthroughVideos=(sections.walkthrough||[]).filter(f=>f?.data);
   const audios=[];for(let vi=0;vi<(sections.professionalDiscussion||[]).length;vi++){const version=sections.professionalDiscussion[vi];for(const [code,rec] of Object.entries(version.recordings||{}))if(rec?.data)audios.push({code,rec,attempt:vi+1})}
   if(videos.length||walkthroughVideos.length||audios.length){
     const entries=[{name:pdfName,data:pdf}],used=new Set();
-    videos.forEach((f,i)=>{const original=String(f.name||''),dot=original.lastIndexOf('.'),ext=dot>0?original.slice(dot):'.mp4',prefix=(f.ksbCodes||[]).join('-'),base=safeZipName(`${prefix?prefix+' - ':''}${(f.evidenceName||`Supporting video ${i+1}`).trim()}`);let name=uniqueMediaName(base,ext,used);entries.push({name:`Supporting Videos/${name}`,data:dataUrlBytes(f.data)})});
-    walkthroughVideos.forEach(f=>{const ext=mediaExtension(f.type,f.name,'video'),base=safeZipName(`${f.code} - ${f.summary||'Video evidence'}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Video Evidence/${name}`,data:dataUrlBytes(f.data)})});
-    audios.forEach(({code,rec,attempt},i)=>{const ext=mediaExtension(rec.type,'','audio'),base=safeZipName(`${code} - Professional Discussion - Attempt ${attempt}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Voice Notes/${name}`,data:dataUrlBytes(rec.data)})});
+    videos.forEach((f,i)=>{const original=String(f.name||''),dot=original.lastIndexOf('.'),ext=dot>0?original.slice(dot):'.mp4',prefix=(f.ksbCodes||[]).join('-'),attempt=Number(f._supportingAttempt||i+1),newMark=isNewEvidence('supporting',attempt)?'NEW EVIDENCE - ':'',base=safeZipName(`${newMark}${prefix?prefix+' - ':''}${(f.evidenceName||`Supporting video ${i+1}`).trim()}`);let name=uniqueMediaName(base,ext,used);entries.push({name:`Supporting Videos/${name}`,data:dataUrlBytes(f.data)})});
+    walkthroughVideos.forEach((f,i)=>{const ext=mediaExtension(f.type,f.name,'video'),newMark=isNewEvidence('walkthrough',i+1)?'NEW EVIDENCE - ':'',base=safeZipName(`${newMark}${f.code} - ${f.summary||'Video evidence'}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Video Evidence/${name}`,data:dataUrlBytes(f.data)})});
+    audios.forEach(({code,rec,attempt},i)=>{const ext=mediaExtension(rec.type,'','audio'),newMark=isNewEvidence('professionalDiscussion',attempt)?'NEW EVIDENCE - ':'',base=safeZipName(`${newMark}${code} - Professional Discussion - Attempt ${attempt}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Voice Notes/${name}`,data:dataUrlBytes(rec.data)})});
     const packageName=`${safe||'Learner'}-Assignment-${assignment.n}-Complete-Evidence-Package.zip`;
     if(returnPackage)return {assignmentNumber:assignment.n,pdfName,entries,packageName};
     await downloadBlob(makeZipBlob(entries),'application/zip',packageName);
@@ -389,15 +389,16 @@ async function generateNVQEvidencePackPDF({course, assignment, profile, sections
   }
 
   // Professional Discussion file index for NVQ evidence packs.
-  {const audioTitles=[];for(let vi=0;vi<(sections.professionalDiscussion||[]).length;vi++){const version=sections.professionalDiscussion[vi];for(const [code,rec] of Object.entries(version.recordings||{}))if(rec?.data)audioTitles.push(`${code} - Professional Discussion - Attempt ${vi+1}${rec.duration?` (${rec.duration})`:''}`)}if(audioTitles.length){const p=meta(newPage('Professional Discussion Audio Files','Attached media'),'-','Professional Discussion',1),x=p.x;let y=sectionHeading(x,'Attached professional discussion files',p.y);x.fillStyle=MUTED;x.font='400 17px Arial';x.fillText('The playable audio files below are included in the downloaded evidence package.',M,y);y+=42;const available=H-y-145,lineH=Math.max(24,Math.min(38,Math.floor(available/Math.max(1,audioTitles.length)))),fontSize=Math.max(13,Math.min(19,lineH-7));audioTitles.forEach((name,i)=>{x.fillStyle=i%2?WHITE:PALE;x.fillRect(M,y-24,W-2*M,lineH);x.fillStyle=TEAL;x.font=`700 ${fontSize}px Arial`;x.fillText(`${i+1}.`,M+14,y);x.fillStyle=INK;x.font=`600 ${fontSize}px Arial`;fitText(x,clean(name),M+58,y,W-2*M-78,fontSize);y+=lineH})}}
+  {const audioTitles=[];for(let vi=0;vi<(sections.professionalDiscussion||[]).length;vi++){const version=sections.professionalDiscussion[vi];for(const [code,rec] of Object.entries(version.recordings||{}))if(rec?.data){const mark=isNewEvidence('professionalDiscussion',vi+1)?'NEW EVIDENCE - ':'';audioTitles.push(`${mark}${code} - Professional Discussion - Attempt ${vi+1}${rec.duration?` (${rec.duration})`:''}`)}}if(audioTitles.length){const p=meta(newPage('Professional Discussion Audio Files','Attached media'),'-','Professional Discussion',1),x=p.x;let y=sectionHeading(x,'Attached professional discussion files',p.y);x.fillStyle=MUTED;x.font='400 17px Arial';x.fillText('The playable audio files below are included in the downloaded evidence package.',M,y);y+=42;const available=H-y-145,lineH=Math.max(24,Math.min(38,Math.floor(available/Math.max(1,audioTitles.length)))),fontSize=Math.max(13,Math.min(19,lineH-7));audioTitles.forEach((name,i)=>{x.fillStyle=i%2?WHITE:PALE;x.fillRect(M,y-24,W-2*M,lineH);x.fillStyle=TEAL;x.font=`700 ${fontSize}px Arial`;x.fillText(`${i+1}.`,M+14,y);x.fillStyle=INK;x.font=`600 ${fontSize}px Arial`;fitText(x,clean(name),M+58,y,W-2*M-78,fontSize);y+=lineH})}}
 
   const total=pages.length;pages.forEach((p,i)=>{const x=p.ctx;x.fillStyle=p.colour||TEAL;x.fillRect(0,H-62,W,62);x.fillStyle=WHITE;x.font='600 17px Arial';x.fillText('Apprentice+ | NVQ Evidence Portfolio',M,H-25);x.textAlign='right';x.fillText(`Page ${i+1} of ${total}`,W-M,H-25);x.textAlign='left'});
   const jpegPages=pages.map(p=>dataUrlBytes(p.canvas.toDataURL('image/jpeg',0.90))),pdf=makeImagePDF(jpegPages,W,H),safe=clean(profile.fullName).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,''),unit=String(assignment.unit||assignment.n).replace(/[^a-z0-9-]+/gi,'-'),pdfName=`${safe||'Learner'}-NVQ-Unit-${unit}-Evidence-Pack.pdf`;
-  const walkthroughVideos=[];for(let vi=0;vi<(sections.discussion||[]).length;vi++){const version=sections.discussion[vi];for(const [code,rec] of Object.entries(version.recordings||{}))if(rec?.data)walkthroughVideos.push({code,rec,attempt:vi+1,type:'video'})}
-  for(let vi=0;vi<(sections.professionalDiscussion||[]).length;vi++){const version=sections.professionalDiscussion[vi];for(const [code,rec] of Object.entries(version.recordings||{}))if(rec?.data)walkthroughVideos.push({code,rec,attempt:vi+1,type:'audio'})}
+  const walkthroughVideos=[];for(let vi=0;vi<(sections.discussion||[]).length;vi++){const version=sections.discussion[vi];for(const [code,rec] of Object.entries(version.recordings||{}))if(rec?.data)walkthroughVideos.push({code,rec,attempt:vi+1,type:'video',newType:'discussion'})}
+  for(let vi=0;vi<(sections.walkthrough||[]).length;vi++){const rec=sections.walkthrough[vi];if(rec?.data)walkthroughVideos.push({code:rec.code||`KSB ${vi+1}`,rec,attempt:vi+1,type:'video',newType:'walkthrough'})}
+  for(let vi=0;vi<(sections.professionalDiscussion||[]).length;vi++){const version=sections.professionalDiscussion[vi];for(const [code,rec] of Object.entries(version.recordings||{}))if(rec?.data)walkthroughVideos.push({code,rec,attempt:vi+1,type:'audio',newType:'professionalDiscussion'})}
   if(walkthroughVideos.length){
     const entries=[{name:pdfName,data:pdf}],used=new Set();
-    walkthroughVideos.forEach(({code,rec,attempt,type},i)=>{const mime=String(rec.type||'video/webm'),ext=mime.includes('mp4')?'.mp4':mime.includes('ogg')?'.ogg':mime.startsWith('audio/')?(mime.includes('mp4')?'.m4a':'.webm'):'.webm',label=type==='audio'?'Professional Discussion':'Video Walkthrough',base=safeZipName(`Attempt ${attempt} - ${code} ${label}`);let name=`${base}${ext}`;if(used.has(name.toLowerCase()))name=`${base}-${i+1}${ext}`;used.add(name.toLowerCase());entries.push({name:`${label} Recordings/${name}`,data:dataUrlBytes(rec.data)})});
+    walkthroughVideos.forEach(({code,rec,attempt,type,newType},i)=>{const mime=String(rec.type||'video/webm'),ext=mime.includes('mp4')?'.mp4':mime.includes('ogg')?'.ogg':mime.startsWith('audio/')?(mime.includes('mp4')?'.m4a':'.webm'):'.webm',label=type==='audio'?'Professional Discussion':'Video Walkthrough',newMark=isNewEvidence(newType,attempt)?'NEW EVIDENCE - ':'',base=safeZipName(`${newMark}Attempt ${attempt} - ${code} ${label}`);let name=`${base}${ext}`;if(used.has(name.toLowerCase()))name=`${base}-${i+1}${ext}`;used.add(name.toLowerCase());entries.push({name:`${label} Recordings/${name}`,data:dataUrlBytes(rec.data)})});
     const packageName=`${safe||'Learner'}-NVQ-Unit-${unit}-Evidence-Package.zip`;
     if(returnPackage)return {assignmentNumber:assignment.n,pdfName,entries,packageName};
     await downloadBlob(makeZipBlob(entries),'application/zip',packageName);
