@@ -1,72 +1,973 @@
-const CACHE='apprentice-plus-v1.6.18-monthly-upload-fix';
-const CURRENT_VERSION='V1.6.18';
-const RELEASE_NOTES_URL='./release-notes.json';
-const FALLBACK_UPDATE_INFO={
- version:CURRENT_VERSION,
- features:['This update includes Apprentice+ improvements and fixes.']
-};
-const APP_SHELL=['./','./index.html','./styles.css?v=1.6.18','./functional-skills-bank.js?v=1.5.20','./trade-courses-bank.js?v=1.5.20','./analytics-foundation.js?v=1.5.64','./analytics-integration.js?v=1.5.64','./app.js?v=1.6.18','./release-notes.json','./technical-drawing-viewer.html','./cadmate.html','./manifest.json','./pdf-generator.js?v=1.5.20','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
-
-async function loadUpdateInfo(){
- try{
-  let response;
-  try{response=await fetch(RELEASE_NOTES_URL,{cache:'no-store'});}catch(_error){response=null;}
-  if(!response||!response.ok)response=await caches.match(RELEASE_NOTES_URL);
-  if(!response)return FALLBACK_UPDATE_INFO;
-  const data=await response.json();
-  const release=data?.releases?.[CURRENT_VERSION];
-  const features=Array.isArray(release?.features)?release.features.filter(Boolean).map(String).slice(0,8):[];
-  return {
-   version:CURRENT_VERSION,
-   title:String(release?.title||''),
-   features:features.length?features:FALLBACK_UPDATE_INFO.features
-  };
- }catch(error){
-  console.warn('Unable to load release notes',error);
-  return FALLBACK_UPDATE_INFO;
- }
+{
+  "latest": "V1.6.19",
+  "releases": [
+    {
+      "version": "V1.6.19",
+      "date": "2026-08-03",
+      "title": "Assignment banner cleanup",
+      "changes": [
+        "Removed the purple Submitted banner from assignment cards.",
+        "Kept assignment upload status, completion indicators and monthly portfolio records unchanged.",
+        "Retained the RPL banner for assignments completed through recognition of prior learning."
+      ]
+    },
+    {
+      "version": "V1.6.18",
+      "date": "2026-08-03",
+      "title": "Monthly Portfolio Upload Fixes",
+      "changes": [
+        "Removed the blank browser screen that opened when downloading a monthly portfolio ZIP.",
+        "Restored Open Online Portfolio after every successful monthly download.",
+        "Restored Evidence Uploaded Online after every successful monthly download, including after earlier confirmed uploads.",
+        "Kept the previous confirmed upload date and baseline until the new upload is explicitly confirmed."
+      ]
+    },
+    {
+      "version": "V1.6.17",
+      "date": "2026-08-03",
+      "title": "New evidence stamps for recordings",
+      "changes": [
+        "New video walkthrough files in monthly portfolio ZIPs are prefixed NEW EVIDENCE.",
+        "New professional discussion voice recordings are prefixed NEW EVIDENCE.",
+        "Attached-media index pages also identify newly added recordings."
+      ]
+    },
+    {
+      "version": "V1.6.16",
+      "date": "2026-08-03",
+      "title": "Practical Assessment Stability",
+      "items": [
+        "Practical scores now update in place without rebuilding or jumping the page.",
+        "Assessor comments, photographs and scroll position remain unchanged while marking.",
+        "Mobile tap highlights and unwanted focus styling have been removed from score controls.",
+        "Assessment summary and development comments update in place only when requested."
+      ]
+    },
+    {
+      "version": "V1.6.15",
+      "date": "2026-08-03",
+      "title": "Learner statements: Knowledge and Behaviours only",
+      "items": [
+        "Learner statements now evidence Knowledge and Behaviour KSBs only.",
+        "Skill KSBs have been removed from learner-statement selection.",
+        "All photo controls and photo requirements have been removed from learner statements.",
+        "Learner-statement PDFs no longer include photo pages."
+      ]
+    },
+    {
+      "version": "V1.6.14",
+      "date": "2026-08-03",
+      "title": "Monthly Upload RPL Update",
+      "items": [
+        "Removed the per-assignment Download Evidence Package workflow.",
+        "Monthly portfolio summaries now identify newly awarded Recognition of Prior Learning as RPL units.",
+        "Monthly upload confirmation now records included assignments as uploaded online."
+      ]
+    },
+    {
+      "version": "V1.6.13",
+      "date": "2026-08-03",
+      "title": "Monthly Portfolio Uploads",
+      "features": [
+        "Replaced Download Entire Portfolio with a tracked monthly portfolio upload workflow.",
+        "Shows the last confirmed upload, additional KSBs met, progress gained and new evidence count.",
+        "Creates assignment folders plus front summary and new-KSB PDF documents.",
+        "Marks newly added evidence pages with a NEW EVIDENCE stamp.",
+        "Opens the learner's online portfolio after download and records Evidence Uploaded Online confirmation."
+      ],
+      "items": [
+        "Each ZIP begins with 00 - Monthly Portfolio Update Summary.pdf and 01 - New KSBs Met Since Last Upload.pdf.",
+        "Every assignment has its own folder containing its evidence PDF and attached media.",
+        "The next monthly comparison starts only after the learner confirms the upload online."
+      ]
+    },
+    {
+      "version": "V1.6.12",
+      "date": "2026-08-02",
+      "title": "Learner-Only Apprentice+",
+      "features": [
+        "Completely removed Assessor Mode from Apprentice+.",
+        "Removed the purple assessor theme and Admin Mode application switch.",
+        "Removed registers, register templates, attendance records and assessor reports.",
+        "Removed assessor workspaces, routes, navigation states and document placeholders.",
+        "Restored the permanent three-tab learner navigation: Toolbox, Course and Academy."
+      ],
+      "items": [
+        "All learner evidence, EPA, Academy, Toolbox and CADMate features remain available.",
+        "Obsolete Assessor Mode and register local-storage keys are deleted when this version starts.",
+        "The codebase now operates solely as the Apprentice+ learner application."
+      ]
+    },
+    {
+      "version": "V1.6.11",
+      "date": "2026-08-02",
+      "title": "Apprentice+ Pass and Scanner Removed",
+      "features": [
+        "Removed the Apprentice+ Pass from the learner name tag.",
+        "Removed the permanent QR code and eight-digit pass number.",
+        "Removed the Assessor Mode camera scanner.",
+        "Removed the manual pass-number fallback.",
+        "Registers now use manual learner entry and saved register templates only.",
+        "Existing locally stored Apprentice+ Pass data is deleted automatically when this version starts."
+      ],
+      "items": [
+        "The rest of the Assessor register system remains available.",
+        "Historical register attendance records are preserved.",
+        "No learner details are encoded into or exposed through a QR code."
+      ]
+    },
+    {
+      "version": "V1.6.10",
+      "date": "2026-08-02",
+      "title": "Assessor Mode Refresh Persistence",
+      "features": [
+        "Assessor Mode now remains active after refreshing, closing or reopening Apprentice+.",
+        "The saved purple theme is applied before the first page render.",
+        "Assessor register pages can now be restored directly after a refresh.",
+        "Invalid learner-page navigation snapshots are ignored while Assessor Mode is active.",
+        "Switching back to Apprentice Mode prevents assessor-only pages from being restored."
+      ],
+      "items": [
+        "Fixed the issue where the app initially displayed Apprentice Mode until a navigation button was pressed.",
+        "Expanded navigation persistence to include Assessor workspace, Reports and all Register pages."
+      ]
+    },
+    {
+      "version": "V1.6.9",
+      "date": "2026-08-02",
+      "title": "Assessor Registers and Pass Scanner",
+      "features": [
+        "Added working register creation, reusable templates and class lists in Assessor Mode.",
+        "Added Apprentice+ Pass camera scanning with an 8-digit pass fallback.",
+        "First scan signs in and second scan signs out with confirmation.",
+        "Added scheduled break deduction and automatic attended-hours calculation.",
+        "Added missing sign-out warnings with last-seen time entry.",
+        "Added absence reasons, notes, audit history and withdrawn learner handling.",
+        "Added register history with date filtering, CSV download and landscape PDF printing."
+      ],
+      "items": [
+        "Learner name, course, college, student ID and course dates are read from the permanent Apprentice+ Pass.",
+        "All register and learner records are stored locally on the assessor device.",
+        "BarcodeDetector camera scanning is used where the browser supports it; manual pass entry remains available."
+      ]
+    },
+    {
+      "version": "V1.6.8",
+      "date": "2026-08-02",
+      "title": "CADMate Landscape PNG Export",
+      "features": [
+        "Replaced the CADMate SVG download with Save PNG.",
+        "Added a filename dialog before each drawing download.",
+        "Automatically adds the .png file extension.",
+        "Exports the current CADMate preview as a 2400 \u00d7 1600 landscape PNG.",
+        "Exports only the drawing canvas with a white background and no CADMate controls.",
+        "Suggests a filename from the selected material, bond, wall length, returns and view."
+      ],
+      "items": [
+        "Invalid filename characters are removed automatically.",
+        "PNG creation and download remain fully offline.",
+        "CADMate project JSON save and load remain available."
+      ]
+    },
+    {
+      "version": "V1.6.7",
+      "date": "2026-08-02",
+      "title": "Working Clean Drawing Viewer",
+      "features": [
+        "Restored the proven technical drawing viewer structure.",
+        "Only the drawing and floating close button are visible.",
+        "Kept hidden viewer controls in place so zoom and fitting logic continues to function.",
+        "Made zoom-label handling safe when optional interface elements are absent.",
+        "Kept the viewer fixed and clipped to all four screen edges."
+      ],
+      "items": [
+        "Pinch zoom, drag panning, double-tap zoom and boundary locking remain enabled.",
+        "Removed visible titles, instructions and toolbars without removing required internal elements."
+      ]
+    },
+    {
+      "version": "V1.6.6",
+      "date": "2026-08-02",
+      "title": "Clean Technical Drawing Viewer",
+      "features": [
+        "Removed all drawing-viewer overlays except the close button.",
+        "The landscape screen now shows only the PNG and a small floating X.",
+        "Pinch zoom, drag panning, double-tap zoom and edge locking remain active."
+      ],
+      "items": [
+        "Removed the drawing title, filename, zoom toolbar, zoom percentage and gesture hint.",
+        "Kept the initial rotate-to-landscape prompt."
+      ]
+    },
+    {
+      "version": "V1.6.5",
+      "date": "2026-08-02",
+      "title": "Technical Drawing Edge Lock",
+      "features": [
+        "Fixed the drawing transform origin so the PNG is centred inside the physical screen edges.",
+        "Changed the viewer, viewport and screen containers to fixed edge-to-edge rectangles.",
+        "Hard-clipped the image stage to the device viewport so no content can sit outside the screen.",
+        "Kept pinch zoom, panning and image-boundary clamping."
+      ],
+      "items": [
+        "Corrected the missing -50% centring translation that caused the drawing to appear offset.",
+        "Added the dedicated viewer to the offline application cache.",
+        "Kept all practical assessment content unchanged."
+      ]
+    },
+    {
+      "version": "V1.6.4",
+      "date": "2026-08-02",
+      "title": "Dedicated Technical Drawing Screen",
+      "features": [
+        "Technical drawings now leave the Practical Assessment page and open on a dedicated Apprentice+ viewer screen.",
+        "The assessment page can no longer remain visible, scroll or zoom underneath the drawing.",
+        "The drawing opens at Fit Width in landscape with custom pinch zoom and edge-clamped panning.",
+        "Portrait orientation is blocked until the phone returns to landscape.",
+        "Fit Page, Fit Width and 100% controls remain available."
+      ],
+      "items": [
+        "Added technical-drawing-viewer.html as a separate offline-cached app screen.",
+        "Close returns to the Practical Assessment page using browser history.",
+        "Removed the in-page overlay from the active drawing-opening path."
+      ]
+    },
+    {
+      "version": "V1.6.3",
+      "date": "2026-08-02",
+      "title": "True Full-Screen Drawing Viewer Fix",
+      "features": [
+        "Replaced the embedded-looking technical drawing view with a true fixed full-screen viewer.",
+        "The drawing now opens at Fit Width so it fills a landscape phone screen.",
+        "Browser page pinch zoom is disabled only while the viewer is open.",
+        "Drawing controls float over the image instead of reducing the viewing area.",
+        "Pinch zoom and panning remain clamped to the PNG boundaries."
+      ],
+      "items": [
+        "Requests browser full-screen and landscape orientation when supported.",
+        "Restores normal viewport behaviour after closing.",
+        "Existing practical assessment drawings remain unchanged."
+      ]
+    },
+    {
+      "version": "V1.6.2",
+      "date": "2026-08-02",
+      "title": "Practical Drawing Viewer",
+      "features": [
+        "Technical drawings now request landscape orientation before opening.",
+        "PNG drawings open in a dedicated full-screen landscape viewer.",
+        "Added pinch zoom, drag panning, double-tap zoom and mouse-wheel zoom.",
+        "Panning is clamped to the drawing edges so learners cannot move into empty space.",
+        "Added Fit Page, Fit Width and 100% viewing controls.",
+        "Returning to portrait pauses the drawing behind a rotate-to-landscape prompt."
+      ],
+      "items": [
+        "Existing Practical Assessment drawings and assessment content remain unchanged.",
+        "Zoom is limited from Fit Page to 6\u00d7.",
+        "The drawing remains in memory while the viewer is open."
+      ]
+    },
+    {
+      "version": "V1.6.1",
+      "date": "2026-08-02",
+      "title": "Apprentice+ Pass Demo",
+      "features": [
+        "Tapping the learner name in Apprentice Mode now opens a full-screen Apprentice+ Pass.",
+        "The pass includes the learner name, course, college, student ID when available, and course dates.",
+        "An automatic permanent eight-digit pass number is generated and stored on the learner device.",
+        "The scannable app-only payload remains fixed after the pass is first issued.",
+        "Added a demo panel showing the exact details Assessor Mode will receive."
+      ],
+      "items": [
+        "The pass is local-only and does not open a website.",
+        "Assessor Mode name tags are unchanged.",
+        "No register scanning has been added yet; this release demonstrates the learner pass."
+      ]
+    },
+    {
+      "version": "V1.6.0",
+      "date": "2026-08-02",
+      "title": "Assessor Mode Framework",
+      "features": [
+        "Added a password-protected switch between Apprentice Mode and Assessor Mode inside Admin Mode.",
+        "Added a complete purple Assessor Mode theme.",
+        "Kept the same three-tab navigation: Toolbox, Assessor and Reports.",
+        "Kept the full learner Toolbox available to assessors.",
+        "Added blank framework pages for Registers, Teaching Resources, Observations, Assessment Documents, Reviews and EPA Documents.",
+        "Added a Reports page with document categories and a master assessor search."
+      ],
+      "items": [
+        "Assessor Mode remains active until changed back through password-protected Admin Mode.",
+        "The Apprentice Mode interface and saved learner evidence remain unchanged.",
+        "Added empty report libraries ready for future PDFs and dated ZIP exports."
+      ]
+    },
+    {
+      "version": "V1.5.81",
+      "date": "2026-08-02",
+      "title": "CADMate Solid Scrolling Page",
+      "features": [
+        "Changed CADMate into one continuous Apprentice+ scrolling page.",
+        "Removed the fixed-height nested CADMate scrolling area.",
+        "CADMate now automatically expands when controls or drawings change."
+      ],
+      "items": [
+        "Added automatic iframe height measurement.",
+        "Added ResizeObserver and content-change height updates.",
+        "Removed fixed desktop and mobile iframe heights.",
+        "Kept all CADMate drawing and bond logic unchanged."
+      ]
+    },
+    {
+      "version": "V1.5.80",
+      "date": "2026-08-02",
+      "title": "CADMate Toolbox",
+      "features": [
+        "Added CADMate to the Toolbox under Work tools.",
+        "Includes the locked metric brickwork, concrete blockwork and English bond drawing renderers.",
+        "Cavity walling is shown as Coming soon and cannot be selected.",
+        "CADMate opens inside Apprentice+ and is included in the offline app cache."
+      ],
+      "items": [
+        "Added CADMate to the Toolbox under Work tools.",
+        "Integrated the locked V96 CADMate renderer.",
+        "Removed Flemish bond from the available CADMate bond list.",
+        "Marked cavity walling as Coming soon.",
+        "Updated app and service-worker versions to V1.5.80."
+      ]
+    },
+    {
+      "version": "V1.5.79",
+      "date": "2026-08-02",
+      "title": "Developer drawing builder runtime fix",
+      "items": [
+        "Fixed the Create college task sheet button returning to the previous screen.",
+        "Restored the missing editable preset list helper required by the workshop-sheet builder.",
+        "Developer Mode now stays open if the builder encounters an error instead of closing silently.",
+        "Updated the app and service-worker cache versions to load the corrected files."
+      ]
+    },
+    {
+      "version": "V1.5.78",
+      "date": "2026-08-02",
+      "title": "Drawing builder open fix",
+      "items": [
+        "Fixed the developer Create college task sheet button so it reliably closes Developer Mode and opens the workshop-sheet builder.",
+        "Updated app and stylesheet asset versions to force the corrected files to load instead of an older cached copy."
+      ]
+    },
+    {
+      "version": "V1.5.77",
+      "title": "College Workshop Task Sheet Builder",
+      "date": "2026-08-01",
+      "features": [
+        "Replaced the previous multi-trade Create Drawing form with one focused Bricklaying workshop-sheet builder.",
+        "Uses the simple college handout structure: orthographic views, specification, task details and task instructions.",
+        "Includes brick, course and return presets with exact millimetre values and a 25-bricks-per-hour time estimate.",
+        "Copies a shorter, stricter prompt that avoids perspective views, invented details and unnecessary architectural schedules."
+      ]
+    },
+    {
+      "version": "V1.5.76",
+      "title": "Technical Drawing Zoom & PDF Fix",
+      "items": [
+        "Added reliable two-finger pinch zoom and one-finger panning in the full-screen drawing viewer.",
+        "Double-tap now resets the drawing to fit the screen.",
+        "Reworked A4 PDF export to open in the device PDF viewer and trigger a download for better Android PWA support."
+      ]
+    },
+    {
+      "version": "V1.5.75",
+      "title": "Brick Drawing Specification & Time Calculator",
+      "date": "2026-08-01",
+      "items": [
+        "Removed the Bricklaying mortar selector.",
+        "Separated practical features from fixings and construction components.",
+        "Added editable feature and fixing presets.",
+        "Calculates estimated brick quantity and build time at 25 bricks per hour.",
+        "Rounds to an editable recommended assessment time with complexity allowances.",
+        "Adds strict orthographic, plan and section rules to copied brickwork prompts."
+      ]
+    },
+    {
+      "version": "V1.5.74",
+      "title": "Rapid Drawing Builder Presets",
+      "date": "01/08/2026",
+      "changes": [
+        "Added editable preset dropdowns for trade-specific wall types, bonds, materials, joints, fixings, adhesives and finishes.",
+        "Added calculated brick-length and course-height dimension presets while keeping every value manually editable.",
+        "Added broader standard dimension and time presets for carpentry, joinery and property maintenance drawings."
+      ]
+    },
+    {
+      "version": "V1.5.73",
+      "title": "Drawing builder button layout fix",
+      "date": "2026-08-01",
+      "features": [
+        "Moved Copy all, Save draft, Clear form and Close to the true end of the drawing form.",
+        "Removed the sticky action panel that covered fields while scrolling.",
+        "Kept the mobile two-column button layout with Copy all spanning the full width."
+      ]
+    },
+    {
+      "version": "V1.5.72",
+      "title": "Developer drawing prompt builder",
+      "date": "2026-08-01",
+      "features": [
+        "Added a developer-only Create new drawing tool.",
+        "Course and assignment dropdowns load the correct task title and KSB or LO criteria.",
+        "Trade-specific fields adapt for bricklaying, site carpentry, architectural joinery and property maintenance.",
+        "Creates the correct drawing filename and a complete portrait A4 technical-drawing prompt.",
+        "Includes prompt preview, Copy all, save draft and clear form controls."
+      ]
+    },
+    {
+      "version": "V1.5.71",
+      "title": "Practical drawing viewer fixes",
+      "date": "2026-08-01",
+      "features": [
+        "Technical drawings now use the assignment task title.",
+        "The full-screen viewer fits the complete drawing and uses native pinch zoom.",
+        "Removed loading and manual zoom controls.",
+        "Missing-drawing messaging now replaces the drawing area.",
+        "Improved A4 PDF download and print output."
+      ]
+    },
+    {
+      "version": "V1.5.70",
+      "date": "2026-08-01",
+      "title": "Full-screen practical drawings",
+      "features": [
+        "Practical Assessment pages now display the issued technical drawing directly instead of generated task controls.",
+        "Technical drawings open in a locked full-screen viewer with fit, zoom, close, print and A4 PDF download controls.",
+        "Removed Activity assessed, generated-task guidance and Practical task details from KSB-course Practical Assessments."
+      ]
+    },
+    {
+      "version": "V1.5.69",
+      "title": "External Technical Drawings",
+      "date": "2026-08-01",
+      "changes": [
+        "Practical Assessments now use course and assignment-specific technical drawings from the GitHub drawing library.",
+        "Drawing filenames are generated automatically for Bricklaying, Site Carpentry, Architectural Joinery and Property Maintenance.",
+        "Technical drawings open in a full-screen viewer with zoom, browser and save options.",
+        "Missing drawings display a clear coming-soon message instead of a broken image.",
+        "Generated SVG drawings are no longer displayed in Practical Assessment specifications."
+      ]
+    },
+    {
+      "version": "V1.5.68",
+      "title": "Concise Skills Card Evidence Details",
+      "date": "2026-08-01",
+      "changes": [
+        "Skills Card source popups now use concise practical task titles instead of full generated specifications.",
+        "Each source clearly lists every skill awarded by that completed practical.",
+        "Source type, achieved grade and completion date are shown at a glance.",
+        "ProjectMate skill mapping now uses the actual task title only, preventing boilerplate instructions from creating unrelated skills.",
+        "Open buttons still link directly to the saved Practical Assessment or ProjectMate task."
+      ]
+    },
+    {
+      "version": "V1.5.67",
+      "title": "Skills Card Evidence Sources",
+      "date": "2026-08-01",
+      "changes": [
+        "Skills Card rows are now clickable.",
+        "Each skill opens a popup listing the Practical Assessments and ProjectMate tasks that contributed to the count.",
+        "Each source shows the concise task title, source type and achieved grade.",
+        "Open buttons take the learner directly to the saved source assessment or ProjectMate task."
+      ]
+    },
+    {
+      "version": "V1.5.66",
+      "title": "Skills Card mapping and counts",
+      "summary": "Groups completed practical tasks into concise trade skills, counts each demonstration and shows the highest grade achieved.",
+      "items": [
+        "Concise course-specific skill names",
+        "Counts repeated demonstrations as x1, x2, x3 and so on",
+        "Highest grade retained for each skill",
+        "Distinction, Merit and Pass ranking",
+        "Practical Assessments and graded ProjectMate tasks included"
+      ]
+    },
+    {
+      "version": "V1.5.65",
+      "title": "Skills Card",
+      "date": "2026-08-01",
+      "features": [
+        "Added a new Skills Card workplace app in the Toolbox.",
+        "Shows the learner name and a ranked list of completed practical tasks.",
+        "Ranks Distinction first, then Merit, then Pass.",
+        "Uses the highest grade recorded for each practical task.",
+        "Includes graded Practical Assessments and completed ProjectMate tasks.",
+        "Added a Pass, Merit or Distinction selector when saving a completed ProjectMate task."
+      ]
+    },
+    {
+      "version": "V1.5.64",
+      "title": "Named analytics cleanup and update reliability",
+      "features": [
+        "Removed remaining generic feature_open and feature_exit analytics events.",
+        "Replaced generic assessment, export, file and media events with readable feature-specific event names.",
+        "Reduced duplicate analytics events so Firebase reports are easier to understand.",
+        "Added a new service-worker cache and immediate activation to ensure this update replaces V1.5.62/V1.5.63 reliably.",
+        "Continues to exclude learner identities, evidence content, answers, photos, videos, audio, signatures and files."
+      ]
+    },
+    {
+      "version": "V1.5.63",
+      "title": "Analytics Event Cleanup",
+      "date": "2026-07-31",
+      "items": [
+        "Updated the visible app build and service-worker cache to V1.5.63.",
+        "Reduced reliance on generic analytics events and prioritised named feature, completion, export and submission events.",
+        "Kept anonymous analytics only and continued excluding learner identity, evidence content, media and files."
+      ]
+    },
+    {
+      "version": "V1.5.62",
+      "title": "Course Analytics Events",
+      "date": "2026-07-31",
+      "items": [
+        "Added clear anonymous events for assignment opens, assignment completions and course progress views.",
+        "Added named events for assignment search opens, searches, suggested terms and selected results.",
+        "Added course selection, Settings section, certificate view/export and learner profile events.",
+        "Added one-time anonymous completion detection so completed assignments are counted without sending learner evidence.",
+        "Only course identifiers, assignment numbers, feature names and non-personal status values are sent."
+      ]
+    },
+    {
+      "version": "V1.5.61",
+      "title": "Evidence Analytics Events",
+      "date": "2026-07-31",
+      "items": [
+        "Added clear anonymous events for every evidence submission type.",
+        "Added named events for photographic evidence photos, video walkthrough clips and professional discussion recordings.",
+        "Added anonymous evidence retake, package export, whole-portfolio export and upload-confirmation events.",
+        "Events include only non-personal counts, evidence type, assignment number and course identifier.",
+        "Names, emails, typed evidence, answers, photos, videos, audio, signatures and file contents remain excluded."
+      ]
+    },
+    {
+      "version": "V1.5.60",
+      "title": "Core Named Analytics Events",
+      "date": "2026-07-31",
+      "items": [
+        "Replaced vague ui_action and field_changed reporting with clear feature-specific event names.",
+        "Added readable open events for Home, Toolbox, Academy, Trade Courses, Functional Skills, EPA and every Toolbox mini app.",
+        "Added named started and completed events for Trade Course, Functional Skills, EPA Knowledge, EPA Discussion, EPA Practical and assignment knowledge tests.",
+        "Added meaningful feature action events for starts, completions, saves, exports, downloads, searches, retakes and submissions.",
+        "Continued excluding names, emails, typed content, answers, evidence, media, signatures, files and precise location."
+      ]
+    },
+    {
+      "version": "V1.5.59",
+      "title": "Useful Analytics Dashboard",
+      "date": "2026-07-31",
+      "items": [
+        "Replaced raw developer event lists with a practical usage summary for the current device.",
+        "Added today and seven-day totals for sessions, time used, assessments, evidence saves and document exports.",
+        "Added rankings for the most-used Toolbox apps and most-visited screens.",
+        "Added readable recent activity while keeping names, emails, evidence content and media excluded.",
+        "Kept Firebase connection and queue checks available inside a compact privacy and diagnostics section."
+      ]
+    },
+    {
+      "version": "V1.5.58",
+      "title": "Hidden Developer Mode",
+      "date": "2026-07-31",
+      "items": [
+        "Removed analytics developer tools from the existing Admin Mode screen.",
+        "Added a separate hidden Developer Mode unlocked by tapping the app version seven times.",
+        "Kept Firebase diagnostics, queue controls, recent anonymous events and privacy details inside the hidden screen only.",
+        "Kept Admin Mode focused on course management, college branding, RPL and data controls."
+      ]
+    },
+    {
+      "version": "V1.5.57",
+      "title": "Admin Mode Scrolling Fix",
+      "date": "2026-07-31",
+      "items": [
+        "Fixed Admin Mode so the full screen scrolls correctly on phones and tablets.",
+        "Added smooth touch scrolling and safe-area spacing for mobile devices.",
+        "Kept the Admin Mode header visible while scrolling through the controls."
+      ]
+    },
+    {
+      "version": "V1.5.56",
+      "title": "Analytics Developer Tools",
+      "date": "2026-07-31",
+      "items": [
+        "Unlock developer tools by tapping the app version seven times.",
+        "View Firebase connection, queue size, recent anonymous event names and last successful send.",
+        "Enable or disable anonymous analytics on the current device.",
+        "Test offline queueing, send a test event, flush queued events and clear the queue.",
+        "View a clear privacy summary showing what is and is not collected."
+      ]
+    },
+    {
+      "version": "V1.5.55",
+      "title": "Analytics Optimisation and Diagnostics",
+      "date": "2026-07-31",
+      "features": [
+        "Added dashboard-ready anonymous engagement summaries and Firebase user properties for app version and platform.",
+        "Added an Admin Mode analytics status panel showing Firebase connection, queued events and session event totals.",
+        "Added test, retry, refresh and clear-queue controls for verifying analytics without exposing learner data.",
+        "Expanded the offline queue and retained strict filtering of personal details, evidence content and media."
+      ]
+    },
+    {
+      "version": "V1.5.54",
+      "title": "Full Anonymous Analytics Integration",
+      "features": [
+        "Anonymous interaction tracking across every current app screen and feature flow.",
+        "Assessment starts and completions across Trade Courses, Functional Skills, assignment knowledge and EPA.",
+        "Anonymous evidence, video, media, Toolbox, search, certificate, PDF and export activity tracking.",
+        "No learner details, entered answers, evidence content, photos, videos, audio, signatures or contact details are sent."
+      ]
+    },
+    {
+      "version": "V1.5.53",
+      "title": "Anonymous Analytics Foundation",
+      "date": "2026-07-31",
+      "features": [
+        "Added Firebase Analytics infrastructure without learner accounts or portfolio syncing.",
+        "Added anonymous app, session, version and automatic screen usage tracking.",
+        "Added offline event queuing with automatic retry when internet access returns.",
+        "Added privacy filtering that excludes personal details and evidence content."
+      ]
+    },
+    {
+      "version": "V1.5.51",
+      "title": "Colour-coded grouped Toolbox",
+      "date": "2026-07-31",
+      "features": [
+        "Grouped Toolbox apps into Work tools, Productivity and Support.",
+        "Added distinctive colour gradients to each mini app for faster visual recognition.",
+        "Moved Settings into the Support section beside FeedbackMate.",
+        "Kept the existing phone-style four-column app layout."
+      ]
+    },
+    {
+      "version": "V1.5.50",
+      "title": "FeedbackMate idea and issue submissions",
+      "date": "2026-07-31",
+      "features": [
+        "Added FeedbackMate to the Toolbox.",
+        "Added Idea and Issue submission types with learner name, reply email, title, details and optional screenshot.",
+        "Submits feedback online to apprentice-plus@outlook.com and includes app version, course, date and device details.",
+        "Saves unfinished feedback locally and provides an email-app fallback if automatic delivery fails."
+      ]
+    },
+    {
+      "version": "V1.5.49",
+      "title": "DrawingMate Two-Sided Scale Ruler",
+      "date": "2026-07-31",
+      "features": [
+        "Added separate left and right drawing-scale selectors.",
+        "Added a full-screen two-sided ruler with measuring marks touching both screen edges.",
+        "Made the ruler preview clickable and added a dedicated Use ruler button.",
+        "Used the saved bank-card calibration for physical screen accuracy."
+      ]
+    },
+    {
+      "version": "V1.5.47",
+      "title": "Academy MCQ controls and notification refresh",
+      "features": [
+        "Replaces inline answer arrows with Previous and locked Submit buttons directly below every Academy MCQ question card.",
+        "Keeps Submit disabled until an answer has been selected, then advances or finishes the test.",
+        "Restyles the notification centre with a modern phone-notification appearance, rounded notification cards and clearer icons.",
+        "Adds Notification settings and Clear actions to the notification panel."
+      ]
+    },
+    {
+      "version": "V1.5.45",
+      "features": [
+        "Keeps video walkthrough review and Save video controls fully above the bottom navigation.",
+        "Keeps the Evidence items total inside the PDF cover panel.",
+        "Updates the learner progress review order and adds weeks remaining.",
+        "Shows the final 12.5% of the course timeline in red for the EPA period."
+      ]
+    },
+    {
+      "version": "V1.5.44",
+      "title": "Video submission bottom clearance",
+      "features": [
+        "Adds a dedicated blank section beneath video submission pages so the final video controls can scroll fully above the fixed navigation bar.",
+        "Applies the clearance to KSB and Learning Outcome Video Walkthrough pages without changing the video workflow.",
+        "Keeps the spacer transparent and removes it from printed or PDF output."
+      ]
+    },
+    {
+      "version": "V1.5.43",
+      "features": [
+        "Select an Academy or EPA answer with one tap, then use the white arrow inside that answer row to submit it.",
+        "Removes the bottom Next and Submit buttons from MCQ question screens so they cannot sit behind the app navigation.",
+        "Applies the same answer-row interaction to Functional Skills, Trade Courses, assignment knowledge assessments and EPA Knowledge Practice."
+      ]
+    },
+    {
+      "version": "V1.5.42",
+      "title": "Global navigation safe-area fix",
+      "features": [
+        "Keeps every screen and final action button above the fixed bottom navigation.",
+        "Applies the same safe-area rule to Course, Academy, Toolbox, Settings, EPA, evidence pages and Mate apps.",
+        "Constrains popups, help tours and modal sheets above the navigation with internal scrolling where needed.",
+        "Hides the app navigation while the phone keyboard is open so the keyboard does not push it upward."
+      ]
+    },
+    {
+      "version": "V1.5.41",
+      "date": "2026-07-31",
+      "title": "Navigation clearance, keyboard and OTJ deletion",
+      "changes": [
+        "Added app-wide bottom clearance so screens, forms, dialogs and action buttons finish above the fixed navigation bar.",
+        "The bottom navigation now moves out of the way when the phone keyboard opens instead of being pushed upward.",
+        "OTJ entries can be deleted with confirmation and totals refresh immediately.",
+        "Archived OTJ PDFs can now be deleted without deleting their underlying entries; those entries become available for export again."
+      ]
+    },
+    {
+      "version": "V1.5.40",
+      "date": "2026-07-31",
+      "title": "OTJ styling and protected signatures",
+      "changes": [
+        "Restyled the College, Workplace and Other OTJ selectors to match the current Apprentice+ visual design.",
+        "All blank signature boxes now require a deliberate press to unlock before drawing, preventing accidental marks while scrolling.",
+        "Applied the same press-to-sign protection to learner onboarding and profile signatures."
+      ]
+    },
+    {
+      "version": "V1.5.39",
+      "date": "2026-07-31",
+      "title": "Review status calculation",
+      "changes": [
+        "EPA readiness remains visible but no longer affects the red, amber or green review status.",
+        "Review status is now calculated only from assignments, KSBs or learning outcomes, and off-the-job training against today's expected progress."
+      ]
+    },
+    {
+      "version": "V1.5.38",
+      "title": "Toolbox and reminder runtime fix",
+      "date": "2026-07-31",
+      "features": [
+        "Restored the missing RemindMate data functions that prevented the Toolbox from opening.",
+        "Stopped reminder notification refreshes from crashing Academy or other pages.",
+        "Kept all learner OTJ entries and reminders unchanged."
+      ]
+    }
+  ],
+  "versions": {
+    "V1.5.32": {
+      "title": "White Icons on Green Surfaces",
+      "date": "31 July 2026",
+      "features": [
+        "Changed silhouettes on every solid green action surface to white for clear contrast.",
+        "Applied the fix to primary buttons, active tabs, navigation, notification, speech, recording, reminder and Toolbox icons.",
+        "Protected white SVG strokes and filled icon shapes from being recoloured by the selected app theme."
+      ]
+    },
+    "V1.5.37": {
+      "title": "Storage and navigation recovery",
+      "features": [
+        "Prevents a failed update backup from replacing the app with a false local-storage error.",
+        "Automatically removes older duplicate update backups before creating the current safety backup.",
+        "Keeps Toolbox, Course and Academy navigation responsive when an individual page encounters an error.",
+        "Separates genuine learner-data loading errors from optional backup, update and notification failures."
+      ]
+    },
+    "V1.5.49": {
+      "title": "DrawingMate Two-Sided Scale Ruler",
+      "date": "2026-07-31",
+      "features": [
+        "Added separate left and right drawing-scale selectors.",
+        "Added a full-screen two-sided ruler with measuring marks touching both screen edges.",
+        "Made the ruler preview clickable and added a dedicated Use ruler button.",
+        "Used the saved bank-card calibration for physical screen accuracy."
+      ]
+    },
+    "V1.5.58": {
+      "version": "V1.5.58",
+      "title": "Hidden Developer Mode",
+      "date": "2026-07-31",
+      "items": [
+        "Removed analytics developer tools from the existing Admin Mode screen.",
+        "Added a separate hidden Developer Mode unlocked by tapping the app version seven times.",
+        "Kept Firebase diagnostics, queue controls, recent anonymous events and privacy details inside the hidden screen only.",
+        "Kept Admin Mode focused on course management, college branding, RPL and data controls."
+      ]
+    },
+    "V1.5.59": {
+      "version": "V1.5.59",
+      "title": "Useful Analytics Dashboard",
+      "date": "2026-07-31",
+      "items": [
+        "Replaced raw developer event lists with a practical usage summary for the current device.",
+        "Added today and seven-day totals for sessions, time used, assessments, evidence saves and document exports.",
+        "Added rankings for the most-used Toolbox apps and most-visited screens.",
+        "Added readable recent activity while keeping names, emails, evidence content and media excluded.",
+        "Kept Firebase connection and queue checks available inside a compact privacy and diagnostics section."
+      ]
+    },
+    "V1.5.60": {
+      "version": "V1.5.60",
+      "title": "Core Named Analytics Events",
+      "date": "2026-07-31",
+      "items": [
+        "Replaced vague ui_action and field_changed reporting with clear feature-specific event names.",
+        "Added readable open events for Home, Toolbox, Academy, Trade Courses, Functional Skills, EPA and every Toolbox mini app.",
+        "Added named started and completed events for Trade Course, Functional Skills, EPA Knowledge, EPA Discussion, EPA Practical and assignment knowledge tests.",
+        "Added meaningful feature action events for starts, completions, saves, exports, downloads, searches, retakes and submissions.",
+        "Continued excluding names, emails, typed content, answers, evidence, media, signatures, files and precise location."
+      ]
+    },
+    "V1.5.65": {
+      "version": "V1.5.65",
+      "title": "Skills Card",
+      "date": "2026-08-01",
+      "features": [
+        "Added a new Skills Card workplace app in the Toolbox.",
+        "Shows the learner name and a ranked list of completed practical tasks.",
+        "Ranks Distinction first, then Merit, then Pass.",
+        "Uses the highest grade recorded for each practical task.",
+        "Includes graded Practical Assessments and completed ProjectMate tasks.",
+        "Added a Pass, Merit or Distinction selector when saving a completed ProjectMate task."
+      ]
+    },
+    "V1.5.66": {
+      "version": "V1.5.66",
+      "title": "Skills Card mapping and counts",
+      "summary": "Groups completed practical tasks into concise trade skills, counts each demonstration and shows the highest grade achieved.",
+      "items": [
+        "Concise course-specific skill names",
+        "Counts repeated demonstrations as x1, x2, x3 and so on",
+        "Highest grade retained for each skill",
+        "Distinction, Merit and Pass ranking",
+        "Practical Assessments and graded ProjectMate tasks included"
+      ]
+    },
+    "V1.5.69": [
+      "Practical Assessments now use course and assignment-specific technical drawings from the GitHub drawing library.",
+      "Drawing filenames are generated automatically for Bricklaying, Site Carpentry, Architectural Joinery and Property Maintenance.",
+      "Technical drawings open in a full-screen viewer with zoom, browser and save options.",
+      "Missing drawings display a clear coming-soon message instead of a broken image.",
+      "Generated SVG drawings are no longer displayed in Practical Assessment specifications."
+    ],
+    "V1.5.79": {
+      "version": "V1.5.79",
+      "date": "2026-08-02",
+      "title": "Developer drawing builder runtime fix",
+      "items": [
+        "Fixed the Create college task sheet button returning to the previous screen.",
+        "Restored the missing editable preset list helper required by the workshop-sheet builder.",
+        "Developer Mode now stays open if the builder encounters an error instead of closing silently.",
+        "Updated the app and service-worker cache versions to load the corrected files."
+      ]
+    }
+  },
+  "latestVersion": "V1.5.79",
+  "releaseDetails": {
+    "V1.5.50": {
+      "version": "V1.5.50",
+      "title": "FeedbackMate idea and issue submissions",
+      "date": "2026-07-31",
+      "features": [
+        "Added FeedbackMate to the Toolbox.",
+        "Added Idea and Issue submission types with learner name, reply email, title, details and optional screenshot.",
+        "Submits feedback online to apprentice-plus@outlook.com and includes app version, course, date and device details.",
+        "Saves unfinished feedback locally and provides an email-app fallback if automatic delivery fails."
+      ]
+    },
+    "V1.5.51": {
+      "version": "V1.5.51",
+      "title": "Colour-coded grouped Toolbox",
+      "date": "2026-07-31",
+      "features": [
+        "Grouped Toolbox apps into Work tools, Productivity and Support.",
+        "Added distinctive colour gradients to each mini app for faster visual recognition.",
+        "Moved Settings into the Support section beside FeedbackMate.",
+        "Kept the existing phone-style four-column app layout."
+      ]
+    },
+    "V1.5.58": {
+      "version": "V1.5.58",
+      "title": "Hidden Developer Mode",
+      "date": "2026-07-31",
+      "features": [
+        "Removed analytics developer tools from the existing Admin Mode screen.",
+        "Added a separate hidden Developer Mode unlocked by tapping the app version seven times.",
+        "Kept Firebase diagnostics, queue controls, recent anonymous events and privacy details inside the hidden screen only.",
+        "Kept Admin Mode focused on course management, college branding, RPL and data controls."
+      ]
+    },
+    "V1.5.61": {
+      "version": "V1.5.61",
+      "title": "Evidence Analytics Events",
+      "date": "2026-07-31",
+      "features": [
+        "Added clear anonymous events for every evidence submission type.",
+        "Added named events for photographic evidence photos, video walkthrough clips and professional discussion recordings.",
+        "Added anonymous evidence retake, package export, whole-portfolio export and upload-confirmation events.",
+        "Events include only non-personal counts, evidence type, assignment number and course identifier.",
+        "Names, emails, typed evidence, answers, photos, videos, audio, signatures and file contents remain excluded."
+      ]
+    },
+    "V1.5.62": {
+      "version": "V1.5.62",
+      "title": "Course Analytics Events",
+      "date": "2026-07-31",
+      "items": [
+        "Added clear anonymous events for assignment opens, assignment completions and course progress views.",
+        "Added named events for assignment search opens, searches, suggested terms and selected results.",
+        "Added course selection, Settings section, certificate view/export and learner profile events.",
+        "Added one-time anonymous completion detection so completed assignments are counted without sending learner evidence.",
+        "Only course identifiers, assignment numbers, feature names and non-personal status values are sent."
+      ]
+    },
+    "V1.5.63": {
+      "version": "V1.5.63",
+      "title": "Analytics Event Cleanup",
+      "date": "2026-07-31",
+      "items": [
+        "Updated the visible app build and service-worker cache to V1.5.63.",
+        "Reduced reliance on generic analytics events and prioritised named feature, completion, export and submission events.",
+        "Kept anonymous analytics only and continued excluding learner identity, evidence content, media and files."
+      ]
+    },
+    "V1.5.65": {
+      "version": "V1.5.65",
+      "title": "Skills Card",
+      "date": "2026-08-01",
+      "features": [
+        "Added a new Skills Card workplace app in the Toolbox.",
+        "Shows the learner name and a ranked list of completed practical tasks.",
+        "Ranks Distinction first, then Merit, then Pass.",
+        "Uses the highest grade recorded for each practical task.",
+        "Includes graded Practical Assessments and completed ProjectMate tasks.",
+        "Added a Pass, Merit or Distinction selector when saving a completed ProjectMate task."
+      ]
+    },
+    "V1.5.69": {
+      "title": "External Technical Drawings",
+      "date": "2026-08-01",
+      "features": [
+        "Practical Assessments now use course and assignment-specific technical drawings from the GitHub drawing library.",
+        "Drawing filenames are generated automatically for Bricklaying, Site Carpentry, Architectural Joinery and Property Maintenance.",
+        "Technical drawings open in a full-screen viewer with zoom, browser and save options.",
+        "Missing drawings display a clear coming-soon message instead of a broken image.",
+        "Generated SVG drawings are no longer displayed in Practical Assessment specifications."
+      ]
+    },
+    "V1.5.79": {
+      "version": "V1.5.79",
+      "title": "Developer drawing builder runtime fix",
+      "date": "2026-08-02",
+      "features": [
+        "Fixed the Create college task sheet button returning to the previous screen.",
+        "Restored the missing editable preset list helper required by the workshop-sheet builder.",
+        "Developer Mode now stays open if the builder encounters an error instead of closing silently.",
+        "Updated the app and service-worker cache versions to load the corrected files."
+      ]
+    }
+  }
 }
-
-self.addEventListener('install',event=>{
- event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()));
-});
-
-self.addEventListener('message',event=>{
- if(event.data?.type==='GET_UPDATE_INFO'){
-  event.waitUntil(loadUpdateInfo().then(info=>event.source?.postMessage({type:'UPDATE_INFO',info})));
- }
- if(event.data?.type==='SKIP_WAITING')self.skipWaiting();
-});
-
-self.addEventListener('activate',event=>{
- event.waitUntil(
-  caches.keys()
-   .then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key))))
-   .then(()=>self.clients.claim())
- );
-});
-
-self.addEventListener('fetch',event=>{
- if(event.request.method!=='GET')return;
- const url=new URL(event.request.url);
- if(url.origin!==self.location.origin)return;
- const isCoreFile=url.pathname.endsWith('/')||['index.html','app.js','functional-skills-bank.js',
-  'trade-courses-bank.js','analytics-foundation.js','analytics-integration.js','qrcode-browser.js','pdf-generator.js','specification-sheet.js','styles.css','cadmate.html','manifest.json','release-notes.json','service-worker.js'].some(name=>url.pathname.endsWith('/'+name));
- if(isCoreFile){
-  event.respondWith(
-   fetch(event.request,{cache:'no-store'})
-    .then(response=>{
-     if(response&&response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));}
-     return response;
-    })
-    .catch(()=>caches.match(event.request).then(cached=>cached||caches.match('./index.html')))
-  );
-  return;
- }
- event.respondWith(
-  caches.match(event.request).then(cached=>cached||fetch(event.request).then(response=>{
-   if(response&&response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));}
-   return response;
-  }))
- );
-});

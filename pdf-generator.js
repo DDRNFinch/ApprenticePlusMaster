@@ -1,459 +1,6414 @@
-// v1.37.1 layout tweak
 'use strict';
 
-/* Apprentice+ offline PDF generator. Evidence stays in the browser; no data is uploaded. */
-async function generateEvidencePackPDF({course, assignment, profile, sections, branding, returnPackage=false, newEvidence={}}) {
-  if(course && course.nvqUnits) return generateNVQEvidencePackPDF({course, assignment, profile, sections, branding, returnPackage, newEvidence});
-  const W=1240,H=1754,M=88,TEAL='#06382c',GREEN='#79d22f',LIGHT_GREEN='#DDF4E6',SOFT_GREEN='#B9E8CA',INK='#172426',MUTED='#627274',PALE='#F5F8F7',WHITE='#ffffff';
-  const pages=[];
-  const newEvidenceAliases={practical:'practical',practicalassessment:'practical',assessorobservation:'practical',photos:'photos',photoevidence:'photos',photographicevidence:'photos',statement:'statement',learnerstatement:'statement',discussion:'discussion',videowalkthrough:'walkthrough',professionaldiscussion:'professionalDiscussion',witness:'witness',witnesstestimony:'witness',supporting:'supporting',supportingevidence:'supporting',walkthrough:'walkthrough'};
-  const isNewEvidence=(type,attempt)=>{const key=newEvidenceAliases[String(type||'').replace(/[^a-z]/gi,'').toLowerCase()]||String(type||'');return Array.isArray(newEvidence?.[key])&&newEvidence[key].includes(Number(attempt))};
-  const drawNewEvidenceStamp=x=>{x.save();x.translate(W-235,205);x.rotate(-0.08);x.strokeStyle='#d32f2f';x.fillStyle='rgba(255,255,255,.92)';x.lineWidth=5;x.fillRect(-5,-38,190,62);x.strokeRect(-5,-38,190,62);x.fillStyle='#d32f2f';x.font='900 23px Arial';x.textAlign='center';x.fillText('NEW EVIDENCE',90,2);x.textAlign='left';x.restore()};
-  const percentageScore=d=>{const max=assignment.ksbs.length*5;if(!max)return 0;const achieved=assignment.ksbs.reduce((sum,[code])=>sum+(+d?.scores?.[code]||0),0);return Math.round((achieved/max)*100)};
-  const buildSkillCriteria=summary=>{const text=String(summary||'').replace(/[.]+$/,'').trim(),lower=text.toLowerCase(),action=text.charAt(0).toLowerCase()+text.slice(1);let out=[`Selected the correct tools, equipment and materials needed to ${action}.`,`Used an appropriate sequence and working method to ${action}.`,'Completed the work accurately and in line with the drawing, specification or required tolerance.','Checked the finished work, corrected defects and left it to the required quality standard.'];if(/health|safety|ppe|rpe|lev|safe working/.test(lower))out=['Identified the main hazards and selected the correct PPE, RPE and control measures.','Followed the safe system of work and used tools, equipment and controls correctly.','Applied the relevant safety requirements consistently throughout the activity.','Maintained good housekeeping, protected others and left the work area safe.'];else if(/communicat|team|wellbeing|inclusion|equity|diversity/.test(lower))out=['Identified who needed information, support or involvement before starting the activity.','Used clear, appropriate communication and worked constructively with others.','Shared accurate information using suitable trade terminology and checked understanding.','Responded professionally, supported the team and reflected on how communication could improve.'];else if(/interpret|drawing|specification|digital design/.test(lower))out=['Selected the correct drawing, specification or digital information for the task.','Extracted the relevant dimensions, symbols, notes and construction requirements.','Transferred the information accurately into the practical work or setting-out process.','Cross-checked the completed work against the source information and corrected discrepancies.'];else if(/estimate|select.*material|resource|cutting list|size timber/.test(lower))out=['Identified the materials, quantities and specification required for the task.','Used an appropriate estimating, measuring or selection method.','Calculated or selected resources accurately with suitable allowances for waste and cutting.','Checked the result against the task requirements and justified the final selection.'];else if(/tool|equipment|maintain|sharpen/.test(lower))out=['Selected tools and equipment that were suitable, serviceable and safe for the task.','Set up and used each tool correctly, following manufacturer and workplace guidance.','Controlled the tools accurately to achieve the required dimensions and finish.','Checked, cleaned, maintained and stored the tools correctly after use.'];else if(/set out|measure|level|laser|mark out/.test(lower))out=['Selected suitable measuring, marking and setting-out equipment.','Established accurate datum points, lines, levels, centres or profiles in the correct sequence.','Checked all dimensions, angles, levels and tolerances throughout the work.','Verified the completed setting out against the drawing or specification before work continued.'];else if(/construct|build|install|fit|form|produce|apply|mix|repair|cut|splice|scribe/.test(lower))out=['Selected and prepared the correct tools, equipment, materials and work area for this skill.',`Used the correct practical sequence and trade technique to ${action}.`,'Maintained the required measurements, alignment, tolerances and component positioning.','Checked workmanship, finish and compliance with the specification, correcting defects where needed.'];else if(/environment|sustainab|recycl|waste/.test(lower))out=['Identified the environmental controls and resource requirements before starting.','Used materials efficiently and followed the correct reuse, recycling and disposal procedures.','Segregated resources correctly and prevented contamination or avoidable waste.','Left the area compliant, tidy and with environmental impacts minimised.'];return out};
-  const skillCriteria=()=>assignment.ksbs.filter(([c])=>String(c).toUpperCase().startsWith('S')).map(([code,summary])=>({code,summary,criteria:buildSkillCriteria(summary)}));
-  const practicalScoringSummary=d=>{const skills=skillCriteria(),scores=d?.scores||{},keys=skills.flatMap(s=>s.criteria.map((_,i)=>`${s.code}::${i+1}`)),graded=keys.map(k=>+scores[k]||0).filter(v=>v>=1&&v<=5);if(graded.length){const achieved=graded.reduce((sum,v)=>sum+v,0);return {graded:graded.length,percentage:Math.round((achieved/(graded.length*5))*100)}}const legacy=skills.map(s=>+scores[s.code]||0).filter(v=>v>=1&&v<=5);if(legacy.length){const achieved=legacy.reduce((sum,v)=>sum+v,0);return {graded:legacy.length,percentage:Math.round((achieved/(legacy.length*5))*100)}}return {graded:0,percentage:null}};
-  const practicalPercentageScore=d=>practicalScoringSummary(d).percentage;
-  const gradeForPercentage=p=>p>=90?'Distinction':p>=80?'Merit':p>=70?'Pass':'Fail';
-  const resultText=d=>{const pct=percentageScore(d);return `${pct}% — ${gradeForPercentage(pct)}`};
-  const practicalResultText=d=>{const pct=practicalPercentageScore(d);return pct===null?'Not yet graded':`${pct}% — ${gradeForPercentage(pct)}`};
-  const clean=v=>String(v??'').replace(/[\u2010-\u2015]/g,'-').replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"');
-  const PDF_COLOURS={cover:TEAL,practical:'#2E7D32',statement:'#1565C0',witness:'#B7791F',video:'#6A1B9A',discussion:'#00897B',photo:'#C65D00',knowledge:'#3949AB',documents:'#546E7A',specification:'#A82A2A'};
-  const pdfSectionFor=title=>{const t=String(title||'').toLowerCase();if(/practical assessment|assessor observation/.test(t))return ['Practical Assessment',PDF_COLOURS.practical];if(/learner statement/.test(t))return ['Learner Statement',PDF_COLOURS.statement];if(/witness|employer|supporting evidence - statement/.test(t))return ['Witness Testimony',PDF_COLOURS.witness];if(/video|walkthrough/.test(t))return ['Video Walkthrough',PDF_COLOURS.video];if(/professional discussion/.test(t))return ['Professional Discussion',PDF_COLOURS.discussion];if(/photo|image/.test(t))return ['Photo Evidence',PDF_COLOURS.photo];if(/knowledge|theory|question/.test(t))return ['Knowledge Questions',PDF_COLOURS.knowledge];if(/document|certificate|supporting evidence/.test(t))return ['Documents',PDF_COLOURS.documents];return ['Evidence Portfolio',PDF_COLOURS.cover]};
-  const pdfStampFor=title=>{const t=String(title||'').toLowerCase();if(/ksb evidence matrix|ksb mapping/.test(t))return ['KSB','Evidence Matrix',TEAL];if(/portfolio contents|evidence index/.test(t))return ['CONT','Contents',TEAL];if(/practical assessment|assessor observation/.test(t))return ['PA','Practical Assessment',PDF_COLOURS.practical];if(/learner statement/.test(t))return ['LS','Learner Statement',PDF_COLOURS.statement];if(/witness|employer|supporting evidence - statement/.test(t))return ['WT','Witness Testimony',PDF_COLOURS.witness];if(/video|walkthrough/.test(t))return ['VW','Video Walkthrough',PDF_COLOURS.video];if(/professional discussion/.test(t))return ['PD','Professional Discussion',PDF_COLOURS.discussion];if(/photo|image/.test(t))return ['PE','Photo Evidence',PDF_COLOURS.photo];if(/knowledge|theory|question/.test(t))return ['KQ','Knowledge Questions',PDF_COLOURS.knowledge];if(/specification/.test(t))return ['SPEC','Specification',PDF_COLOURS.specification];if(/document|certificate|supporting evidence/.test(t))return ['SE','Supporting Evidence',PDF_COLOURS.documents];if(/assignment/.test(t))return ['AS','Assignment',TEAL];return ['PORT','Portfolio',TEAL]};
-  const drawPdfStamp=(x,title,cx=W-142,cy=108,r=70)=>{const [code,labelText,colour]=pdfStampFor(title);x.save();x.shadowColor='rgba(10,35,37,.28)';x.shadowBlur=18;x.shadowOffsetY=8;const grad=x.createRadialGradient(cx-r*.35,cy-r*.42,r*.10,cx,cy,r);grad.addColorStop(0,'#ffffff');grad.addColorStop(.14,colour);grad.addColorStop(1,colour);x.fillStyle=grad;x.beginPath();x.arc(cx,cy,r,0,Math.PI*2);x.fill();x.shadowColor='transparent';x.strokeStyle='rgba(255,255,255,.88)';x.lineWidth=5;x.beginPath();x.arc(cx,cy,r-8,0,Math.PI*2);x.stroke();x.strokeStyle='rgba(7,53,57,.22)';x.lineWidth=2;x.beginPath();x.arc(cx,cy,r-16,0,Math.PI*2);x.stroke();x.fillStyle=WHITE;x.textAlign='center';x.textBaseline='middle';x.font=`900 ${code.length>3?24:34}px Arial`;x.fillText(code,cx,cy-10);x.font='700 12px Arial';const words=labelText.toUpperCase().split(' ');if(words.length>1){x.fillText(words[0],cx,cy+23);x.fillText(words.slice(1).join(' '),cx,cy+38)}else x.fillText(words[0],cx,cy+29);x.textAlign='left';x.textBaseline='alphabetic';x.restore()};
-  const apprenticeLogo=await loadImage('logo-apprentice-plus.png');
-  const collegeLogo=branding?.logo?await loadImage(branding.logo):null;
-  const drawLogo=(x,img,px,py,maxW,maxH)=>{if(!img)return;const sc=Math.min(maxW/img.width,maxH/img.height);x.drawImage(img,px,py,img.width*sc,img.height*sc)};
-  const newPage=(title,version,status='Submitted - Locked')=>{
-    const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');const [sectionName,sectionColour]=pdfSectionFor(title);x._sectionColour=sectionColour;x._sectionName=sectionName;
-    x.fillStyle=WHITE;x.fillRect(0,0,W,H);
-    x.fillStyle=LIGHT_GREEN;x.fillRect(0,0,W,18);
-    x.fillStyle=SOFT_GREEN;x.fillRect(M,226,W-2*M,5);
-    drawLogo(x,apprenticeLogo,M,48,185,82);
-    if(collegeLogo)drawLogo(x,collegeLogo,W-M-430,52,190,72);
-    x.fillStyle=MUTED;x.font='700 16px Arial';x.fillText(`${clean(course.standard||'')}  •  Level ${clean(course.level||'-')}`,M,155);
-    x.fillStyle=TEAL;x.font='700 44px Arial';fitText(x,clean(course.name||'Apprenticeship Course'),M,202,W-2*M,44);
-    x.fillStyle=INK;x.font='700 27px Arial';fitText(x,clean(title),M,274,W-2*M-270,27);
-    const metaText=`${String(version).startsWith('Attempt')?version:`Version ${version}`}  •  ${status}`;x.fillStyle=MUTED;x.font='600 16px Arial';x.fillText(metaText,M,309);
-    const tabW=Math.min(250,Math.max(150,sectionName.length*11+28));x.fillStyle=LIGHT_GREEN;x.fillRect(W-M-tabW,247,tabW,52);x.strokeStyle=SOFT_GREEN;x.lineWidth=2;x.strokeRect(W-M-tabW,247,tabW,52);x.fillStyle=TEAL;x.font='700 15px Arial';x.textAlign='center';x.fillText(sectionName,W-M-tabW/2,280);x.textAlign='left';
-    drawPdfStamp(x,title);
-    pages.push({canvas:c,ctx:x,colour:sectionColour,sectionName});return {c,x,y:354};
-  };
-  function fitText(x,text,px,py,max,fontSize){let s=fontSize;x.font=`700 ${s}px Arial`;while(x.measureText(text).width>max&&s>16){s--;x.font=`700 ${s}px Arial`}x.fillText(text,px,py)}
-  function line(x,y,w= W-2*M){x.fillStyle=x._sectionColour||GREEN;x.fillRect(M,y,w,4)}
-  function label(x,t,px,py){x.fillStyle=MUTED;x.font='700 17px Arial';x.fillText(clean(t).toUpperCase(),px,py)}
-  function value(x,t,px,py,size=22,bold=false){x.fillStyle=INK;x.font=`${bold?700:400} ${size}px Arial`;x.fillText(clean(t||'-'),px,py)}
-  function wrap(x,text,maxWidth,font='400 22px Arial'){x.font=font;const paras=clean(text||'-').split(/\n/),out=[];for(const p of paras){const words=p.split(/\s+/);let l='';for(const w of words){const test=l?`${l} ${w}`:w;if(x.measureText(test).width>maxWidth&&l){out.push(l);l=w}else l=test}out.push(l||' ')}return out}
-  function sectionHeading(x,t,y){x.fillStyle=x._sectionColour||TEAL;x.font='700 25px Arial';x.fillText(clean(t),M,y);line(x,y+14);return y+52}
-  function meta(p,version,date,type){const {x}=p;let y=p.y;x.fillStyle=PALE;x.fillRect(M,y,W-2*M,132);label(x,'Learner',M+24,y+31);value(x,profile.fullName,M+24,y+62,21,true);label(x,'Date submitted',M+560,y+31);value(x,date||'-',M+560,y+62,21,true);label(x,'Evidence type',M+24,y+96);value(x,type,M+190,y+96,19,true);label(x,'Status',M+560,y+96);value(x,'Submitted - Locked',M+650,y+96,19,true);if(isNewEvidence(type,version))drawNewEvidenceStamp(x);p.y=y+168;return p}
-  function signature(x,data,y,title='Signature') {label(x,title,M,y);x.strokeStyle='#b8c4c1';x.lineWidth=2;x.strokeRect(M,y+18,420,122);if(data){try{x.drawImage(data._img||data,M+12,y+28,396,98)}catch{}}return y+162}
-  async function loadImage(src){if(!src)return null;return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src})}
-  function footerAll(){const numbered=pages.filter(p=>!p.isCover),total=numbered.length;let pageNo=0;pages.forEach(p=>{if(p.isCover)return;pageNo++;const x=p.ctx;x.fillStyle=LIGHT_GREEN;x.fillRect(M,H-72,W-2*M,3);x.fillStyle=MUTED;x.font='600 15px Arial';x.fillText(`${branding?.name?branding.name+'  •  ':''}Apprentice+ | Your Course, Your Way`,M,H-34);x.textAlign='right';x.fillText(`Page ${pageNo} of ${total}`,W-M,H-34);x.textAlign='left'})}
-
-  const evidenceCatalogue=[];
-  const evidenceMatrix={};(assignment.ksbs||[]).forEach(([code])=>evidenceMatrix[code]=[]);
-  const addMatrix=(code,ref)=>{if(evidenceMatrix[code]&&!evidenceMatrix[code].includes(ref))evidenceMatrix[code].push(ref)};
-  const selectedCodes=d=>{
-    const valid=code=>Object.prototype.hasOwnProperty.call(evidenceMatrix,code);
-    const explicit=Array.isArray(d?.ksbEvidence)?d.ksbEvidence:[];
-    const photoLinked=Object.keys(d?.outcomePhotos||{}).filter(code=>!!d.outcomePhotos?.[code]?.data);
-    const scored=Object.keys(d?.scores||{}).map(k=>String(k).split('::')[0]).filter(code=>{const raw=d?.scores?.[code]??Object.entries(d?.scores||{}).find(([key])=>String(key).split('::')[0]===code)?.[1];return Number(raw)>0});
-    const recorded=Object.keys(d?.recordings||{}).filter(code=>!!d.recordings?.[code]?.data);
-    return [...new Set([...explicit,...photoLinked,...scored,...recorded].filter(valid))];
-  };
-  const practicalCodes=d=>{const skillSet=new Set((assignment.ksbs||[]).filter(([code])=>String(code).toUpperCase().startsWith('S')).map(([code])=>code));return selectedCodes(d).filter(code=>skillSet.has(code))};
-  const addEvidence=(ref,title,type,date)=>evidenceCatalogue.push({ref,title,type,date:date||'-'});
-  (sections.practical||[]).forEach((d,i)=>{const ref=`PA${i+1}`;addEvidence(ref,`Practical Assessment ${i+1}`,'Practical Assessment',d.date);practicalCodes(d).forEach(code=>addMatrix(code,ref))});
-  (sections.statement||[]).forEach((d,i)=>{const ref=`LS${i+1}`;addEvidence(ref,`Learner Statement ${i+1}`,'Learner Statement',d.date);selectedCodes(d).forEach(code=>addMatrix(code,ref))});
-  (sections.witness||[]).forEach((d,i)=>{const ref=`WT${i+1}`;addEvidence(ref,`Witness Testimony ${i+1}`,'Witness Testimony',d.date);selectedCodes(d).forEach(code=>addMatrix(code,ref))});
-  (sections.photos||[]).forEach((d,i)=>{const ref=`PE${i+1}`;addEvidence(ref,`Photographic Evidence ${i+1}`,'Photo Evidence',d.date);selectedCodes(d).forEach(code=>addMatrix(code,ref))});
-  (sections.professionalDiscussion||[]).forEach((d,i)=>{const ref=`PD${i+1}`;addEvidence(ref,`Professional Discussion ${i+1}`,'Professional Discussion',d.date);Object.keys(d.recordings||{}).filter(code=>d.recordings?.[code]?.data).forEach(code=>addMatrix(code,ref))});
-  (sections.walkthrough||[]).forEach((d,i)=>{const ref=`VW${i+1}`;addEvidence(ref,`Video Walkthrough ${i+1}`,'Video Walkthrough',d.date);if(d.code)addMatrix(d.code,ref)});
-
-  function drawCompactParagraph(x,text,px,py,maxWidth,maxHeight){
-    const sizes=[20,19,18,17,16,15,14];
-    for(const size of sizes){
-      const lineH=Math.round(size*1.42),lines=wrap(x,text,maxWidth,`400 ${size}px Arial`);
-      if(lines.length*lineH<=maxHeight){
-        x.font=`400 ${size}px Arial`;x.fillStyle=INK;
-        lines.forEach((l,i)=>x.fillText(l,px,py+i*lineH));
-        return py+lines.length*lineH;
-      }
-    }
-    const size=14,lineH=20,lines=wrap(x,text,maxWidth,`400 ${size}px Arial`),maxLines=Math.max(1,Math.floor(maxHeight/lineH));
-    const shown=lines.slice(0,maxLines);
-    if(lines.length>maxLines&&shown.length){shown[shown.length-1]=shown[shown.length-1].replace(/[.,;:]?$/,'...')}
-    x.font=`400 ${size}px Arial`;x.fillStyle=INK;shown.forEach((l,i)=>x.fillText(l,px,py+i*lineH));
-    return py+shown.length*lineH;
-  }
-  function compactScoreRows(p,d,startY,veryCompact=false){
-    const x=p.x;let y=startY,headerH=veryCompact?28:40,headerStep=veryCompact?32:46,rowH=veryCompact?25:38,rowStep=veryCompact?28:42,headerFont=veryCompact?13:17,summaryFont=veryCompact?12:16,criterionFont=veryCompact?10:14,scoreFont=veryCompact?12:16,gap=veryCompact?3:8;
-    skillCriteria().forEach(skill=>{
-      x.fillStyle=TEAL;x.fillRect(M,y-headerH+8,W-2*M,headerH);x.fillStyle=WHITE;x.font=`700 ${headerFont}px Arial`;x.fillText(skill.code,M+12,y);x.font=`700 ${summaryFont}px Arial`;fitText(x,clean(skill.summary),M+78,y,W-2*M-92,summaryFont);y+=headerStep;
-      skill.criteria.forEach((criterion,i)=>{x.fillStyle=PALE;x.fillRect(M,y-rowH+8,W-2*M,rowH);x.fillStyle=INK;x.font=`400 ${criterionFont}px Arial`;fitText(x,clean(`${i+1}. ${criterion}`),M+12,y,W-2*M-112,criterionFont);x.textAlign='right';x.font=`700 ${scoreFont}px Arial`;x.fillText(`${d.scores?.[`${skill.code}::${i+1}`]||'-'} / 5`,W-M-12,y);x.textAlign='left';y+=rowStep});y+=gap;
-    });
-    return y;
-  }
+(function(global){
+ const banks=Object.create(null);
+ function key(courseId,assignment){return `${courseId}::${Number(assignment)}`}
+ function register(courseId,assignment,questions){
+  const bankKey=key(courseId,assignment);
+  if(banks[bankKey])throw new Error(`MCQ bank already registered for ${bankKey}`);
+  banks[bankKey]=Object.freeze((questions||[]).map(q=>Object.freeze({...q,courseId,assignment:Number(assignment),options:Object.freeze([...(q.options||[])])})));
+ }
+ function get(courseId,assignment){return banks[key(courseId,assignment)]||[]}
+ function summary(){return Object.entries(banks).map(([bankKey,questions])=>({bankKey,total:questions.length,approved:questions.filter(q=>q.status==='approved').length}));}
+ global.MCQQuestionBank=Object.freeze({version:'2.0.3-bricklayer-kb-challenging-set2',register,get,summary});
+})(window);
 
 
-  function drawSelectedKsbRows(x,d,startY,maxHeight){
-    const rows=(assignment.ksbs||[]).filter(([code])=>selectedCodes(d).includes(code));
-    if(!rows.length){x.fillStyle=MUTED;x.font='400 15px Arial';x.fillText('No KSBs selected.',M,startY);return startY+24}
-    const rowH=Math.max(22,Math.min(38,Math.floor(maxHeight/rows.length)));
-    const font=Math.max(10,Math.min(15,rowH-9));
-    let y=startY;
-    rows.forEach(([code,summary],i)=>{
-      const kind=String(code).toUpperCase().startsWith('K')?'Knowledge':String(code).toUpperCase().startsWith('S')?'Skill':String(code).toUpperCase().startsWith('B')?'Behaviour':'KSB';
-      x.fillStyle=i%2?WHITE:PALE;x.fillRect(M,y-rowH+7,W-2*M,rowH);
-      x.fillStyle=x._sectionColour||TEAL;x.font=`700 ${font}px Arial`;x.fillText(clean(code),M+10,y);
-      x.fillStyle=MUTED;x.font=`700 ${Math.max(9,font-2)}px Arial`;x.fillText(kind.toUpperCase(),M+70,y);
-      x.fillStyle=INK;x.font=`400 ${font}px Arial`;fitText(x,clean(summary),M+170,y,W-2*M-182,font);
-      y+=rowH;
-    });
-    return y;
-  }
-  async function drawEvidencePhotoStrip(x,d,y,maxHeight){
-    const items=[];
-    for(const [code,ph] of Object.entries(d?.outcomePhotos||{})){if(ph?.data)items.push({code,img:await loadImage(ph.data)})}
-    for(let i=0;i<(d?.photos||[]).length;i++){const ph=d.photos[i];if(ph?.data)items.push({code:`Photo ${i+1}`,img:await loadImage(ph.data)})}
-    if(!items.length)return y;
-    const shown=items.slice(0,6),gap=10,cellW=(W-2*M-gap*(shown.length-1))/shown.length,cellH=Math.min(maxHeight,Math.max(58,cellW*.62));
-    shown.forEach((it,i)=>{const px=M+i*(cellW+gap);x.fillStyle=PALE;x.fillRect(px,y,cellW,cellH);if(it.img){const sc=Math.max(cellW/it.img.width,cellH/it.img.height),iw=it.img.width*sc,ih=it.img.height*sc;x.save();x.beginPath();x.rect(px,y,cellW,cellH);x.clip();x.drawImage(it.img,px+(cellW-iw)/2,y+(cellH-ih)/2,iw,ih);x.restore()}x.fillStyle=WHITE;x.fillRect(px,y+cellH-20,cellW,20);x.fillStyle=TEAL;x.font='700 10px Arial';fitText(x,clean(it.code),px+4,y+cellH-6,cellW-8,10)});
-    return y+cellH+12;
-  }
-
-  function addTextPages(title,version,date,type,heading,text,extraDraw){let p=meta(newPage(title,version),version,date,type);let x=p.x,y=sectionHeading(x,heading,p.y);if(extraDraw){y=extraDraw(p,y)||y}const lines=wrap(x,text,W-2*M,'400 22px Arial');x.font='400 22px Arial';x.fillStyle=INK;for(const l of lines){if(y>H-145){p=meta(newPage(`${title} - Continued`,version),version,date,type);x=p.x;y=sectionHeading(x,`${heading} (continued)`,p.y);x.font='400 22px Arial';x.fillStyle=INK}x.fillText(l,M,y);y+=32}return {p,x,y}}
-
-  async function addOutcomePhotoPages(d,title,version,date,type,selectedOnly=false){
-    const photos=d?.outcomePhotos||{};
-    const outcomes=assignment.ksbs.filter(([code])=>photos[code]?.data&&(!selectedOnly||+d.scores?.[code]===5));
-    for(let i=0;i<outcomes.length;i+=4){
-      const batch=outcomes.slice(i,i+4),p=meta(newPage(`${title} - ${course.nvqUnits?'Learning Outcome':'KSB'} Photos`,version),version,date,type);const x=p.x;let y=sectionHeading(x,course.nvqUnits?'Learning Outcome Photographs':'KSB Photographs',p.y);const gapX=22,gapY=32,cellW=(W-2*M-gapX)/2,cellH=cellW*9/16;
-      for(let j=0;j<batch.length;j++){const [code,text]=batch[j],col=j%2,row=Math.floor(j/2),px=M+col*(cellW+gapX),py=y+row*(cellH+gapY+54),img=await loadImage(photos[code].data);x.fillStyle=PALE;x.fillRect(px,py,cellW,cellH);if(img){const scale=Math.max(cellW/img.width,cellH/img.height),iw=img.width*scale,ih=img.height*scale;x.save();x.beginPath();x.rect(px,py,cellW,cellH);x.clip();x.drawImage(img,px+(cellW-iw)/2,py+(cellH-ih)/2,iw,ih);x.restore()}x.fillStyle=TEAL;x.font='700 17px Arial';x.fillText(clean(code),px,py+cellH+24);x.fillStyle=INK;x.font='400 13px Arial';const caption=wrap(x,text,cellW,'400 13px Arial').slice(0,2);caption.forEach((line,k)=>x.fillText(line,px,py+cellH+43+k*16));}
-    }
-  }
-
-  // Front cover (unnumbered)
+window.MCQQuestionBank.register('bricklayer-st0095-v1-2',1,[
   {
-    const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.fillStyle=WHITE;x.fillRect(0,0,W,H);
-    // layered, logo-inspired cover shapes with soft 3D depth
-    x.fillStyle='rgba(7,53,57,.10)';x.beginPath();x.arc(W+70,330,390,0,Math.PI*2);x.fill();
-    x.fillStyle=LIGHT_GREEN;x.beginPath();x.arc(W+25,270,340,0,Math.PI*2);x.fill();
-    x.fillStyle='rgba(185,232,202,.50)';x.fillRect(M+14,382,W-2*M,770);
-    x.fillStyle='rgba(7,53,57,.10)';x.fillRect(M+26,394,W-2*M,770);
-    x.fillStyle=WHITE;x.fillRect(M,368,W-2*M,770);
-    x.strokeStyle=SOFT_GREEN;x.lineWidth=3;x.strokeRect(M,368,W-2*M,770);
-    drawLogo(x,apprenticeLogo,M,64,250,112);if(collegeLogo)drawLogo(x,collegeLogo,W-M-500,76,210,82);drawPdfStamp(x,'Evidence Portfolio');
-    x.fillStyle=TEAL;x.font='700 64px Arial';fitText(x,clean(course.name||'Apprenticeship Course'),M,254,W-2*M,64);
-    x.fillStyle=MUTED;x.font='600 21px Arial';x.fillText(`${clean(course.standard||'')}  •  Level ${clean(course.level||'-')}`,M,302);
-    x.fillStyle=INK;x.font='700 36px Arial';x.fillText('EVIDENCE PORTFOLIO',M,448);
-    x.fillStyle=GREEN;x.fillRect(M,474,145,7);
-    let y=526;
-    [['Learner',profile.fullName],['Evidence',`Assignment ${assignment.n} - ${assignment.title}`],['Employer',profile.employer],['Training provider',branding?.name||profile.trainingProvider||profile.provider||'-'],['Assessor',profile.mentor],['Portfolio date',new Date().toLocaleDateString('en-GB')],['Evidence items',String(evidenceCatalogue.length)]].forEach(([a,b])=>{x.fillStyle=MUTED;x.font='700 14px Arial';x.fillText(clean(a).toUpperCase(),M+48,y);x.fillStyle=INK;x.font='700 23px Arial';fitText(x,clean(b||'-'),M+48,y+30,W-2*M-96,23);y+=82});
-    x.fillStyle=TEAL;x.font='700 21px Arial';x.fillText('APPRENTICE+',M,H-122);x.fillStyle=MUTED;x.font='600 18px Arial';x.fillText('Your Course, Your Way',M,H-88);
-    pages.push({canvas:c,ctx:x,colour:TEAL,sectionName:'Portfolio',isCover:true});
-  }
-
-  // Page 1 - portfolio contents
+    "ksb": "K1",
+    "concept": "K1 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Who is legally responsible for health and safety on site?",
+    "options": ["The site manager only","Your employer only","I don't know","Everyone on site, including yourself"],
+    "correct": 3,
+    "explanation": "Everyone has legal responsibilities under the Health and Safety at Work etc. Act 1974. Employers, supervisors and employees must all work safely, follow site rules and report hazards.",
+    "id": "brick-approved-a1-k1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
   {
-    const p=meta(newPage('Portfolio Contents','Page 1'),'Portfolio index','Evidence Portfolio');const x=p.x;let y=sectionHeading(x,'Evidence Index',p.y);
-    if(!evidenceCatalogue.length){value(x,'No submitted evidence items were available.',M,y,20)}else{
-      evidenceCatalogue.forEach((item,i)=>{if(y>H-135)return;x.fillStyle=i%2?WHITE:PALE;x.fillRect(M,y-28,W-2*M,52);x.fillStyle=x._sectionColour||TEAL;x.font='700 19px Arial';x.fillText(item.ref,M+16,y);x.fillStyle=INK;x.font='600 18px Arial';fitText(x,item.title,M+105,y,W-2*M-340,18);x.fillStyle=MUTED;x.font='500 16px Arial';x.textAlign='right';x.fillText(item.date||'-',W-M-18,y);x.textAlign='left';y+=56});
-    }
-    y=Math.min(y+25,H-310);y=sectionHeading(x,'Evidence Reference Key',y);
-    const keys=['PA  Practical Assessment','LS  Learner Statement','WT  Witness / Employer Testimony','VW  Video Walkthrough','PD  Professional Discussion','PE  Photo Evidence'];
-    keys.forEach((t,i)=>{x.fillStyle=INK;x.font='600 17px Arial';x.fillText(t,M+(i%2)*520,y+Math.floor(i/2)*34)});
-  }
-
-  // Page 2+ - automatic KSB evidence matrix. Every evidence reference is shown
-  // and long KSB descriptions wrap instead of running beyond the page edge.
+    "ksb": "K2",
+    "concept": "K2 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which item of PPE should always be replaced if it becomes damaged?",
+    "options": ["Safety boots","High-visibility vest","Safety helmet","I don't know"],
+    "correct": 2,
+    "explanation": "A damaged safety helmet may no longer protect you from falling objects or impacts. It should be replaced immediately and never repaired.",
+    "id": "brick-approved-a1-k2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
   {
-    let p=meta(newPage('KSB Evidence Matrix','Page 2'),'Automatic mapping','Evidence Portfolio');let x=p.x;let y=sectionHeading(x,'KSB Mapping',p.y);
-    x.fillStyle=MUTED;x.font='400 17px Arial';x.fillText('Evidence references show exactly where each KSB is evidenced within this downloaded portfolio.',M,y);y+=42;
-    const drawMatrixHeader=()=>{x.fillStyle=x._sectionColour||TEAL;x.fillRect(M,y-24,W-2*M,38);x.fillStyle=WHITE;x.font='700 15px Arial';x.fillText('KSB',M+14,y);x.fillText('Description',M+88,y);x.textAlign='right';x.fillText('Evidence location',W-M-16,y);x.textAlign='left';y+=54};
-    drawMatrixHeader();
-    for(const [code,summary] of assignment.ksbs||[]){
-      const refs=evidenceMatrix[code]||[];
-      x.font='600 15px Arial';const summaryLines=wrap(x,clean(summary),W-2*M-390,'600 15px Arial');
-      x.font='700 16px Arial';const refText=refs.length?refs.join('  '):'No evidence mapped';const refLines=wrap(x,refText,280,'700 16px Arial');
-      const rowH=Math.max(58,Math.max(summaryLines.length*20,refLines.length*21)+26);
-      if(y+rowH>H-115){p=meta(newPage('KSB Evidence Matrix - Continued','Automatic mapping'),'Automatic mapping','Evidence Portfolio');x=p.x;y=sectionHeading(x,'KSB Mapping (continued)',p.y);drawMatrixHeader()}
-      x.fillStyle=refs.length?PALE:'#fafafa';x.fillRect(M,y-25,W-2*M,rowH-6);
-      x.fillStyle=x._sectionColour||TEAL;x.font='700 18px Arial';x.fillText(code,M+14,y);
-      x.fillStyle=INK;x.font='600 15px Arial';summaryLines.forEach((line,i)=>x.fillText(line,M+88,y+i*20));
-      x.textAlign='right';x.fillStyle=refs.length?(x._sectionColour||TEAL):MUTED;x.font='700 16px Arial';refLines.forEach((line,i)=>x.fillText(line,W-M-16,y+i*21));x.textAlign='left';y+=rowH;
-    }
-    const covered=Object.values(evidenceMatrix).filter(v=>v.length).length,total=(assignment.ksbs||[]).length;
-    if(y+86>H-110){p=meta(newPage('KSB Evidence Matrix - Summary','Automatic mapping'),'Automatic mapping','Evidence Portfolio');x=p.x;y=sectionHeading(x,'KSB Mapping Summary',p.y)}
-    x.fillStyle=PALE;x.fillRect(M,y,W-2*M,76);label(x,'KSB coverage in this pack',M+22,y+31);value(x,`${covered} of ${total} KSBs mapped`,M+355,y+32,22,true);
-  }
-
-  const scoreRows=(p,d,startY)=>{const x=p.x;let y=startY;assignment.ksbs.forEach(([code,summary])=>{if(y>H-230){p=meta(newPage(`${p.title||'Assessment'} - Scores Continued`,d._version),d._version,d.date,'Assessment');y=sectionHeading(p.x,'KSB Scores (continued)',p.y)}x=p.x;x.fillStyle=PALE;x.fillRect(M,y-29,W-2*M,45);x.fillStyle=TEAL;x.font='700 19px Arial';x.fillText(code,M+16,y);x.fillStyle=INK;x.font='400 18px Arial';x.fillText(clean(summary),M+105,y);x.textAlign='right';x.font='700 20px Arial';x.fillText(`${d.scores?.[code]||'-'} / 5`,W-M-18,y);x.textAlign='left';y+=52});return {p,y}};
-
-  // Practical - every saved version, exactly one A4 page per version
-  for(let i=0;i<(sections.practical||[]).length;i++){
-    const d=sections.practical[i],v=i+1;d._version=v;
-    const p=meta(newPage(`Practical Assessment · PA${v}`,`Attempt ${v}`),`Attempt ${v}`,d.date,'Practical Assessment');const x=p.x;let y=sectionHeading(x,'Assessment Details',p.y);
-    label(x,'Tutor / assessor',M,y);value(x,d.tutor,M+240,y,18,true);y+=36;
-    label(x,'Activity assessed',M,y);y=drawCompactParagraph(x,d.activity,M+240,y,W-2*M-245,44)+8;
-    y=sectionHeading(x,'Finished Product Evidence',y);
-    const practicalImgs=[];for(const ph of d.photos||[])practicalImgs.push(await loadImage(ph.data));
-    const gap=14,cellW=(W-2*M-gap*2)/3,cellH=cellW*9/16;
-    for(let j=0;j<3;j++){const px=M+j*(cellW+gap),img=practicalImgs[j];x.fillStyle=PALE;x.fillRect(px,y,cellW,cellH);if(img){const scale=Math.max(cellW/img.width,cellH/img.height),iw=img.width*scale,ih=img.height*scale;x.save();x.beginPath();x.rect(px,y,cellW,cellH);x.clip();x.drawImage(img,px+(cellW-iw)/2,y+(cellH-ih)/2,iw,ih);x.restore()}x.fillStyle=TEAL;x.font='700 12px Arial';x.fillText(`Photo ${j+1}`,px+8,y+cellH-8)}
-    y+=cellH+34;y=sectionHeading(x,'Skill-specific Practical Marks',y);y=compactScoreRows(p,d,y,true);
-    y+=2;label(x,'Overall result',M,y);value(x,practicalResultText(d),M+220,y,18,true);y+=34;
-    const sigTop=H-225;
-    const sig=await loadImage(d.signature);signature(x,sig,sigTop,'Tutor / assessor signature');
-    {const fp=meta(newPage(`Practical Assessment Feedback · PA${v}`,`Attempt ${v}`),`Attempt ${v}`,d.date,'Practical Assessment');const fx=fp.x;let fy=sectionHeading(fx,'Assessment Summary',fp.y);fy=drawCompactParagraph(fx,d.feedbackSummary||d.feedback||'No assessment summary recorded.',M,fy,W-2*M,260)+22;fy=sectionHeading(fx,'Areas for Improvement',fy);fy=drawCompactParagraph(fx,d.feedbackDevelopment||'No areas for improvement recorded.',M,fy,W-2*M,260)+22;fy=sectionHeading(fx,'Additional Assessment Comments',fy);drawCompactParagraph(fx,d.feedback||'No additional comments recorded.',M,fy,W-2*M,Math.max(120,H-fy-120));}
-    if(course.nvqUnits)await addOutcomePhotoPages(d,'Assessor Observation',`Attempt ${v}`,d.date,'Assessor Observation',true);
-  }
-
-  // Photographic Evidence - three photographs per selected Skill
-  for(let i=0;i<(sections.photos||[]).length;i++){
-    const d=sections.photos[i],v=i+1;
-    const selected=(assignment.ksbs||[]).filter(([code])=>String(code).toUpperCase().startsWith('S')&&(d.ksbEvidence||[]).includes(code));
-    const entries=[];
-    for(const [code,text] of selected){for(let j=0;j<3;j++){const ph=d.skillPhotos?.[code]?.[j];if(ph?.data)entries.push({code,text,index:j+1,img:await loadImage(ph.data)})}}
-    if(!entries.length){for(let j=0;j<(d.photos||[]).length;j++){const ph=d.photos[j];if(ph?.data)entries.push({code:'PE',text:'Legacy photographic evidence',index:j+1,img:await loadImage(ph.data)})}}
-    for(let start=0;start<entries.length;start+=6){const batch=entries.slice(start,start+6),pageNo=Math.floor(start/6)+1,totalPages=Math.max(1,Math.ceil(entries.length/6));const p=meta(newPage(`Photographic Evidence · PE${v}${totalPages>1?` · ${pageNo}/${totalPages}`:''}`,v),v,d.date,'Photographic Evidence');const x=p.x;let y=sectionHeading(x,'Skill Photographs',p.y);const gapX=22,gapY=34,cellW=(W-2*M-gapX)/2,cellH=cellW*9/16;for(let j=0;j<batch.length;j++){const item=batch[j],col=j%2,row=Math.floor(j/2),px=M+col*(cellW+gapX),py=y+row*(cellH+gapY+26),img=item.img;x.fillStyle=PALE;x.fillRect(px,py,cellW,cellH);if(img){const scale=Math.max(cellW/img.width,cellH/img.height),iw=img.width*scale,ih=img.height*scale;x.save();x.beginPath();x.rect(px,py,cellW,cellH);x.clip();x.drawImage(img,px+(cellW-iw)/2,py+(cellH-ih)/2,iw,ih);x.restore()}x.fillStyle=TEAL;x.font='700 14px Arial';x.fillText(`${item.code} · Photo ${item.index}`,px,py+cellH+20);x.fillStyle=INK;x.font='400 12px Arial';fitText(x,clean(item.text),px,py+cellH+38,cellW,12)}if(start+6>=entries.length){const sig=await loadImage(d.signature);signature(x,sig,H-225,'Learner signature')}}
-  }
-
-  // Statements
-  for(let i=0;i<(sections.statement||[]).length;i++){
-    const d=sections.statement[i],v=i+1;const r=addTextPages(`Learner Statement · LS${v}`,v,d.date,'Learner Statement','Statement',d.text);let {p,x,y}=r;const sig=await loadImage(d.signature);if(y>H-300){p=meta(newPage(`Learner Statement - Signature · LS${v}`,v),v,d.date,'Learner Statement');signature(p.x,sig,p.y,'Learner signature')}else signature(x,sig,y+35,'Learner signature');
-  }
-
-  // Witness testimony - one complete A4 page per testimony.
-  for(let i=0;i<(sections.witness||[]).length;i++){
-    const d=sections.witness[i],v=i+1;
-    const p=meta(newPage(`Witness Testimony · WT${v}`,`Attempt ${v}`),`Attempt ${v}`,d.date,d.type||'Witness Testimony');const x=p.x;let y=sectionHeading(x,'Witness Details',p.y);
-    const detailRows=[['Evidence source',d.type||'Witness testimony'],['Name',d.personName],['Role',d.role],['Organisation',d.organisation],['Activity witnessed',d.activity]];
-    detailRows.forEach(([a,b])=>{label(x,a,M,y);value(x,b,M+210,y,15,true);y+=28});
-    y=sectionHeading(x,'Selected Knowledge, Skills and Behaviours',y+2);
-    const selectedCount=Math.max(1,selectedCodes(d).length),ksbBudget=Math.min(420,Math.max(130,selectedCount*30));
-    y=drawSelectedKsbRows(x,d,y,ksbBudget)+8;
-    const photos=Object.values(d?.outcomePhotos||{}).filter(ph=>ph?.data).length+(d?.photos||[]).filter(ph=>ph?.data).length;
-    if(photos){y=sectionHeading(x,'Attached Photographs',y);y=await drawEvidencePhotoStrip(x,d,y,115)}
-    const sigTop=H-205;
-    const remaining=Math.max(170,sigTop-y-20),block=Math.floor(remaining/3);
-    y=sectionHeading(x,'Witness Testimony',y);y=drawCompactParagraph(x,d.feedback||'No testimony recorded.',M,y,W-2*M,Math.max(70,block))+8;
-    y=sectionHeading(x,'Assessment Summary',y);y=drawCompactParagraph(x,d.feedbackSummary||d.feedback||'No assessment summary recorded.',M,y,W-2*M,Math.max(60,block-8))+8;
-    y=sectionHeading(x,'Areas for Improvement / Additional Comments',y);drawCompactParagraph(x,[d.feedbackDevelopment,d.additionalComments].filter(Boolean).join('\n')||'No areas for improvement or additional comments recorded.',M,y,W-2*M,Math.max(55,sigTop-y-16));
-    const sig=await loadImage(d.signature);signature(x,sig,sigTop,`${d.type||'Witness'} signature`);
-  }
-
-  // Professional discussion - recordings are listed in the PDF and included in the ZIP package
-  for(let i=0;i<(sections.professionalDiscussion||[]).length;i++){
-    const d=sections.professionalDiscussion[i],v=i+1,recordings=d.recordings||{},notes=d.notes||{};
-    const evidenced=(assignment.ksbs||[]).filter(([code])=>!!recordings?.[code]?.data);
-    const lines=evidenced.map(([code,summary])=>{
-      const rec=recordings[code],note=String(notes[code]||'').trim();
-      return `${code} — ${summary}\nRecording: Included (${rec.duration||'duration unavailable'}, recorded ${rec.date||d.date||''})${note?`\nNotes: ${note}`:''}`;
-    }).join('\n\n');
-    const intro=`Discussion lead: ${d.assessor||''}\nActivity / subject: ${d.activity||''}\n\n${lines||'No recorded KSB evidence was attached to this discussion.'}`;
-    let r=addTextPages(`Professional Discussion · PD${v}`,`Attempt ${v}`,d.date,'Professional Discussion','Learning Outcome Recordings',intro),{p,x,y}=r;
-    const sig=await loadImage(d.signature);if(y>H-300){p=meta(newPage(`Professional Discussion - Signature · PD${v}`,v),v,d.date,'Professional Discussion');signature(p.x,sig,p.y,'Assessor / discussion lead signature')}else signature(x,sig,y+35,'Assessor / discussion lead signature');
-  }
-
-  // Video evidence index - list every attached video title together on one page.
+    "ksb": "K3",
+    "concept": "K3 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "You are asked to carry out work that isn't covered by the RAMS. What should you do?",
+    "options": ["Continue if an experienced bricklayer approves","Stop and ask for the RAMS to be reviewed","Work carefully until the supervisor returns","I don't know"],
+    "correct": 1,
+    "explanation": "RAMS must reflect the work being carried out. If they do not, work should stop until suitable controls are in place.",
+    "id": "brick-approved-a1-k3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
   {
-    const videoTitles=[];
-    for(let i=0;i<(sections.walkthrough||[]).length;i++){const f=sections.walkthrough[i],mark=isNewEvidence('walkthrough',i+1)?'NEW EVIDENCE - ':'';videoTitles.push(`${mark}${ksbMediaFileName(f)}`)}
-    if(videoTitles.length){
-      const p=meta(newPage('Video Evidence Files','Attached media'),'Attached media','Video Evidence Index');const x=p.x;let y=sectionHeading(x,'Attached video files',p.y);
-      x.fillStyle=MUTED;x.font='400 17px Arial';x.fillText('The playable files below are included in the downloaded evidence package.',M,y);y+=42;
-      const available=H-y-145,lineH=Math.max(24,Math.min(38,Math.floor(available/Math.max(1,videoTitles.length))));
-      const fontSize=Math.max(13,Math.min(19,lineH-7));
-      videoTitles.forEach((name,i)=>{x.fillStyle=i%2?WHITE:PALE;x.fillRect(M,y-24,W-2*M,lineH);x.fillStyle=TEAL;x.font=`700 ${fontSize}px Arial`;x.fillText(`${i+1}.`,M+14,y);x.fillStyle=INK;x.font=`600 ${fontSize}px Arial`;fitText(x,clean(name),M+58,y,W-2*M-78,fontSize);y+=lineH});
-    }
+    "ksb": "B1",
+    "concept": "B1 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "You notice another apprentice working unsafely. What should you do?",
+    "options": ["Report it or challenge it safely if appropriate","Ignore it if they have more experience","Wait until the end of the day","I don't know"],
+    "correct": 0,
+    "explanation": "Professional bricklayers have a responsibility to help maintain a safe workplace. Unsafe behaviour should be challenged appropriately or reported before someone is injured.",
+    "id": "brick-approved-a1-b1",
+    "type": "Behaviour",
+    "status": "approved"
   }
-
-  // Professional Discussion file index, matching the Video Walkthrough index.
+,
   {
-    const audioTitles=[];
-    for(let vi=0;vi<(sections.professionalDiscussion||[]).length;vi++){
-      const version=sections.professionalDiscussion[vi];
-      for(const [code,rec] of Object.entries(version.recordings||{})){
-        if(rec?.data){const mark=isNewEvidence('professionalDiscussion',vi+1)?'NEW EVIDENCE - ':'';audioTitles.push(`${mark}${code} - Professional Discussion - Attempt ${vi+1}${rec.duration?` (${rec.duration})`:''}`);}
-      }
-    }
-    if(audioTitles.length){
-      const p=meta(newPage('Professional Discussion Audio Files','Attached media'),'Attached media','Professional Discussion');const x=p.x;let y=sectionHeading(x,'Attached professional discussion files',p.y);
-      x.fillStyle=MUTED;x.font='400 17px Arial';x.fillText('The playable audio files below are included in the downloaded evidence package.',M,y);y+=42;
-      const available=H-y-145,lineH=Math.max(24,Math.min(38,Math.floor(available/Math.max(1,audioTitles.length))));
-      const fontSize=Math.max(13,Math.min(19,lineH-7));
-      audioTitles.forEach((name,i)=>{x.fillStyle=i%2?WHITE:PALE;x.fillRect(M,y-24,W-2*M,lineH);x.fillStyle=TEAL;x.font=`700 ${fontSize}px Arial`;x.fillText(`${i+1}.`,M+14,y);x.fillStyle=INK;x.font=`600 ${fontSize}px Arial`;fitText(x,clean(name),M+58,y,W-2*M-78,fontSize);y+=lineH});
-    }
+    "ksb": "K1",
+    "concept": "K1 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A bricklayer is asked to chase a wall in a refurbishment area where the survey information is missing. What is the safest response?",
+    "options": ["Stop work and confirm the asbestos information before disturbing the material","Use hand tools to reduce dust","Wear a disposable mask and continue","Ask another trade whether the wall looks safe"],
+    "correct": 0,
+    "explanation": "Unknown materials in refurbishment work must not be disturbed until asbestos information and suitable controls are confirmed.",
+    "id": "brick-challenging-set1-a1-k1-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K2",
+    "concept": "K2 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "During repeated dry cutting, an operative wears an FFP3 mask but the extraction unit is disconnected. Why is this still unacceptable?",
+    "options": ["RPE replaces the need for extraction","Only eye protection is required outdoors","An FFP3 mask is only needed when mixing mortar","LEV or dust suppression should control dust at source, with suitable RPE as additional protection"],
+    "correct": 3,
+    "explanation": "Dust should be controlled at source using effective extraction or suppression; RPE is an additional control, not a substitute.",
+    "id": "brick-challenging-set1-a1-k2-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K3",
+    "concept": "K3 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A method statement specifies a mechanical lifting aid, but the aid is unavailable when heavy lintels arrive. What should happen?",
+    "options": ["Lift the lintels manually with extra workers","Change the sequence without recording it","Stop the task until the safe system is reviewed and suitable equipment is provided","Proceed because the delivery driver is waiting"],
+    "correct": 2,
+    "explanation": "Work must follow the agreed safe system. A missing control requires the task to stop and the RAMS to be reviewed.",
+    "id": "brick-challenging-set1-a1-k3-3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B1",
+    "concept": "B1 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A supervisor asks the team to skip an edge-protection check to recover lost time. Which response best demonstrates B1?",
+    "options": ["Agree because the supervisor is accountable","Explain the safety concern and do not start until the protection is confirmed","Carry on but work more slowly","Ask someone else to work near the edge first"],
+    "correct": 1,
+    "explanation": "Putting health, safety and wellbeing first means refusing unsafe shortcuts and ensuring controls are effective before work starts.",
+    "id": "brick-challenging-set1-a1-b1-4",
+    "type": "Behaviour",
+    "status": "approved"
   }
-
-
-  footerAll();
-  const jpegPages=pages.map(p=>dataUrlBytes(p.canvas.toDataURL('image/jpeg',0.90)));
-  const pdf=makeImagePDF(jpegPages,W,H);
-  const safe=clean(profile.fullName).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'');
-  const pdfName=`${safe||'Learner'}-Assignment-${assignment.n}-Evidence-Pack.pdf`;
-  const videos=[];for(let supportingIndex=0;supportingIndex<(sections.supporting||[]).length;supportingIndex++){const version=sections.supporting[supportingIndex],codes=selectedKsbCodesForMedia(assignment,version);for(const f of version.files||[])if((f.type||'').startsWith('video/')&&f.data)videos.push({...f,ksbCodes:codes,_supportingAttempt:supportingIndex+1})}
-  const walkthroughVideos=(sections.walkthrough||[]).filter(f=>f?.data);
-  const audios=[];for(let vi=0;vi<(sections.professionalDiscussion||[]).length;vi++){const version=sections.professionalDiscussion[vi];for(const [code,rec] of Object.entries(version.recordings||{}))if(rec?.data)audios.push({code,rec,attempt:vi+1})}
-  if(videos.length||walkthroughVideos.length||audios.length){
-    const entries=[{name:pdfName,data:pdf}],used=new Set();
-    videos.forEach((f,i)=>{const original=String(f.name||''),dot=original.lastIndexOf('.'),ext=dot>0?original.slice(dot):'.mp4',prefix=(f.ksbCodes||[]).join('-'),attempt=Number(f._supportingAttempt||i+1),newMark=isNewEvidence('supporting',attempt)?'NEW EVIDENCE - ':'',base=safeZipName(`${newMark}${prefix?prefix+' - ':''}${(f.evidenceName||`Supporting video ${i+1}`).trim()}`);let name=uniqueMediaName(base,ext,used);entries.push({name:`Supporting Videos/${name}`,data:dataUrlBytes(f.data)})});
-    walkthroughVideos.forEach((f,i)=>{const ext=mediaExtension(f.type,f.name,'video'),newMark=isNewEvidence('walkthrough',i+1)?'NEW EVIDENCE - ':'',base=safeZipName(`${newMark}${f.code} - ${f.summary||'Video evidence'}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Video Evidence/${name}`,data:dataUrlBytes(f.data)})});
-    audios.forEach(({code,rec,attempt},i)=>{const ext=mediaExtension(rec.type,'','audio'),newMark=isNewEvidence('professionalDiscussion',attempt)?'NEW EVIDENCE - ':'',base=safeZipName(`${newMark}${code} - Professional Discussion - Attempt ${attempt}`),name=uniqueMediaName(base,ext,used);entries.push({name:`KSB Voice Notes/${name}`,data:dataUrlBytes(rec.data)})});
-    const packageName=`${safe||'Learner'}-Assignment-${assignment.n}-Complete-Evidence-Package.zip`;
-    if(returnPackage)return {assignmentNumber:assignment.n,pdfName,entries,packageName};
-    await downloadBlob(makeZipBlob(entries),'application/zip',packageName);
-  }else{
-    const entries=[{name:pdfName,data:pdf}];
-    if(returnPackage)return {assignmentNumber:assignment.n,pdfName,entries,packageName:pdfName};
-    await downloadBlob(pdf,'application/pdf',pdfName);
+,
+  {
+    "ksb": "K1",
+    "concept": "K1 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "During refurbishment, a bricklayer finds a damaged board labelled as potentially containing asbestos beside the planned work area. What is the correct response?",
+    "options": ["Move it carefully to one side","Wet it and continue working nearby","Stop work, prevent disturbance and report it under the site asbestos procedure","Break it into smaller pieces for disposal"],
+    "correct": 2,
+    "explanation": "Suspected asbestos-containing material must not be disturbed. Work should stop and the site procedure followed.",
+    "id": "brick-challenging-set2-a1-k1-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K2",
+    "concept": "K2 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A worker has the correct RPE for cutting masonry but has not completed a face-fit test. Why should the task not begin?",
+    "options": ["The mask colour may not match the site rules","The protection level cannot be relied upon without a suitable face fit","Face-fit testing is only needed for welding","RPE is unnecessary when cutting outdoors"],
+    "correct": 1,
+    "explanation": "Tight-fitting RPE must fit the individual wearer correctly; otherwise contaminated air can leak around the seal.",
+    "id": "brick-challenging-set2-a1-k2-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K3",
+    "concept": "K3 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A toolbox talk identifies a new vehicle route crossing the mortar-mixing area. What is the best next step?",
+    "options": ["Update the task controls and relocate or segregate the mixing area before work continues","Continue using the area until an incident occurs","Ask drivers to sound their horns","Work faster whenever vehicles approach"],
+    "correct": 0,
+    "explanation": "Changed site conditions require the safe system of work and controls to be reviewed before continuing.",
+    "id": "brick-challenging-set2-a1-k3-3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B1",
+    "concept": "B1 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A colleague appears exhausted and is making repeated errors while working from a scaffold. What action best puts wellbeing and safety first?",
+    "options": ["Ignore it because they are responsible for themselves","Give them stronger coffee and continue","Complete their checks without telling anyone","Speak to them and the supervisor, pause the task and arrange suitable support"],
+    "correct": 3,
+    "explanation": "Health, safety and wellbeing come before production, so concerns should be raised and the task paused if necessary.",
+    "id": "brick-challenging-set2-a1-b1-4",
+    "type": "Behaviour",
+    "status": "approved"
   }
-}
+]);
 
-function selectedKsbCodesForMedia(assignment,version){
-  const available=new Set((assignment?.ksbs||[]).map(([code])=>String(code)));
-  return Object.entries(version?.scores||{}).filter(([code,score])=>available.has(String(code))&&Number(score)>0).map(([code])=>String(code));
-}
-function mediaExtension(type,name,kind='video'){
-  const original=String(name||''),dot=original.lastIndexOf('.');if(dot>0&&dot>original.length-8)return original.slice(dot);
-  const mime=String(type||'').toLowerCase();if(mime.includes('mp4'))return kind==='audio'?'.m4a':'.mp4';if(mime.includes('ogg'))return '.ogg';if(mime.includes('mpeg'))return '.mp3';if(mime.includes('wav'))return '.wav';return '.webm';
-}
-function uniqueMediaName(base,ext,used){let name=`${base}${ext}`,n=2;while(used.has(name.toLowerCase()))name=`${base} (${n++})${ext}`;used.add(name.toLowerCase());return name}
-function ksbMediaFileName(f){return `${safeZipName(`${f.code||'KSB'} - ${f.summary||'Video evidence'}`)}${mediaExtension(f.type,f.name,'video')}`}
-
-/* NVQ-only portfolio PDF. This branch is intentionally isolated so the original
-   Bricklaying, Site Carpentry, Architectural Joiner and Property Maintenance
-   PDF layouts and grading logic remain unchanged. */
-async function generateNVQEvidencePackPDF({course, assignment, profile, sections, branding, returnPackage=false, newEvidence={}}) {
-  const W=1240,H=1754,M=88,TEAL='#06382c',GREEN='#48E023',YELLOW='#F7D75C',GREY='#EEF1F1',INK='#1A1A1A',MUTED='#5f6f70',PALE='#f2f7f5',WHITE='#ffffff';
-  const pages=[];
-  const newEvidenceAliases={practical:'practical',practicalassessment:'practical',assessorobservation:'practical',photos:'photos',photoevidence:'photos',photographicevidence:'photos',statement:'statement',learnerstatement:'statement',discussion:'discussion',videowalkthrough:'walkthrough',professionaldiscussion:'professionalDiscussion',witness:'witness',witnesstestimony:'witness',supporting:'supporting',supportingevidence:'supporting',walkthrough:'walkthrough'};
-  const isNewEvidence=(type,attempt)=>{const key=newEvidenceAliases[String(type||'').replace(/[^a-z]/gi,'').toLowerCase()]||String(type||'');return Array.isArray(newEvidence?.[key])&&newEvidence[key].includes(Number(attempt))};
-  const drawNewEvidenceStamp=x=>{x.save();x.translate(W-235,205);x.rotate(-0.08);x.strokeStyle='#d32f2f';x.fillStyle='rgba(255,255,255,.92)';x.lineWidth=5;x.fillRect(-5,-38,190,62);x.strokeRect(-5,-38,190,62);x.fillStyle='#d32f2f';x.font='900 23px Arial';x.textAlign='center';x.fillText('NEW EVIDENCE',90,2);x.textAlign='left';x.restore()};
-  const clean=v=>String(v??'').replace(/[\u2010-\u2015]/g,'-').replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"');
-  const allOutcomeCodes=new Set((assignment.ksbs||[]).map(([code])=>code));
-  const selectedCodes=d=>{const explicit=Array.isArray(d?.ksbEvidence)?d.ksbEvidence:[];const photos=Object.keys(d?.outcomePhotos||{}).filter(code=>d.outcomePhotos?.[code]?.data);const scores=Object.keys(d?.scores||{}).map(k=>String(k).split('::')[0]).filter(code=>Number(d?.scores?.[code]??Object.entries(d?.scores||{}).find(([key])=>String(key).split('::')[0]===code)?.[1])>0);const recordings=Object.keys(d?.recordings||{}).filter(code=>d.recordings?.[code]?.data);return [...new Set([...explicit,...photos,...scores,...recordings].filter(code=>allOutcomeCodes.has(code)))];};
-  const selectedScores=d=>(assignment.ksbs||[]).filter(([code])=>selectedCodes(d).includes(code));
-  const drawAllOutcomeRows=(x,d,startY,maxHeight)=>{const rows=selectedScores(d);if(!rows.length){x.fillStyle=MUTED;x.font='400 15px Arial';x.fillText('No learning outcomes selected.',M,startY);return startY+24}const rowH=Math.max(22,Math.min(38,Math.floor(maxHeight/rows.length))),font=Math.max(10,Math.min(15,rowH-9));let y=startY;rows.forEach(([code,text],i)=>{x.fillStyle=i%2?WHITE:PALE;x.fillRect(M,y-rowH+7,W-2*M,rowH);x.fillStyle=x._sectionColour||TEAL;x.font=`700 ${font}px Arial`;x.fillText(clean(code),M+10,y);x.fillStyle=INK;x.font=`400 ${font}px Arial`;fitText(x,clean(text),M+90,y,W-2*M-102,font);y+=rowH});return y};
-  const selectedStatement=d=>(assignment.ksbs||[]).filter(([code])=>selectedCodes(d).includes(code));
-  const selectedDiscussion=d=>{const recordings=d?.recordings||{};return (assignment.ksbs||[]).filter(([code])=>!!recordings?.[code]?.data)};
-  const evidenceMap={};(assignment.ksbs||[]).forEach(([code])=>evidenceMap[code]=[]);
-  const add=(code,ref,type)=>{if(evidenceMap[code]&&!evidenceMap[code].some(e=>e.ref===ref))evidenceMap[code].push({ref,type})};
-  (sections.practical||[]).forEach((d,i)=>selectedCodes(d).forEach(c=>add(c,`AO${i+1}`,'Assessor Observation')));
-  (sections.photos||[]).forEach((d,i)=>selectedCodes(d).forEach(c=>add(c,`PE${i+1}`,'Photographic Evidence')));
-  (sections.statement||[]).forEach((d,i)=>selectedCodes(d).forEach(c=>add(c,`LS${i+1}`,'Learner Statement')));
-  (sections.discussion||[]).forEach((d,i)=>selectedCodes(d).forEach(c=>add(c,`VW${i+1}`,'Video Walkthrough')));
-  (sections.professionalDiscussion||[]).forEach((d,i)=>selectedDiscussion(d).forEach(([c])=>add(c,`PD${i+1}`,'Professional Discussion')));
-  (sections.witness||[]).forEach((d,i)=>selectedCodes(d).forEach(c=>add(c,`WT${i+1}`,'Witness Testimony')));
-
-  const PDF_COLOURS={cover:'#79d22f',practical:'#2E7D32',statement:'#1565C0',witness:'#F9A825',video:'#6A1B9A',discussion:'#00897B',photo:'#EF6C00',knowledge:'#3949AB',documents:'#546E7A'};
-  const pdfSectionFor=title=>{const t=String(title||'').toLowerCase();if(/assessor observation|practical/.test(t))return ['Practical Assessment',PDF_COLOURS.practical];if(/learner statement/.test(t))return ['Learner Statement',PDF_COLOURS.statement];if(/witness|employer/.test(t))return ['Witness Testimony',PDF_COLOURS.witness];if(/video|walkthrough/.test(t))return ['Video Walkthrough',PDF_COLOURS.video];if(/professional discussion/.test(t))return ['Professional Discussion',PDF_COLOURS.discussion];if(/photo|image/.test(t))return ['Photo Evidence',PDF_COLOURS.photo];if(/knowledge|question/.test(t))return ['Knowledge Questions',PDF_COLOURS.knowledge];if(/document|certificate|supporting/.test(t))return ['Documents',PDF_COLOURS.documents];return ['Evidence Portfolio',PDF_COLOURS.cover]};
-  const pdfStampFor=title=>{const t=String(title||'').toLowerCase();if(/learning outcome|coverage|evidence pack/.test(t))return ['NVQ','Evidence Pack',PDF_COLOURS.cover];if(/assessor observation|practical/.test(t))return ['PA','Practical Assessment',PDF_COLOURS.practical];if(/learner statement/.test(t))return ['LS','Learner Statement',PDF_COLOURS.statement];if(/witness|employer/.test(t))return ['WT','Witness Testimony',PDF_COLOURS.witness];if(/video|walkthrough/.test(t))return ['VW','Video Walkthrough',PDF_COLOURS.video];if(/professional discussion/.test(t))return ['PD','Professional Discussion',PDF_COLOURS.discussion];if(/photo|image/.test(t))return ['PE','Photo Evidence',PDF_COLOURS.photo];if(/knowledge|question/.test(t))return ['KQ','Knowledge Questions',PDF_COLOURS.knowledge];if(/document|certificate|supporting/.test(t))return ['SE','Supporting Evidence',PDF_COLOURS.documents];return ['PORT','Portfolio',PDF_COLOURS.cover]};
-  const drawPdfStamp=(x,title,cx=W-138,cy=104,r=68)=>{const [code,labelText,colour]=pdfStampFor(title);x.save();x.shadowColor='rgba(0,0,0,.30)';x.shadowBlur=16;x.shadowOffsetY=7;const grad=x.createRadialGradient(cx-r*.35,cy-r*.42,r*.10,cx,cy,r);grad.addColorStop(0,'#ffffff');grad.addColorStop(.14,colour);grad.addColorStop(1,colour);x.fillStyle=grad;x.beginPath();x.arc(cx,cy,r,0,Math.PI*2);x.fill();x.shadowColor='transparent';x.strokeStyle='rgba(255,255,255,.90)';x.lineWidth=5;x.beginPath();x.arc(cx,cy,r-8,0,Math.PI*2);x.stroke();x.strokeStyle='rgba(0,0,0,.20)';x.lineWidth=2;x.beginPath();x.arc(cx,cy,r-16,0,Math.PI*2);x.stroke();x.fillStyle=WHITE;x.textAlign='center';x.textBaseline='middle';x.font=`900 ${code.length>3?24:34}px Arial`;x.fillText(code,cx,cy-9);x.font='700 11px Arial';const words=labelText.toUpperCase().split(' ');if(words.length>1){x.fillText(words[0],cx,cy+22);x.fillText(words.slice(1).join(' '),cx,cy+36)}else x.fillText(words[0],cx,cy+28);x.textAlign='left';x.textBaseline='alphabetic';x.restore()};
-  const newPage=(title,subtitle='NVQ Evidence Portfolio')=>{const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d'),[sectionName,sectionColour]=pdfSectionFor(title);x._sectionColour=sectionColour;x._sectionName=sectionName;x.fillStyle=WHITE;x.fillRect(0,0,W,H);x.fillStyle=sectionColour;x.fillRect(0,0,W,16);x.fillRect(0,0,18,H);x.fillStyle=sectionColour;x.fillRect(M,54,W-2*M,150);x.fillStyle=WHITE;x.font='700 24px Arial';x.fillText('APPRENTICE+ NVQ EVIDENCE PORTFOLIO',M+30,92);x.font='700 38px Arial';fitText(x,clean(title),M+30,148,W-2*M-245,38);x.font='600 20px Arial';x.fillText(clean(subtitle),M+30,184);const tabW=Math.min(300,Math.max(170,sectionName.length*13+34));x.fillStyle=sectionColour;x.fillRect(W-M-tabW,214,tabW,38);x.fillStyle=WHITE;x.font='700 16px Arial';x.textAlign='center';x.fillText(sectionName,W-M-tabW/2,239);x.textAlign='left';drawPdfStamp(x,title);pages.push({canvas:c,ctx:x,colour:sectionColour,sectionName});return {c,x,y:272}};
-  function fitText(x,text,px,py,max,fontSize){let s=fontSize;x.font=`700 ${s}px Arial`;while(x.measureText(text).width>max&&s>14){s--;x.font=`700 ${s}px Arial`}x.fillText(text,px,py)}
-  function label(x,t,px,py){x.fillStyle=MUTED;x.font='700 17px Arial';x.fillText(clean(t).toUpperCase(),px,py)}
-  function value(x,t,px,py,size=21,bold=false){x.fillStyle=INK;x.font=`${bold?700:400} ${size}px Arial`;x.fillText(clean(t||'-'),px,py)}
-  function wrap(x,text,maxWidth,font='400 21px Arial'){x.font=font;const out=[];for(const p of clean(text||'-').split(/\n/)){const words=p.split(/\s+/);let line='';for(const w of words){const test=line?`${line} ${w}`:w;if(x.measureText(test).width>maxWidth&&line){out.push(line);line=w}else line=test}out.push(line||' ')}return out}
-  function sectionHeading(x,t,y){x.fillStyle=x._sectionColour||TEAL;x.font='700 25px Arial';x.fillText(clean(t),M,y);x.fillStyle=x._sectionColour||GREEN;x.fillRect(M,y+14,W-2*M,4);return y+52}
-  function meta(p,date,type,attempt){const {x}=p;let y=p.y;x.fillStyle=PALE;x.fillRect(M,y,W-2*M,132);label(x,'Learner',M+24,y+31);value(x,profile.fullName,M+24,y+62,21,true);label(x,'Date submitted',M+560,y+31);value(x,date||'-',M+560,y+62,21,true);label(x,'Evidence type',M+24,y+96);value(x,type,M+190,y+96,19,true);label(x,'Attempt',M+560,y+96);value(x,String(attempt),M+650,y+96,19,true);if(isNewEvidence(type,attempt))drawNewEvidenceStamp(x);p.y=y+168;return p}
-  async function loadImage(src){if(!src)return null;return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src})}
-  function signature(x,img,y,title){label(x,title,M,y);x.strokeStyle='#b8c4c1';x.lineWidth=2;x.strokeRect(M,y+18,420,122);if(img)try{x.drawImage(img,M+12,y+28,396,98)}catch{}return y+162}
-  function paragraph(x,text,y,maxHeight=360){const sizes=[21,20,19,18,17,16,15];for(const size of sizes){const lh=Math.round(size*1.43),lines=wrap(x,text,W-2*M,`400 ${size}px Arial`);if(lines.length*lh<=maxHeight){x.font=`400 ${size}px Arial`;x.fillStyle=INK;lines.forEach((l,i)=>x.fillText(l,M,y+i*lh));return y+lines.length*lh}}const lines=wrap(x,text,W-2*M,'400 15px Arial'),max=Math.floor(maxHeight/22);x.font='400 15px Arial';x.fillStyle=INK;lines.slice(0,max).forEach((l,i)=>x.fillText(l,M,y+i*22));return y+Math.min(lines.length,max)*22}
-  function drawOutcomeRows(x,outcomes,y,showCriteria=true){for(const [code,text] of outcomes){if(y>H-160)break;x.fillStyle=PALE;x.fillRect(M,y-28,W-2*M,64);x.fillStyle=TEAL;x.font='700 19px Arial';x.fillText(code,M+16,y);x.fillStyle=INK;x.font='600 17px Arial';fitText(x,clean(text),M+100,y,W-2*M-125,17);if(showCriteria&&assignment.criteria?.[code]){x.fillStyle=MUTED;x.font='400 13px Arial';fitText(x,`Criteria: ${clean(assignment.criteria[code])}`,M+100,y+23,W-2*M-125,13)}y+=76}return y}
-  async function photoPages(d,title,attempt,outcomes){const photos=d?.outcomePhotos||{},available=outcomes.filter(([code])=>photos[code]?.data);for(let i=0;i<available.length;i+=4){const batch=available.slice(i,i+4),p=meta(newPage(`${title} - ${course.nvqUnits?'Learning Outcome':'KSB'} Photos`,`${title} | Attempt ${attempt}`),d.date,title,attempt),x=p.x;let y=sectionHeading(x,course.nvqUnits?'Learning Outcome Photographs':'KSB Photographs',p.y),gapX=22,gapY=32,cellW=(W-2*M-gapX)/2,cellH=cellW*9/16;for(let j=0;j<batch.length;j++){const [code,text]=batch[j],col=j%2,row=Math.floor(j/2),px=M+col*(cellW+gapX),py=y+row*(cellH+gapY+54),img=await loadImage(photos[code].data);x.fillStyle=PALE;x.fillRect(px,py,cellW,cellH);if(img){const scale=Math.max(cellW/img.width,cellH/img.height),iw=img.width*scale,ih=img.height*scale;x.save();x.beginPath();x.rect(px,py,cellW,cellH);x.clip();x.drawImage(img,px+(cellW-iw)/2,py+(cellH-ih)/2,iw,ih);x.restore()}x.fillStyle=TEAL;x.font='700 17px Arial';x.fillText(code,px,py+cellH+24);x.fillStyle=INK;x.font='400 13px Arial';wrap(x,text,cellW,'400 13px Arial').slice(0,2).forEach((line,k)=>x.fillText(line,px,py+cellH+43+k*16))}}}
-
-  {const p=newPage(`Evidence Pack ${assignment.n}: ${assignment.title}`,`Unit ${assignment.unit}${assignment.optional?' | Optional unit':''}`),x=p.x;let y=p.y;x.fillStyle=PALE;x.fillRect(M,y,W-2*M,300);y+=46;[['Qualification',course.name],['Unit',assignment.unit],['Learner',profile.fullName],['Employer',profile.employer],['Assessor',profile.mentor]].forEach(([a,b])=>{label(x,a,M+28,y);value(x,b,M+300,y,21,true);y+=46});y=sectionHeading(x,'Learning Outcome Coverage',p.y+350);for(const [code,text] of assignment.ksbs){const count=Math.min(2,evidenceMap[code].length),colour=count>=2?GREEN:count===1?YELLOW:GREY;x.fillStyle=colour;x.fillRect(M,y-28,W-2*M,66);x.fillStyle=TEAL;x.font='700 20px Arial';x.fillText(`${code}  ${count}/2`,M+18,y);x.fillStyle=INK;x.font='600 16px Arial';fitText(x,clean(text),M+150,y,W-2*M-175,16);y+=78}const met=Object.values(evidenceMap).reduce((n,a)=>n+Math.min(2,a.length),0),total=(assignment.ksbs||[]).length*2;x.fillStyle=PALE;x.fillRect(M,y,W-2*M,78);label(x,'Overall evidence coverage',M+24,y+30);value(x,`${met} of ${total} requirements met`,M+330,y+31,22,true)}
-
-  // Detailed LO matrix: shows every evidence type and its exact location.
-  {let p=meta(newPage('Learning Outcome Evidence Matrix','Automatic mapping'),'-','Learning Outcome Matrix',1),x=p.x,y=sectionHeading(x,'Learning Outcome Mapping',p.y);x.fillStyle=MUTED;x.font='400 17px Arial';x.fillText('References show exactly where each learning outcome is evidenced in this portfolio.',M,y);y+=44;
-   const header=()=>{x.fillStyle=TEAL;x.fillRect(M,y-24,W-2*M,38);x.fillStyle=WHITE;x.font='700 15px Arial';x.fillText('LO',M+14,y);x.fillText('Learning outcome',M+82,y);x.textAlign='right';x.fillText('Evidence location',W-M-16,y);x.textAlign='left';y+=54};header();
-   for(const [code,text] of assignment.ksbs){const refs=evidenceMap[code]||[],refText=refs.length?refs.map(e=>e.ref).join('  '):'No evidence mapped';x.font='600 15px Arial';const desc=wrap(x,clean(text),W-2*M-390,'600 15px Arial');x.font='700 16px Arial';const refLines=wrap(x,refText,280,'700 16px Arial');const rowH=Math.max(58,Math.max(desc.length*20,refLines.length*21)+26);if(y+rowH>H-115){p=meta(newPage('Learning Outcome Evidence Matrix - Continued','Automatic mapping'),'-','Learning Outcome Matrix',1);x=p.x;y=sectionHeading(x,'Learning Outcome Mapping (continued)',p.y);header()}x.fillStyle=refs.length?PALE:'#fafafa';x.fillRect(M,y-25,W-2*M,rowH-6);x.fillStyle=TEAL;x.font='700 18px Arial';x.fillText(code,M+14,y);x.fillStyle=INK;x.font='600 15px Arial';desc.forEach((line,i)=>x.fillText(line,M+82,y+i*20));x.textAlign='right';x.fillStyle=refs.length?TEAL:MUTED;x.font='700 16px Arial';refLines.forEach((line,i)=>x.fillText(line,W-M-16,y+i*21));x.textAlign='left';y+=rowH}
-   if(y+130>H-110){p=meta(newPage('Learning Outcome Evidence Key','Automatic mapping'),'-','Learning Outcome Matrix',1);x=p.x;y=sectionHeading(x,'Evidence Reference Key',p.y)}else y=sectionHeading(x,'Evidence Reference Key',y+12);const keys=['AO  Assessor Observation','LS  Learner Statement','WT  Witness Testimony','VW  Video Walkthrough','PD  Professional Discussion','PE  Photographic Evidence'];keys.forEach((t,i)=>{x.fillStyle=INK;x.font='600 16px Arial';x.fillText(t,M+(i%2)*520,y+Math.floor(i/2)*32)})}
-
-  for(let i=0;i<(sections.practical||[]).length;i++){const d=sections.practical[i],attempt=i+1,outcomes=selectedScores(d),p=meta(newPage('Assessor Observation',`Attempt ${attempt}`),d.date,'Assessor Observation',attempt),x=p.x;let y=sectionHeading(x,'Observation Details',p.y);label(x,'Assessor',M,y);value(x,d.tutor,M+230,y,19,true);y+=40;label(x,'Activity observed',M,y);value(x,d.activity,M+230,y,18);y+=54;y=sectionHeading(x,'Learning Outcomes Observed',y);y=drawOutcomeRows(x,outcomes,y);y=sectionHeading(x,'Assessor Observation',y+8);y=paragraph(x,d.feedback||'-',y,Math.max(110,H-y-330));const sig=await loadImage(d.signature);signature(x,sig,Math.min(H-245,y+28),'Assessor signature');{const fp=meta(newPage('Assessor Observation Feedback',`Attempt ${attempt}`),d.date,'Assessor Observation',attempt),fx=fp.x;let fy=sectionHeading(fx,'Assessment Summary',fp.y);fy=paragraph(fx,d.feedbackSummary||d.feedback||'No assessment summary recorded.',fy,300)+24;fy=sectionHeading(fx,'Areas for Improvement',fy);paragraph(fx,d.feedbackDevelopment||'No areas for improvement recorded.',fy,300)}await photoPages(d,'Assessor Observation',attempt,outcomes)}
-  for(let i=0;i<(sections.photos||[]).length;i++){const d=sections.photos[i],attempt=i+1,outcomes=selectedStatement(d),p=meta(newPage('Photographic Evidence',`Attempt ${attempt}`),d.date,'Photographic Evidence',attempt),x=p.x;let y=sectionHeading(x,'Learning Outcomes Evidenced',p.y);y=drawOutcomeRows(x,outcomes,y);y=sectionHeading(x,'Photographic Evidence Notes',y+8);y=paragraph(x,d.activity||'Photographs submitted as evidence for the selected learning outcomes.',y,Math.max(100,H-y-330));const sig=await loadImage(d.signature);signature(x,sig,Math.min(H-245,y+28),'Learner signature');await photoPages(d,'Photographic Evidence',attempt,outcomes)}
-  for(let i=0;i<(sections.statement||[]).length;i++){const d=sections.statement[i],attempt=i+1,outcomes=selectedStatement(d),p=meta(newPage('Learner Statement',`Attempt ${attempt}`),d.date,'Learner Statement',attempt),x=p.x;let y=sectionHeading(x,'Learning Outcomes Evidenced',p.y);y=drawOutcomeRows(x,outcomes,y);y=sectionHeading(x,'Learner Statement',y+8);y=paragraph(x,d.text,y,Math.max(130,H-y-330));const sig=await loadImage(d.signature);signature(x,sig,Math.min(H-245,y+28),'Learner signature');}
-  for(let i=0;i<(sections.discussion||[]).length;i++){const d=sections.discussion[i],attempt=i+1,outcomes=selectedDiscussion(d),p=meta(newPage('Video Walkthrough',`Attempt ${attempt}`),d.date,'Video Walkthrough',attempt),x=p.x;let y=sectionHeading(x,'Walkthrough Details',p.y);label(x,'Walkthrough lead',M,y);value(x,d.assessor,M+230,y,19,true);y+=40;label(x,'Activity demonstrated',M,y);value(x,d.activity,M+230,y,18);y+=54;y=sectionHeading(x,'Recorded Learning Outcomes',y);for(const [code,text] of outcomes){if(y>H-350){break}x.fillStyle=PALE;x.fillRect(M,y-28,W-2*M,112);x.fillStyle=TEAL;x.font='700 19px Arial';x.fillText(code,M+16,y);x.fillStyle=INK;x.font='600 16px Arial';fitText(x,clean(text),M+100,y,W-2*M-125,16);const rec=d.recordings?.[code],note=String(d.notes?.[code]||'').trim();x.fillStyle=MUTED;x.font='400 14px Arial';x.fillText(`Video included in evidence package${rec?.duration?` | ${rec.duration}`:''}`,M+100,y+28);if(note){x.fillStyle=INK;x.font='400 14px Arial';fitText(x,`Notes: ${clean(note)}`,M+100,y+54,W-2*M-125,14)}y+=126}const sig=await loadImage(d.signature);signature(x,sig,Math.min(H-245,y+20),'Assessor / walkthrough lead signature')}
-  for(let i=0;i<(sections.professionalDiscussion||[]).length;i++){const d=sections.professionalDiscussion[i],attempt=i+1,outcomes=selectedDiscussion(d),p=meta(newPage('Professional Discussion',`Attempt ${attempt}`),d.date,'Professional Discussion',attempt),x=p.x;let y=sectionHeading(x,'Discussion Details',p.y);label(x,'Discussion lead',M,y);value(x,d.assessor,M+230,y,19,true);y+=40;label(x,'Activity discussed',M,y);value(x,d.activity,M+230,y,18);y+=54;y=sectionHeading(x,'Recorded Learning Outcomes',y);for(const [code,text] of outcomes){if(y>H-350)break;x.fillStyle=PALE;x.fillRect(M,y-28,W-2*M,112);x.fillStyle=TEAL;x.font='700 19px Arial';x.fillText(code,M+16,y);x.fillStyle=INK;x.font='600 16px Arial';fitText(x,clean(text),M+100,y,W-2*M-125,16);const rec=d.recordings?.[code],note=String(d.notes?.[code]||'').trim();x.fillStyle=MUTED;x.font='400 14px Arial';x.fillText(`Audio included in evidence package${rec?.duration?` | ${rec.duration}`:''}`,M+100,y+28);if(note){x.fillStyle=INK;x.font='400 14px Arial';fitText(x,`Notes: ${clean(note)}`,M+100,y+54,W-2*M-125,14)}y+=126}const sig=await loadImage(d.signature);signature(x,sig,Math.min(H-245,y+20),'Assessor / discussion lead signature')}
-  for(let i=0;i<(sections.witness||[]).length;i++){
-    const d=sections.witness[i],attempt=i+1,p=meta(newPage('Witness Testimony',`Attempt ${attempt}`),d.date,'Witness Testimony',attempt),x=p.x;let y=sectionHeading(x,'Witness Details',p.y);
-    [['Name',d.personName],['Role',d.role],['Organisation',d.organisation],['Activity witnessed',d.activity]].forEach(([a,b])=>{label(x,a,M,y);value(x,b,M+210,y,15,true);y+=30});
-    y=sectionHeading(x,'Learning Outcomes Witnessed',y+4);y=drawAllOutcomeRows(x,d,y,380)+8;
-    const sigTop=H-205,remaining=Math.max(180,sigTop-y-15),block=Math.floor(remaining/3);
-    y=sectionHeading(x,'Witness Testimony',y);y=paragraph(x,d.feedback||'No testimony recorded.',y,Math.max(65,block))+8;
-    y=sectionHeading(x,'Assessment Summary',y);y=paragraph(x,d.feedbackSummary||d.feedback||'No assessment summary recorded.',y,Math.max(55,block-8))+8;
-    y=sectionHeading(x,'Areas for Improvement / Additional Comments',y);paragraph(x,[d.feedbackDevelopment,d.additionalComments].filter(Boolean).join('\n')||'No areas for improvement or additional comments recorded.',y,Math.max(50,sigTop-y-12));
-    const sig=await loadImage(d.signature);signature(x,sig,sigTop,'Witness signature');
+window.MCQQuestionBank.register('bricklayer-st0095-v1-2',2,[
+  {
+    "ksb": "K4",
+    "concept": "K4 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why should mortar never be washed into a surface drain?",
+    "options": ["It stains the brickwork","It weakens the mortar","I don't know","It can pollute watercourses and block drainage"],
+    "correct": 3,
+    "explanation": "Mortar is highly alkaline. Allowing it into drains can pollute rivers and streams and may breach environmental regulations.",
+    "id": "brick-approved-a2-k4",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K5",
+    "concept": "K5 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which action is most likely to reduce brick waste?",
+    "options": ["Ordering extra bricks","Using a wetter mortar mix","Accurate setting out before work starts","I don't know"],
+    "correct": 2,
+    "explanation": "Good setting out reduces unnecessary cuts and mistakes, helping to minimise waste and improve productivity.",
+    "id": "brick-approved-a2-k5",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K7",
+    "concept": "K7 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which document sets the standard for the workmanship of brickwork?",
+    "options": ["BS 8000-3","BS EN 771-1","BS EN 998-2","I don't know"],
+    "correct": 0,
+    "explanation": "BS 8000-3 provides guidance on the workmanship expected when carrying out masonry construction, including brickwork.",
+    "id": "brick-approved-a2-k7",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "You realise you've laid a course out of line. What should you do?",
+    "options": ["Continue and hope it isn't noticed","Correct it as soon as possible and inform your supervisor if necessary","Hide it when pointing","I don't know"],
+    "correct": 1,
+    "explanation": "Taking responsibility for mistakes is a key professional behaviour. Correcting defects early usually saves time, money and materials.",
+    "id": "brick-approved-a2-b2",
+    "type": "Behaviour",
+    "status": "approved"
   }
-
-  // Professional Discussion file index for NVQ evidence packs.
-  {const audioTitles=[];for(let vi=0;vi<(sections.professionalDiscussion||[]).length;vi++){const version=sections.professionalDiscussion[vi];for(const [code,rec] of Object.entries(version.recordings||{}))if(rec?.data){const mark=isNewEvidence('professionalDiscussion',vi+1)?'NEW EVIDENCE - ':'';audioTitles.push(`${mark}${code} - Professional Discussion - Attempt ${vi+1}${rec.duration?` (${rec.duration})`:''}`)}}if(audioTitles.length){const p=meta(newPage('Professional Discussion Audio Files','Attached media'),'-','Professional Discussion',1),x=p.x;let y=sectionHeading(x,'Attached professional discussion files',p.y);x.fillStyle=MUTED;x.font='400 17px Arial';x.fillText('The playable audio files below are included in the downloaded evidence package.',M,y);y+=42;const available=H-y-145,lineH=Math.max(24,Math.min(38,Math.floor(available/Math.max(1,audioTitles.length)))),fontSize=Math.max(13,Math.min(19,lineH-7));audioTitles.forEach((name,i)=>{x.fillStyle=i%2?WHITE:PALE;x.fillRect(M,y-24,W-2*M,lineH);x.fillStyle=TEAL;x.font=`700 ${fontSize}px Arial`;x.fillText(`${i+1}.`,M+14,y);x.fillStyle=INK;x.font=`600 ${fontSize}px Arial`;fitText(x,clean(name),M+58,y,W-2*M-78,fontSize);y+=lineH})}}
-
-  const total=pages.length;pages.forEach((p,i)=>{const x=p.ctx;x.fillStyle=p.colour||TEAL;x.fillRect(0,H-62,W,62);x.fillStyle=WHITE;x.font='600 17px Arial';x.fillText('Apprentice+ | NVQ Evidence Portfolio',M,H-25);x.textAlign='right';x.fillText(`Page ${i+1} of ${total}`,W-M,H-25);x.textAlign='left'});
-  const jpegPages=pages.map(p=>dataUrlBytes(p.canvas.toDataURL('image/jpeg',0.90))),pdf=makeImagePDF(jpegPages,W,H),safe=clean(profile.fullName).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,''),unit=String(assignment.unit||assignment.n).replace(/[^a-z0-9-]+/gi,'-'),pdfName=`${safe||'Learner'}-NVQ-Unit-${unit}-Evidence-Pack.pdf`;
-  const walkthroughVideos=[];for(let vi=0;vi<(sections.discussion||[]).length;vi++){const version=sections.discussion[vi];for(const [code,rec] of Object.entries(version.recordings||{}))if(rec?.data)walkthroughVideos.push({code,rec,attempt:vi+1,type:'video',newType:'discussion'})}
-  for(let vi=0;vi<(sections.walkthrough||[]).length;vi++){const rec=sections.walkthrough[vi];if(rec?.data)walkthroughVideos.push({code:rec.code||`KSB ${vi+1}`,rec,attempt:vi+1,type:'video',newType:'walkthrough'})}
-  for(let vi=0;vi<(sections.professionalDiscussion||[]).length;vi++){const version=sections.professionalDiscussion[vi];for(const [code,rec] of Object.entries(version.recordings||{}))if(rec?.data)walkthroughVideos.push({code,rec,attempt:vi+1,type:'audio',newType:'professionalDiscussion'})}
-  if(walkthroughVideos.length){
-    const entries=[{name:pdfName,data:pdf}],used=new Set();
-    walkthroughVideos.forEach(({code,rec,attempt,type,newType},i)=>{const mime=String(rec.type||'video/webm'),ext=mime.includes('mp4')?'.mp4':mime.includes('ogg')?'.ogg':mime.startsWith('audio/')?(mime.includes('mp4')?'.m4a':'.webm'):'.webm',label=type==='audio'?'Professional Discussion':'Video Walkthrough',newMark=isNewEvidence(newType,attempt)?'NEW EVIDENCE - ':'',base=safeZipName(`${newMark}Attempt ${attempt} - ${code} ${label}`);let name=`${base}${ext}`;if(used.has(name.toLowerCase()))name=`${base}-${i+1}${ext}`;used.add(name.toLowerCase());entries.push({name:`${label} Recordings/${name}`,data:dataUrlBytes(rec.data)})});
-    const packageName=`${safe||'Learner'}-NVQ-Unit-${unit}-Evidence-Package.zip`;
-    if(returnPackage)return {assignmentNumber:assignment.n,pdfName,entries,packageName};
-    await downloadBlob(makeZipBlob(entries),'application/zip',packageName);
-  }else{
-    const entries=[{name:pdfName,data:pdf}];
-    if(returnPackage)return {assignmentNumber:assignment.n,pdfName,entries,packageName:pdfName};
-    await downloadBlob(pdf,'application/pdf',pdfName);
+,
+  {
+    "ksb": "K4",
+    "concept": "K4 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which waste-management decision best reduces environmental impact when a pallet contains usable bricks, broken clean masonry and contaminated packaging?",
+    "options": ["Reuse sound bricks, segregate clean masonry for recycling and dispose of contaminated packaging through the correct route","Place everything in mixed waste","Crush all materials together on site","Burn the packaging and reuse the ash"],
+    "correct": 0,
+    "explanation": "The waste hierarchy prioritises reuse, then recycling, with controlled disposal for materials that cannot be recovered safely.",
+    "id": "brick-challenging-set1-a2-k4-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K5",
+    "concept": "K5 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A newly built cavity wall has insulation gaps and poorly sealed service penetrations. What is the most likely combined consequence?",
+    "options": ["Improved ventilation and lower heat loss","Reduced airtightness, thermal bridging and increased condensation risk","Stronger masonry and faster drying","No effect once plasterboard is installed"],
+    "correct": 1,
+    "explanation": "Gaps and unsealed penetrations increase uncontrolled air leakage and heat loss and can create cold surfaces where condensation forms.",
+    "id": "brick-challenging-set1-a2-k5-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K7",
+    "concept": "K7 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A drawing detail conflicts with a manufacturer-approved cavity tray installation detail. What should the bricklayer do?",
+    "options": ["Choose the quickest detail","Follow the drawing because drawings always override specifications","Combine both details without approval","Raise the discrepancy and obtain clarification before installation"],
+    "correct": 3,
+    "explanation": "Conflicting technical requirements must be clarified by the responsible person before work proceeds to ensure compliance.",
+    "id": "brick-challenging-set1-a2-k7-3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which action best demonstrates environmental responsibility while cutting bricks?",
+    "options": ["Cut every brick individually without planning","Discard all offcuts to keep the area tidy","Plan cuts, use offcuts where suitable and operate dust suppression correctly","Use dry cutting because it is faster"],
+    "correct": 2,
+    "explanation": "Planning cuts reduces waste, suitable offcuts can be reused, and dust suppression limits environmental and health impacts.",
+    "id": "brick-challenging-set1-a2-b2-4",
+    "type": "Behaviour",
+    "status": "approved"
   }
-}
-
-async function downloadBlob(bytes,type,name){
-  const blob=bytes instanceof Blob?bytes:new Blob([bytes],{type});
-  if(!blob.size)throw new Error('Generated download was empty');
-  const url=URL.createObjectURL(blob),a=document.createElement('a');
-  a.href=url;a.download=name;a.rel='noopener';a.style.display='none';
-  document.body.appendChild(a);
-  // Give mobile browsers one frame to register the object URL and anchor.
-  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-  a.click();
-  setTimeout(()=>{a.remove();URL.revokeObjectURL(url)},30000);
-  return {name,size:blob.size};
-}
-function safeZipName(name){return String(name||'file').replace(/[\\/:*?"<>|]/g,'-').replace(/^\.+/,'').slice(0,140)||'file'}
-
-function dataUrlBytes(url){
-  const value=String(url||''),comma=value.indexOf(',');
-  if(comma<0)throw new Error('Evidence media is not stored as a downloadable data URL');
-  const payload=value.slice(comma+1),isBase64=/;base64/i.test(value.slice(0,comma));
-  if(!isBase64)return new TextEncoder().encode(decodeURIComponent(payload));
-  const b=atob(payload),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u
-}
-function makeZipBlob(entries){
-  const enc=new TextEncoder(),parts=[],centrals=[];let offset=0;
-  const u16=n=>new Uint8Array([n&255,(n>>>8)&255]),u32=n=>new Uint8Array([n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255]);
-  for(const e of entries){
-    const name=enc.encode(e.name),data=e.data instanceof Uint8Array?e.data:new Uint8Array(e.data),crc=crc32(data);
-    const header=[u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name];
-    parts.push(...header,data);
-    const localLength=header.reduce((n,p)=>n+p.length,0)+data.length;
-    centrals.push(u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),name);
-    offset+=localLength;
+,
+  {
+    "ksb": "K4",
+    "concept": "K4 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which action best prevents surface-water contamination when cleaning masonry tools?",
+    "options": ["Wash cement residue into a road drain","Rinse tools beside a watercourse","Use a designated washout area that contains and manages contaminated water","Dilute the residue with extra water"],
+    "correct": 2,
+    "explanation": "Cementitious wash water is highly alkaline and must be contained and managed rather than entering surface-water drains.",
+    "id": "brick-challenging-set2-a2-k4-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K5",
+    "concept": "K5 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why can excessive uncontrolled ventilation reduce the energy performance of a completed building?",
+    "options": ["It makes insulation stronger","It increases unintended heat loss and can undermine airtightness targets","It prevents all condensation","It increases the thermal mass of masonry"],
+    "correct": 1,
+    "explanation": "Uncontrolled air leakage increases heat loss and can compromise designed airtightness and energy performance.",
+    "id": "brick-challenging-set2-a2-k5-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K7",
+    "concept": "K7 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A warranty provider detail specifies a larger cavity than the drawing. What should happen before work starts?",
+    "options": ["Raise the conflict and obtain an approved clarification","Use whichever dimension saves materials","Average the two dimensions","Follow the verbal instruction of the nearest operative"],
+    "correct": 0,
+    "explanation": "Conflicting requirements must be formally clarified before work proceeds.",
+    "id": "brick-challenging-set2-a2-k7-3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What best demonstrates environmental consideration when mortar is left at the end of a shift?",
+    "options": ["Wash it into the drainage system","Use it on any nearby wall regardless of specification","Leave it uncovered for the next day","Minimise surplus through accurate batching and dispose of unavoidable waste correctly"],
+    "correct": 3,
+    "explanation": "Accurate batching reduces waste, and unavoidable residue must follow the correct disposal route.",
+    "id": "brick-challenging-set2-a2-b2-4",
+    "type": "Behaviour",
+    "status": "approved"
   }
-  const centralSize=centrals.reduce((n,p)=>n+p.length,0);
-  parts.push(...centrals,u32(0x06054b50),u16(0),u16(0),u16(entries.length),u16(entries.length),u32(centralSize),u32(offset),u16(0));
-  // Blob keeps the media buffers as separate parts and avoids allocating several full copies of a large package.
-  return new Blob(parts,{type:'application/zip'});
-}
-function crc32(data){let c=0xffffffff;for(const b of data){c^=b;for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xedb88320:0)}return(c^0xffffffff)>>>0}
+]);
 
-function makeImagePDF(images,width,height){
-  const enc=new TextEncoder(),parts=[],offsets=[0];let pos=0;const add=v=>{const u=typeof v==='string'?enc.encode(v):v;parts.push(u);pos+=u.length};
-  add('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');const count=2+images.length*3;
-  function obj(n,head,stream){offsets[n]=pos;add(`${n} 0 obj\n${head}`);if(stream){add(`\nstream\n`);add(stream);add(`\nendstream`)}add(`\nendobj\n`)}
-  obj(1,'<< /Type /Catalog /Pages 2 0 R >>');
-  const pageIds=images.map((_,i)=>3+i*3+2);obj(2,`<< /Type /Pages /Count ${images.length} /Kids [${pageIds.map(n=>`${n} 0 R`).join(' ')}] >>`);
-  images.forEach((img,i)=>{const imageId=3+i*3,contentId=imageId+1,pageId=imageId+2;obj(imageId,`<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.length} >>`,img);const stream=enc.encode('q\n595.28 0 0 841.89 0 0 cm\n/Im0 Do\nQ');obj(contentId,`<< /Length ${stream.length} >>`,stream);obj(pageId,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im0 ${imageId} 0 R >> >> /Contents ${contentId} 0 R >>`)});
-  const xref=pos;add(`xref\n0 ${count+1}\n0000000000 65535 f \n`);for(let i=1;i<=count;i++)add(`${String(offsets[i]).padStart(10,'0')} 00000 n \n`);add(`trailer\n<< /Size ${count+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);const total=parts.reduce((s,p)=>s+p.length,0),out=new Uint8Array(total);let at=0;parts.forEach(p=>{out.set(p,at);at+=p.length});return out;
+window.MCQQuestionBank.register('bricklayer-st0095-v1-2',3,[
+  {
+    "ksb": "K10",
+    "concept": "K10 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before starting work from a drawing, what should you check first?",
+    "options": ["The drawing scale","That you have the latest revision","The name of the designer","I don't know"],
+    "correct": 1,
+    "explanation": "Construction drawings are regularly updated. Always use the latest approved revision to avoid building from outdated information.",
+    "id": "brick-approved-a3-k10",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K9",
+    "concept": "K9 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "What is a key advantage of factory-produced masonry panels?",
+    "options": ["They eliminate the need for foundations","They remove the need for wall ties","They reduce construction time and improve consistency","I don't know"],
+    "correct": 2,
+    "explanation": "Factory-built panels are manufactured under controlled conditions, improving quality and reducing installation time on site.",
+    "id": "brick-approved-a3-k9",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K11",
+    "concept": "K11 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why should you always use the latest drawing revision?",
+    "options": ["It contains the most up-to-date construction information","It uses the correct paper size","It is easier to read","I don't know"],
+    "correct": 0,
+    "explanation": "Construction drawings are updated throughout a project. Using an outdated revision can lead to errors, rework and non-compliant construction.",
+    "id": "brick-approved-a3-k11",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K10",
+    "concept": "K10 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A plan is drawn at 1:50 and shows a wall length of 86 mm. What full-size length should be set out?",
+    "options": ["1.72 m","43.0 m","0.43 m","4.30 m"],
+    "correct": 3,
+    "explanation": "At 1:50, 86 mm represents 86 × 50 = 4300 mm, or 4.30 m.",
+    "id": "brick-challenging-set1-a3-k10-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K9",
+    "concept": "K9 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why might a masonry support system be specified above a wide opening in a framed building?",
+    "options": ["To replace all cavity insulation","To remove the need for movement joints","To allow bricks to be laid without mortar","To transfer the load of masonry safely back to the structural frame"],
+    "correct": 3,
+    "explanation": "Masonry support systems carry masonry loads and transfer them into the structural frame where traditional support is not available.",
+    "id": "brick-challenging-set1-a3-k9-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K11",
+    "concept": "K11 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A digital model shows a service passing through the proposed wall line. What is the main benefit of identifying this before construction?",
+    "options": ["It removes the need to read drawings","It allows coordination and clash resolution before work and materials are committed","It automatically changes the structural design","It guarantees the service has already been installed"],
+    "correct": 1,
+    "explanation": "Digital coordination can reveal clashes early, allowing approved changes before they cause rework, delay or safety risks.",
+    "id": "brick-challenging-set1-a3-k11-3",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K10",
+    "concept": "K10 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A section drawing shows a DPC 150 mm above finished external ground level. What should the bricklayer do if the site level would leave only 80 mm?",
+    "options": ["Raise the discrepancy before laying and obtain an approved solution","Build to 80 mm because the ground is already formed","Add a thicker bed joint below the DPC","Ignore the section and follow the elevation"],
+    "correct": 0,
+    "explanation": "The discrepancy affects moisture protection and must be resolved before construction.",
+    "id": "brick-challenging-set2-a3-k10-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K9",
+    "concept": "K9 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is a key advantage of using prefabricated masonry components in rapid-build construction?",
+    "options": ["They remove the need for setting out","They eliminate lifting risks","They can improve consistency and reduce site installation time when correctly coordinated","They allow specifications to be ignored"],
+    "correct": 2,
+    "explanation": "Prefabrication can improve consistency and speed, but still requires accurate coordination and safe installation.",
+    "id": "brick-challenging-set2-a3-k9-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K11",
+    "concept": "K11 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A BIM model and printed drawing show different lintel levels. Which source should be assumed correct?",
+    "options": ["The newest-looking one","Neither until the discrepancy is checked through the project information-control process","The printed copy because paper is permanent","The digital model because software cannot be wrong"],
+    "correct": 1,
+    "explanation": "Conflicting controlled information must be checked and clarified rather than assumed.",
+    "id": "brick-challenging-set2-a3-k11-3",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register('bricklayer-st0095-v1-2',4,[
+  {
+    "ksb": "K8",
+    "concept": "K8 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which facing brick classification is suitable for severe exposure?",
+    "options": ["F1/S1","F1/S2","I don't know","F2/S2"],
+    "correct": 3,
+    "explanation": "F2 bricks have high frost resistance, while S2 indicates higher resistance to soluble salts, making F2/S2 suitable for severe exposure.",
+    "id": "brick-approved-a4-k8",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K6",
+    "concept": "K6 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "What is the main purpose of a cavity in a cavity wall?",
+    "options": ["Improve moisture resistance and thermal performance","Reduce the amount of mortar used","Make bricklaying quicker","I don't know"],
+    "correct": 0,
+    "explanation": "The cavity helps prevent moisture reaching the inner leaf and improves the wall's thermal performance when correctly insulated.",
+    "id": "brick-approved-a4-k6",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K12",
+    "concept": "K12 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "What is the main reason for calculating material quantities before work starts?",
+    "options": ["To make bricklaying quicker","To reduce the number of deliveries","To reduce waste and avoid material shortages","I don't know"],
+    "correct": 2,
+    "explanation": "Accurate estimating ensures enough materials are available while reducing waste, unnecessary costs and delays.",
+    "id": "brick-approved-a4-k12",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K8",
+    "concept": "K8 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Facing bricks are specified for severe exposure near the coast. Which combination is most important when selecting them?",
+    "options": ["Colour and pallet size only","Lowest compressive strength available","Suitable frost resistance and soluble-salt classification","Highest water absorption available"],
+    "correct": 2,
+    "explanation": "Bricks in severe exposure require appropriate durability classifications, including frost resistance and resistance to soluble salts.",
+    "id": "brick-challenging-set1-a4-k8-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K6",
+    "concept": "K6 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why must cavity wall ties be installed at the specified spacing, embedment and orientation?",
+    "options": ["To make pointing easier","To reduce the number of insulation boards","To support floor finishes","To connect the leaves, transfer lateral loads and avoid directing moisture inward"],
+    "correct": 3,
+    "explanation": "Correctly installed ties connect the leaves structurally and should be oriented so moisture is not carried across the cavity.",
+    "id": "brick-challenging-set1-a4-k6-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K12",
+    "concept": "K12 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A 10 m² single-leaf wall uses 60 bricks per m² and a 7.5% allowance is required. Approximately how many bricks should be ordered?",
+    "options": ["600","645","615","675"],
+    "correct": 1,
+    "explanation": "The basic quantity is 600 bricks. Adding 7.5% gives 645 bricks.",
+    "id": "brick-challenging-set1-a4-k12-3",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K8",
+    "concept": "K8 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should high-suction bricks sometimes be controlled before laying in hot conditions?",
+    "options": ["To prevent them drawing water too quickly from the mortar and weakening bond development","To increase their weight","To make them darker","To eliminate the need for curing"],
+    "correct": 0,
+    "explanation": "Excessive suction can remove water from mortar too rapidly, reducing workability and bond.",
+    "id": "brick-challenging-set2-a4-k8-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K6",
+    "concept": "K6 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is the main purpose of correctly installed cavity insulation retainers?",
+    "options": ["To hold wall ties horizontally","To replace fire stopping","To support the outer leaf vertically","To keep insulation securely positioned and maintain the designed cavity arrangement"],
+    "correct": 3,
+    "explanation": "Retainers help keep insulation correctly located so the cavity performs as designed.",
+    "id": "brick-challenging-set2-a4-k6-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K12",
+    "concept": "K12 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A wall requires 840 blocks, including waste. Blocks are supplied in packs of 72. What is the minimum number of full packs required?",
+    "options": ["10","12","11","13"],
+    "correct": 1,
+    "explanation": "840 divided by 72 is 11.67, so 12 full packs are required.",
+    "id": "brick-challenging-set2-a4-k12-3",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register('bricklayer-st0095-v1-2',5,[
+  {
+    "ksb": "K13",
+    "concept": "K13 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which tool is primarily used to maintain a straight course of brickwork?",
+    "options": ["Spirit level","Brick trowel","Line and pins","I don't know"],
+    "correct": 2,
+    "explanation": "A line and pins provide a straight guide for each course, helping maintain alignment and producing accurate brickwork.",
+    "id": "brick-approved-a5-k13",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K14",
+    "concept": "K14 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which disc should normally be fitted when cutting bricks with a cut-off saw?",
+    "options": ["Diamond blade","Wood cutting blade","Grinding disc","I don't know"],
+    "correct": 0,
+    "explanation": "Diamond blades are designed for cutting masonry safely and accurately while producing a clean finish.",
+    "id": "brick-approved-a5-k14",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B1",
+    "concept": "B1 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "You notice another apprentice working unsafely. What should you do?",
+    "options": ["Ignore it if they have more experience","Wait until the end of the day","I don't know","Report it or challenge it safely if appropriate"],
+    "correct": 3,
+    "explanation": "Professional bricklayers have a responsibility to help maintain a safe workplace. Unsafe behaviour should be challenged appropriately or reported before someone is injured.",
+    "id": "brick-approved-a5-b1",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K13",
+    "concept": "K13 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A spirit level gives different readings when reversed on the same surface. What does this indicate?",
+    "options": ["The wall is definitely level","The bubble needs warming","The level may be inaccurate and should be checked or removed from use","The surface must be dry before testing"],
+    "correct": 2,
+    "explanation": "A reliable level should give a consistent reading when reversed. Different readings indicate possible calibration or damage.",
+    "id": "brick-challenging-set1-a5-k13-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K14",
+    "concept": "K14 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A disc cutter begins to vibrate excessively during a cut. What is the correct action?",
+    "options": ["Grip it harder and finish the cut","Stop, isolate it and inspect the disc, guard and machine before reuse","Increase speed to stabilise it","Remove the guard to see the disc clearly"],
+    "correct": 1,
+    "explanation": "Unexpected vibration can indicate a damaged disc, poor fitting or machine defect. The equipment must be stopped and inspected.",
+    "id": "brick-challenging-set1-a5-k14-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B1",
+    "concept": "B1 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A damaged guard is found on the mixer immediately before a large pour. What action best reflects B1?",
+    "options": ["Remove it from service, report the defect and obtain safe equipment","Use it carefully for one batch","Ask a colleague to stand beside the moving parts","Operate it only at half load"],
+    "correct": 0,
+    "explanation": "Unsafe equipment must be taken out of service and reported rather than used under production pressure.",
+    "id": "brick-challenging-set1-a5-b1-3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K13",
+    "concept": "K13 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A brick trowel has a loose handle. What is the safest action?",
+    "options": ["Wrap tape around it and continue","Use it only for pointing","Soak the handle in water","Remove it from use until it is repaired or replaced"],
+    "correct": 3,
+    "explanation": "A loose handle can fail unexpectedly and the tool should not be used until safe.",
+    "id": "brick-challenging-set2-a5-k13-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K14",
+    "concept": "K14 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why must the maximum diameter and speed rating of a cutting disc match the power tool?",
+    "options": ["To improve colour matching","To prevent overspeed, poor guarding and potential disc failure","To reduce the need for training","To make the tool quieter"],
+    "correct": 1,
+    "explanation": "An unsuitable disc can be oversped or inadequately guarded, creating a serious failure risk.",
+    "id": "brick-challenging-set2-a5-k14-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B1",
+    "concept": "B1 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A power lead has exposed inner insulation but the tool still works. What should the bricklayer do?",
+    "options": ["Isolate and remove the tool from use, then report the defect","Use it only in dry weather","Tape it temporarily and finish the job","Ask a colleague to hold the cable clear"],
+    "correct": 0,
+    "explanation": "Damaged electrical equipment must be taken out of service and reported.",
+    "id": "brick-challenging-set2-a5-b1-3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register('bricklayer-st0095-v1-2',6,[
+  {
+    "ksb": "K21",
+    "concept": "K21 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "What is the main purpose of a cavity tray above a window opening?",
+    "options": ["Support the lintel","Hold the wall ties in place","Prevent moisture reaching the inner leaf","I don't know"],
+    "correct": 2,
+    "explanation": "A cavity tray collects water within the cavity and directs it out through weep holes, preventing damp from reaching the inside of the building.",
+    "id": "brick-approved-a6-k21",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K22",
+    "concept": "K22 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "What is the main function of a wall tie?",
+    "options": ["Hold insulation against the inner leaf","Support the DPC","I don't know","Connect the inner and outer leaves while allowing movement"],
+    "correct": 3,
+    "explanation": "Wall ties provide structural restraint between the two leaves of a cavity wall while allowing small amounts of movement.",
+    "id": "brick-approved-a6-k22",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A customer asks you a question you don't know the answer to. What is the best response?",
+    "options": ["Make an educated guess","Politely explain you'll find the correct information","Tell them to ask someone else","I don't know"],
+    "correct": 1,
+    "explanation": "Being honest and respectful builds trust. If you are unsure, seek the correct information rather than giving incorrect advice.",
+    "id": "brick-approved-a6-b3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K21",
+    "concept": "K21 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When setting out a cavity wall opening, which check most directly prevents the reveals from becoming out of square?",
+    "options": ["Comparing the diagonals and confirming lines with a square","Checking only the overall wall length","Increasing the bed-joint thickness","Setting the lintel before the first course"],
+    "correct": 0,
+    "explanation": "Equal diagonals and square checks confirm that the opening and wall lines are correctly set out.",
+    "id": "brick-challenging-set1-a6-k21-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K22",
+    "concept": "K22 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why are weep holes installed above a cavity tray over an opening?",
+    "options": ["To ventilate the room","To support the lintel","To allow moisture collected by the tray to discharge through the outer leaf","To hold insulation against the inner leaf"],
+    "correct": 2,
+    "explanation": "Weep holes provide a drainage route for water intercepted by the cavity tray.",
+    "id": "brick-challenging-set1-a6-k22-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "An opening is found to be 12 mm outside the specified width before the lintel is installed. What best demonstrates ownership?",
+    "options": ["Continue and leave it for the window installer","Adjust the next courses without telling anyone","Record it only after the wall is complete","Stop, report the deviation and correct it using an agreed method"],
+    "correct": 3,
+    "explanation": "Taking ownership means identifying, reporting and correcting non-compliant work before it creates further defects.",
+    "id": "brick-challenging-set1-a6-b3-3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K21",
+    "concept": "K21 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why is a gauge rod useful when setting out an opening in cavity walling?",
+    "options": ["It calculates mortar strength","It controls course heights and helps align openings, lintels and features accurately","It measures cavity width automatically","It replaces a spirit level"],
+    "correct": 1,
+    "explanation": "A gauge rod provides consistent vertical course control and feature alignment.",
+    "id": "brick-challenging-set2-a6-k21-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K22",
+    "concept": "K22 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What defect can result if cavity insulation is pushed tightly against mortar droppings bridging the cavity?",
+    "options": ["Improved thermal performance","Higher compressive strength","A path for moisture to cross toward the inner leaf","Reduced need for wall ties"],
+    "correct": 2,
+    "explanation": "Mortar bridges can transfer moisture across the cavity, especially where insulation is forced against them.",
+    "id": "brick-challenging-set2-a6-k22-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A wall tie has been omitted in a completed section that is still accessible. What action shows ownership?",
+    "options": ["Record and report it, then correct it using the approved method","Cover it with insulation","Leave it because one tie makes no difference","Ask the next trade to decide"],
+    "correct": 0,
+    "explanation": "Ownership means acknowledging the defect and ensuring an approved correction before concealment.",
+    "id": "brick-challenging-set2-a6-b3-3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register('bricklayer-st0095-v1-2',7,[
+  {
+    "ksb": "K17",
+    "concept": "K17 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which joint profile provides the best resistance to rain penetration?",
+    "options": ["Bucket handle joint","Recessed joint","Flush joint","I don't know"],
+    "correct": 0,
+    "explanation": "The bucket handle joint compresses the mortar, creating a dense finish that improves resistance to water penetration.",
+    "id": "brick-approved-a7-k17",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K19",
+    "concept": "K19 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why are movement joints installed in long lengths of brickwork?",
+    "options": ["To improve appearance","To reduce the amount of mortar required","To allow expansion and contraction without cracking","I don't know"],
+    "correct": 2,
+    "explanation": "Brickwork expands and contracts with temperature and moisture changes. Movement joints reduce the risk of uncontrolled cracking.",
+    "id": "brick-approved-a7-k19",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K20",
+    "concept": "K20 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "What should never be done once mortar has begun its initial set?",
+    "options": ["Protect it from drying out","Add water and remix it","Cover it between uses","I don't know"],
+    "correct": 1,
+    "explanation": "Adding water after mortar has begun its initial set weakens the mix and can reduce the strength and durability of the finished brickwork.",
+    "id": "brick-approved-a7-k20",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K17",
+    "concept": "K17 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which joint finish is generally most effective at shedding rainwater on exposed brickwork?",
+    "options": ["Deep recessed","Raked-out","Unfinished flush","Weather-struck"],
+    "correct": 3,
+    "explanation": "A properly formed weather-struck joint creates a sloping face that helps shed water from the masonry surface.",
+    "id": "brick-challenging-set1-a7-k17-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K19",
+    "concept": "K19 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should brickwork movement joints remain free from mortar bridges?",
+    "options": ["Mortar makes the sealant too dark","It reduces the strength of every brick","A rigid bridge prevents movement and can cause cracking beside the joint","It stops wall ties being installed"],
+    "correct": 2,
+    "explanation": "Movement joints need to accommodate expansion and contraction; rigid mortar bridges restrain movement and transfer stress into the wall.",
+    "id": "brick-challenging-set1-a7-k19-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K20",
+    "concept": "K20 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A mortar batch is mixed with inconsistent amounts of water between loads. What is the most likely effect?",
+    "options": ["Identical strength and colour","Variation in workability, strength and finished appearance","Faster brick production with no quality effect","Improved resistance to all weather conditions"],
+    "correct": 1,
+    "explanation": "Inconsistent gauging changes the water-cement ratio and workability, leading to variable strength, curing and colour.",
+    "id": "brick-challenging-set1-a7-k20-3",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K17",
+    "concept": "K17 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is a likely consequence of tooling joints after the mortar has become too hard?",
+    "options": ["A denser brick face","Increased wall-tie strength","Improved bond between courses","Poor compaction and an uneven, weak joint finish"],
+    "correct": 3,
+    "explanation": "Late tooling can prevent proper compaction and leave an inconsistent finish.",
+    "id": "brick-challenging-set2-a7-k17-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K19",
+    "concept": "K19 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why is compressible filler used within a masonry movement joint?",
+    "options": ["To accommodate movement while supporting the sealant profile","To bond both sides rigidly","To replace wall ties","To absorb rainwater permanently"],
+    "correct": 0,
+    "explanation": "The filler allows movement and helps form the correct sealed joint arrangement.",
+    "id": "brick-challenging-set2-a7-k19-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K20",
+    "concept": "K20 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should cement and sand be accurately gauged for each mortar batch?",
+    "options": ["To make every batch set instantly","To avoid using clean water","To ensure consistent proportions, performance and colour","To eliminate the need for mixing"],
+    "correct": 2,
+    "explanation": "Consistent gauging produces more uniform workability, strength and appearance.",
+    "id": "brick-challenging-set2-a7-k20-3",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register('bricklayer-st0095-v1-2',8,[
+  {
+    "ksb": "K15",
+    "concept": "K15 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which bond is most commonly used for the outer leaf of a modern cavity wall?",
+    "options": ["English bond","Flemish bond","I don't know","Stretcher bond"],
+    "correct": 3,
+    "explanation": "Stretcher bond is commonly used because wall ties connect the two leaves, removing the need for headers through the cavity.",
+    "id": "brick-approved-a8-k15",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K16",
+    "concept": "K16 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "What is the purpose of a gauge rod when building brickwork?",
+    "options": ["To maintain consistent course heights","To check wall thickness","To measure cavity width","I don't know"],
+    "correct": 0,
+    "explanation": "A gauge rod marks the height of each course, helping maintain accurate gauge and reducing cumulative errors.",
+    "id": "brick-approved-a8-k16",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K18",
+    "concept": "K18 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "What is the maximum recommended projection of a corbel course?",
+    "options": ["Half a brick","One-third of a brick","One-quarter of a brick","I don't know"],
+    "correct": 1,
+    "explanation": "Limiting each corbel course to about one-third of the brick width helps maintain stability and reduces the risk of failure.",
+    "id": "brick-approved-a8-k18",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K23",
+    "concept": "K23 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why should a DPC never be bridged with mortar?",
+    "options": ["It weakens the brickwork","It prevents wall ties from working","It allows moisture to bypass the DPC","I don't know"],
+    "correct": 2,
+    "explanation": "Mortar bridging creates a path for moisture to travel past the DPC, increasing the risk of damp penetration.",
+    "id": "brick-approved-a8-k23",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K15",
+    "concept": "K15 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why are snapped headers required in parts of an English bond wall?",
+    "options": ["To reduce the wall thickness","To maintain bonding and avoid continuous vertical joints","To create a cavity","To replace closers at every corner"],
+    "correct": 1,
+    "explanation": "Correctly positioned headers and closers maintain the bond and prevent continuous vertical joints through the wall.",
+    "id": "brick-challenging-set1-a8-k15-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K16",
+    "concept": "K16 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is the main purpose of checking gauge before constructing the capping course on a solid wall?",
+    "options": ["To ensure the wall finishes at the required height with consistent joints","To reduce mortar mixing","To make the bricks absorb more water","To remove the need for line and level checks"],
+    "correct": 0,
+    "explanation": "Gauge planning ensures the courses and capping finish at the designed height without irregular joint adjustments.",
+    "id": "brick-challenging-set1-a8-k16-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K18",
+    "concept": "K18 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "An attached pier is added to a long wall. What must be maintained where the pier bonds into the wall?",
+    "options": ["A continuous vertical joint","A wider cavity behind the pier","Dry joints between all projecting bricks","Proper bonding and consistent course alignment"],
+    "correct": 3,
+    "explanation": "The pier must be properly bonded into the wall and aligned with the wall courses to perform and appear correctly.",
+    "id": "brick-challenging-set1-a8-k18-3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K23",
+    "concept": "K23 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When setting out a soldier course over an opening, why should the total opening width be divided before laying?",
+    "options": ["To increase the lintel bearing","To avoid using a spirit level","To make the bricks lighter","To determine an even unit and joint arrangement"],
+    "correct": 3,
+    "explanation": "Dividing the available width allows the bricks and joints to be distributed evenly and avoids an undersized final unit.",
+    "id": "brick-challenging-set1-a8-k23-4",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K15",
+    "concept": "K15 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which feature distinguishes Flemish bond from English bond?",
+    "options": ["Every course contains only stretchers","Headers are used only at corners","Headers and stretchers alternate within each course","There are no vertical joints"],
+    "correct": 2,
+    "explanation": "Flemish bond alternates headers and stretchers in the same course.",
+    "id": "brick-challenging-set2-a8-k15-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K16",
+    "concept": "K16 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should the first course of a solid wall be checked carefully for line, level and square?",
+    "options": ["Errors at the base are carried through and become harder to correct","Later courses can only compensate with thicker joints","It determines mortar colour","It prevents all efflorescence"],
+    "correct": 0,
+    "explanation": "Initial setting-out errors accumulate and affect the entire wall.",
+    "id": "brick-challenging-set2-a8-k16-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K18",
+    "concept": "K18 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When building an attached pier, why must its bond be coordinated with the wall?",
+    "options": ["To create a decorative shadow only","To ensure the pier is properly integrated rather than acting as an unstable separate element","To reduce the number of bricks","To avoid using closures"],
+    "correct": 1,
+    "explanation": "Correct bonding integrates the pier with the wall and improves stability.",
+    "id": "brick-challenging-set2-a8-k18-3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K23",
+    "concept": "K23 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is the main setting-out risk when forming a brick-on-edge sill?",
+    "options": ["Using bricks with equal colour","Failing to allow for joint widths and the required projection or fall","Checking the opening width","Using a gauge rod"],
+    "correct": 1,
+    "explanation": "The unit arrangement, joints, projection and fall must be set out together to avoid a poor fit or drainage defect.",
+    "id": "brick-challenging-set2-a8-k23-4",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register('bricklayer-st0095-v1-2',9,[
+  {
+    "ksb": "K24",
+    "concept": "K24 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "What is the minimum end bearing normally required for a standard lintel unless specified otherwise?",
+    "options": ["100 mm","225 mm","150 mm","I don't know"],
+    "correct": 2,
+    "explanation": "Most standard lintels require a minimum end bearing of 150 mm, although the manufacturer's instructions and project specification must always be followed.",
+    "id": "brick-approved-a9-k24",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K25",
+    "concept": "K25 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why are weep holes installed above openings?",
+    "options": ["Allow water collected by the cavity tray to drain outside","Improve ventilation inside the building","Strengthen the outer leaf","I don't know"],
+    "correct": 0,
+    "explanation": "Weep holes allow water collected by the cavity tray to escape safely from the wall, helping prevent damp problems.",
+    "id": "brick-approved-a9-k25",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A customer asks you a question you don't know the answer to. What is the best response?",
+    "options": ["Make an educated guess","Tell them to ask someone else","I don't know","Politely explain you'll find the correct information"],
+    "correct": 3,
+    "explanation": "Being honest and respectful builds trust. If you are unsure, seek the correct information rather than giving incorrect advice.",
+    "id": "brick-approved-a9-b3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K24",
+    "concept": "K24 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Several bricks have spalled faces while surrounding mortar is extremely hard and dense. What is a likely contributing factor?",
+    "options": ["Bed joints that are too consistent","Use of clean water when mixing","Mortar that is too strong and impermeable for the masonry","Correct protection during curing"],
+    "correct": 2,
+    "explanation": "Overly strong, impermeable mortar can concentrate moisture and frost damage in softer bricks instead of accommodating movement and drying.",
+    "id": "brick-challenging-set1-a9-k24-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K25",
+    "concept": "K25 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Fresh brickwork is forecast to experience overnight frost. Which protection is most appropriate?",
+    "options": ["Seal it tightly with non-breathable plastic against the face","Soak the wall before leaving","Apply heat directly with a flame","Protect it with insulated, securely fixed covers while maintaining ventilation and avoiding contact damage"],
+    "correct": 3,
+    "explanation": "Insulated covers protect fresh work from frost while suitable ventilation and separation avoid condensation and surface damage.",
+    "id": "brick-challenging-set1-a9-k25-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A replacement brick does not match the existing colour or size, but the repair deadline is today. What best demonstrates ownership?",
+    "options": ["Report the mismatch and obtain approval or a suitable replacement","Install it and hide it with mortar","Leave the opening unattended","Ask the customer not to look closely"],
+    "correct": 0,
+    "explanation": "Ownership includes checking materials against the requirement and escalating incompatibility before completing a defective repair.",
+    "id": "brick-challenging-set1-a9-b3-3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K24",
+    "concept": "K24 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A horizontal crack follows the bed joint beneath a long concrete lintel. Which issue should be investigated first?",
+    "options": ["Whether the bricks were too clean","Differential movement or inadequate movement provision around the lintel","Whether the wall was pointed neatly","The colour of the DPC"],
+    "correct": 1,
+    "explanation": "Concrete and masonry can move differently, so movement detailing around the lintel should be checked.",
+    "id": "brick-challenging-set2-a9-k24-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K25",
+    "concept": "K25 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "How should facing bricks be stored before use during wet weather?",
+    "options": ["Directly on muddy ground under a torn sheet","Fully submerged to equalise suction","Uncovered beside the mixer","On a firm raised base, protected from saturation while allowing ventilation"],
+    "correct": 3,
+    "explanation": "Raised, ventilated protection reduces contamination, saturation and frost damage.",
+    "id": "brick-challenging-set2-a9-k25-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A repaired area is structurally sound but the joint profile visibly differs from the existing work. What should the bricklayer do?",
+    "options": ["Inspect it against the specification and correct the finish before handover","Leave it because strength is all that matters","Apply paint over the joints","Ask the customer to accept it verbally"],
+    "correct": 0,
+    "explanation": "Taking ownership includes checking both performance and specified finish before completion.",
+    "id": "brick-challenging-set2-a9-b3-3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register('bricklayer-st0095-v1-2',10,[
+  {
+    "ksb": "K26",
+    "concept": "K26 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why should cavity insulation be fitted tightly without gaps?",
+    "options": ["To reduce mortar usage","To reduce heat loss through the wall","To improve brick bond","I don't know"],
+    "correct": 1,
+    "explanation": "Gaps in insulation create cold bridges, reducing the wall's thermal efficiency and increasing heat loss.",
+    "id": "brick-approved-a10-k26",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K27",
+    "concept": "K27 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "What should you do if brickwork is found to be outside the specified tolerance?",
+    "options": ["Hide the defect with pointing","Continue until the wall is complete","Report the issue and agree corrective action","I don't know"],
+    "correct": 2,
+    "explanation": "Quality issues should be reported as soon as they are identified so corrective action can be agreed before further work continues.",
+    "id": "brick-approved-a10-k27",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B6",
+    "concept": "B6 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Your supervisor gives you constructive feedback. What should you do?",
+    "options": ["Ignore it if the work has passed","Explain why your way is better","Listen, act on it and use it to improve","I don't know"],
+    "correct": 2,
+    "explanation": "Constructive feedback helps develop your skills and professionalism. Acting on feedback is an important part of continuous improvement.",
+    "id": "brick-approved-a10-b6",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "B5",
+    "concept": "B5 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before leaving your work area, what should you always do?",
+    "options": ["Leave any waste for the labourer","Check your work and leave the area clean and tidy","Cover unfinished work only","I don't know"],
+    "correct": 1,
+    "explanation": "Professional bricklayers take pride in their workmanship and housekeeping. A clean, organised work area reduces hazards and reflects high standards.",
+    "id": "brick-approved-a10-b5",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K26",
+    "concept": "K26 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A bricklayer needs to explain a cavity tray defect to a customer. Which approach is most effective?",
+    "options": ["Explain the issue in plain language, then confirm the required action and likely effect","Use unexplained technical abbreviations throughout","Avoid discussing the defect until work is complete","Only show the customer the drawing"],
+    "correct": 0,
+    "explanation": "Communication should be adapted to the audience while clearly explaining the issue, action and consequences.",
+    "id": "brick-challenging-set1-a10-k26-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K27",
+    "concept": "K27 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A delivery delay will prevent the bricklaying gang from completing an area needed by another trade. What should the team do?",
+    "options": ["Keep the delay within the gang","Start unrelated work without coordination","Blame the supplier during the next meeting","Inform the wider team early and agree a revised sequence"],
+    "correct": 3,
+    "explanation": "Effective teamwork requires early communication and coordination so dependent trades can adjust safely and efficiently.",
+    "id": "brick-challenging-set1-a10-k27-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B6",
+    "concept": "B6 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which action best demonstrates team focus when scaffolding access is shared with another trade?",
+    "options": ["Store materials across the access while taking lunch","Use the access first because brickwork is external","Coordinate timings and keep agreed routes clear","Move the other trade’s equipment without asking"],
+    "correct": 2,
+    "explanation": "Considering the wider build team means coordinating shared resources and maintaining safe access for everyone.",
+    "id": "brick-challenging-set1-a10-b6-3",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "B5",
+    "concept": "B5 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "An apprentice repeatedly struggles to interpret masonry details. What action best demonstrates B5?",
+    "options": ["Avoid drawings and copy nearby work","Request focused support, practise the skill and review feedback","Wait until the final assessment","Ask another person to complete all setting out"],
+    "correct": 1,
+    "explanation": "Seeking development opportunities involves identifying a gap, obtaining support and applying feedback to improve competence.",
+    "id": "brick-challenging-set1-a10-b5-4",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K26",
+    "concept": "K26 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which message is most suitable when warning another trade about uncured masonry?",
+    "options": ["Do not load or fix to this wall until the stated curing period has passed; contact the bricklaying supervisor if access is needed","Keep off","The wall is weak","Everyone should know not to touch it"],
+    "correct": 0,
+    "explanation": "Clear communication identifies the restriction, duration and contact route without ambiguity.",
+    "id": "brick-challenging-set2-a10-k26-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K27",
+    "concept": "K27 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should the bricklaying team coordinate scaffold loading with the scaffold contractor?",
+    "options": ["To reserve the best working lift","To reduce brick colour variation","To avoid completing inspections","To ensure loads and material positions remain within the scaffold design and safe capacity"],
+    "correct": 3,
+    "explanation": "Scaffold loading must stay within the designed capacity and arrangement.",
+    "id": "brick-challenging-set2-a10-k27-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B6",
+    "concept": "B6 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "The team finishes its area early while another gang is struggling with a shared deadline. What best demonstrates team focus?",
+    "options": ["Leave immediately","Take over unfamiliar work without permission","Offer appropriate support through the supervisor without working beyond competence","Criticise the slower gang"],
+    "correct": 2,
+    "explanation": "Team focus includes supporting wider goals while respecting competence and supervision.",
+    "id": "brick-challenging-set2-a10-b6-3",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "B5",
+    "concept": "B5 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A bricklayer receives feedback that their raking cuts are inconsistent. What is the best response?",
+    "options": ["Ignore it because the wall passed","Request coaching, practise controlled setting out and review the results","Avoid all future raking work","Blame the cutting tools"],
+    "correct": 1,
+    "explanation": "Development means acting on feedback and deliberately improving the identified skill.",
+    "id": "brick-challenging-set2-a10-b5-4",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register('bricklayer-st0095-v1-2',11,[
+  {
+    "ksb": "K28",
+    "concept": "K28 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before starting work, which information is most important to confirm with your supervisor?",
+    "options": ["The latest approved drawings and work instructions","The brick manufacturer's address","The site opening times","I don't know"],
+    "correct": 0,
+    "explanation": "Confirming the correct drawings and instructions helps ensure the work is completed safely and to the required specification.",
+    "id": "brick-approved-a11-k28",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K31",
+    "concept": "K31 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why is it important to keep your bricklaying knowledge up to date?",
+    "options": ["To reduce the amount of brick cutting","To increase mortar strength","I don't know","To keep up with changes in regulations, products and working practices"],
+    "correct": 3,
+    "explanation": "The construction industry continually changes. Keeping your knowledge current helps maintain safe, compliant and high-quality work.",
+    "id": "brick-approved-a11-k31",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B4",
+    "concept": "B4 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A colleague is struggling to safely lift heavy blocks. What should you do?",
+    "options": ["Continue with your own work","Offer assistance or arrange suitable help if it is safe to do so","Tell them to work faster","I don't know"],
+    "correct": 1,
+    "explanation": "Good teamwork improves safety, productivity and quality. Supporting colleagues appropriately is part of professional behaviour.",
+    "id": "brick-approved-a11-b4",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K28",
+    "concept": "K28 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A colleague’s suggestion is dismissed because of their accent before it is considered. Which principle has been breached?",
+    "options": ["Inclusive and equitable treatment","Efficient material use","Quality-control sampling","Work sequencing"],
+    "correct": 0,
+    "explanation": "Inclusive workplaces judge contributions fairly and do not disadvantage people because of protected or personal characteristics.",
+    "id": "brick-challenging-set1-a11-k28-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K31",
+    "concept": "K31 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A normally reliable colleague becomes withdrawn, makes unusual mistakes and says they are overwhelmed. What is the most appropriate response?",
+    "options": ["Diagnose the condition yourself","Tell the whole team so they can monitor them","Speak privately, listen without judgement and signpost workplace or professional support","Ignore it unless they request sick leave"],
+    "correct": 2,
+    "explanation": "A supportive response is private, respectful and focused on listening and directing the person to appropriate support, not diagnosis.",
+    "id": "brick-challenging-set1-a11-k31-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B4",
+    "concept": "B4 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A new team member needs a reasonable adjustment to take part in a briefing. What best demonstrates B4?",
+    "options": ["Hold the briefing unchanged to treat everyone identically","Exclude them from the briefing and send notes later","Ask them to arrange everything without support","Work with them and the supervisor to provide an effective adjustment"],
+    "correct": 3,
+    "explanation": "An inclusive culture removes avoidable barriers so people can participate effectively and equitably.",
+    "id": "brick-challenging-set1-a11-b4-3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K28",
+    "concept": "K28 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is the difference between equality and equity in the workplace?",
+    "options": ["Equality gives identical support; equity provides appropriate support to remove disadvantage","They mean exactly the same thing","Equity applies only to pay","Equality allows discrimination when deadlines are tight"],
+    "correct": 0,
+    "explanation": "Equality concerns fair treatment, while equity recognises that different support may be needed to achieve fair participation.",
+    "id": "brick-challenging-set2-a11-k28-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K31",
+    "concept": "K31 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which source is most appropriate for immediate workplace wellbeing support?",
+    "options": ["Unverified social media advice","A customer on site","The employer support route, trained mental-health first aider, GP or recognised support service","A materials supplier"],
+    "correct": 2,
+    "explanation": "Support should come from recognised workplace or professional routes.",
+    "id": "brick-challenging-set2-a11-k31-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B4",
+    "concept": "B4 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A colleague is repeatedly excluded from informal planning discussions. What action best supports inclusion?",
+    "options": ["Continue because attendance is voluntary","Tell them to ask afterwards","Only include senior workers","Ensure relevant discussions and decisions are shared through accessible team channels"],
+    "correct": 3,
+    "explanation": "Inclusive practice ensures everyone affected has fair access to relevant information and participation.",
+    "id": "brick-challenging-set2-a11-b4-3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register('bricklayer-st0095-v1-2',12,[
+  {
+    "ksb": "K30",
+    "concept": "K30 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A customer asks you to change the work from the drawing. What should you do?",
+    "options": ["Make the change if it seems reasonable","Explain that changes must be authorised before work continues","Ask another bricklayer what they think","I don't know"],
+    "correct": 1,
+    "explanation": "Only authorised changes should be made. Unapproved alterations may breach the specification, regulations or contract requirements.",
+    "id": "brick-approved-a12-k30",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K29",
+    "concept": "K29 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Another trade has damaged completed brickwork. What should you do first?",
+    "options": ["Repair it without telling anyone","Report the damage to the appropriate person","Continue working around it","I don't know"],
+    "correct": 1,
+    "explanation": "Damage should be reported promptly so the correct repair can be agreed and responsibility recorded.",
+    "id": "brick-approved-a12-k29",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "You realise you've laid a course out of line. What should you do?",
+    "options": ["Continue and hope it isn't noticed","Hide it when pointing","Correct it as soon as possible and inform your supervisor if necessary","I don't know"],
+    "correct": 2,
+    "explanation": "Taking responsibility for mistakes is a key professional behaviour. Correcting defects early usually saves time, money and materials.",
+    "id": "brick-approved-a12-b2",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K30",
+    "concept": "K30 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Before constructing a gable with a raking cut, which setting-out method gives the most reliable control of the slope?",
+    "options": ["Establishing the rise and run, fixing a line or template, and checking course intersections","Guessing each cut from the previous brick","Cutting every brick to the same angle before setting out","Increasing joint thickness near the top"],
+    "correct": 0,
+    "explanation": "The rake should be derived from the required geometry and controlled with an accurate line or template linked to the course gauge.",
+    "id": "brick-challenging-set1-a12-k30-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K29",
+    "concept": "K29 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should a bolster be positioned on the waste side of a marked brick cut?",
+    "options": ["To make the brick absorb less water","To increase the bed-joint thickness","To avoid wearing eye protection","To keep the required piece closer to the intended dimension"],
+    "correct": 3,
+    "explanation": "Positioning the tool on the waste side allows for the width and break of the cut, protecting the required dimension.",
+    "id": "brick-challenging-set1-a12-k29-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Repeated cuts are needed for a raking wall. Which approach best demonstrates environmental consideration?",
+    "options": ["Cut each brick without a cutting schedule","Discard all partial bricks immediately","Use excess water and allow slurry to enter a drain","Set out and label cuts first, reuse suitable offcuts and minimise dust and slurry"],
+    "correct": 3,
+    "explanation": "Planned cutting reduces waste, enables offcut reuse and supports controlled management of dust and slurry.",
+    "id": "brick-challenging-set1-a12-b2-3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "K30",
+    "concept": "K30 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When setting out a raking wall, why should perp-joint positions be considered before cutting?",
+    "options": ["To increase mortar waste","To keep the bond and avoid weak or visually poor slivers","To remove the need for a line","To make all cuts identical"],
+    "correct": 1,
+    "explanation": "Planning joint positions maintains bond and avoids unsuitable small cut units.",
+    "id": "brick-challenging-set2-a12-k30-1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K29",
+    "concept": "K29 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is the safest method for making a controlled hand cut to a brick?",
+    "options": ["Support it securely, mark the cut, wear eye protection and use the correct bolster and hammer technique","Hold it in one hand and strike toward the body","Use any damaged chisel available","Strike repeatedly without marking"],
+    "correct": 0,
+    "explanation": "Secure support, clear marking, PPE and correct tools improve control and reduce injury risk.",
+    "id": "brick-challenging-set2-a12-k29-2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 alternative challenging brickwork question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which approach best reduces waste when cutting blocks for a gable?",
+    "options": ["Begin cutting before setting out","Discard every offcut below half length","Prepare a cutting schedule and reuse suitable matching offcuts","Cut all blocks longer and trim them repeatedly"],
+    "correct": 2,
+    "explanation": "A cutting schedule and planned reuse reduce unnecessary material use and waste.",
+    "id": "brick-challenging-set2-a12-b2-3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+
+window.MCQQuestionBank.register('site-carpentry-v1-4',1,[
+  {
+    "ksb": "K1",
+    "concept": "K1 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A cable runs across a busy access route. What is the safest immediate action?",
+    "options": ["Cover it with timber offcuts","Mark it with warning tape only","I don't know","Reroute or protect it using an approved cable cover"],
+    "correct": 3,
+    "explanation": "Cables across access routes create a trip and electrical hazard. They should be rerouted or protected with a suitable cable cover, not improvised materials.",
+    "id": "site-carpentry-approved-a1-k1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K2",
+    "concept": "K2 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "You are sanding MDF indoors. Which control best reduces exposure to fine dust?",
+    "options": ["Safety glasses and an open window","Tool extraction with suitable RPE","Disposable dust mask without extraction","I don't know"],
+    "correct": 1,
+    "explanation": "MDF produces fine dust that can damage health. Extraction should remove dust at source, supported by correctly selected and fitted RPE.",
+    "id": "site-carpentry-approved-a1-k2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K3",
+    "concept": "K3 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "The method statement specifies a podium, but only stepladders are available. What should you do?",
+    "options": ["Use the stepladder if another worker holds it","Complete only the easier sections from the ladder","Stop and obtain the specified equipment or revised method","I don't know"],
+    "correct": 2,
+    "explanation": "The agreed safe system must be followed. Different access equipment requires the risks and working method to be reviewed before work begins.",
+    "id": "site-carpentry-approved-a1-k3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B1",
+    "concept": "B1 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "You notice a damaged extension lead being used on site. What should you do?",
+    "options": ["Remove it from use and report it immediately","Use it for low-powered tools only","Tape over the damage and continue working","I don't know"],
+    "correct": 0,
+    "explanation": "Damaged electrical equipment must never be used. Remove it from service, report it and ensure a safe replacement is provided.",
+    "id": "site-carpentry-approved-a1-b1",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "K1",
+    "concept": "K1 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "During refurbishment, a board is suspected to contain asbestos and must be moved to reach damaged framing. What is the correct response?",
+    "options": ["Stop work, prevent disturbance and report it for assessment","Dampen it and remove it carefully","Wear a disposable mask and continue","Break it into smaller pieces for easier removal"],
+    "correct": 0,
+    "explanation": "Suspected asbestos-containing material must not be disturbed. Work must stop and the material must be assessed and managed by competent persons under the appropriate plan.",
+    "id": "site-carpentry-challenging-a1-k1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K2",
+    "concept": "K2 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A carpenter is routing MDF for several hours in a workshop. Which control combination follows the hierarchy most effectively?",
+    "options": ["Open a door and wear safety glasses","Use on-tool LEV, suitable RPE and verify both are functioning","Wear ear defenders and sweep dust afterwards","Use a fan to blow dust away from the operator"],
+    "correct": 1,
+    "explanation": "Fine wood dust should be controlled at source with effective extraction, supported by correctly selected and face-fitted RPE where residual exposure remains.",
+    "id": "site-carpentry-challenging-a1-k2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K3",
+    "concept": "K3 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A task changes because newly installed services now pass through the planned cutting area. What should happen before work continues?",
+    "options": ["The carpenter should work more slowly around the services","A warning note should be added after the task","Only insulated hand tools should be used","The risk assessment and method statement should be reviewed and briefed"],
+    "correct": 3,
+    "explanation": "A material change to the work invalidates assumptions in the safe system. RAMS must be reviewed, controls revised and those affected briefed before restarting.",
+    "id": "site-carpentry-challenging-a1-k3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B1",
+    "concept": "B1 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A colleague removes a guard because it slows production. What best demonstrates putting health, safety and wellbeing first?",
+    "options": ["Finish the current cut, then replace it","Stand further away while they cut","Stop use of the machine and challenge or report the unsafe act","Record it only if an accident occurs"],
+    "correct": 2,
+    "explanation": "Unsafe equipment use must be stopped immediately. Protecting people takes priority over output or avoiding confrontation.",
+    "id": "site-carpentry-challenging-a1-b1",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+{
+  "ksb": "K1",
+  "concept": "K1 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "While lifting floorboards, an operative finds damaged insulation that may contain asbestos. What is the correct response?",
+  "options": ["Bag it as general waste and continue","Wet it and remove it wearing a dust mask","Stop work, prevent disturbance and report it under the asbestos procedure","Ask another trade to dispose of it without recording the find"],
+  "correct": 2,
+  "explanation": "Suspected asbestos must not be disturbed. Work should stop, the area should be controlled and the finding reported through the authorised procedure.",
+  "id": "site-carpentry-challenging-set2-a1-k1",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K2",
+  "concept": "K2 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A circular saw is producing heavy airborne dust despite the operative wearing an FFP3 mask. Which additional control should be prioritised?",
+  "options": ["Open a nearby door only","Use suitable extraction or dust suppression at source","Change to safety glasses","Work faster to shorten exposure"],
+  "correct": 1,
+  "explanation": "RPE is the last line of defence. Effective LEV or dust suppression should control dust at source before relying on personal protection.",
+  "id": "site-carpentry-challenging-set2-a1-k2",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K3",
+  "concept": "K3 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A method statement requires a podium step, but only an unsecured stepladder is available. What should the carpenter do?",
+  "options": ["Use the stepladder for a short task","Alter the method without telling anyone","Ask a colleague to foot the ladder","Stop and obtain the specified access equipment or an authorised revised method"],
+  "correct": 3,
+  "explanation": "Safe systems of work must be followed. A change requires suitable equipment or an authorised review of the method and risk controls.",
+  "id": "site-carpentry-challenging-set2-a1-k3",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "B1",
+  "concept": "B1 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A colleague removes a guard to finish a cut before break. What best demonstrates putting safety and wellbeing first?",
+  "options": ["Stop the unsafe activity and ensure the guard is reinstated before work resumes","Ignore it because the colleague is experienced","Complete the cut for them","Report it only after the job is finished"],
+  "correct": 0,
+  "explanation": "Prioritising safety means intervening immediately when unsafe work could cause harm and ensuring the correct control is restored.",
+  "id": "site-carpentry-challenging-set2-a1-b1",
+  "type": "Behaviour",
+  "status": "approved"
 }
+]);
+
+window.MCQQuestionBank.register('site-carpentry-v1-4',2,[
+  {
+    "ksb": "K4",
+    "concept": "K4 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which method best reduces waste when cutting several identical timber components?",
+    "options": ["Cut each piece separately from full lengths","Prepare a cutting list and optimise lengths before cutting","Allow extra length on every component and trim later","I don't know"],
+    "correct": 1,
+    "explanation": "A planned cutting list reduces offcuts, avoids unnecessary cuts and makes more efficient use of available timber lengths.",
+    "id": "site-carpentry-approved-a2-k4",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K7",
+    "concept": "K7 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A fire door lining is wider than the manufacturer's permitted tolerance. What should happen?",
+    "options": ["Fit thicker architrave to cover the difference","Reduce the door edge until it fits","I don't know","Correct the opening or lining before fitting the door"],
+    "correct": 3,
+    "explanation": "Fire doors must be installed within the manufacturer's specified tolerances. Covering or trimming an incorrect opening may compromise fire performance.",
+    "id": "site-carpentry-approved-a2-k7",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K40",
+    "concept": "K40 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which tax is normally deducted from an employee's wages through PAYE?",
+    "options": ["Income Tax","Council Tax","VAT","I don't know"],
+    "correct": 0,
+    "explanation": "Employees usually pay Income Tax and National Insurance through the PAYE system, while self-employed workers have different tax responsibilities.",
+    "id": "site-carpentry-approved-a2-k40",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "You have several usable timber offcuts left after completing a job. What should you do?",
+    "options": ["Dispose of them in the general waste skip","Burn them if permitted","Store them for reuse if they meet the required standard","I don't know"],
+    "correct": 2,
+    "explanation": "Reusing suitable materials helps reduce waste, lowers costs and supports sustainable construction practices.",
+    "id": "site-carpentry-approved-a2-b2",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "K4",
+    "concept": "K4 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which timber purchasing decision best supports sustainable forestry without compromising specification?",
+    "options": ["Buying the cheapest imported timber available","Using reclaimed timber regardless of condition","Ordering extra material to avoid later deliveries","Selecting certified timber from a traceable responsibly managed source"],
+    "correct": 3,
+    "explanation": "Certified, traceable timber supports responsible forest management while still allowing required strength, durability and quality to be verified.",
+    "id": "site-carpentry-challenging-a2-k4",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K7",
+    "concept": "K7 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A proprietary timber connector is being installed in a load-bearing structure. Which information takes priority?",
+    "options": ["A similar detail used on a previous project","The current design, relevant standard and manufacturer installation requirements","The carpenter’s preferred fixing pattern","The merchant’s verbal advice"],
+    "correct": 1,
+    "explanation": "Structural work must follow current approved design information, applicable standards and the manufacturer’s tested installation requirements.",
+    "id": "site-carpentry-challenging-a2-k7",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K40",
+    "concept": "K40 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A self-employed carpenter quotes a fixed price for work. Which responsibility normally remains theirs?",
+    "options": ["Their client must deduct all tax through PAYE","They are automatically covered by the principal contractor’s insurance","They must manage business records, tax obligations and appropriate insurance","They do not need written terms for small jobs"],
+    "correct": 2,
+    "explanation": "Self-employed workers are responsible for business records, tax and suitable insurance, and should use clear contractual terms.",
+    "id": "site-carpentry-challenging-a2-k40",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Offcuts include clean structural timber, treated timber and contaminated packaging. What is the most sustainable action?",
+    "options": ["Segregate each stream and reuse suitable clean timber where permitted","Place everything in one timber skip","Burn untreated timber and skip the rest","Keep only the largest pieces and mix all remaining waste"],
+    "correct": 0,
+    "explanation": "Effective segregation enables safe reuse, recycling and lawful disposal, preventing treated or contaminated materials from spoiling recoverable waste streams.",
+    "id": "site-carpentry-challenging-a2-b2",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+{
+  "ksb": "K4",
+  "concept": "K4 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Which timber purchasing decision best supports sustainable forestry?",
+  "options": ["Specify certified timber from a responsibly managed source","Choose the cheapest imported timber regardless of source","Use only hardwood because it lasts longer","Order extra stock to avoid future deliveries"],
+  "correct": 0,
+  "explanation": "Certified responsibly sourced timber provides traceability and supports sustainable forest management.",
+  "id": "site-carpentry-challenging-set2-a2-k4",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K7",
+  "concept": "K7 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A detail on site conflicts with the approved drawing and a relevant British Standard. What should the carpenter do?",
+  "options": ["Follow the verbal instruction because it is quicker","Use whichever option requires less material","Follow the older detail because it has been used before","Pause the work and seek clarification through the approved technical process"],
+  "correct": 3,
+  "explanation": "Conflicting technical requirements should be resolved formally before work continues to avoid non-compliant installation.",
+  "id": "site-carpentry-challenging-set2-a2-k7",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K40",
+  "concept": "K40 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A self-employed carpenter quotes for work. Which responsibility normally remains theirs rather than an employer's?",
+  "options": ["Deducting PAYE from their own wages","Receiving statutory holiday pay from the client","Maintaining business records and arranging their own tax submissions","Being enrolled automatically into the client's pension"],
+  "correct": 2,
+  "explanation": "Self-employed workers are generally responsible for business records, tax returns and their own tax arrangements.",
+  "id": "site-carpentry-challenging-set2-a2-k40",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "B2",
+  "concept": "B2 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Offcuts from a roof job include reusable lengths, clean untreated waste and contaminated timber. What is the most sustainable action?",
+  "options": ["Place everything in one skip","Reuse suitable lengths and segregate the remainder into correct waste streams","Burn the untreated timber and bin the rest","Store all waste indefinitely"],
+  "correct": 1,
+  "explanation": "Resource efficiency means prioritising reuse and then segregating waste correctly for recycling or lawful disposal.",
+  "id": "site-carpentry-challenging-set2-a2-b2",
+  "type": "Behaviour",
+  "status": "approved"
+}
+]);
+
+window.MCQQuestionBank.register('site-carpentry-v1-4',3,[
+  {
+    "ksb": "K5",
+    "concept": "K5 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why must timber studwork be separated from a damp concrete floor?",
+    "options": ["To reduce moisture passing into the timber","To improve the fixing strength","To prevent the sole plate twisting","I don't know"],
+    "correct": 0,
+    "explanation": "Timber in contact with damp concrete can absorb moisture and become vulnerable to decay. A suitable damp-resistant separation is required.",
+    "id": "site-carpentry-approved-a3-k5",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K6",
+    "concept": "K6 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A BIM model and printed drawing show different partition positions. What should you use?",
+    "options": ["The printed drawing because it is on site","The latest authorised information after clarification","The BIM model because digital information is always newer","I don't know"],
+    "correct": 1,
+    "explanation": "Neither format automatically takes priority. The latest authorised revision must be confirmed before the work proceeds.",
+    "id": "site-carpentry-approved-a3-k6",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K8",
+    "concept": "K8 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A drawing dimension conflicts with a scaled measurement. Which should normally be followed?",
+    "options": ["The scaled measurement","The measurement that uses the least material","The written dimension","I don't know"],
+    "correct": 2,
+    "explanation": "Written dimensions normally take priority because printed or displayed drawings may not be reproduced at their original scale.",
+    "id": "site-carpentry-approved-a3-k8",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B4",
+    "concept": "B4 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Your supervisor offers training on a new fixing system you've never used. What should you do?",
+    "options": ["Decline because your current method works","Wait until you're told it's compulsory","I don't know","Attend the training and develop your knowledge"],
+    "correct": 3,
+    "explanation": "Taking opportunities to learn new methods and products helps you remain competent and improves your future career prospects.",
+    "id": "site-carpentry-approved-a3-b4",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "K5",
+    "concept": "K5 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When fixing internal timber lining to an external SIPS wall, why must the specified vapour-control and service-zone details be maintained?",
+    "options": ["To protect airtightness and reduce interstitial condensation risk","To make the wall easier to decorate","To increase the density of the panel","To avoid using mechanical fixings"],
+    "correct": 0,
+    "explanation": "Incorrect penetrations or missing control layers can allow warm moist air into the panel build-up, increasing condensation and durability risks.",
+    "id": "site-carpentry-challenging-a3-k5",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K6",
+    "concept": "K6 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A digital model shows a service opening that is absent from the latest issued drawing. What is the correct approach?",
+    "options": ["Cut the opening because 3D models are always authoritative","Ignore the model and continue immediately","Raise the discrepancy and confirm the approved coordinated information","Average the two positions"],
+    "correct": 2,
+    "explanation": "Conflicting information must be clarified through the project’s information-control process. Format alone does not establish authority.",
+    "id": "site-carpentry-challenging-a3-k6",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K8",
+    "concept": "K8 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A detail is marked “Do not scale” but one dimension is missing. What should the carpenter do?",
+    "options": ["Scale the missing dimension from the screen","Request clarification before setting out","Use the nearest standard timber size","Match the dimension used on the previous room"],
+    "correct": 1,
+    "explanation": "Where scaling is prohibited and information is incomplete, the missing dimension must be formally clarified to prevent unapproved assumptions and rework.",
+    "id": "site-carpentry-challenging-a3-k8",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B4",
+    "concept": "B4 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A post-job review identifies repeated errors when reading revised drawings. What best demonstrates seeking development?",
+    "options": ["Ask a colleague to check every drawing indefinitely","Avoid jobs involving detailed drawings","Continue until an error causes rejection","Request targeted training and apply a revision-checking routine"],
+    "correct": 3,
+    "explanation": "Targeted learning combined with an improved checking process addresses the competence gap and reduces recurrence.",
+    "id": "site-carpentry-challenging-a3-b4",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+{
+  "ksb": "K5",
+  "concept": "K5 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Why must a carpenter identify whether a wall is part of a timber-frame fire-resisting construction before forming an opening?",
+  "options": ["The work could interrupt structural, fire and moisture-control layers","The timber may be harder to cut","The opening will always need planning permission","Timber-frame walls cannot contain services"],
+  "correct": 0,
+  "explanation": "Modern wall systems combine structural, fire, air and moisture functions. Alterations can compromise several safety-critical layers.",
+  "id": "site-carpentry-challenging-set2-a3-k5",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K6",
+  "concept": "K6 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "What is a key advantage of checking a coordinated digital model before setting out a partition?",
+  "options": ["It guarantees the materials are already ordered","It can reveal clashes with services and other building elements","It removes the need to verify site dimensions","It replaces all written specifications"],
+  "correct": 1,
+  "explanation": "Digital models can expose coordination clashes, but dimensions and specifications still require verification.",
+  "id": "site-carpentry-challenging-set2-a3-k6",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K8",
+  "concept": "K8 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A drawing is marked 1:50, but one dimension appears inconsistent with the written specification. Which source should the carpenter rely on first?",
+  "options": ["A scaled measurement taken from the drawing","A similar detail from another project","The written figured dimension and an approved clarification","An estimate based on the available timber"],
+  "correct": 2,
+  "explanation": "Figured dimensions and approved clarifications take priority over scaling drawings, especially where documents conflict.",
+  "id": "site-carpentry-challenging-set2-a3-k8",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "B4",
+  "concept": "B4 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A carpenter repeatedly struggles to interpret complex roof drawings. What best demonstrates seeking development?",
+  "options": ["Avoid roof work whenever possible","Copy another carpenter's dimensions without checking","Continue until a mistake is identified","Ask for targeted training and supervised practice"],
+  "correct": 3,
+  "explanation": "Recognising a development need and seeking training or supervised practice supports safe, competent progression.",
+  "id": "site-carpentry-challenging-set2-a3-b4",
+  "type": "Behaviour",
+  "status": "approved"
+}
+]);
+
+window.MCQQuestionBank.register('site-carpentry-v1-4',4,[
+  {
+    "ksb": "K9",
+    "concept": "K9 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which material is most suitable for a painted internal window board requiring good stability?",
+    "options": ["Untreated green softwood","Moisture-resistant MDF where the specification permits","Exterior structural plywood","I don't know"],
+    "correct": 1,
+    "explanation": "Moisture-resistant MDF provides a stable, smooth surface for painted internal joinery, provided it is permitted by the specification and suitably protected.",
+    "id": "site-carpentry-approved-a4-k9",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K10",
+    "concept": "K10 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Timber is damp, darkened and feels soft, but the area remains continuously wet. What is most likely?",
+    "options": ["Wet rot","Dry rot","Powder-post beetle attack","I don't know"],
+    "correct": 0,
+    "explanation": "Wet rot develops where timber remains persistently damp. Dry rot has different identifying features and can spread beyond the original moisture source.",
+    "id": "site-carpentry-approved-a4-k10",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K12",
+    "concept": "K12 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why should a cutting list be produced before machining timber?",
+    "options": ["To make marking out unnecessary","To reduce the number of fixings required","To reduce waste and improve material efficiency","I don't know"],
+    "correct": 2,
+    "explanation": "A cutting list ensures components are cut in the correct order, reducing waste, saving time and making the best use of available timber.",
+    "id": "site-carpentry-approved-a4-k12",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K9",
+    "concept": "K9 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why might laminated timber be specified instead of a solid section for a long component?",
+    "options": ["It is always cheaper and needs no protection","It contains no adhesive","It can be cut without regard to grain direction","It can provide improved dimensional stability and engineered performance"],
+    "correct": 3,
+    "explanation": "Laminated products can be engineered for strength, stability and consistency, but must still be selected and used to specification.",
+    "id": "site-carpentry-challenging-a4-k9",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K10",
+    "concept": "K10 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Moisture readings remain high after replacing decayed timber. What is the most important next action?",
+    "options": ["Apply preservative and conceal the area","Identify and rectify the moisture source before completing repair","Use denser hardwood for the replacement","Increase ventilation only after decoration"],
+    "correct": 1,
+    "explanation": "Decay repair will fail if the underlying moisture source remains. The cause must be diagnosed and corrected before reinstatement.",
+    "id": "site-carpentry-challenging-a4-k10",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K12",
+    "concept": "K12 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A cutting list totals exactly 42 metres of timber. Why should the order normally exceed this figure?",
+    "options": ["Timber is sold only in one-metre lengths","Extra timber is required by law","Allowance is needed for defects, cutting losses and available stock lengths","Every component must be cut twice"],
+    "correct": 2,
+    "explanation": "Procurement must account for stock-length optimisation, kerf, trimming and permissible defects without creating excessive waste.",
+    "id": "site-carpentry-challenging-a4-k12",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+{
+  "ksb": "K9",
+  "concept": "K9 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Which material is most suitable for a stable painted cabinet side where wide solid timber would be prone to movement?",
+  "options": ["Unseasoned softwood boards","Green oak","Untreated external plywood in every location","Moisture-resistant MDF where the environment and specification permit"],
+  "correct": 3,
+  "explanation": "A suitable manufactured board can offer dimensional stability, provided its grade and intended environment match the specification.",
+  "id": "site-carpentry-challenging-set2-a4-k9",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K10",
+  "concept": "K10 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A skirting board shows crumbly brown timber with cuboidal cracking near a long-term leak. What is the most likely diagnosis?",
+  "options": ["Wet rot associated with sustained high moisture","Dry rot caused only by dry air","Normal seasoning","Insect attack with no moisture involvement"],
+  "correct": 0,
+  "explanation": "Wet rot commonly develops where timber remains persistently damp and may produce soft, weakened or cracked timber.",
+  "id": "site-carpentry-challenging-set2-a4-k10",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K12",
+  "concept": "K12 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A cutting list totals 38.4 metres of timber. The stock length is 4.8 metres and 10% allowance is required. What is the minimum number of lengths?",
+  "options": ["9","8","10","11"],
+  "correct": 0,
+  "explanation": "38.4 m plus 10% is 42.24 m. Dividing by 4.8 m gives 8.8, so nine full lengths are required.",
+  "id": "site-carpentry-challenging-set2-a4-k12",
+  "type": "Knowledge",
+  "status": "approved"
+}
+]);
+
+window.MCQQuestionBank.register('site-carpentry-v1-4',5,[
+  {
+    "ksb": "K14",
+    "concept": "K14 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which hand tool is primarily used to check whether two adjoining faces are exactly 90°?",
+    "options": ["Bevel gauge","Spirit level","Try square","I don't know"],
+    "correct": 2,
+    "explanation": "A try square is designed to check and mark right angles accurately when preparing timber components.",
+    "id": "site-carpentry-approved-a5-k14",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K15",
+    "concept": "K15 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why should a chisel be kept sharp?",
+    "options": ["It removes more timber with each cut","It prevents timber from splitting completely","I don't know","It requires less force and gives greater control"],
+    "correct": 3,
+    "explanation": "Sharp tools are safer because they require less effort, provide better control and produce a cleaner finish.",
+    "id": "site-carpentry-approved-a5-k15",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K17",
+    "concept": "K17 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before changing a blade on a circular saw, what should you do first?",
+    "options": ["Lower the blade fully","Remove the battery or disconnect the power supply","Wear cut-resistant gloves","I don't know"],
+    "correct": 1,
+    "explanation": "Power must always be isolated before changing blades or carrying out maintenance to prevent accidental start-up.",
+    "id": "site-carpentry-approved-a5-k17",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K14",
+    "concept": "K14 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A mortise must be chopped accurately near the end of a component. Which practice gives best control?",
+    "options": ["Use a blunt chisel so it removes less timber","Hold the timber by hand and cut from one side only","Secure the work, mark both faces and work progressively with a suitable sharp chisel","Use the widest chisel available regardless of mortise size"],
+    "correct": 2,
+    "explanation": "Secure support, accurate marking and a correctly sized sharp chisel reduce breakout and improve control and accuracy.",
+    "id": "site-carpentry-challenging-a5-k14",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K15",
+    "concept": "K15 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "After honing a plane iron, a wire edge remains on the back. What should be done?",
+    "options": ["Remove it by flattening and polishing the back","Leave it because it improves cutting","Increase the blade projection","Round over the cutting edge"],
+    "correct": 0,
+    "explanation": "The burr or wire edge must be removed on the flat back to produce a clean, durable cutting edge.",
+    "id": "site-carpentry-challenging-a5-k15",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K17",
+    "concept": "K17 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A circular saw repeatedly binds during a rip cut even though the blade is sharp. Which issue should be checked first?",
+    "options": ["Whether the battery is fully charged","Whether the blade guard has been tied back","Whether more force can be applied","Whether the workpiece is adequately supported without closing on the blade"],
+    "correct": 3,
+    "explanation": "Poor support can cause the kerf to close and trap the blade, increasing kickback risk. Guards must never be defeated and forcing the saw is unsafe.",
+    "id": "site-carpentry-challenging-a5-k17",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+{
+  "ksb": "K14",
+  "concept": "K14 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Why should a mortise gauge be stored with its pins protected?",
+  "options": ["To keep the timber dry","To prevent injury and damage to the marking points","To stop the stock shrinking","To maintain the blade angle"],
+  "correct": 1,
+  "explanation": "Protected pins reduce injury risk and prevent the fine marking points from being damaged.",
+  "id": "site-carpentry-challenging-set2-a5-k14",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K15",
+  "concept": "K15 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A chisel edge is sharp but has become rounded over behind the bevel. What is the best corrective action?",
+  "options": ["Increase the honing angle each time","Strike it harder during use","Cool it by dipping a red-hot edge in water","Re-establish the primary bevel before honing the cutting edge"],
+  "correct": 3,
+  "explanation": "Regrinding the correct primary bevel removes excessive rounding; honing can then restore a durable cutting edge.",
+  "id": "site-carpentry-challenging-set2-a5-k15",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K17",
+  "concept": "K17 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Before changing a router cutter, what sequence is safest?",
+  "options": ["Switch off, hold the spindle and change it immediately","Leave the router plugged in but remove the battery indicator","Disconnect or isolate the power, allow complete stop, then use the correct tools","Clamp the trigger off and change the cutter"],
+  "correct": 2,
+  "explanation": "The tool must be isolated from its energy source and fully stopped before cutter changes.",
+  "id": "site-carpentry-challenging-set2-a5-k17",
+  "type": "Knowledge",
+  "status": "approved"
+}
+]);
+
+window.MCQQuestionBank.register('site-carpentry-v1-4',6,[
+  {
+    "ksb": "K16",
+    "concept": "K16 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why are jigs commonly used when producing several identical components?",
+    "options": ["They improve consistency and accuracy","They eliminate the need for measuring","They reduce timber strength","I don't know"],
+    "correct": 0,
+    "explanation": "Jigs allow components to be produced repeatedly to the same dimensions, improving quality and reducing production time.",
+    "id": "site-carpentry-approved-a6-k16",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K29",
+    "concept": "K29 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why should a laser level be checked before use?",
+    "options": ["To improve the battery life","To confirm it is calibrated and giving accurate levels","To increase the laser brightness","I don't know"],
+    "correct": 1,
+    "explanation": "An incorrectly calibrated laser level can introduce errors throughout the installation, affecting the quality of the finished work.",
+    "id": "site-carpentry-approved-a6-k29",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K16",
+    "concept": "K16 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A drilling jig gives consistent holes, but every hole is 3 mm out of position. What is the underlying problem?",
+    "options": ["The jig improves repeatability but was set out inaccurately","The drill speed is too low","The timber moisture content is too high","The jig needs more clamps only"],
+    "correct": 0,
+    "explanation": "A jig repeats its reference geometry. If the original setting-out is wrong, it will reproduce the same error accurately.",
+    "id": "site-carpentry-challenging-a6-k16",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K29",
+    "concept": "K29 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A cross-line laser is moved after the datum has been transferred. What check is essential before continuing?",
+    "options": ["Increase brightness to maximum","Rotate it until the line appears level","Reconfirm the laser against the established datum and check calibration","Use the floor as the new reference"],
+    "correct": 2,
+    "explanation": "Movement can alter setup or reference. The instrument must be rechecked against the controlled datum before further levels are transferred.",
+    "id": "site-carpentry-challenging-a6-k29",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+{
+  "ksb": "K16",
+  "concept": "K16 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A drilling jig produces holes that gradually move out of position after repeated use. What is the most likely cause?",
+  "options": ["The workpieces are too dry","The guide bush or locating face has worn","The drill speed is too low in every case","The jig is made from sheet material"],
+  "correct": 1,
+  "explanation": "Wear in guide bushes or locating surfaces causes repeatability to deteriorate and requires repair or replacement.",
+  "id": "site-carpentry-challenging-set2-a6-k16",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K29",
+  "concept": "K29 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A cross-line laser gives different readings after being moved. What should be checked before relying on it?",
+  "options": ["The colour of the beam","Whether it is the newest model","The room temperature only","Calibration, stable setup and reference datum"],
+  "correct": 3,
+  "explanation": "A laser must be calibrated, securely positioned and related to a verified datum before measurements are trusted.",
+  "id": "site-carpentry-challenging-set2-a6-k29",
+  "type": "Knowledge",
+  "status": "approved"
+}
+]);
+
+window.MCQQuestionBank.register('site-carpentry-v1-4',7,[
+  {
+    "ksb": "K13",
+    "concept": "K13 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A drawing detail is unclear. What should you do before starting work?",
+    "options": ["Build it using your previous experience","Clarify the information with the appropriate person","Ask another apprentice","I don't know"],
+    "correct": 1,
+    "explanation": "Unclear drawings should always be clarified before work starts to avoid errors, wasted materials and delays.",
+    "id": "site-carpentry-approved-a7-k13",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K18",
+    "concept": "K18 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Another trade is working in your area and access is restricted. What should you do?",
+    "options": ["Coordinate the work safely with the other trade","Continue working around them","Wait until they have finished","I don't know"],
+    "correct": 0,
+    "explanation": "Good communication between trades helps prevent accidents, avoids delays and improves the overall quality of the build.",
+    "id": "site-carpentry-approved-a7-k18",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K19",
+    "concept": "K19 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A colleague is being treated unfairly because of their background. What is the most appropriate action?",
+    "options": ["Ignore it unless it affects your work","Discuss it privately after work only","I don't know","Challenge or report the behaviour using site procedures"],
+    "correct": 3,
+    "explanation": "Everyone has a responsibility to help create an inclusive workplace. Discrimination should be challenged appropriately or reported through the correct procedures.",
+    "id": "site-carpentry-approved-a7-k19",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K20",
+    "concept": "K20 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A workmate's behaviour changes noticeably and you're concerned about their wellbeing. What should you do?",
+    "options": ["Ignore it because it's a personal matter","Tell the rest of the team","Ask if they're okay and encourage them to access appropriate support if needed","I don't know"],
+    "correct": 2,
+    "explanation": "Looking out for colleagues is part of professional behaviour. Offering support and signposting appropriate help can make a significant difference.",
+    "id": "site-carpentry-approved-a7-k20",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A new apprentice is excluded by other workers because of their background. What is the most appropriate action?",
+    "options": ["Ignore it unless they complain","Tell them they'll have to fit in","Support them and report inappropriate behaviour through the correct channels","I don't know"],
+    "correct": 2,
+    "explanation": "Everyone deserves to work in a respectful and inclusive environment. Discrimination or exclusion should be challenged or reported appropriately.",
+    "id": "site-carpentry-approved-a7-b3",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "B5",
+    "concept": "B5 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Another trade is delayed and your work depends on theirs. What is the best approach?",
+    "options": ["Continue with work that hasn't been coordinated","Work with the wider team to agree the safest and most efficient next step","Leave site until they're finished","I don't know"],
+    "correct": 1,
+    "explanation": "Construction projects rely on good teamwork. Coordinating with other trades helps maintain safety, quality and programme deadlines.",
+    "id": "site-carpentry-approved-a7-b5",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "K13",
+    "concept": "K13 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A client asks why a door cannot be altered as requested because it is fire-rated. What is the best communication approach?",
+    "options": ["Use technical abbreviations without explanation","Simply state that regulations forbid all alterations","Refer them to another trade without recording the issue","Explain plainly how the proposed alteration could affect the certified assembly, then outline compliant options"],
+    "correct": 3,
+    "explanation": "Clear, audience-appropriate communication should explain the technical consequence and identify compliant next steps without unnecessary jargon.",
+    "id": "site-carpentry-challenging-a7-k13",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K18",
+    "concept": "K18 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Two trades need the same access platform to meet separate deadlines. What is the most effective team response?",
+    "options": ["Coordinate priorities and sequence through the supervisor to protect the programme and safety","The first trade to arrive keeps it all day","Both trades use it simultaneously","Each trade delays without informing anyone"],
+    "correct": 0,
+    "explanation": "Good teamwork requires coordinated planning, clear communication and safe allocation of shared resources around wider project priorities.",
+    "id": "site-carpentry-challenging-a7-k18",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K19",
+    "concept": "K19 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A worker with limited English is excluded from a toolbox talk because it would take longer to explain. Why is this unacceptable?",
+    "options": ["Toolbox talks are optional for experienced workers","Only written information is legally valid","The worker should rely on colleagues afterwards","Safety information must be communicated accessibly and inclusion supports equal participation"],
+    "correct": 3,
+    "explanation": "Everyone affected must understand essential safety information. Reasonable communication support promotes inclusion and safe participation.",
+    "id": "site-carpentry-challenging-a7-k19",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K20",
+    "concept": "K20 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A colleague’s concentration and behaviour have changed significantly over several weeks. What is the most appropriate response?",
+    "options": ["Diagnose the cause yourself","Discuss it openly with the whole team","Speak privately, listen without judgement and signpost suitable support or supervision","Ignore it unless work quality fails"],
+    "correct": 2,
+    "explanation": "A supportive, confidential conversation and appropriate signposting respects boundaries while helping the person access competent support.",
+    "id": "site-carpentry-challenging-a7-k20",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A team member is repeatedly interrupted and their ideas are dismissed. What action best contributes to an inclusive culture?",
+    "options": ["Stay silent to avoid conflict","Create space for them to contribute and challenge disrespectful behaviour appropriately","Speak for them on every occasion","Tell them to be more assertive"],
+    "correct": 1,
+    "explanation": "Inclusive behaviour involves enabling participation and addressing conduct that marginalises others, while respecting the individual’s own voice.",
+    "id": "site-carpentry-challenging-a7-b3",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "B5",
+    "concept": "B5 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Your own task is complete, but delayed partitions will prevent the next trade starting. What best demonstrates team focus?",
+    "options": ["Inform the supervisor and offer appropriate support within your competence","Leave immediately because your work is finished","Change the partition design without approval","Ask the next trade to work around the delay"],
+    "correct": 0,
+    "explanation": "Team focus means considering the wider build programme, communicating constraints and supporting recovery without exceeding authority or competence.",
+    "id": "site-carpentry-challenging-a7-b5",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+{
+  "ksb": "K13",
+  "concept": "K13 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Which instruction is clearest during a coordinated lift of a pre-hung door set?",
+  "options": ["Lift it carefully over there","Do what we normally do","On three, raise the hinge side first and move to the marked opening","Take it to the room when ready"],
+  "correct": 2,
+  "explanation": "Clear terminology, sequencing and location information reduce ambiguity during team tasks.",
+  "id": "site-carpentry-challenging-set2-a7-k13",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K18",
+  "concept": "K18 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Two trades need the same access route at the same time. What best reflects good team working?",
+  "options": ["Agree a safe sequence with the wider team and communicate changes","Block the route before the other trade arrives","Continue independently until someone complains","Leave the decision to the apprentice"],
+  "correct": 0,
+  "explanation": "Good teamwork requires coordination, communication and consideration of the wider build programme.",
+  "id": "site-carpentry-challenging-set2-a7-k18",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K19",
+  "concept": "K19 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A worker is excluded from technical discussions because English is not their first language. What is the best response?",
+  "options": ["Continue because technical meetings must be fast","Use clear communication and reasonable support so they can contribute","Ask them to sign the briefing without discussion","Allocate them only simple tasks"],
+  "correct": 1,
+  "explanation": "Inclusive practice removes avoidable barriers and enables workers to participate safely and fairly.",
+  "id": "site-carpentry-challenging-set2-a7-k19",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K20",
+  "concept": "K20 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A normally reliable colleague becomes withdrawn, makes unusual mistakes and says they are not sleeping. What is the most appropriate first action?",
+  "options": ["Diagnose the cause yourself","Tell the whole team so they can watch them","Ignore it unless they ask for help","Speak privately, listen, and signpost approved support while addressing immediate safety risks"],
+  "correct": 3,
+  "explanation": "A supportive private conversation and appropriate signposting are suitable, while any immediate safety concern must also be managed.",
+  "id": "site-carpentry-challenging-set2-a7-k20",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "B3",
+  "concept": "B3 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A team member suggests adapting a briefing format for a colleague with dyslexia. What best demonstrates inclusive behaviour?",
+  "options": ["Reject it because everyone should receive identical information","Use an accessible format that still communicates the same requirements","Remove the colleague from the task","Ask them to rely on another worker"],
+  "correct": 1,
+  "explanation": "Equality may require reasonable adjustments so everyone can access the same essential information.",
+  "id": "site-carpentry-challenging-set2-a7-b3",
+  "type": "Behaviour",
+  "status": "approved"
+},
+{
+  "ksb": "B5",
+  "concept": "B5 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "The carpentry team is ahead, but dryliners are delayed by stored materials in their area. What best supports the overall team goal?",
+  "options": ["Coordinate their relocation safely to help the wider build sequence","Leave the materials because carpentry is on programme","Tell the dryliners to work around them","Move them without informing anyone"],
+  "correct": 0,
+  "explanation": "Team focus includes considering dependencies across trades and resolving obstacles through coordinated action.",
+  "id": "site-carpentry-challenging-set2-a7-b5",
+  "type": "Behaviour",
+  "status": "approved"
+}
+]);
+
+window.MCQQuestionBank.register('site-carpentry-v1-4',8,[
+  {
+    "ksb": "K22",
+    "concept": "K22 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why should timber sizing tables be checked before installing floor joists?",
+    "options": ["To reduce the amount of timber ordered","To make fixing easier","To confirm the timber can safely support the required load and span","I don't know"],
+    "correct": 2,
+    "explanation": "Sizing tables ensure timber members have sufficient strength and stiffness for the intended span and loading.",
+    "id": "site-carpentry-approved-a8-k22",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K22",
+    "concept": "K22 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A load-bearing stud wall includes a concentrated load above an opening. How should timber sizes and fixings be selected?",
+    "options": ["Use the same arrangement as a nearby non-load-bearing wall","Increase nail quantity until the wall feels rigid","Choose the largest timber available","Follow the structural design and relevant sizing information for studs, lintel and fixings"],
+    "correct": 3,
+    "explanation": "Load-bearing elements and structural fixings must follow approved structural information; visual similarity or improvised over-fixing is not a substitute for design.",
+    "id": "site-carpentry-challenging-a8-k22",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+{
+  "ksb": "K22",
+  "concept": "K22 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A load-bearing stud wall requires a timber size shown in a structural schedule. Why must the carpenter avoid substituting a smaller section?",
+  "options": ["Smaller timber is harder to nail","The plasterboard will always crack immediately","The wall's load capacity, stability and compliance may be reduced","The insulation will become non-compliant regardless of type"],
+  "correct": 2,
+  "explanation": "Structural timber sizes are selected to meet load and stability requirements and should not be reduced without authorised design approval.",
+  "id": "site-carpentry-challenging-set2-a8-k22",
+  "type": "Knowledge",
+  "status": "approved"
+}
+]);
+
+window.MCQQuestionBank.register('site-carpentry-v1-4',9,[
+  {
+    "ksb": "K27",
+    "concept": "K27 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before fixing a timber stud wall, what should be checked first?",
+    "options": ["The manufacturer's warranty","The plasterboard thickness","I don't know","That it is correctly set out, plumb and positioned"],
+    "correct": 3,
+    "explanation": "Accurate setting out ensures walls align correctly with the building layout and prevents problems during second fix.",
+    "id": "site-carpentry-approved-a9-k27",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K27",
+    "concept": "K27 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Floor joists require notches and holes for services. Which principle is correct?",
+    "options": ["Follow specified permitted zones and limits to preserve structural capacity","Cut them wherever services align","Drill all holes near supports","Notches are acceptable if reinforced with screws"],
+    "correct": 0,
+    "explanation": "Joist penetrations must remain within defined zones and size limits because incorrect cuts can seriously reduce structural performance.",
+    "id": "site-carpentry-challenging-a9-k27",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+{
+  "ksb": "K27",
+  "concept": "K27 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Why are floor joist crowns normally oriented consistently during installation?",
+  "options": ["To make joists easier to paint","To reduce irregular floor levels as the joists settle under load","To eliminate the need for strutting","To increase joist moisture content"],
+  "correct": 1,
+  "explanation": "Consistent crown orientation helps produce a more even floor and controls variation as the structure carries load.",
+  "id": "site-carpentry-challenging-set2-a9-k27",
+  "type": "Knowledge",
+  "status": "approved"
+}
+]);
+
+window.MCQQuestionBank.register('site-carpentry-v1-4',10,[
+  {
+    "ksb": "K28",
+    "concept": "K28 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "When hanging an internal door, what should be checked before fitting the ironmongery?",
+    "options": ["That the architrave has been fitted","That the door has the correct and even clearance around the frame","That the skirting boards have been installed","I don't know"],
+    "correct": 1,
+    "explanation": "The door should open and close freely with consistent gaps before locks, handles and other ironmongery are fitted.",
+    "id": "site-carpentry-approved-a10-k28",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K28",
+    "concept": "K28 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "External timber cladding is being fixed over battens. Which detail is most important for long-term performance?",
+    "options": ["Seal every rear cavity completely","Fix boards tightly edge-to-edge","Use internal-grade fixings if concealed","Maintain the specified drainage, ventilation, clearances and fixing pattern"],
+    "correct": 3,
+    "explanation": "Correct ventilation, drainage, movement allowance and durable fixings control moisture and accommodate timber movement.",
+    "id": "site-carpentry-challenging-a10-k28",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+{
+  "ksb": "K28",
+  "concept": "K28 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "When forming a service encasement, why must access to valves or inspection points be maintained?",
+  "options": ["To reduce the amount of timber used","To improve acoustic insulation only","To allow future inspection, isolation and maintenance","To avoid using fire-stopping materials"],
+  "correct": 2,
+  "explanation": "Required service points must remain accessible for safe inspection, isolation and maintenance.",
+  "id": "site-carpentry-challenging-set2-a10-k28",
+  "type": "Knowledge",
+  "status": "approved"
+}
+]);
+
+window.MCQQuestionBank.register('site-carpentry-v1-4',11,[
+  {
+    "ksb": "K11",
+    "concept": "K11 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which product is most suitable for filling a small defect in painted internal timber?",
+    "options": ["Two-part wood filler","Silicone sealant","Expanding foam","I don't know"],
+    "correct": 0,
+    "explanation": "Wood filler restores minor defects before sanding and painting. Silicone and foam are not suitable for producing a durable painted timber finish.",
+    "id": "site-carpentry-approved-a11-k11",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K28",
+    "concept": "K28 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "When hanging an internal door, what should be checked before fitting the ironmongery?",
+    "options": ["That the architrave has been fitted","That the door has the correct and even clearance around the frame","That the skirting boards have been installed","I don't know"],
+    "correct": 1,
+    "explanation": "The door should open and close freely with consistent gaps before locks, handles and other ironmongery are fitted.",
+    "id": "site-carpentry-approved-a11-k28",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K11",
+    "concept": "K11 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A sealant is required around a sanitary worktop joint. Which selection factor is most important?",
+    "options": ["Choose the cheapest colour match","Use wood filler because it can be sanded","Select any mastic labelled multipurpose","Confirm compatibility, movement capability and resistance to moisture and mould"],
+    "correct": 3,
+    "explanation": "The product must suit the substrates, movement and environmental exposure; appearance alone does not ensure performance.",
+    "id": "site-carpentry-challenging-a11-k11",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K28",
+    "concept": "K28 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A run of base units is level, but the wall is badly out of plumb. What is the correct installation approach?",
+    "options": ["Pull the units tight to the wall and accept the twist","Follow the wall even if doors no longer align","Keep units level and aligned, scribe or pack appropriately, and secure to suitable structure","Remove all service gaps"],
+    "correct": 2,
+    "explanation": "Units should remain level, aligned and structurally secure. Irregular backgrounds are accommodated by controlled scribing or packing, not by distorting units.",
+    "id": "site-carpentry-challenging-a11-k28",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+{
+  "ksb": "K11",
+  "concept": "K11 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Which product is most appropriate for filling a small cosmetic defect in joinery before a painted finish?",
+  "options": ["A compatible wood filler specified for the finish","Expanding foam","Roofing mastic","Timber preservative"],
+  "correct": 0,
+  "explanation": "A compatible wood filler is designed to repair minor surface defects and accept the intended finish.",
+  "id": "site-carpentry-challenging-set2-a11-k11",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K28",
+  "concept": "K28 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A wall unit is fixed to a metal-stud partition. What is the most important consideration?",
+  "options": ["Use the longest screws available","Apply adhesive only","Position all fixings into plasterboard edges","Fix into suitable structural support or specified proprietary anchors"],
+  "correct": 3,
+  "explanation": "The fixing method must transfer the load safely into suitable support, not rely on unsuitable lining material alone.",
+  "id": "site-carpentry-challenging-set2-a11-k28",
+  "type": "Knowledge",
+  "status": "approved"
+}
+]);
+
+window.MCQQuestionBank.register('site-carpentry-v1-4',12,[
+  {
+    "ksb": "K21",
+    "concept": "K21 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "When marking several identical components, which method gives the greatest accuracy?",
+    "options": ["Use one master component or setting-out rod as a reference","Measure each piece individually","Estimate from the previous cut","I don't know"],
+    "correct": 0,
+    "explanation": "Using a master template or setting-out rod reduces cumulative measuring errors and produces consistent components.",
+    "id": "site-carpentry-approved-a12-k21",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K27",
+    "concept": "K27 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before fixing a timber stud wall, what should be checked first?",
+    "options": ["The manufacturer's warranty","That it is correctly set out, plumb and positioned","The plasterboard thickness","I don't know"],
+    "correct": 1,
+    "explanation": "Accurate setting out ensures walls align correctly with the building layout and prevents problems during second fix.",
+    "id": "site-carpentry-approved-a12-k27",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K28",
+    "concept": "K28 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "When hanging an internal door, what should be checked before fitting the ironmongery?",
+    "options": ["That the architrave has been fitted","That the skirting boards have been installed","That the door has the correct and even clearance around the frame","I don't know"],
+    "correct": 2,
+    "explanation": "The door should open and close freely with consistent gaps before locks, handles and other ironmongery are fitted.",
+    "id": "site-carpentry-approved-a12-k28",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K21",
+    "concept": "K21 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A handrail return requires two matching mitres. Which method best controls cumulative error?",
+    "options": ["Mark from the actual installation, test-fit and adjust before final fixing","Cut both pieces from nominal angles without checking","Fill any gap with adhesive","Cut one piece long and force it into position"],
+    "correct": 0,
+    "explanation": "Site conditions may vary from nominal geometry. Direct measurement, test fitting and controlled adjustment achieve an accurate joint.",
+    "id": "site-carpentry-challenging-a12-k21",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K27",
+    "concept": "K27 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Before installing a straight stair flight, which verification is most critical?",
+    "options": ["That all components are the same colour","That skirting is installed first","That the stair can be carried by two people","That the opening, rise, going, headroom and supports match approved information"],
+    "correct": 3,
+    "explanation": "Stair geometry and support conditions affect safety and compliance. They must be checked against approved design before installation.",
+    "id": "site-carpentry-challenging-a12-k27",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K28",
+    "concept": "K28 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When fitting spindles to a straight flight, what determines their maximum clear spacing?",
+    "options": ["The width of the available timber","The installer’s preferred appearance","Regulatory requirements and the approved balustrade design","The spacing of nearby floor joists"],
+    "correct": 2,
+    "explanation": "Balustrade openings must comply with the applicable requirements and approved design to prevent unsafe gaps.",
+    "id": "site-carpentry-challenging-a12-k28",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+{
+  "ksb": "K21",
+  "concept": "K21 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A handrail return requires two matching mitres. How should the carpenter minimise a visible gap?",
+  "options": ["Cut both pieces to nominal angles without testing","Verify the actual angle, mark from a common reference and trial-fit before final fixing","Fill the joint before checking alignment","Cut one piece oversize and force it closed"],
+  "correct": 1,
+  "explanation": "Accurate angle verification, common-reference marking and trial fitting are essential for close-fitting mitres.",
+  "id": "site-carpentry-challenging-set2-a12-k21",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K27",
+  "concept": "K27 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Which check is most important before fixing a straight flight of stairs into its opening?",
+  "options": ["That every tread is the same colour","That the strings have been varnished","That dimensions, pitch, support and landing levels match the approved design","That the handrail is already fitted"],
+  "correct": 2,
+  "explanation": "The staircase must fit the approved geometry and have adequate support before permanent fixing.",
+  "id": "site-carpentry-challenging-set2-a12-k27",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K28",
+  "concept": "K28 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "When fitting spindles to a straight flight, what determines compliant spacing?",
+  "options": ["The width of the available offcuts","The carpenter's preferred appearance","The distance that gives the fewest spindles","The approved design and applicable guarding requirements"],
+  "correct": 3,
+  "explanation": "Spacing must follow the approved design and guarding requirements rather than convenience or appearance alone.",
+  "id": "site-carpentry-challenging-set2-a12-k28",
+  "type": "Knowledge",
+  "status": "approved"
+}
+]);
+
+window.MCQQuestionBank.register('site-carpentry-v1-4',13,[
+  {
+    "ksb": "K28",
+    "concept": "K28 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "When hanging an internal door, what should be checked before fitting the ironmongery?",
+    "options": ["That the door has the correct and even clearance around the frame","That the architrave has been fitted","That the skirting boards have been installed","I don't know"],
+    "correct": 0,
+    "explanation": "The door should open and close freely with consistent gaps before locks, handles and other ironmongery are fitted.",
+    "id": "site-carpentry-approved-a13-k28",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K28",
+    "concept": "K28 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A fire door is being rehung after floor finishes changed. Which adjustment is acceptable?",
+    "options": ["Plane the door until any gap looks even","Maintain the certified assembly’s permitted gaps, seals, hinges and closer requirements","Remove the intumescent seals if they rub","Replace fire-rated hinges with lighter hinges"],
+    "correct": 1,
+    "explanation": "A fire door is a tested assembly. Alterations must retain specified components and tolerances rather than relying on appearance alone.",
+    "id": "site-carpentry-challenging-a13-k28",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+{
+  "ksb": "K28",
+  "concept": "K28 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "An internal door binds at the head only after being hung. What should be checked before planing the door?",
+  "options": ["Frame squareness, hinge positioning and consistent clearances","Whether the handle is centred","The paint colour","The floor covering in the next room"],
+  "correct": 0,
+  "explanation": "Binding may result from frame or hinge alignment. The cause should be checked before removing material from the door.",
+  "id": "site-carpentry-challenging-set2-a13-k28",
+  "type": "Knowledge",
+  "status": "approved"
+}
+]);
+
+window.MCQQuestionBank.register('site-carpentry-v1-4',14,[
+  {
+    "ksb": "K24",
+    "concept": "K24 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why is accurate scribing important when fitting timber against an uneven surface?",
+    "options": ["To reduce the number of fixings required","To allow larger expansion gaps","I don't know","To produce a close-fitting, professional finish"],
+    "correct": 3,
+    "explanation": "Scribing transfers the shape of an uneven surface onto the timber, producing a neat fit with minimal gaps.",
+    "id": "site-carpentry-approved-a14-k24",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K28",
+    "concept": "K28 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "When hanging an internal door, what should be checked before fitting the ironmongery?",
+    "options": ["That the architrave has been fitted","That the skirting boards have been installed","That the door has the correct and even clearance around the frame","I don't know"],
+    "correct": 2,
+    "explanation": "The door should open and close freely with consistent gaps before locks, handles and other ironmongery are fitted.",
+    "id": "site-carpentry-approved-a14-k28",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K24",
+    "concept": "K24 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why is scribing generally preferred to forcing skirting against an uneven floor?",
+    "options": ["It removes the need for fixings","It transfers the irregular profile for a close fit without distorting the moulding","It makes every joint a mitre","It increases timber moisture resistance"],
+    "correct": 1,
+    "explanation": "Scribing accurately follows the adjoining surface, producing a controlled fit while keeping the component correctly positioned.",
+    "id": "site-carpentry-challenging-a14-k24",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K28",
+    "concept": "K28 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "An internal corner in skirting is slightly out of square. Which technique usually gives the most reliable joint?",
+    "options": ["Two fixed 45-degree mitres","A square butt joint filled completely","A scribed joint formed from the actual moulding profile","Bending both lengths into the corner"],
+    "correct": 2,
+    "explanation": "A scribed internal joint accommodates minor angular and profile variations better than two nominal mitres.",
+    "id": "site-carpentry-challenging-a14-k28",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+{
+  "ksb": "K24",
+  "concept": "K24 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "Why is scribing generally preferred to a mitre for an internal skirting corner?",
+  "options": ["It better accommodates small corner-angle changes and timber movement","It requires no marking","It uses more adhesive","It avoids cutting a profile"],
+  "correct": 0,
+  "explanation": "A scribed joint follows the moulded profile and tends to remain visually closed despite minor angle errors or movement.",
+  "id": "site-carpentry-challenging-set2-a14-k24",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K28",
+  "concept": "K28 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "A long skirting run needs a lengthwise joint. Which arrangement generally gives the least visible and most durable result?",
+  "options": ["A square butt joint placed in an unsupported gap","A scarf or splayed splice positioned over secure backing","Two pieces overlapped without fixing","A joint directly beneath a doorway threshold"],
+  "correct": 1,
+  "explanation": "A supported scarf or splayed splice increases fixing area and makes the joint less conspicuous.",
+  "id": "site-carpentry-challenging-set2-a14-k28",
+  "type": "Knowledge",
+  "status": "approved"
+}
+]);
+
+window.MCQQuestionBank.register('site-carpentry-v1-4',15,[
+  {
+    "ksb": "K25",
+    "concept": "K25 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before cutting a traditional roof rafter, what should be confirmed first?",
+    "options": ["The gutter manufacturer's details","The ceiling paint finish","I don't know","The roof pitch and construction drawings"],
+    "correct": 3,
+    "explanation": "Rafter lengths and angles depend on the roof pitch and design. Always work from the approved drawings.",
+    "id": "site-carpentry-approved-a15-k25",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K26",
+    "concept": "K26 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "What is the main difference between a warm roof and a cold roof?",
+    "options": ["The roof covering used","The timber grade","The position of the insulation","I don't know"],
+    "correct": 2,
+    "explanation": "A warm roof places insulation above the structural deck, while a cold roof places insulation below it.",
+    "id": "site-carpentry-approved-a15-k26",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K25",
+    "concept": "K25 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Before altering a prefabricated roof truss to pass a service, what must happen?",
+    "options": ["Obtain an approved structural solution from the designer or truss manufacturer","Cut the smallest member available","Add plywood each side after cutting","Move the service and leave the cut concealed"],
+    "correct": 0,
+    "explanation": "Trusses are engineered systems. Members must not be altered without an approved design because changes can compromise the whole roof structure.",
+    "id": "site-carpentry-challenging-a15-k25",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K26",
+    "concept": "K26 challenging applied question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "In a warm flat roof, where is the principal insulation layer normally positioned?",
+    "options": ["Below the ceiling with a ventilated void above","Above the structural deck as part of the warm-roof build-up","Between firring pieces only with no control layer","Directly beneath the waterproof covering without a specified system"],
+    "correct": 1,
+    "explanation": "A warm roof places insulation above the deck within a designed build-up, keeping the deck warmer and controlling condensation when layers are installed correctly.",
+    "id": "site-carpentry-challenging-a15-k26",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+{
+  "ksb": "K25",
+  "concept": "K25 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "During a traditional cut roof, why must birdsmouth cuts not be made deeper than the design permits?",
+  "options": ["They make the rafter too heavy","They prevent ridge boards being painted","They increase ventilation","They reduce the effective rafter section and may weaken it"],
+  "correct": 3,
+  "explanation": "Excessive notching reduces the structural section of the rafter and can compromise its capacity.",
+  "id": "site-carpentry-challenging-set2-a15-k25",
+  "type": "Knowledge",
+  "status": "approved"
+},
+{
+  "ksb": "K26",
+  "concept": "K26 alternative challenging question",
+  "difficulty": "Challenging",
+  "style": "workplace-scenario",
+  "question": "What is the key distinction between warm and cold flat-roof insulation arrangements?",
+  "options": ["Warm roofs always use metal decking","Cold roofs do not need moisture control","Warm roofs cannot use waterproof coverings","Warm-roof insulation is generally above the structural deck, while cold-roof insulation is below with a ventilated void where required"],
+  "correct": 3,
+  "explanation": "The insulation position and associated condensation-control strategy distinguish warm and cold roof constructions.",
+  "id": "site-carpentry-challenging-set2-a15-k26",
+  "type": "Knowledge",
+  "status": "approved"
+}
+]);
+
+window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",1,[
+  {
+    "ksb": "K1",
+    "concept": "K1 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A cable runs across a busy workshop access route. What is the safest immediate action?",
+    "options": ["Cover it with timber offcuts","Mark it with warning tape only","Reroute it or use an approved cable protector","I don't know"],
+    "correct": 2,
+    "explanation": "Trailing cables create trip and electrical hazards. They should be rerouted or protected with suitable equipment, not improvised materials.",
+    "id": "architectural-joiner-approved-a1-k1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K2",
+    "concept": "K2 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "You are sanding MDF at a fixed machine. Which control best reduces dust exposure?",
+    "options": ["Effective LEV with suitable RPE","Safety glasses and an open door","RPE without extraction","I don't know"],
+    "correct": 0,
+    "explanation": "LEV removes dust at source. Suitable, correctly fitted RPE provides additional protection where the assessment requires it.",
+    "id": "architectural-joiner-approved-a1-k2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K3",
+    "concept": "K3 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "The method statement does not cover the machine setup being used. What should happen?",
+    "options": ["Continue if an experienced joiner agrees","Stop and have the safe system reviewed","Use the machine at a slower feed rate","I don't know"],
+    "correct": 1,
+    "explanation": "The risk assessment and method statement must match the actual task and equipment before work starts.",
+    "id": "architectural-joiner-approved-a1-k3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B1",
+    "concept": "B1 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "You notice a damaged guard on a workshop machine. What should you do?",
+    "options": ["Remove it from use and report the defect","Use the machine only for small components","Ask another worker to watch the blade","I don't know"],
+    "correct": 0,
+    "explanation": "A defective guard can expose moving cutters or blades. The machine must be isolated, removed from use and reported.",
+    "id": "architectural-joiner-approved-a1-b1",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S1",
+    "concept": "S1 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A joiner is asked to use a portable router with a damaged cable because the job is urgent. What action demonstrates compliance with health and safety requirements?",
+    "options": ["Use it through an RCD for this one cut","Remove it from use, report it and obtain serviceable equipment","Tape the cable and keep it clear of the bench","Ask a colleague to hold the cable away from the cutter"],
+    "correct": 1,
+    "explanation": "Damaged electrical equipment must be removed from use and reported; urgency does not justify bypassing safety requirements.",
+    "id": "architectural-joiner-challenging-a1-s1",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S2",
+    "concept": "S2 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Machining hardwood creates fine airborne dust despite effective extraction. What is the most appropriate additional control?",
+    "options": ["Wear any disposable mask available","Open the workshop doors and reduce the feed speed","Wear safety glasses instead of respiratory protection","Use task-suitable, face-fit-tested RPE and confirm the LEV is operating correctly"],
+    "correct": 3,
+    "explanation": "RPE must be suitable and correctly fitted, while LEV should be checked because extraction is the primary source control.",
+    "id": "architectural-joiner-challenging-a1-s2",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K1",
+    "concept": "K1 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A joiner must cut material near an area where asbestos-containing board may be present. What is the correct decision?",
+    "options": ["Proceed carefully without disturbing the board","Dampen the area and use a dust mask","Stop work and follow the asbestos management and reporting procedure","Cover the suspected board with plywood and continue"],
+    "correct": 2,
+    "explanation": "Suspected asbestos must not be disturbed. Work should stop until the register, assessment and authorised procedure confirm it is safe.",
+    "id": "architectural-joiner-challenging-a1-k1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K2",
+    "concept": "K2 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why is LEV generally more effective than relying only on RPE during repeated timber machining?",
+    "options": ["LEV makes hearing protection unnecessary","LEV prevents all contact with rotating machinery","LEV removes the need for routine inspection","LEV captures contaminant close to its source before it spreads through the breathing zone"],
+    "correct": 3,
+    "explanation": "LEV controls dust at source; RPE is normally an additional control rather than the sole control for significant dust generation.",
+    "id": "architectural-joiner-challenging-a1-k2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K3",
+    "concept": "K3 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A toolbox talk identifies a new hazard that is absent from the current method statement. What should happen before work continues?",
+    "options": ["Review and amend the risk assessment and method statement, then brief those affected","Record it after the shift","Rely on the verbal toolbox talk alone","Allow only experienced workers to continue"],
+    "correct": 0,
+    "explanation": "Safe systems must reflect the actual hazards and controls, and affected workers must understand the revised arrangements.",
+    "id": "architectural-joiner-challenging-a1-k3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B1",
+    "concept": "B1 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A colleague appears exhausted and repeatedly makes setup errors at a spindle moulder. What response best puts health, safety and wellbeing first?",
+    "options": ["Complete the setup for them without discussion","Stop the unsafe activity, raise the concern appropriately and help them access support","Tell them to work more slowly","Ignore it unless an accident occurs"],
+    "correct": 1,
+    "explanation": "Wellbeing concerns that affect safe performance should be addressed promptly through supportive reporting and appropriate assistance.",
+    "id": "architectural-joiner-challenging-a1-b1",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",2,[
+  {
+    "ksb": "K4",
+    "concept": "K4 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which method best reduces waste when manufacturing repeated joinery components?",
+    "options": ["Leave extra length on every component","Machine each component from a new length","Prepare an optimised cutting list before machining","I don't know"],
+    "correct": 2,
+    "explanation": "An optimised cutting list makes efficient use of stock lengths and reduces avoidable offcuts and remanufacture.",
+    "id": "architectural-joiner-approved-a2-k4",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K7",
+    "concept": "K7 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A fire-door detail conflicts with the manufacturer's installation instructions. What should happen?",
+    "options": ["Follow the detail because it is on the drawing","Clarify the conflict before manufacture or installation","Use whichever method gives the neatest finish","I don't know"],
+    "correct": 1,
+    "explanation": "Fire-door work must comply with the approved design, test evidence and manufacturer's instructions. Conflicts require clarification.",
+    "id": "architectural-joiner-approved-a2-k7",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K40",
+    "concept": "K40 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which payment is normally deducted from an employee's wages through PAYE?",
+    "options": ["VAT","Corporation Tax","I don't know","Income Tax"],
+    "correct": 3,
+    "explanation": "Employees normally pay Income Tax and National Insurance through PAYE. Self-employed workers have different reporting responsibilities.",
+    "id": "architectural-joiner-approved-a2-k40",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Usable hardwood offcuts remain after machining. What is the best action?",
+    "options": ["Put them in general waste","Burn them with other timber waste","Store suitable pieces for reuse","I don't know"],
+    "correct": 2,
+    "explanation": "Reusing suitable offcuts reduces waste, cost and demand for new timber while maintaining the required quality.",
+    "id": "architectural-joiner-approved-a2-b2",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S3",
+    "concept": "S3 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Offcuts include clean untreated timber, MDF and solvent-contaminated cloths. How should they be managed?",
+    "options": ["Segregate each waste stream and use authorised storage and disposal routes","Place all items in the timber recycling skip","Burn clean timber and bin the remainder","Mix them together if the total volume is small"],
+    "correct": 0,
+    "explanation": "Different materials and hazardous wastes require separate, authorised reuse, recycling or disposal arrangements.",
+    "id": "architectural-joiner-challenging-a2-s3",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S4",
+    "concept": "S4 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A window specification conflicts with a current fire-safety requirement. What should the joiner do?",
+    "options": ["Follow the drawing because it was issued first","Alter the detail using personal judgement","Manufacture it and record the conflict on delivery","Stop and seek clarification through the approved technical route before manufacture"],
+    "correct": 3,
+    "explanation": "Conflicts with regulations or standards must be resolved before manufacture, not improvised or deferred.",
+    "id": "architectural-joiner-challenging-a2-s4",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K4",
+    "concept": "K4 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which purchasing decision best supports sustainable forestry without compromising specification?",
+    "options": ["Choose the cheapest imported timber","Replace all solid timber with plastic","Use certified timber of the required grade and optimise cutting to reduce waste","Order extra material to avoid a second delivery"],
+    "correct": 2,
+    "explanation": "Certified, correctly graded timber and efficient cutting reduce environmental impact while maintaining required performance.",
+    "id": "architectural-joiner-challenging-a2-k4",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K7",
+    "concept": "K7 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A manufactured door set is intended for a fire-resisting opening. Which source should govern its construction and installation?",
+    "options": ["A similar door in another building","The relevant regulations, test evidence, manufacturer instructions and project specification","The workshop supervisor’s preferred detail","A general-purpose joinery textbook alone"],
+    "correct": 1,
+    "explanation": "Fire performance depends on the tested system and compliance with relevant regulations, standards and specified details.",
+    "id": "architectural-joiner-challenging-a2-k7",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K40",
+    "concept": "K40 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A self-employed joiner prices work without allowing for tax, insurance or business overheads. What is the main risk?",
+    "options": ["Turnover may appear healthy while the work is financially unsustainable and obligations are unmet","The quotation will always be rejected","The customer automatically becomes the employer","VAT must be charged on every first job"],
+    "correct": 0,
+    "explanation": "Self-employment requires realistic costing and compliance with tax, insurance and business obligations.",
+    "id": "architectural-joiner-challenging-a2-k40",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A cutting list can be nested to save one board, but it requires reorganising the machining sequence. What behaviour best reflects environmental responsibility?",
+    "options": ["Use the original layout to save planning time","Order another board as contingency","Optimise the cutting plan where safe and practical, and segregate remaining waste","Discard short reusable offcuts immediately"],
+    "correct": 2,
+    "explanation": "Resource-efficient planning reduces waste while maintaining safe and effective production.",
+    "id": "architectural-joiner-challenging-a2-b2",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",3,[
+  {
+    "ksb": "K5",
+    "concept": "K5 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why must a timber door frame be isolated from a damp masonry opening?",
+    "options": ["To improve screw holding","To keep the frame perfectly square","I don't know","To reduce moisture passing into the timber"],
+    "correct": 3,
+    "explanation": "Timber can absorb moisture from damp masonry, causing swelling, staining and decay. Suitable separation and protection are required.",
+    "id": "architectural-joiner-approved-a3-k5",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K6",
+    "concept": "K6 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A digital model and workshop drawing show different dimensions. What should you use?",
+    "options": ["The latest authorised information after clarification","The workshop drawing because it is printed","The digital model because it is electronic","I don't know"],
+    "correct": 0,
+    "explanation": "Neither format automatically takes priority. The latest authorised revision must be confirmed before manufacture begins.",
+    "id": "architectural-joiner-approved-a3-k6",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K8",
+    "concept": "K8 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A written dimension conflicts with a scaled measurement on a drawing. Which normally takes priority?",
+    "options": ["The scaled measurement","The written dimension","The dimension using the least material","I don't know"],
+    "correct": 1,
+    "explanation": "Written dimensions normally take priority because drawings can be printed or displayed at a different scale.",
+    "id": "architectural-joiner-approved-a3-k8",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B4",
+    "concept": "B4 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "You are offered training on unfamiliar CNC or fixed machinery. What should you do?",
+    "options": ["Decline until the machine becomes compulsory","Watch another worker instead of training","I don't know","Attend and develop your competence"],
+    "correct": 3,
+    "explanation": "Taking suitable training opportunities improves competence and supports safe use of new equipment and methods.",
+    "id": "architectural-joiner-approved-a3-b4",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S5",
+    "concept": "S5 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Before assembling large frames, what is the best way to prepare the work area?",
+    "options": ["Stack components beside the emergency exit","Begin assembly and move obstructions as required","Clear access routes, check supports and handling space, and position protection before starting","Use the floor because it provides the largest surface"],
+    "correct": 2,
+    "explanation": "A planned, clear and protected work area reduces handling, trip and damage risks.",
+    "id": "architectural-joiner-challenging-a3-s5",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S6",
+    "concept": "S6 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A drawing dimension conflicts with the written specification. What should the joiner do before marking out?",
+    "options": ["Raise a technical query and work only from confirmed information","Use the larger dimension","Average the two values","Follow whichever document was printed most recently"],
+    "correct": 0,
+    "explanation": "Conflicting information must be clarified through the controlled project process before manufacture.",
+    "id": "architectural-joiner-challenging-a3-s6",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K5",
+    "concept": "K5 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why can sealing an internal timber lining against a cold external wall create a defect?",
+    "options": ["It always weakens the timber grain","It may restrict moisture movement and create concealed condensation if the wall build-up is not understood","It causes all fixings to corrode immediately","It increases the fire resistance beyond the design"],
+    "correct": 1,
+    "explanation": "Changes to insulation, air and moisture layers can shift condensation risk and damage the building fabric.",
+    "id": "architectural-joiner-challenging-a3-k5",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K6",
+    "concept": "K6 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is the main benefit of checking a digital model before producing setting-out details?",
+    "options": ["It removes the need to verify dimensions on site","It guarantees the model is contractually correct","It can reveal interfaces, clashes and coordinated dimensions, subject to document control","It permits unapproved design changes"],
+    "correct": 2,
+    "explanation": "Digital models aid coordination, but information still requires status checks and verification.",
+    "id": "architectural-joiner-challenging-a3-k6",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K8",
+    "concept": "K8 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A drawing is marked “for information” rather than “for construction.” What does this mean for manufacture?",
+    "options": ["It may be used if dimensions appear complete","It should not be used as authorised production information","Only timber dimensions may be taken from it","It becomes valid after verbal approval from a colleague"],
+    "correct": 1,
+    "explanation": "Document status controls whether information is approved for manufacture or installation.",
+    "id": "architectural-joiner-challenging-a3-k8",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B4",
+    "concept": "B4 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A new CNC process is being introduced, but the joiner has only used manual machinery. What is the best response?",
+    "options": ["Attempt the process using existing knowledge","Avoid the task permanently","Ask a trained colleague to sign the work off afterwards","Seek training and supervised practice before operating independently"],
+    "correct": 3,
+    "explanation": "Learning and supervised development should precede independent use of unfamiliar processes or equipment.",
+    "id": "architectural-joiner-challenging-a3-b4",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",4,[
+  {
+    "ksb": "K9",
+    "concept": "K9 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which material is most suitable for a stable, painted internal joinery panel?",
+    "options": ["Moisture-resistant MDF where specified","Unseasoned softwood boards","External carcassing timber","I don't know"],
+    "correct": 0,
+    "explanation": "Where permitted, moisture-resistant MDF provides a stable, smooth surface suitable for painted internal joinery.",
+    "id": "architectural-joiner-approved-a4-k9",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K10",
+    "concept": "K10 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Timber remains damp, darkens and becomes soft near a leaking opening. What is most likely?",
+    "options": ["Wet rot","Dry rot","Insect attack","I don't know"],
+    "correct": 0,
+    "explanation": "Wet rot develops where timber remains persistently damp. The moisture source must be corrected before repair.",
+    "id": "architectural-joiner-approved-a4-k10",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K12",
+    "concept": "K12 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why should a cutting list be completed before selecting timber stock?",
+    "options": ["To avoid checking the drawings","To remove the need for quality checks","To reduce waste and confirm required sizes","I don't know"],
+    "correct": 2,
+    "explanation": "A cutting list confirms finished sizes, quantities and allowances so suitable stock can be selected efficiently.",
+    "id": "architectural-joiner-approved-a4-k12",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S7",
+    "concept": "S7 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A cutting list requires twelve identical rails from stock containing several defects. What is the best estimating approach?",
+    "options": ["Divide total rail length by board length only","Allow for saw kerfs, defects, machining allowance and usable yield before ordering","Order exactly the net finished length","Add a fixed 50% waste allowance to every job"],
+    "correct": 1,
+    "explanation": "Accurate estimation considers real material yield, defects, machining and cutting losses.",
+    "id": "architectural-joiner-challenging-a4-s7",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K9",
+    "concept": "K9 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why is quarter-sawn timber often selected for components where dimensional stability is important?",
+    "options": ["It is always cheaper than flat-sawn timber","It contains no natural defects","It requires no moisture conditioning","Its growth-ring orientation generally reduces width movement and cupping"],
+    "correct": 3,
+    "explanation": "Quarter-sawn boards generally move less across their width and are less prone to cupping.",
+    "id": "architectural-joiner-challenging-a4-k9",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K10",
+    "concept": "K10 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A timber component has cuboidal cracking, darkened wood and remains brittle after drying. Which defect is most likely?",
+    "options": ["Wet rot","Blue stain only","Resin bleed","Dry rot"],
+    "correct": 3,
+    "explanation": "Cuboidal cracking and brittle decay are characteristic indicators associated with dry rot, requiring investigation of moisture and spread.",
+    "id": "architectural-joiner-challenging-a4-k10",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K12",
+    "concept": "K12 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should a cutting list distinguish finished sizes from sawn sizes?",
+    "options": ["To reduce the number of components","To avoid identifying timber species","To ensure machining allowances are included before material is ordered and cut","To eliminate the need for tolerances"],
+    "correct": 2,
+    "explanation": "Sawn stock must include sufficient allowance to achieve the specified finished dimensions after machining.",
+    "id": "architectural-joiner-challenging-a4-k12",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",5,[
+  {
+    "ksb": "K14",
+    "concept": "K14 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which tool checks whether adjoining component faces are at 90 degrees?",
+    "options": ["Try square","Sliding bevel","Marking gauge","I don't know"],
+    "correct": 0,
+    "explanation": "A try square is used to mark and check right angles on timber components.",
+    "id": "architectural-joiner-approved-a5-k14",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K15",
+    "concept": "K15 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A chisel edge is sharp but has a rounded bevel. What is the likely problem?",
+    "options": ["It will cut more deeply","It will be harder to control accurately","It will prevent the timber splitting","I don't know"],
+    "correct": 1,
+    "explanation": "A rounded bevel changes the cutting geometry and makes accurate, controlled paring more difficult.",
+    "id": "architectural-joiner-approved-a5-k15",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K17",
+    "concept": "K17 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before changing a router cutter, what must you do first?",
+    "options": ["Lower the speed setting","Fit the extraction hose","I don't know","Remove the battery or isolate the power"],
+    "correct": 3,
+    "explanation": "The tool must be isolated before changing cutters or carrying out adjustments to prevent accidental start-up.",
+    "id": "architectural-joiner-approved-a5-k17",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S9",
+    "concept": "S9 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A chisel is required for paring a shoulder close to a finished face. Which method is safest and most controlled?",
+    "options": ["Strike it hard with a metal hammer","Hold the work by hand and cut towards the body","Use a sharp chisel with both hands behind the cutting edge and controlled pressure","Use a blunt chisel to reduce the chance of slipping"],
+    "correct": 2,
+    "explanation": "Sharp tools, secure work and hands kept behind the cutting edge provide controlled and safer paring.",
+    "id": "architectural-joiner-challenging-a5-s9",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S10",
+    "concept": "S10 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Before plunging a router into a workpiece, what setup is most important?",
+    "options": ["Confirm the cutter is correctly secured, depth is set, work is clamped and guarding/extraction are effective","Start the motor before fitting the cutter","Hold the workpiece against the bench by hand","Increase speed after the cutter enters the timber"],
+    "correct": 0,
+    "explanation": "Correct cutter security, settings, workholding, guarding and extraction are essential before routing.",
+    "id": "architectural-joiner-challenging-a5-s10",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S11",
+    "concept": "S11 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A plane iron produces a polished edge but leaves repeated ridges. What maintenance action is most appropriate?",
+    "options": ["Increase the depth of cut","Flatten and sharpen the cutting edge, then reset the cap iron and lateral adjustment","Oil the sole without removing the iron","Round over the corners of the blade heavily"],
+    "correct": 1,
+    "explanation": "Ridges commonly indicate an uneven or damaged edge or poor setup; sharpening and correct adjustment restore performance.",
+    "id": "architectural-joiner-challenging-a5-s11",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K14",
+    "concept": "K14 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should a marking gauge pin project only enough to score the timber?",
+    "options": ["A long pin improves accuracy on all grain directions","Excess projection can follow grain, tear fibres and reduce control","A short pin prevents the fence contacting the face edge","Projection has no effect if the stock is hardwood"],
+    "correct": 1,
+    "explanation": "Minimal projection gives a controlled, accurate line and reduces grain-following and tearing.",
+    "id": "architectural-joiner-challenging-a5-k14",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K15",
+    "concept": "K15 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why is a consistent sharpening angle important on a bench chisel?",
+    "options": ["It guarantees the chisel never becomes blunt","It changes the timber moisture content","It balances edge strength with cutting performance for the intended work","It removes the need to flatten the back"],
+    "correct": 2,
+    "explanation": "The bevel angle affects both edge durability and cutting ease; the back must also be suitably flat.",
+    "id": "architectural-joiner-challenging-a5-k15",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K17",
+    "concept": "K17 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A portable circular saw consistently burns the cut and wanders. Which combination is most likely?",
+    "options": ["A blunt or unsuitable blade, poor setup or excessive feed pressure","A sharp correct blade and slow feed","Low timber moisture content only","An overlong extension lead with the saw unplugged"],
+    "correct": 0,
+    "explanation": "Blade condition/type, alignment and feed technique are primary causes of burning and wandering.",
+    "id": "architectural-joiner-challenging-a5-k17",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",6,[
+  {
+    "ksb": "K16",
+    "concept": "K16 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why is a jig preferable when routing several identical housings?",
+    "options": ["It removes the need to mark datum faces","It allows any cutter size to be used","I don't know","It improves repeatability and controls cutter position"],
+    "correct": 3,
+    "explanation": "A correctly made jig controls the tool consistently, improving accuracy and repeatability across multiple components.",
+    "id": "architectural-joiner-approved-a6-k16",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K29",
+    "concept": "K29 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A laser level is knocked during setting out. What should you do before continuing?",
+    "options": ["Continue if the line still looks level","Recheck its accuracy or calibration","Increase the laser brightness","I don't know"],
+    "correct": 1,
+    "explanation": "An impact may affect accuracy. The laser must be checked before its readings are relied upon.",
+    "id": "architectural-joiner-approved-a6-k29",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S12",
+    "concept": "S12 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A drilling jig will be used for fifty identical components. What feature most improves repeatable accuracy?",
+    "options": ["A pencil centreline only","A larger drill than the finished hole","Positive location stops and a durable guide bush referenced from consistent faces","Clamping the jig in a different position each time"],
+    "correct": 2,
+    "explanation": "Stops and guide bushes locate each component consistently and control tool position over repeated use.",
+    "id": "architectural-joiner-challenging-a6-s12",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K16",
+    "concept": "K16 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should a jig be trialled on scrap before production?",
+    "options": ["To wear in the cutter","To avoid recording dimensions","To replace the need for inspection","To verify location, clearance, sequence and finished accuracy without risking production material"],
+    "correct": 3,
+    "explanation": "A trial confirms the jig and process produce the required result safely before valuable components are machined.",
+    "id": "architectural-joiner-challenging-a6-k16",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K29",
+    "concept": "K29 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A laser level is knocked over during setup but appears undamaged. What should happen before relying on it?",
+    "options": ["Check its calibration against a known reference and remove it from use if accuracy is uncertain","Continue because the beam still lights","Adjust the work to match the beam","Store it for one hour to reset automatically"],
+    "correct": 0,
+    "explanation": "Impact can affect calibration even without visible damage, so accuracy must be verified before use.",
+    "id": "architectural-joiner-challenging-a6-k29",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",7,[
+  {
+    "ksb": "K13",
+    "concept": "K13 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A drawing detail is unclear before manufacture. What should you do?",
+    "options": ["Use a previous job as the pattern","Choose the easiest construction method","Clarify it with the appropriate person","I don't know"],
+    "correct": 2,
+    "explanation": "Unclear information should be clarified before work starts to prevent incorrect manufacture, waste and delay.",
+    "id": "architectural-joiner-approved-a7-k13",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K18",
+    "concept": "K18 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Another worker needs the spindle moulder while your setup is incomplete. What is the best response?",
+    "options": ["Leave your setup in place and walk away","Coordinate the work and agree a safe sequence","Allow them to adjust your guards and cutters","I don't know"],
+    "correct": 1,
+    "explanation": "Good teamwork requires clear coordination so machinery remains safely set up and production can continue efficiently.",
+    "id": "architectural-joiner-approved-a7-k18",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K19",
+    "concept": "K19 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A colleague is repeatedly excluded because of their background. What should you do?",
+    "options": ["Support them and report inappropriate behaviour","Ignore it unless they make a complaint","Tell them to avoid the people involved","I don't know"],
+    "correct": 0,
+    "explanation": "Exclusion and discrimination should be challenged appropriately or reported through the correct workplace procedure.",
+    "id": "architectural-joiner-approved-a7-k19",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K20",
+    "concept": "K20 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A colleague's behaviour changes and you are concerned about their wellbeing. What should you do?",
+    "options": ["Discuss it with the whole workshop","Ignore it because it is personal","I don't know","Ask if they are okay and signpost support"],
+    "correct": 3,
+    "explanation": "A respectful conversation and appropriate signposting can help, while maintaining privacy and professional boundaries.",
+    "id": "architectural-joiner-approved-a7-k20",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A new apprentice is being mocked for asking questions. What is the best action?",
+    "options": ["Tell them to stop asking in front of others","Wait until their review meeting","Support them and challenge or report the behaviour","I don't know"],
+    "correct": 2,
+    "explanation": "An inclusive workplace allows people to learn without harassment. Inappropriate behaviour should be challenged or reported.",
+    "id": "architectural-joiner-approved-a7-b3",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "B5",
+    "concept": "B5 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A delayed component will affect the installation team. What should you do?",
+    "options": ["Coordinate with the wider team and agree priorities","Finish your own batch before telling anyone","Send an unfinished component to save time","I don't know"],
+    "correct": 0,
+    "explanation": "Early coordination helps the wider team manage safety, quality and programme impacts.",
+    "id": "architectural-joiner-approved-a7-b5",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S8",
+    "concept": "S8 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A drawing issue is being explained to a customer unfamiliar with joinery terms. What is the best approach?",
+    "options": ["Use technical abbreviations to show expertise","Explain the effect in plain language, using essential terms only and checking understanding","Avoid discussing the issue until manufacture is complete","Send the drawing without explanation"],
+    "correct": 1,
+    "explanation": "Communication should be adapted to the audience while remaining accurate and confirming understanding.",
+    "id": "architectural-joiner-challenging-a7-s8",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S13",
+    "concept": "S13 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A colleague says workload is affecting sleep and concentration. What should the joiner do?",
+    "options": ["Diagnose the condition","Promise the issue will remain secret in all circumstances","Tell them everyone experiences the same pressure","Listen, encourage use of appropriate workplace or external support, and escalate immediate safety concerns"],
+    "correct": 3,
+    "explanation": "Supportive listening and signposting are appropriate; urgent safety concerns may require escalation.",
+    "id": "architectural-joiner-challenging-a7-s13",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K13",
+    "concept": "K13 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When is precise construction terminology most important?",
+    "options": ["When discussing colour preferences with a customer","During an informal lunch break","When avoiding written records","When communicating dimensions, tolerances and technical requirements to the production team"],
+    "correct": 3,
+    "explanation": "Technical terms reduce ambiguity when communicating production requirements to competent colleagues.",
+    "id": "architectural-joiner-challenging-a7-k13",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K18",
+    "concept": "K18 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should the workshop team coordinate machining and assembly sequences?",
+    "options": ["To ensure every worker performs the same task","To remove individual responsibility","To avoid bottlenecks, conflicting use of equipment and incomplete components reaching assembly","To eliminate the need for quality checks"],
+    "correct": 2,
+    "explanation": "Coordination supports safe flow, resource availability and completion of components in the required order.",
+    "id": "architectural-joiner-challenging-a7-k18",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K19",
+    "concept": "K19 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which action best supports equity rather than simply treating everyone identically?",
+    "options": ["Provide reasonable adjustments that enable individuals to participate safely and effectively","Give all workers exactly the same equipment regardless of need","Exclude anyone who requires an adjustment from machinery work","Lower quality standards for selected workers"],
+    "correct": 0,
+    "explanation": "Equity addresses barriers through appropriate adjustments while maintaining legitimate standards.",
+    "id": "architectural-joiner-challenging-a7-k19",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K20",
+    "concept": "K20 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which sign most strongly indicates that a wellbeing concern may be affecting workshop safety?",
+    "options": ["A worker prefers a different radio station","Persistent fatigue, reduced concentration and repeated unusual mistakes","A request for annual leave","A change of lunch choice"],
+    "correct": 1,
+    "explanation": "Changes in concentration and repeated errors can indicate a wellbeing issue with direct safety implications.",
+    "id": "architectural-joiner-challenging-a7-k20",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A team member is repeatedly excluded from technical discussions because English is not their first language. What is the best response?",
+    "options": ["Use inclusive communication, ensure they can contribute and challenge the exclusion appropriately","Accept it because meetings must be quick","Give them only non-technical work","Ask them to obtain information afterwards"],
+    "correct": 0,
+    "explanation": "Inclusive practice removes communication barriers and ensures fair participation in relevant work decisions.",
+    "id": "architectural-joiner-challenging-a7-b3",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "B5",
+    "concept": "B5 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Assembly is falling behind because machined components are arriving out of sequence. What team-focused action is best?",
+    "options": ["Concentrate only on personal output","Skip inspections to increase speed","Coordinate priorities with machining and assembly colleagues to recover the shared programme safely","Blame the previous shift in the job record"],
+    "correct": 2,
+    "explanation": "Team focus means coordinating across the wider production process rather than optimising one task in isolation.",
+    "id": "architectural-joiner-challenging-a7-b5",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",8,[
+  {
+    "ksb": "K32",
+    "concept": "K32 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why should all joinery components be marked from the same face side and face edge?",
+    "options": ["To reduce the amount of marking","To keep measurements from a consistent datum","To make the pencil lines easier to remove","I don't know"],
+    "correct": 1,
+    "explanation": "Using common datum faces prevents errors caused by measuring from uneven or differently sized surfaces.",
+    "id": "architectural-joiner-approved-a8-k32",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S23",
+    "concept": "S23 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A setting rod shows accumulated dimensions for several components. How should the joiner reduce cumulative error?",
+    "options": ["Mark each dimension from the previous mark","Use a thicker pencil line","Add machining allowance after assembly","Reference critical dimensions from a common datum and verify the overall size"],
+    "correct": 3,
+    "explanation": "Common datums prevent small marking errors from accumulating across multiple components.",
+    "id": "architectural-joiner-challenging-a8-s23",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K32",
+    "concept": "K32 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "What is the likely effect of marking mortices from different face edges on paired components?",
+    "options": ["The joints will self-align during cramping","Only the surface finish will change","The components may be mirrored or offset, causing poor alignment and incorrect overall geometry","The timber will become less stable"],
+    "correct": 2,
+    "explanation": "Consistent face-side and face-edge references are essential for corresponding joints and accurate assembly.",
+    "id": "architectural-joiner-challenging-a8-k32",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",9,[
+  {
+    "ksb": "K11",
+    "concept": "K11 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Which product is most suitable for filling a small defect in painted internal joinery?",
+    "options": ["Silicone sealant","Expanding foam","I don't know","Two-part wood filler"],
+    "correct": 3,
+    "explanation": "A suitable wood filler can be shaped, sanded and finished to restore a minor defect in painted timber.",
+    "id": "architectural-joiner-approved-a9-k11",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K33",
+    "concept": "K33 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "What is the main risk if mortise-and-tenon shoulders do not close during assembly?",
+    "options": ["The adhesive will cure too quickly","The joint can finish out of square and show gaps","The tenon will become stronger","I don't know"],
+    "correct": 1,
+    "explanation": "Closed, accurate shoulders help locate the joint, maintain squareness and provide a clean finished appearance.",
+    "id": "architectural-joiner-approved-a9-k33",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K35",
+    "concept": "K35 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "When is a biscuit joint most useful in joinery manufacture?",
+    "options": ["For aligning and joining boards or components","For carrying major structural loads alone","For replacing all mechanical fixings in fire doors","I don't know"],
+    "correct": 0,
+    "explanation": "Biscuits are commonly used to align and join components, often with adhesive, but are not a universal structural fixing.",
+    "id": "architectural-joiner-approved-a9-k35",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S24",
+    "concept": "S24 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A mortice-and-tenon frame must resist racking. Which production choice is most important?",
+    "options": ["Make the tenon as thin as possible","Leave gaps for extra adhesive","Produce accurately fitting shoulders and proportion the joint without excessively weakening either member","Cut the mortice across the full width of the stile"],
+    "correct": 2,
+    "explanation": "Sound proportions and tight shoulders transfer load and maintain frame geometry without unduly weakening members.",
+    "id": "architectural-joiner-challenging-a9-s24",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S25",
+    "concept": "S25 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When using biscuits to align a wide panel glue-up, what is the correct practice?",
+    "options": ["Cut matching slots from consistent reference faces and apply the specified adhesive and clamping pressure","Use biscuits to replace all edge preparation","Make one slot deeper so the panel can move","Fit dry biscuits permanently without adhesive"],
+    "correct": 0,
+    "explanation": "Matching reference faces, correct adhesive and controlled cramping produce alignment and bond performance.",
+    "id": "architectural-joiner-challenging-a9-s25",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K11",
+    "concept": "K11 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why must preservative compatibility be checked before applying a decorative finish?",
+    "options": ["Preservatives always prevent paint adhesion","Some treatments can affect adhesion, drying or appearance, so manufacturer guidance must be followed","Decorative finishes make preservatives unnecessary","Compatibility matters only outdoors"],
+    "correct": 1,
+    "explanation": "Chemical compatibility can affect the performance of subsequent fillers, sealants and finishes.",
+    "id": "architectural-joiner-challenging-a9-k11",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K33",
+    "concept": "K33 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why are dovetails effective in a drawer corner?",
+    "options": ["They rely entirely on adhesive","They require no accurate marking","They allow unlimited timber movement","Their interlocking shape resists withdrawal in the direction of the main load"],
+    "correct": 3,
+    "explanation": "The geometry mechanically resists pulling apart, while accurate fitting and adhesive complete the joint.",
+    "id": "architectural-joiner-challenging-a9-k33",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K35",
+    "concept": "K35 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When are dowels preferable to biscuits for a small framed joint?",
+    "options": ["Whenever no drilling equipment is available","When precise positional reinforcement is required within limited edge width","When the joint must remain completely unglued","Only when joining end grain to glass"],
+    "correct": 1,
+    "explanation": "Dowels can provide accurate alignment and reinforcement where biscuit dimensions or slotting are unsuitable.",
+    "id": "architectural-joiner-challenging-a9-k35",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",10,[
+  {
+    "ksb": "K34",
+    "concept": "K34 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before gluing a right-angled timber window, which check is most important?",
+    "options": ["The glazing beads are already painted","The ironmongery has been fitted","The frame components are dry assembled and diagonals match","I don't know"],
+    "correct": 2,
+    "explanation": "A dry assembly and equal diagonal check confirm the window is square and the joints fit before adhesive is applied.",
+    "id": "architectural-joiner-approved-a10-k34",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S26",
+    "concept": "S26 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "During dry assembly of a casement, diagonal measurements differ. What should happen before gluing?",
+    "options": ["Correct the component or joint accuracy until the frame is square and meets tolerance","Increase hinge clearance","Force it square with glazing beads after finishing","Plane the outside edges after glazing"],
+    "correct": 0,
+    "explanation": "Squareness should be corrected during dry assembly; later forcing or trimming can distort rebates and operation.",
+    "id": "architectural-joiner-challenging-a10-s26",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K34",
+    "concept": "K34 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why must glazing rebates have correct depth and edge cover?",
+    "options": ["Only to reduce machining time","To make the sash heavier","To eliminate all need for beads","To accommodate the specified glazing system, drainage and sealant while retaining the unit safely"],
+    "correct": 3,
+    "explanation": "Rebate geometry is part of the tested and specified glazing arrangement, affecting retention, sealing and drainage.",
+    "id": "architectural-joiner-challenging-a10-k34",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",11,[
+  {
+    "ksb": "K36",
+    "concept": "K36 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A door lining is assembled square but twists when lifted. What should be checked?",
+    "options": ["The architrave moulding profile","The hinge screw colour","I don't know","The timber straightness and temporary bracing"],
+    "correct": 3,
+    "explanation": "Straight components and suitable temporary bracing help keep a lining square and free from twist during handling and installation.",
+    "id": "architectural-joiner-approved-a11-k36",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K39",
+    "concept": "K39 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why should hinge recesses be cut to a consistent depth?",
+    "options": ["To make the screw heads easier to paint","To increase the door's fire rating automatically","To keep the door correctly positioned and hinges fully supported","I don't know"],
+    "correct": 2,
+    "explanation": "Consistent recess depth keeps hinges flush and supported, helping the door hang accurately without binding.",
+    "id": "architectural-joiner-approved-a11-k39",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S27",
+    "concept": "S27 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A door lining is assembled accurately but the opening is out of plumb. What is the correct manufacturing response?",
+    "options": ["Keep the product to confirmed specification and report the opening discrepancy for resolution","Manufacture the lining out of square to match the opening","Reduce the head width without approval","Ignore the issue because installation will correct it"],
+    "correct": 0,
+    "explanation": "Manufacture should follow confirmed information; site discrepancies require controlled clarification rather than unapproved alteration.",
+    "id": "architectural-joiner-challenging-a11-s27",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K36",
+    "concept": "K36 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why are horns sometimes left on a manufactured door frame until installation?",
+    "options": ["They permanently increase opening width","They protect and stabilise the frame during handling and installation before being trimmed as specified","They replace all installation fixings","They identify the hinge side only"],
+    "correct": 1,
+    "explanation": "Horns can protect joints and help maintain frame shape during transport and fitting.",
+    "id": "architectural-joiner-challenging-a11-k36",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K39",
+    "concept": "K39 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should hinge recesses be consistent in depth across a door set?",
+    "options": ["To make the screws easier to paint","To increase door mass","Unequal depths can twist hinge alignment, alter clearances and impair operation","To eliminate the need for pilot holes"],
+    "correct": 2,
+    "explanation": "Consistent recesses position hinge leaves correctly and maintain alignment and clearances.",
+    "id": "architectural-joiner-challenging-a11-k39",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",12,[
+  {
+    "ksb": "K36",
+    "concept": "K36 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A door lining is assembled square but twists when lifted. What should be checked?",
+    "options": ["The architrave moulding profile","The timber straightness and temporary bracing","The hinge screw colour","I don't know"],
+    "correct": 1,
+    "explanation": "Straight components and suitable temporary bracing help keep a lining square and free from twist during handling and installation.",
+    "id": "architectural-joiner-approved-a12-k36",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K37",
+    "concept": "K37 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before assembling a timber door, why should component moisture and straightness be checked?",
+    "options": ["To limit later distortion and joint movement","To reduce the number of clamps needed","To make adhesive set faster","I don't know"],
+    "correct": 0,
+    "explanation": "Unsuitable moisture content or distorted components can cause twist, gaps and joint failure after manufacture.",
+    "id": "architectural-joiner-approved-a12-k37",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S27",
+    "concept": "S27 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A straight-flight stair string has a knot crossing the narrowest section of a housing. What should the joiner do?",
+    "options": ["Use it if the knot is filled","Increase the housing depth","Hide the knot against the wall","Assess against specification and grading requirements, then reject or reposition the component if strength is compromised"],
+    "correct": 3,
+    "explanation": "Critical stair components must meet material and structural requirements; defects cannot simply be concealed.",
+    "id": "architectural-joiner-challenging-a12-s27",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S28",
+    "concept": "S28 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When producing repeated spindles for a balustrade, how should consistency be controlled?",
+    "options": ["Mark each spindle independently by eye","Use verified templates or jigs, controlled machine settings and sample checks throughout production","Finish all spindles before measuring any","Allow variation because sanding will correct it"],
+    "correct": 1,
+    "explanation": "Controlled references and periodic checks prevent drift across repeated components.",
+    "id": "architectural-joiner-challenging-a12-s28",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K36",
+    "concept": "K36 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why must tread and riser housings in stair strings be set out from a common pitch line?",
+    "options": ["To reduce timber moisture movement","To make the strings interchangeable with doors","To maintain consistent rise, going and stair geometry across the flight","To avoid using a setting rod"],
+    "correct": 2,
+    "explanation": "The pitch line provides the common geometric reference needed for consistent stair dimensions.",
+    "id": "architectural-joiner-challenging-a12-k36",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K37",
+    "concept": "K37 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A moulding profile must match an existing sample. What is the best manufacturing approach?",
+    "options": ["Select the nearest cutter and sand until it looks similar","Increase the timber thickness and leave it unfinished","Copy it freehand onto each component","Record the profile accurately, confirm dimensions and use suitable tooling or a controlled multi-stage process"],
+    "correct": 3,
+    "explanation": "Accurate capture and controlled tooling are required for repeatable matching profiles.",
+    "id": "architectural-joiner-challenging-a12-k37",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",13,[
+  {
+    "ksb": "K37",
+    "concept": "K37 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before assembling a timber door, why should component moisture and straightness be checked?",
+    "options": ["To limit later distortion and joint movement","To reduce the number of clamps needed","To make adhesive set faster","I don't know"],
+    "correct": 0,
+    "explanation": "Unsuitable moisture content or distorted components can cause twist, gaps and joint failure after manufacture.",
+    "id": "architectural-joiner-approved-a13-k37",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K30",
+    "concept": "K30 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A fire-door leaf requires trimming beyond the manufacturer's allowance. What should happen?",
+    "options": ["Trim it equally from both edges","Increase the intumescent strip size","Stop and obtain an approved solution","I don't know"],
+    "correct": 2,
+    "explanation": "Excessive trimming can invalidate the fire-door evidence. The manufacturer's limits and approved design must be followed.",
+    "id": "architectural-joiner-approved-a13-k30",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S28",
+    "concept": "S28 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A timber door is cramped square, but one stile bows after pressure is applied. What should be done?",
+    "options": ["Release and diagnose component straightness, joint fit and cramping balance before proceeding","Add more pressure until it straightens","Plane the bow out after finishing","Fit heavier hinges to correct it"],
+    "correct": 0,
+    "explanation": "Excess or uneven pressure can distort assembly; the cause must be corrected before the adhesive cures.",
+    "id": "architectural-joiner-challenging-a13-s28",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S29",
+    "concept": "S29 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When fitting a mortice lock, how should weakening of the door stile be minimised?",
+    "options": ["Cut the pocket larger than the case for adjustment","Drill through both faces with the largest available bit","Position the lock beside an existing major joint","Mark accurately, use the specified lock and remove only the material required while maintaining edge distances"],
+    "correct": 3,
+    "explanation": "Accurate minimal removal and correct positioning preserve the stile and door performance.",
+    "id": "architectural-joiner-challenging-a13-s29",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K37",
+    "concept": "K37 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should door components be conditioned to the intended service environment before final machining and assembly?",
+    "options": ["To make timber permanently waterproof","To reduce dimensional change after manufacture that could affect clearances and joints","To increase adhesive open time indefinitely","To remove the need for sealing"],
+    "correct": 1,
+    "explanation": "Moisture equilibration reduces later movement that can cause binding, gaps or joint stress.",
+    "id": "architectural-joiner-challenging-a13-k37",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K30",
+    "concept": "K30 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why must intumescent seals and ironmongery match the fire-door evidence?",
+    "options": ["Any seal of the same colour performs identically","Only the door leaf affects fire resistance","Fire performance applies to the tested or assessed doorset configuration, including compatible components and positions","Ironmongery may be changed after installation without review"],
+    "correct": 2,
+    "explanation": "A fire door is an assembly; unverified substitutions or positions can invalidate its demonstrated performance.",
+    "id": "architectural-joiner-challenging-a13-k30",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",14,[
+  {
+    "ksb": "K37",
+    "concept": "K37 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before assembling a timber door, why should component moisture and straightness be checked?",
+    "options": ["To limit later distortion and joint movement","To reduce the number of clamps needed","To make adhesive set faster","I don't know"],
+    "correct": 0,
+    "explanation": "Unsuitable moisture content or distorted components can cause twist, gaps and joint failure after manufacture.",
+    "id": "architectural-joiner-approved-a14-k37",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K38",
+    "concept": "K38 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why should end grain receive extra attention before applying a clear finish?",
+    "options": ["It cannot be sanded after machining","It absorbs finish more readily than face grain","It always contains preservative","I don't know"],
+    "correct": 1,
+    "explanation": "End grain is more absorbent and may darken or finish unevenly unless it is prepared and coated correctly.",
+    "id": "architectural-joiner-approved-a14-k38",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S28",
+    "concept": "S28 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A wall unit carcass is square before the back is fixed. What method best preserves squareness?",
+    "options": ["Fix the back from one corner without rechecking","Remove all cramps first","Fit doors before the back","Confirm equal diagonals, hold the carcass securely and fix the back in a controlled sequence"],
+    "correct": 3,
+    "explanation": "The back stabilises the carcass, so squareness must be verified and maintained during fixing.",
+    "id": "architectural-joiner-challenging-a14-s28",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K37",
+    "concept": "K37 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why should edging and lippings be selected with movement and finishing in mind?",
+    "options": ["Different materials and grain orientations can move or finish differently, affecting flatness and appearance","Their only purpose is to conceal fixings","They always eliminate the need for sealing","Thicker lippings automatically improve fire performance"],
+    "correct": 0,
+    "explanation": "Compatibility of materials, moisture movement and finish affects the long-term quality of manufactured units.",
+    "id": "architectural-joiner-challenging-a14-k37",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K38",
+    "concept": "K38 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "After sanding, an oiled surface shows dark swirl marks. What is the most likely cause?",
+    "options": ["The oil is too transparent","The timber was planed with the grain","The final abrasive was too fine to leave any mark","Previous coarse sanding scratches were not removed before moving through finer grades"],
+    "correct": 3,
+    "explanation": "Coarse scratches become more visible under finish; each abrasive stage must remove marks from the previous stage.",
+    "id": "architectural-joiner-challenging-a14-k38",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("architectural-joiner-st0264-v1-4",15,[
+  {
+    "ksb": "K31",
+    "concept": "K31 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before starting a planer and thicknesser, which check is essential?",
+    "options": ["The outfeed timber is already stacked","The machine is set to maximum feed speed","The extraction, guards and emergency stop are serviceable","I don't know"],
+    "correct": 2,
+    "explanation": "Fixed machinery must have effective guarding, extraction and emergency controls before operation.",
+    "id": "architectural-joiner-approved-a15-k31",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+,
+  {
+    "ksb": "S30",
+    "concept": "S30 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Before operating a thicknesser after a blade change, what sequence is most appropriate?",
+    "options": ["Start production immediately at minimum depth","Complete authorised setup and guard checks, test run safely, machine a sample and verify dimensions before production","Remove extraction to hear unusual noise","Feed two components together to test capacity"],
+    "correct": 1,
+    "explanation": "Post-maintenance checks, guarded test operation and sample verification are required before production use.",
+    "id": "architectural-joiner-challenging-a15-s30",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "K31",
+    "concept": "K31 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why must the bridge guard on a surface planer be adjusted close to the workpiece?",
+    "options": ["To increase cutter speed","To press the timber flat instead of using correct technique","To minimise exposed cutter block while allowing the stock to pass safely","To replace the need for push blocks"],
+    "correct": 2,
+    "explanation": "The guard should expose only the minimum cutter area required; other controls and safe techniques remain necessary.",
+    "id": "architectural-joiner-challenging-a15-k31",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",1,[
+  {
+    "ksb": "K3",
+    "concept": "K3 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A chemical cleaner has no readable label. What should you do?",
+    "options": ["Use a small amount to test it","Ask a colleague what it probably is","I don't know","Do not use it until identified and COSHH information is available"],
+    "correct": 3,
+    "explanation": "Unidentified substances must not be used. The product and its COSHH controls must be confirmed before handling or applying it.",
+    "id": "pmo-approved-a1-k3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K4",
+    "concept": "K4 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A repair requires work above a busy entrance. What control is most important?",
+    "options": ["Finish during the quietest ten minutes","Use barriers and control access below the work","Ask people to walk through quickly","I don't know"],
+    "correct": 1,
+    "explanation": "The area below work at height must be controlled to protect building users from falling tools, materials and debris.",
+    "id": "pmo-approved-a1-k4",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A customer asks you to skip barriers for a quick repair. What should you do?",
+    "options": ["Use the required controls before starting","Agree if they remain nearby","Start while another worker watches the area","I don't know"],
+    "correct": 0,
+    "explanation": "Health and safety controls must not be removed for convenience. The area should be made safe before work begins.",
+    "id": "pmo-approved-a1-b2",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "K3",
+    "concept": "K3 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "An operative must use a solvent cleaner above shoulder height. Which combination of controls best reflects their legal responsibilities?",
+    "options": ["Wear gloves and continue because PPE is the main control","Open a nearby window and rely on the product label","Ask a colleague to hold the steps while the cleaner is applied","Check COSHH information, reduce exposure, use suitable access equipment and wear specified PPE"],
+    "correct": 3,
+    "explanation": "The operative must follow COSHH and work-at-height controls, use suitable equipment and apply PPE only as part of the wider control measures.",
+    "id": "pmo-challenging-a1-k3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K4",
+    "concept": "K4 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A risk assessment lists dust extraction as mandatory, but the extractor is unavailable. What should the operative do?",
+    "options": ["Stop and obtain the specified control or have the assessment reviewed","Wear a disposable mask and continue","Reduce the cutting time and continue","Ask another operative to stand clear while cutting"],
+    "correct": 0,
+    "explanation": "A required control cannot simply be replaced informally. Work should stop until equivalent controls are authorised through a revised assessment or method.",
+    "id": "pmo-challenging-a1-k4",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K3",
+    "concept": "K3 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A product label requires ventilation and chemical-resistant gloves. Which action best meets the operative’s legal responsibility?",
+    "options": ["Use ordinary gloves for a shorter period","Follow the COSHH controls and stop if the specified ventilation cannot be provided","Use the product outdoors without reading the assessment","Ask the customer to confirm the product is safe"],
+    "correct": 1,
+    "explanation": "COSHH controls must be followed; work should not proceed when required exposure controls are unavailable.",
+    "id": "pmo-set2-a1-k3",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K4",
+    "concept": "K4 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A task has low likelihood of injury but could cause a fatal fall. How should this affect the risk assessment?",
+    "options": ["The risk is low because likelihood is low","Only previous accident history matters","The severity must be considered, so strong controls may still be required","The task can proceed if completed quickly"],
+    "correct": 2,
+    "explanation": "Risk considers both likelihood and severity; potentially fatal consequences justify robust controls even when likelihood is low.",
+    "id": "pmo-set2-a1-k4",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S3",
+    "concept": "S3 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "An operative discovers possible asbestos-containing board while preparing a repair. What action demonstrates compliance?",
+    "options": ["Dampen it and continue carefully","Remove a small sample with hand tools","Stop work, prevent disturbance and follow the asbestos procedure","Cover it with new board"],
+    "correct": 2,
+    "explanation": "Suspected asbestos must not be disturbed; work should stop and the approved management process followed.",
+    "id": "pmo-set2-a1-s3",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S4",
+    "concept": "S4 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A risk assessment requires exclusion barriers, but furniture prevents the specified layout. What should the operative do?",
+    "options": ["Start and move barriers as people approach","Replace barriers with verbal warnings","Reduce the task duration","Reorganise the area or obtain a reviewed safe method before starting"],
+    "correct": 3,
+    "explanation": "The workplace must be organised so required controls are effective; changes need proper review, not informal omission.",
+    "id": "pmo-set2-a1-s4",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S6",
+    "concept": "S6 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "After ceiling drilling, what completes safe reinstatement of the work area?",
+    "options": ["Remove only the power tool","Make the repair safe, remove dust and waste, restore access, remove controls only when hazards are gone and check the area","Leave barriers for the customer","Sweep visible debris into a corner"],
+    "correct": 1,
+    "explanation": "Safe practice includes preparation, controls, housekeeping and full reinstatement before reopening the area.",
+    "id": "pmo-set2-a1-s6",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "B2",
+    "concept": "B2 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A supervisor suggests skipping dust extraction for one quick cut. What response best demonstrates B2?",
+    "options": ["Insist on the required controls and stop until they are available","Agree because exposure is brief","Use extraction only if the customer complains","Ask a colleague to make the cut"],
+    "correct": 0,
+    "explanation": "Prioritising health and safety means applying controls consistently, not trading them for speed.",
+    "id": "pmo-set2-a1-b2",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",2,[
+  {
+    "ksb": "K1",
+    "concept": "K1 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A leaking tap is reported repeatedly. Which approach is planned preventative maintenance?",
+    "options": ["Replace it only after complete failure","Wait for another customer complaint","I don't know","Inspect and service similar taps on a schedule"],
+    "correct": 3,
+    "explanation": "Planned preventative maintenance uses scheduled inspection and servicing to reduce breakdowns. Reactive maintenance responds after a fault has occurred.",
+    "id": "pmo-approved-a2-k1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K2",
+    "concept": "K2 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before drilling into a wall in an older building, what must be checked first?",
+    "options": ["Whether the wall has recently been painted","The likely construction and hidden services","The nearest available drill bit size","I don't know"],
+    "correct": 1,
+    "explanation": "Building age and construction can indicate hidden services, asbestos-containing materials or structural risks. These must be identified before work starts.",
+    "id": "pmo-approved-a2-k2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K6",
+    "concept": "K6 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before repairing a ceiling in an occupied room, what should be done?",
+    "options": ["Move only items directly beneath the defect","Start work and warn people as they enter","Protect the area, isolate access and use suitable equipment","I don't know"],
+    "correct": 2,
+    "explanation": "The work area must be protected and controlled before work begins, including safe access equipment and protection for occupants and finishes.",
+    "id": "pmo-approved-a2-k6",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "You notice a small defect after declaring your repair complete. What should you do?",
+    "options": ["Correct and report it rather than leave it","Wait to see whether the customer notices","Remove the defect from the job record","I don't know"],
+    "correct": 0,
+    "explanation": "Taking responsibility includes checking work, correcting defects and keeping records accurate rather than passing the problem on.",
+    "id": "pmo-approved-a2-b3",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "K1",
+    "concept": "K1 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A hospital replaces fan belts every 12 months because failure records show they typically deteriorate after 15 months. What best explains this approach?",
+    "options": ["It is reactive maintenance because the belts have not yet failed","It is planned preventative maintenance based on condition and failure history","It is corrective maintenance because replacement is mandatory after inspection","It is emergency maintenance because hospital services are critical"],
+    "correct": 1,
+    "explanation": "PPM uses planned intervals or condition data to reduce the likelihood of failure. Reactive maintenance begins after a defect or breakdown is reported.",
+    "id": "pmo-challenging-a2-k1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K2",
+    "concept": "K2 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "While fixing a wall lining in a 1960s residential block, the operative finds an unfamiliar board around a service riser. What is the most appropriate response?",
+    "options": ["Cut a small sample with a hand saw to identify the material","Assume it is plasterboard because it is inside a residential building","Remove the board carefully because maintenance work is non-structural","Stop work, protect the area and check the asbestos and building information"],
+    "correct": 3,
+    "explanation": "Older buildings may contain asbestos-containing materials and fire-resisting elements. Work must stop until the material and its safety function are confirmed.",
+    "id": "pmo-challenging-a2-k2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K6",
+    "concept": "K6 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A corridor ceiling repair is planned in an occupied care home. Which arrangement best protects building users?",
+    "options": ["Work from steps during a quiet period and move when residents approach","Ask a member of care staff to warn residents while work continues","Create a controlled exclusion zone, protect surfaces and use suitable access equipment","Place tools against the wall so the corridor remains partly open"],
+    "correct": 2,
+    "explanation": "Occupied premises require controlled access, suitable work-at-height equipment, protection of adjacent areas and consideration of vulnerable users.",
+    "id": "pmo-challenging-a2-k6",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K1",
+    "concept": "K1 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A school boiler is serviced every August, but a failed pump is replaced immediately in January. How should these tasks be classified?",
+    "options": ["August is PPM; January is reactive maintenance","Both are reactive maintenance","August is reactive; January is PPM","Both are PPM because they involve equipment"],
+    "correct": 0,
+    "explanation": "Scheduled servicing intended to prevent failure is PPM; an unplanned response to a failure is reactive maintenance.",
+    "id": "pmo-set2-a2-k1",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K2",
+    "concept": "K2 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Before drilling into a wall in a 1960s concrete-framed residential block, why must the operative confirm the wall construction and building information?",
+    "options": ["To choose the quickest drill speed","To decide whether the tenant should remain home","To calculate the building insurance value","To avoid damaging structural, fire-stopping or concealed service elements"],
+    "correct": 3,
+    "explanation": "The wall may contain structural elements, compartmentation or concealed services whose damage could affect building safety.",
+    "id": "pmo-set2-a2-k2",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K6",
+    "concept": "K6 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Maintenance is required in a busy corridor beside a glazed display. Which setup best protects users and adjacent property?",
+    "options": ["Place tools against the display and work between passing users","Create a controlled work zone, protect the display and use suitable access equipment","Ask users to step over the tools","Work without barriers during quieter moments"],
+    "correct": 1,
+    "explanation": "A controlled, tidy area with suitable access and protection prevents injury and damage to adjacent surfaces.",
+    "id": "pmo-set2-a2-k6",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S1",
+    "concept": "S1 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A repair requires isolating water, removing a unit, repairing plaster and refitting the unit. Which plan is most effective?",
+    "options": ["Repair plaster before isolating water","Remove the unit first and decide the sequence later","Confirm information and materials, isolate safely, remove carefully, repair in sequence, test and reinstate","Ask each trade to work independently without coordination"],
+    "correct": 2,
+    "explanation": "A logical sequence controls hazards, prevents rework and includes testing and reinstatement.",
+    "id": "pmo-set2-a2-s1",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S2",
+    "concept": "S2 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A replacement door closer visually matches the old one but has a lower fire-door rating. What should the operative select?",
+    "options": ["A compatible component meeting the door specification and manufacturer requirements","The cheaper matching closer","Any closer with the same screw spacing","The old closer with added lubricant"],
+    "correct": 0,
+    "explanation": "Components must comply with the relevant specification and preserve the performance of the assembly.",
+    "id": "pmo-set2-a2-s2",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "B3",
+    "concept": "B3 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A completed repair passes an initial check, but the operative notices a minor defect before leaving. What demonstrates ownership?",
+    "options": ["Correct the defect, retest and update the record","Leave because the main fault is fixed","Wait for the customer to report it","Remove the defect from the job notes"],
+    "correct": 0,
+    "explanation": "Taking responsibility includes identifying and correcting deficiencies before completion.",
+    "id": "pmo-set2-a2-b3",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",3,[
+  {
+    "ksb": "K5",
+    "concept": "K5 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A proposed repair could affect a fire-resisting wall. What should happen first?",
+    "options": ["Use the quickest matching material","Complete the repair and photograph it afterwards","Check the approved specification and seek authorised guidance","I don't know"],
+    "correct": 2,
+    "explanation": "Work affecting fire safety must follow approved information and regulatory requirements. The operative must not make unauthorised substitutions.",
+    "id": "pmo-approved-a3-k5",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K23",
+    "concept": "K23 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A replacement component has several similar versions. Which source should confirm the correct one?",
+    "options": ["A photograph from a previous job","The cheapest supplier listing","I don't know","The latest specification, asset data or manufacturer's information"],
+    "correct": 3,
+    "explanation": "Technical and asset information should be used to identify compatible, compliant components rather than relying on appearance or price.",
+    "id": "pmo-approved-a3-k23",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K30",
+    "concept": "K30 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A colleague makes an offensive comment about another worker. What should you do?",
+    "options": ["Ignore it unless the worker complains","Challenge or report it through the correct procedure","Repeat it privately to check whether others agree","I don't know"],
+    "correct": 1,
+    "explanation": "Employees have responsibilities to support a respectful, inclusive workplace. Inappropriate behaviour should be challenged safely or reported.",
+    "id": "pmo-approved-a3-k30",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B5",
+    "concept": "B5 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A new colleague is being excluded from team discussions. What should you do?",
+    "options": ["Include them and challenge inappropriate exclusion","Wait for the supervisor to notice","Tell them to speak only when asked","I don't know"],
+    "correct": 0,
+    "explanation": "Inclusive behaviour means ensuring colleagues can contribute and addressing exclusion respectfully through appropriate channels.",
+    "id": "pmo-approved-a3-b5",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "K5",
+    "concept": "K5 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A repair is proposed to a fire-resisting compartment wall in a high-rise residential building. Which action is most appropriate?",
+    "options": ["Use any material with a similar thickness","Complete the repair and rely on the final visual inspection","Use the product previously used elsewhere in the building","Follow the approved fire-stopping specification and escalate any uncertainty"],
+    "correct": 3,
+    "explanation": "Work affecting fire safety must follow approved designs, product evidence and competent oversight, particularly in higher-risk buildings.",
+    "id": "pmo-challenging-a3-k5",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K23",
+    "concept": "K23 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A manufacturer has revised the installation instructions for a replacement valve. Which information should the operative follow?",
+    "options": ["The instructions supplied with the oldest valve on site","The latest approved manufacturer information that matches the exact product","A previous job sheet showing how another operative fitted one","A supplier's generic online description"],
+    "correct": 1,
+    "explanation": "Current product-specific technical literature is the authoritative source, subject to the job specification and organisational controls.",
+    "id": "pmo-challenging-a3-k23",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K30",
+    "concept": "K30 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A vulnerable resident discloses information suggesting possible abuse. What is the operative's responsibility?",
+    "options": ["Investigate by questioning neighbours","Promise confidentiality and keep the information private","Record and report the concern promptly through the organisation's safeguarding procedure","Wait for physical evidence before reporting"],
+    "correct": 2,
+    "explanation": "Safeguarding concerns must be reported through the approved process. Operatives should not investigate or promise secrecy.",
+    "id": "pmo-challenging-a3-k30",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K5",
+    "concept": "K5 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A repair to a fire-resisting door in a higher-risk building is outside the operative’s competence. What is the correct response?",
+    "options": ["Make a temporary alteration and record it later","Replace only the visible damaged part","Use any component that appears equivalent","Escalate the work and preserve the door’s certified performance"],
+    "correct": 3,
+    "explanation": "Regulated safety-critical work must maintain compliance and be completed by competent persons using suitable certified components.",
+    "id": "pmo-set2-a3-k5",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K23",
+    "concept": "K23 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Manufacturer guidance conflicts with an old site note for installing a proprietary fire-stopping product. Which source should govern the work?",
+    "options": ["Current approved technical information, specification and relevant certification","The old note because it is already printed","A colleague’s memory","A generic online video"],
+    "correct": 0,
+    "explanation": "Current authoritative product data, project specifications and certification should be used for safety-critical installation.",
+    "id": "pmo-set2-a3-k23",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K30",
+    "concept": "K30 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A vulnerable resident discloses that a carer is deliberately preventing essential repairs. What should the operative do?",
+    "options": ["Confront the carer immediately","Follow the organisation’s safeguarding reporting procedure and record factual information securely","Ignore it because it is not a maintenance issue","Discuss it with other residents"],
+    "correct": 1,
+    "explanation": "Safeguarding concerns must be escalated through approved procedures while maintaining confidentiality and factual records.",
+    "id": "pmo-set2-a3-k30",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S5",
+    "concept": "S5 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A repair would reduce the width of a protected escape route below the approved requirement. What should the operative do?",
+    "options": ["Complete it because the change is small","Record it only after completion","Stop and seek instruction so the work remains compliant","Use thinner decorative trim without approval"],
+    "correct": 2,
+    "explanation": "Work must comply with regulatory requirements; potentially non-compliant changes require escalation and authorised design guidance.",
+    "id": "pmo-set2-a3-s5",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S19",
+    "concept": "S19 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A proprietary damp-proofing system is proposed. How should the operative use technical information before work?",
+    "options": ["Rely on the product name","Check current data sheets, substrate requirements, limitations and application instructions against the job","Use the same method as ordinary paint","Follow a social media demonstration"],
+    "correct": 1,
+    "explanation": "Technical literature must be used to confirm suitability, preparation, limitations and installation requirements.",
+    "id": "pmo-set2-a3-s19",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "B5",
+    "concept": "B5 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A colleague repeatedly excludes an apprentice with limited English from toolbox discussions. What should an inclusive operative do?",
+    "options": ["Accept it to save time","Give the apprentice only manual tasks","Support accessible communication and challenge or report exclusion through the correct route","Discuss the issue with customers"],
+    "correct": 2,
+    "explanation": "Inclusive behaviour actively enables participation and addresses unfair exclusion appropriately.",
+    "id": "pmo-set2-a3-b5",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",4,[
+  {
+    "ksb": "K7",
+    "concept": "K7 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A power tool guard does not return fully after use. What should you do?",
+    "options": ["Lubricate it and continue","Hold it back manually while cutting","I don't know","Remove the tool from use and report the defect"],
+    "correct": 3,
+    "explanation": "Defective guards make equipment unsafe. The tool should be isolated, labelled if required and reported for repair or replacement.",
+    "id": "pmo-approved-a4-k7",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K8",
+    "concept": "K8 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "After isolating an electrical circuit, what confirms it is safe to work near?",
+    "options": ["A suitable tester proves the circuit dead","The switch is in the off position","The equipment display has gone blank","I don't know"],
+    "correct": 0,
+    "explanation": "Safe isolation requires proving the circuit dead with an appropriate tester, not relying only on switches, labels or displays.",
+    "id": "pmo-approved-a4-k8",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K7",
+    "concept": "K7 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A circular saw starts normally but its lower guard closes slowly. What is the correct decision?",
+    "options": ["Use it only for short cuts","Remove it from service and report the defect","Apply lubricant and test it on waste timber","Hold the guard clear manually until the cut begins"],
+    "correct": 1,
+    "explanation": "A defective guard is a critical safety failure. The tool must not be used until repaired and confirmed safe.",
+    "id": "pmo-challenging-a4-k7",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K8",
+    "concept": "K8 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "After switching off and locking an electrical isolator, what should happen before work begins on the circuit?",
+    "options": ["Check that connected equipment has stopped","Wait five minutes for stored electricity to disappear","Prove the tester, test for dead, then re-prove the tester","Confirm the circuit number on the distribution-board schedule"],
+    "correct": 2,
+    "explanation": "Safe isolation includes proving the voltage indicator, testing the circuit is dead and proving the indicator again.",
+    "id": "pmo-challenging-a4-k8",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K7",
+    "concept": "K7 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A multi-tool blade is rated for timber but the repair involves a concealed metal fixing. What is the safest decision?",
+    "options": ["Increase speed to cut through both materials","Remove the guard for better visibility","Apply more force at low speed","Select a suitable blade and verify the tool’s guard and condition"],
+    "correct": 3,
+    "explanation": "Tools and accessories must be suitable for the material and used with safeguards correctly fitted.",
+    "id": "pmo-set2-a4-k7",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K8",
+    "concept": "K8 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "After isolating a circuit, the indicator on the local switch goes out. What must happen before touching conductors?",
+    "options": ["Prove the tester, test for dead, then re-prove the tester","Assume isolation is complete","Remove the fuse and begin immediately","Ask another operative whether the circuit is live"],
+    "correct": 0,
+    "explanation": "Safe isolation requires an approved test-for-dead procedure using a proven voltage indicator.",
+    "id": "pmo-set2-a4-k8",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S7",
+    "concept": "S7 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A circular saw guard sticks during the pre-use check. What is the correct action?",
+    "options": ["Manually lift it for each cut","Lubricate it while running","Use it only for shallow cuts","Remove the saw from use and report or repair it through the approved process"],
+    "correct": 3,
+    "explanation": "Defective safeguards make equipment unsafe; it must be removed from use until correctly repaired.",
+    "id": "pmo-set2-a4-s7",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S8",
+    "concept": "S8 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which sequence best demonstrates safe electrical isolation?",
+    "options": ["Switch off locally, remove cover, test later","Turn off equipment and place a note nearby","Identify supply, isolate, secure against reconnection, prove tester, test dead, re-prove tester","Ask the occupier not to use the circuit"],
+    "correct": 2,
+    "explanation": "Safe isolation requires positive identification, secure isolation and proven testing for dead.",
+    "id": "pmo-set2-a4-s8",
+    "type": "Skill",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",5,[
+  {
+    "ksb": "K9",
+    "concept": "K9 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A fire door closer no longer shuts the door fully. What is the correct action?",
+    "options": ["Adjust or report it promptly under the maintenance procedure","Wedge the door open until replacement parts arrive","Remove the closer so the door moves freely","I don't know"],
+    "correct": 0,
+    "explanation": "Fire doors must close effectively. A defective closer should be dealt with promptly through the correct maintenance and reporting procedure.",
+    "id": "pmo-approved-a5-k9",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K31",
+    "concept": "K31 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why should an operative record CPD and new training?",
+    "options": ["To replace all workplace supervision","To show competence development and recognise limits of authority","To allow work on any system without approval","I don't know"],
+    "correct": 1,
+    "explanation": "CPD records show how competence is maintained and developed, while helping operatives understand when specialist support or authorisation is required.",
+    "id": "pmo-approved-a5-k31",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B6",
+    "concept": "B6 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "You are offered training on equipment you rarely use. What is the best response?",
+    "options": ["Decline because another trade usually uses it","Attend if it supports your role and competence","Use the equipment first and train later","I don't know"],
+    "correct": 1,
+    "explanation": "Seeking relevant development improves competence and helps operatives understand safe limits, new methods and future responsibilities.",
+    "id": "pmo-approved-a5-b6",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "K9",
+    "concept": "K9 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A weekly emergency-light test shows one fitting does not illuminate. What is the best response?",
+    "options": ["Replace the lamp only after the next full-duration test","Remove the fitting from the test record until repaired","Record the defect and arrange prompt corrective action under the site procedure","Leave a temporary torch nearby and mark the test as passed"],
+    "correct": 2,
+    "explanation": "Emergency systems must be tested, failures recorded and corrective action initiated promptly to maintain safe escape arrangements.",
+    "id": "pmo-challenging-a5-k9",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K9",
+    "concept": "K9 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "An emergency exit sign remains illuminated but points toward a route now blocked by refurbishment. What is the key maintenance concern?",
+    "options": ["The sign may dangerously misdirect occupants and must be reported and corrected","The lamp is working, so no action is needed","The sign only matters during night shifts","Cover the sign until refurbishment ends"],
+    "correct": 0,
+    "explanation": "Emergency signage must accurately identify a safe route; illuminated but incorrect signage can increase risk.",
+    "id": "pmo-set2-a5-k9",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K31",
+    "concept": "K31 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "An operative has watched training on fire-door inspection but has not been assessed as competent. What should CPD lead them to do?",
+    "options": ["Carry out all inspections independently","Assume the certificate grants authority","Avoid any further learning","Recognise their current limit, seek supervised experience or assessment, and escalate work meanwhile"],
+    "correct": 3,
+    "explanation": "CPD improves knowledge but does not automatically confer competence or authority; limits must still be recognised.",
+    "id": "pmo-set2-a5-k31",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S9",
+    "concept": "S9 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "During an emergency-light test, one fitting illuminates but fails before the required duration. What should be recorded?",
+    "options": ["Fail, identify the location and defect, and report corrective action required","Pass, because it initially illuminated","No result until the next annual test","Replace the test label only"],
+    "correct": 0,
+    "explanation": "Emergency systems must meet their specified test performance; failures require accurate recording and escalation.",
+    "id": "pmo-set2-a5-s9",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "B6",
+    "concept": "B6 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "An operative repeatedly encounters unfamiliar smart-building controls. What best demonstrates B6?",
+    "options": ["Continue by trial and error","Refuse all future digital tasks","Rely on old instructions for conventional systems","Seek relevant training, supervised practice and updated technical guidance"],
+    "correct": 3,
+    "explanation": "Seeking structured learning develops competence safely and supports changing technology.",
+    "id": "pmo-set2-a5-b6",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",6,[
+  {
+    "ksb": "K10",
+    "concept": "K10 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Before replacing a faulty tap, how should the water supply be controlled?",
+    "options": ["Open all nearby taps before finding the valve","Close the correct isolation valve and confirm flow has stopped","Rely on the building's main stop tap being closed","I don't know"],
+    "correct": 1,
+    "explanation": "The correct supply must be isolated and checked before dismantling components. This prevents flooding and confirms the isolation is effective.",
+    "id": "pmo-approved-a6-k10",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K11",
+    "concept": "K11 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A sink drains slowly but the trap is clear. What should be checked next?",
+    "options": ["The hot-water temperature","The tap aerator","The waste pipe for restriction or poor fall","I don't know"],
+    "correct": 2,
+    "explanation": "If the trap is clear, the waste pipe may be partially blocked or incorrectly graded, both of which can restrict drainage.",
+    "id": "pmo-approved-a6-k11",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K12",
+    "concept": "K12 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why should little-used outlets be flushed as part of water hygiene controls?",
+    "options": ["To prevent stagnation that may encourage bacterial growth","To increase mains pressure","To remove all limescale from the system","I don't know"],
+    "correct": 0,
+    "explanation": "Stagnant water can support bacterial growth, including Legionella. Flushing should follow the building's water hygiene procedure.",
+    "id": "pmo-approved-a6-k12",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K10",
+    "concept": "K10 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A basin tap is to be replaced in a multi-storey building. Which sequence best limits water damage?",
+    "options": ["Close the main stopcock, remove the tap and reopen it slowly","Open all taps in the building before isolating the supply","Identify the local isolation, verify it works, relieve pressure and control residual water","Drain the entire cold-water storage system regardless of the pipe arrangement"],
+    "correct": 2,
+    "explanation": "The correct local isolation should be identified and tested, pressure relieved and residual water safely contained before dismantling.",
+    "id": "pmo-challenging-a6-k10",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K11",
+    "concept": "K11 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Several ground-floor appliances discharge slowly, but upper-floor fittings operate normally. What should be investigated first?",
+    "options": ["Low incoming mains pressure","A blockage in the shared below-ground drain serving the ground floor","A fault in the roof ventilation system","Excessive hot-water temperature"],
+    "correct": 1,
+    "explanation": "A shared pattern of slow discharge at low level commonly indicates restriction in the branch or below-ground drain downstream of those fittings.",
+    "id": "pmo-challenging-a6-k11",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K12",
+    "concept": "K12 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why is routinely flushing little-used outlets an important water-hygiene control?",
+    "options": ["It increases mains pressure throughout the building","It prevents scale forming in every type of pipe","It removes the need for temperature monitoring","It reduces stagnation that can support Legionella growth"],
+    "correct": 3,
+    "explanation": "Low-use outlets can allow stagnant water and favourable bacterial conditions. Flushing is one control within a wider water-safety plan.",
+    "id": "pmo-challenging-a6-k12",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K10",
+    "concept": "K10 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A leaking basin tap has local service valves, but one valve will not close fully. What should the operative do before dismantling the tap?",
+    "options": ["Isolate at a reliable upstream point and safely relieve pressure","Continue because the leak is small","Tighten the tap while the supply remains live","Block the outlet with cloth"],
+    "correct": 0,
+    "explanation": "The supply must be reliably isolated and pressure relieved before components are removed.",
+    "id": "pmo-set2-a6-k10",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K11",
+    "concept": "K11 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Several ground-floor appliances discharge slowly after heavy rain, while upper-floor appliances drain normally. Which fault is most likely?",
+    "options": ["A local tap washer fault","Low mains water pressure","A defective roof vent tile","Restriction or surcharge in the below-ground drainage serving the building"],
+    "correct": 3,
+    "explanation": "Multiple low-level drainage symptoms during rainfall suggest a downstream below-ground restriction or surcharge.",
+    "id": "pmo-set2-a6-k11",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K12",
+    "concept": "K12 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Why is simply raising stored hot-water temperature not always a complete Legionella control?",
+    "options": ["Temperature has no effect on bacteria","Control also depends on circulation, avoiding stagnation, monitoring and competent risk management","Only cold water systems present risk","Certification removes the need for checks"],
+    "correct": 1,
+    "explanation": "Water hygiene requires a managed system including temperature control, circulation, monitoring and prevention of stagnation.",
+    "id": "pmo-set2-a6-k12",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S10",
+    "concept": "S10 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "After replacing a fill valve, what should the operative do before closing the job?",
+    "options": ["Restore water and leave immediately","Increase pressure to test faster","Restore supply gradually, check operation, leaks and water level, then reinstate the area","Seal the access panel before testing"],
+    "correct": 2,
+    "explanation": "Repairs must be functionally tested and checked for leakage before access is closed and the area reinstated.",
+    "id": "pmo-set2-a6-s10",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S11",
+    "concept": "S11 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A drain blockage is cleared, but the same chamber rapidly fills again. What is the best next action?",
+    "options": ["Continue rodding indefinitely","Add chemical cleaner","Leave the cover open to release pressure","Stop, record findings and escalate for further investigation of a downstream defect"],
+    "correct": 3,
+    "explanation": "Rapid recurrence suggests a wider defect requiring competent investigation rather than repeated local clearance.",
+    "id": "pmo-set2-a6-s11",
+    "type": "Skill",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",7,[
+  {
+    "ksb": "K13",
+    "concept": "K13 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A room remains cold although the heating is on. What should be checked first?",
+    "options": ["The system controls and whether heat is reaching the emitter","The colour of the wall finish","The external drainage system","I don't know"],
+    "correct": 0,
+    "explanation": "Basic diagnosis starts with controls, settings and whether the system is delivering heat before components are replaced.",
+    "id": "pmo-approved-a7-k13",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K25",
+    "concept": "K25 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "The same repair fails repeatedly. What best supports continuous improvement?",
+    "options": ["Repeat the repair using more material","Record the failure, investigate the cause and change the method","Allocate the task to a different operative without review","I don't know"],
+    "correct": 1,
+    "explanation": "Continuous improvement relies on evidence, root-cause review and controlled changes, rather than repeatedly treating the same symptom.",
+    "id": "pmo-approved-a7-k25",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K13",
+    "concept": "K13 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A building management system repeatedly calls for heating while rooms are already above set temperature. Which component should be checked first?",
+    "options": ["The fire alarm sounder circuit","The incoming water stop valve","The relevant temperature sensor and its control signal","The emergency-light battery"],
+    "correct": 2,
+    "explanation": "Environmental controls rely on accurate sensors and control signals. Incorrect feedback can cause unnecessary heating and energy use.",
+    "id": "pmo-challenging-a7-k13",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K13",
+    "concept": "K13 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A room overheats even though its sensor shows the set temperature has been reached. Which BEMS fault should be investigated first?",
+    "options": ["Whether the sensor, controller or actuator is incorrectly signalling the heating valve","The fire alarm battery","The external drainage gradient","The emergency lighting duration"],
+    "correct": 0,
+    "explanation": "Environmental systems rely on sensors, controllers and actuators; a fault in this control chain can cause overheating.",
+    "id": "pmo-set2-a7-k13",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K25",
+    "concept": "K25 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "The same door closer fault recurs in several buildings. Which action best demonstrates continuous improvement?",
+    "options": ["Repair each closer without recording the cause","Replace all doors regardless of condition","Reduce inspection frequency","Analyse failure patterns, review specification and installation, then update the maintenance process"],
+    "correct": 3,
+    "explanation": "Continuous improvement uses evidence from recurring faults to change specifications, methods or controls.",
+    "id": "pmo-set2-a7-k25",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S12",
+    "concept": "S12 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A ventilation unit is isolated and its filter replaced. What should happen before it is returned to service?",
+    "options": ["Run it with the cover removed","Confirm components and guards are secure, restore supply and verify operation against the required settings","Increase fan speed above specification","Reset all controls to factory defaults"],
+    "correct": 1,
+    "explanation": "Environmental equipment must be safely reassembled and functionally tested against the intended settings.",
+    "id": "pmo-set2-a7-s12",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S21",
+    "concept": "S21 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "After repairing an automatic door closer, how should the operative inspect their work?",
+    "options": ["Check appearance only","Ask the customer whether it looks correct","Test closing from relevant opening angles, confirm latching, clearances and specification, and rectify defects","Wait for the next complaint"],
+    "correct": 2,
+    "explanation": "Inspection must verify performance against the specification, not merely appearance.",
+    "id": "pmo-set2-a7-s21",
+    "type": "Skill",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",8,[
+  {
+    "ksb": "K14",
+    "concept": "K14 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A double-glazed unit is misted between the panes. What has most likely failed?",
+    "options": ["The window handle","The sealed glazing unit","The external sill","I don't know"],
+    "correct": 1,
+    "explanation": "Moisture between panes usually indicates failure of the sealed unit, allowing the insulating cavity to lose its seal.",
+    "id": "pmo-approved-a8-k14",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K27",
+    "concept": "K27 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "How should a technical fault be explained to a resident?",
+    "options": ["Use trade terminology throughout","Avoid explaining it until the repair is complete","Use clear everyday language and confirm understanding","I don't know"],
+    "correct": 2,
+    "explanation": "Communication should suit the audience. Clear language and checking understanding help residents know what is happening and why.",
+    "id": "pmo-approved-a8-k27",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K28",
+    "concept": "K28 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A repair cannot be completed during the first visit. What should the customer receive?",
+    "options": ["A promise that it will be completed the next morning","No information until parts arrive","I don't know","A realistic update on the reason and next steps"],
+    "correct": 3,
+    "explanation": "Good customer service includes honest, timely updates about progress, limitations and agreed next steps without making unsupported promises.",
+    "id": "pmo-approved-a8-k28",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K14",
+    "concept": "K14 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A fire door has been eased because it was binding, but a 7 mm gap now exists at the head. Why is this a concern?",
+    "options": ["It may allow excessive smoke and fire spread and no longer meet the required doorset performance","It will cause the closer to operate too quickly","It will reduce the acoustic rating only","It will make the hinges wear more slowly"],
+    "correct": 0,
+    "explanation": "Fire doors rely on controlled gaps, compatible components and correct installation. Excessive gaps can undermine tested fire and smoke performance.",
+    "id": "pmo-challenging-a8-k14",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K28",
+    "concept": "K28 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A repair cannot be completed because a specialist part is unavailable. Which response provides the best customer service?",
+    "options": ["Close the job and wait for the customer to contact the office","Give an estimated completion date without checking availability","Explain the issue, make the situation safe, record the next action and provide a realistic update route","Tell the customer that procurement is not the operative's responsibility"],
+    "correct": 2,
+    "explanation": "Good customer service keeps the customer informed, manages expectations honestly and records the agreed next steps.",
+    "id": "pmo-challenging-a8-k28",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K14",
+    "concept": "K14 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A fire door closes but rebounds and remains slightly open. Why is adjusting only the latch potentially inadequate?",
+    "options": ["The paint colour may be incorrect","The closer, hinges, seals, alignment and gaps all affect compliant performance","The door should always be wedged open","Only the glazing matters"],
+    "correct": 1,
+    "explanation": "A fire door is an assembly; closing action, alignment, gaps, seals and hardware collectively determine performance.",
+    "id": "pmo-set2-a8-k14",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K27",
+    "concept": "K27 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "How should an operative explain a failed thermostatic mixing valve to a resident?",
+    "options": ["Use only specialist abbreviations","Avoid explaining until the repair is complete","Give the resident the manufacturer’s full data sheet without discussion","Explain the safety impact in plain language, then use technical terms in the formal report"],
+    "correct": 3,
+    "explanation": "Communication should suit the audience while technical terminology is retained where needed for accurate records.",
+    "id": "pmo-set2-a8-k27",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K28",
+    "concept": "K28 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A repair cannot be completed because a specialist part is unavailable. Which update best supports customer service?",
+    "options": ["Explain what was found, any temporary safety action, the next step and expected communication arrangements","Say only that the job is incomplete","Advise the customer to search for the part","Close the job without notes"],
+    "correct": 0,
+    "explanation": "Customers need clear, accurate and timely information about findings, safety, next actions and follow-up.",
+    "id": "pmo-set2-a8-k28",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S13",
+    "concept": "S13 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A replacement hinge leaves a door binding at the head. Which action best demonstrates competent joinery repair?",
+    "options": ["Plane the door immediately without checks","Check hinge position, recess depth, frame alignment and clearances before removing material","Fit a stronger closer","Increase the latch recess"],
+    "correct": 1,
+    "explanation": "Accurate diagnosis and adjustment should precede irreversible removal of material.",
+    "id": "pmo-set2-a8-s13",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S23",
+    "concept": "S23 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A technical fault must be handed over to an electrician while a resident is present. What is the best communication approach?",
+    "options": ["Give the electrician precise technical findings and explain the impact and next steps to the resident in plain language","Use the same technical detail for everyone","Speak only to the resident","Avoid documenting the handover"],
+    "correct": 0,
+    "explanation": "Communication should be adapted to each audience while preserving accurate technical information.",
+    "id": "pmo-set2-a8-s23",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S24",
+    "concept": "S24 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A resident is unhappy that only a temporary repair can be completed. What should the operative say?",
+    "options": ["Promise a permanent repair date without confirmation","State that another team is responsible and leave","Avoid mentioning limitations","Explain the temporary measure, its limitations, safety advice and the confirmed follow-up process"],
+    "correct": 3,
+    "explanation": "Good customer feedback is honest, clear and includes limitations, safety and next steps.",
+    "id": "pmo-set2-a8-s24",
+    "type": "Skill",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",9,[
+  {
+    "ksb": "K15",
+    "concept": "K15 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A repaired plaster patch keeps showing through the finish. What is the likely cause?",
+    "options": ["The final coat was applied with a wide brush","The room was ventilated after painting","The repair was not feathered, dried and sealed correctly","I don't know"],
+    "correct": 2,
+    "explanation": "Poor preparation, uneven edges, retained moisture or inadequate sealing can leave a patch visible through the final decoration.",
+    "id": "pmo-approved-a9-k15",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K16",
+    "concept": "K16 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Paint is peeling from a previously glossy surface. What was most likely missed?",
+    "options": ["A second finishing coat","Adequate cleaning and keying before painting","A darker colour underneath","I don't know"],
+    "correct": 1,
+    "explanation": "Smooth or contaminated surfaces need cleaning and suitable abrasion or preparation so the new coating can bond properly.",
+    "id": "pmo-approved-a9-k16",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K26",
+    "concept": "K26 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Usable timber is left after a repair. What is the best environmental action?",
+    "options": ["Place it in mixed waste to clear the area","Burn it if the site is quiet","I don't know","Reuse or segregate it through the approved waste system"],
+    "correct": 3,
+    "explanation": "Suitable materials should be reused where possible or segregated for authorised recycling. Waste must follow site and legal controls.",
+    "id": "pmo-approved-a9-k26",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K15",
+    "concept": "K15 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A repaired plaster patch repeatedly cracks around its edge. Which cause is most likely?",
+    "options": ["The final coat was polished too early","The room was decorated with matt paint","The background was not stabilised or the repair edges were poorly prepared","The patch was mixed in a clean container"],
+    "correct": 2,
+    "explanation": "Recurring edge cracks often result from movement, loose backgrounds, poor bonding or inadequate preparation rather than the decorative finish.",
+    "id": "pmo-challenging-a9-k15",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K16",
+    "concept": "K16 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "New paint is blistering on a previously sound wall. Moisture readings are high. What should happen before repainting?",
+    "options": ["Remove blisters, identify and correct the moisture source, then allow the wall to dry","Apply a thicker topcoat to seal the surface","Use a faster-drying solvent paint","Sand the blisters flat and apply stain block immediately"],
+    "correct": 0,
+    "explanation": "The underlying moisture defect must be corrected and the substrate allowed to reach a suitable condition before redecorating.",
+    "id": "pmo-challenging-a9-k16",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K15",
+    "concept": "K15 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A repaired plaster patch repeatedly develops a hairline crack along the joint. What preparation is most likely missing?",
+    "options": ["Applying a thicker final coat only","Using gloss paint before plastering","Stabilising the background and reinforcing the joint where movement occurs","Increasing room temperature during mixing"],
+    "correct": 2,
+    "explanation": "Recurring joint cracks often require a sound background and reinforcement rather than simply adding more finish plaster.",
+    "id": "pmo-set2-a9-k15",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K16",
+    "concept": "K16 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "New paint blisters on a previously sound external wall shortly after rain. What is the most appropriate diagnosis before repainting?",
+    "options": ["Moisture is trapped behind a poorly prepared or incompatible coating","The roller pile was too short","The colour is too dark","The paint tin was opened too slowly"],
+    "correct": 0,
+    "explanation": "Blistering commonly results from moisture, poor adhesion or incompatible coatings; the cause must be corrected first.",
+    "id": "pmo-set2-a9-k16",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K26",
+    "concept": "K26 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A waste carrier offers a low price but cannot provide registration details or transfer documentation. What should the operative do?",
+    "options": ["Use them for non-hazardous waste only","Ask them to dispose of waste after dark","Record the waste as reused","Do not use them; verify an authorised carrier and maintain required waste records"],
+    "correct": 3,
+    "explanation": "Waste must be transferred only to authorised carriers with appropriate documentation and duty-of-care controls.",
+    "id": "pmo-set2-a9-k26",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S14",
+    "concept": "S14 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A plaster patch is proud of the surrounding wall. What is the correct quality response before decoration?",
+    "options": ["Use thicker paint to hide it","Allow suitable drying, level and finish the patch to match the surrounding plane","Sand while the plaster is wet","Apply sealant around the edges"],
+    "correct": 1,
+    "explanation": "The repair must be cured and finished flush and smooth before decoration.",
+    "id": "pmo-set2-a9-s14",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S15",
+    "concept": "S15 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "When applying sealant around a bath, which method gives the most reliable result?",
+    "options": ["Apply over damp, contaminated sealant","Fill gaps with paint first","Remove failed material, clean and dry surfaces, mask if needed, apply a continuous bead and tool it correctly","Apply several thin beads on different days"],
+    "correct": 2,
+    "explanation": "Clean, dry preparation and a continuous correctly tooled bead are essential for durable sealing.",
+    "id": "pmo-set2-a9-s15",
+    "type": "Skill",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",10,[
+  {
+    "ksb": "K17",
+    "concept": "K17 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Several replacement wall tiles sound hollow when tapped. What is the likely issue?",
+    "options": ["The grout colour is too light","The tiles were cut with a wet saw","I don't know","Insufficient adhesive coverage behind the tiles"],
+    "correct": 3,
+    "explanation": "Hollow areas commonly indicate poor adhesive contact or coverage, which can reduce support and lead to loose or cracked tiles.",
+    "id": "pmo-approved-a10-k17",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K18",
+    "concept": "K18 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A laminate floor is lifting along one wall. What should be checked first?",
+    "options": ["Whether the underlay is the correct colour","Whether an adequate expansion gap was left","Whether the boards were laid towards the window","I don't know"],
+    "correct": 1,
+    "explanation": "Laminate needs perimeter expansion space. If restrained, normal movement can cause boards to lift or peak.",
+    "id": "pmo-approved-a10-k18",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K17",
+    "concept": "K17 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Several replacement wall tiles sound hollow shortly after installation. What is the most likely explanation?",
+    "options": ["Adhesive coverage or background preparation was inadequate","The grout joints were too narrow","The tiles were cut with a wet cutter","The spacers were removed before grouting"],
+    "correct": 0,
+    "explanation": "Hollow areas indicate insufficient adhesive contact or poor bonding, often caused by inadequate preparation or incorrect application.",
+    "id": "pmo-challenging-a10-k17",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K18",
+    "concept": "K18 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A newly repaired resilient floor joint opens after two days. Which factor should be checked first?",
+    "options": ["Whether the material was acclimatised and fitted at the correct temperature","Whether the skirting was painted before the repair","Whether a darker adhesive was used","Whether the room was vacuumed after installation"],
+    "correct": 0,
+    "explanation": "Flooring materials can expand or contract with temperature and moisture. Acclimatisation and correct fitting conditions are essential.",
+    "id": "pmo-challenging-a10-k18",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K17",
+    "concept": "K17 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Replacement tiles are sound, but grout joints crack repeatedly beside a timber floor. Which underlying issue is most likely?",
+    "options": ["The tiles are too clean","The grout colour is incorrect","The adhesive was mixed too slowly","Movement in the background or inadequate movement accommodation"],
+    "correct": 3,
+    "explanation": "Movement in flexible backgrounds must be controlled or accommodated; rigid finishes otherwise crack.",
+    "id": "pmo-set2-a10-k17",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K18",
+    "concept": "K18 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A vinyl floor repair shows every ridge in the subfloor after installation. Which principle was overlooked?",
+    "options": ["Vinyl requires a rough background","Resilient flooring reflects substrate defects, so the base must be smooth and suitably prepared","The adhesive should be applied only to edges","The room should be colder during fitting"],
+    "correct": 1,
+    "explanation": "Thin resilient finishes telegraph imperfections, making substrate preparation critical.",
+    "id": "pmo-set2-a10-k18",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S16",
+    "concept": "S16 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A replacement tile must fit around a pipe. What should the operative do to minimise cracking and poor alignment?",
+    "options": ["Cut the opening after fixing the tile","Break the tile into two pieces","Set out accurately, mark the pipe position, use a suitable cutting method and maintain required clearance","Increase the grout joint to hide errors"],
+    "correct": 2,
+    "explanation": "Accurate setting out and appropriate cutting produce a sound repair around obstacles.",
+    "id": "pmo-set2-a10-s16",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S17",
+    "concept": "S17 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A laminate board is replaced beside a doorway. What should be checked before final fitting?",
+    "options": ["Only the board colour","Whether adhesive covers the whole floor","That the board is tightly wedged to the wall","Subfloor condition, expansion allowance, joint engagement and clearance around the frame"],
+    "correct": 3,
+    "explanation": "Floor repairs require a sound base, correct joints and movement allowance, especially around obstacles.",
+    "id": "pmo-set2-a10-s17",
+    "type": "Skill",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",11,[
+  {
+    "ksb": "K19",
+    "concept": "K19 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Pointing has failed again shortly after repair. What is the most likely cause?",
+    "options": ["The bricks were cleaned after completion","The wall contains stretcher bond","The joints were prepared poorly or the mortar was unsuitable","I don't know"],
+    "correct": 2,
+    "explanation": "Durable repointing depends on removing loose material, preparing the joints and using a compatible mortar suited to the masonry and exposure.",
+    "id": "pmo-approved-a11-k19",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K29",
+    "concept": "K29 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A repair reveals a fault outside your competence. What should you do?",
+    "options": ["Continue carefully to avoid delaying the job","Make the area safe and refer it to the correct trade","Ask the customer whether they want you to try","I don't know"],
+    "correct": 1,
+    "explanation": "Operatives must work within their competence. The issue should be made safe, recorded and passed to an appropriately competent person.",
+    "id": "pmo-approved-a11-k29",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K19",
+    "concept": "K19 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Hard cement mortar has been used to repoint soft historic brickwork, and brick faces are now spalling. What is the most likely reason?",
+    "options": ["The mortar is stronger and less permeable than the bricks, forcing moisture through the masonry units","The mortar is too permeable and releases moisture too quickly","The joints were too deeply recessed","The bricks were laid in stretcher bond"],
+    "correct": 0,
+    "explanation": "An incompatible dense mortar can trap moisture and concentrate evaporation through softer bricks, causing face damage during wetting and freezing.",
+    "id": "pmo-challenging-a11-k19",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K29",
+    "concept": "K29 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "During a ceiling repair, the operative identifies damaged electrical cabling above the board. What should happen?",
+    "options": ["Cover the cable and complete the plaster repair","Wrap the cable with tape because it is hidden","Ask the customer whether they want the cable replaced","Make the area safe and refer the electrical fault to an authorised competent person"],
+    "correct": 3,
+    "explanation": "Property maintenance operatives must recognise trade boundaries, make the situation safe and coordinate with the appropriate competent trade.",
+    "id": "pmo-challenging-a11-k29",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K19",
+    "concept": "K19 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Hard cement-rich mortar is proposed for repointing old soft brickwork. What is the main risk?",
+    "options": ["The joints will dry too slowly","The wall ties will become longer","The mortar may trap moisture and cause the softer bricks to deteriorate","The bricks will become fireproof"],
+    "correct": 2,
+    "explanation": "Mortar should be compatible with masonry; overly hard, impermeable mortar can accelerate decay of soft bricks.",
+    "id": "pmo-set2-a11-k19",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K29",
+    "concept": "K29 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A damp patch may result from either failed pointing or a leaking concealed pipe. Why should trades coordinate before opening up the wall?",
+    "options": ["To combine evidence, avoid unnecessary damage and assign work to the competent trade","To decide who receives the job first","Because PMOs cannot inspect damp","To guarantee the repair is cosmetic"],
+    "correct": 0,
+    "explanation": "Interdependent diagnosis helps avoid destructive work and ensures the correct competent trade undertakes the repair.",
+    "id": "pmo-set2-a11-k29",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S18",
+    "concept": "S18 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A damaged fence panel is leaning because the post has rotted below ground. What is the appropriate repair approach?",
+    "options": ["Screw the panel more tightly to the rotten post","Make the area safe, assess the post and footing, then repair or replace the failed structural component","Paint the visible post","Support it permanently with loose bricks"],
+    "correct": 1,
+    "explanation": "The failed load-bearing component and its support must be addressed, not just the visible symptom.",
+    "id": "pmo-set2-a11-s18",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "S25",
+    "concept": "S25 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "During a roof inspection, the operative identifies suspected structural movement beyond minor maintenance. What should they do?",
+    "options": ["Attempt a temporary structural repair","Make the immediate area safe, record evidence and escalate to the appropriate competent person","Ignore it unless water is entering","Ask the customer to monitor it"],
+    "correct": 1,
+    "explanation": "Issues beyond competence or authority must be made safe and escalated with clear evidence.",
+    "id": "pmo-set2-a11-s25",
+    "type": "Skill",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",12,[
+  {
+    "ksb": "K20",
+    "concept": "K20 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A roof leak appears only during wind-driven rain. What should be inspected first?",
+    "options": ["The loft insulation thickness","The ceiling decoration below","Junctions, flashings and displaced coverings on the exposed side","I don't know"],
+    "correct": 2,
+    "explanation": "Wind-driven rain commonly enters at damaged coverings, laps, abutments and flashings. Inspection should focus on likely entry points safely.",
+    "id": "pmo-approved-a12-k20",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K25",
+    "concept": "K25 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "The same repair fails repeatedly. What best supports continuous improvement?",
+    "options": ["Repeat the repair using more material","Allocate the task to a different operative without review","I don't know","Record the failure, investigate the cause and change the method"],
+    "correct": 3,
+    "explanation": "Continuous improvement relies on evidence, root-cause review and controlled changes, rather than repeatedly treating the same symptom.",
+    "id": "pmo-approved-a12-k25",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B4",
+    "concept": "B4 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Your repair affects another trade's work later that day. What should you do?",
+    "options": ["Coordinate timing and requirements with the wider team","Complete it without interrupting them","Leave instructions beside the work area","I don't know"],
+    "correct": 0,
+    "explanation": "Team-focused working requires timely coordination so work remains safe, efficient and compatible with other trades' activities.",
+    "id": "pmo-approved-a12-b4",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "K20",
+    "concept": "K20 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A temporary roof repair is required after storm damage. Which principle is most important?",
+    "options": ["Make the covering completely permanent using any available material","Prevent water entry without creating unsafe loading or concealing damage that needs full repair","Seal the internal ceiling because it is easier to access","Remove surrounding coverings until replacement materials arrive"],
+    "correct": 1,
+    "explanation": "Temporary repairs should safely reduce further damage while preserving access and information for a competent permanent repair.",
+    "id": "pmo-challenging-a12-k20",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K25",
+    "concept": "K25 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Repeat call-backs show that repaired door closers fail within three months. Which action best demonstrates continuous improvement?",
+    "options": ["Increase the number of spare closers held in stock","Ask operatives to complete repairs more quickly","Replace only the units that customers complain about","Analyse failure records, installation methods and product suitability, then trial and review corrective changes"],
+    "correct": 3,
+    "explanation": "Continuous improvement uses evidence and root-cause analysis to change processes or products and then checks whether performance improves.",
+    "id": "pmo-challenging-a12-k25",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K20",
+    "concept": "K20 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A temporary roof patch is needed after storm damage. What is the priority before choosing the repair material?",
+    "options": ["Assessing roof type, access, weather exposure and whether the temporary repair can be secured without creating further hazards","Matching the roof colour exactly","Using the cheapest available sheet","Removing all undamaged coverings"],
+    "correct": 0,
+    "explanation": "Temporary repairs must suit the roof and conditions, remain secure and not create additional safety or water-ingress risks.",
+    "id": "pmo-set2-a12-k20",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B4",
+    "concept": "B4 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Another trade’s delayed work threatens the team deadline. What best demonstrates team focus?",
+    "options": ["Complete their specialist work without competence","Ignore the delay because it is not your task","Share accurate progress, coordinate dependencies and help with suitable tasks within competence","Criticise the trade in front of the customer"],
+    "correct": 2,
+    "explanation": "Team focus requires coordination, constructive support and respect for competence boundaries.",
+    "id": "pmo-set2-a12-b4",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",13,[
+  {
+    "ksb": "K21",
+    "concept": "K21 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A timber fence post is decayed at ground level. Which repair is most reliable?",
+    "options": ["Fix a new board across the damaged area","Paint the exposed decay with preservative only","Replace or correctly support the failed post","I don't know"],
+    "correct": 2,
+    "explanation": "Decay at ground level affects the post's structural support. The failed section must be replaced or repaired with an approved support system.",
+    "id": "pmo-approved-a13-k21",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K27",
+    "concept": "K27 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "How should a technical fault be explained to a resident?",
+    "options": ["Use trade terminology throughout","Use clear everyday language and confirm understanding","Avoid explaining it until the repair is complete","I don't know"],
+    "correct": 1,
+    "explanation": "Communication should suit the audience. Clear language and checking understanding help residents know what is happening and why.",
+    "id": "pmo-approved-a13-k27",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K21",
+    "concept": "K21 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A metal railing post is loose because corrosion has expanded within its concrete fixing pocket. What repair is most appropriate?",
+    "options": ["Paint over the corrosion and tighten the top rail","Pack the gap with timber wedges","Add a second coat of gloss paint around the base","Remove defective material, treat or replace the post and reinstate the fixing with a suitable system"],
+    "correct": 3,
+    "explanation": "The failed fixing and corrosion must be addressed structurally; surface treatment alone will not restore secure support.",
+    "id": "pmo-challenging-a13-k21",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K27",
+    "concept": "K27 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "How should an operative explain a failed thermostatic valve to a resident and report it to an engineer?",
+    "options": ["Use clear everyday language for the resident and precise industry terminology in the technical report","Use identical technical language for both audiences","Avoid explaining the cause to the resident","Use only photographs because written descriptions may be misunderstood"],
+    "correct": 0,
+    "explanation": "Communication should be adapted to the audience while remaining accurate: plain language for customers and appropriate technical detail for specialists.",
+    "id": "pmo-challenging-a13-k27",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K21",
+    "concept": "K21 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A steel railing post is loose because corrosion has expanded within its concrete socket. Why is surface painting alone ineffective?",
+    "options": ["Paint makes steel weaker","It does not address section loss or the failed anchorage below the surface","Concrete cannot be repaired","All railings must be timber"],
+    "correct": 1,
+    "explanation": "The underlying corrosion and anchorage defect must be treated; coating only the visible surface will not restore stability.",
+    "id": "pmo-set2-a13-k21",
+    "type": "Knowledge",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",14,[
+  {
+    "ksb": "K22",
+    "concept": "K22 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Paving repeatedly ponds after rain. What should be checked before replacing slabs?",
+    "options": ["The paving colour and joint width","The number of people using the path","I don't know","Falls, levels and drainage outlets"],
+    "correct": 3,
+    "explanation": "Persistent ponding usually relates to inadequate falls, settlement or blocked drainage. The cause should be diagnosed before relaying finishes.",
+    "id": "pmo-approved-a14-k22",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K26",
+    "concept": "K26 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Usable timber is left after a repair. What is the best environmental action?",
+    "options": ["Place it in mixed waste to clear the area","Burn it if the site is quiet","Reuse or segregate it through the approved waste system","I don't know"],
+    "correct": 2,
+    "explanation": "Suitable materials should be reused where possible or segregated for authorised recycling. Waste must follow site and legal controls.",
+    "id": "pmo-approved-a14-k26",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "B1",
+    "concept": "B1 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "You have reusable materials left after a repair. What should you do?",
+    "options": ["Keep suitable items for approved reuse and segregate the rest","Put everything into general waste","Leave them for the customer to dispose of","I don't know"],
+    "correct": 0,
+    "explanation": "Sustainable behaviour means preventing waste, reusing suitable materials and following the approved recycling and disposal arrangements.",
+    "id": "pmo-approved-a14-b1",
+    "type": "Behaviour",
+    "status": "approved"
+  },
+  {
+    "ksb": "K22",
+    "concept": "K22 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A paved path has settled repeatedly above a service trench. What is the most likely underlying cause?",
+    "options": ["The trench backfill was inadequately compacted","The paving slabs are too light in colour","The joints contain too much sand","The path has insufficient surface texture"],
+    "correct": 0,
+    "explanation": "Repeated settlement over a trench commonly indicates poor compaction or unsuitable backfill beneath the paving.",
+    "id": "pmo-challenging-a14-k22",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K26",
+    "concept": "K26 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A contractor offers to remove mixed construction waste but cannot provide evidence of authorisation. What should the operative do?",
+    "options": ["Use the contractor if the price is lower","Use only an authorised waste carrier and complete the required transfer records","Allow collection if the waste is non-hazardous","Ask the contractor to separate the waste after leaving site"],
+    "correct": 1,
+    "explanation": "Waste must be transferred only to appropriately authorised carriers, with correct classification and documentation.",
+    "id": "pmo-challenging-a14-k26",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K22",
+    "concept": "K22 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A paved path repeatedly sinks beside a repaired drain. What should be investigated before relaying the slabs again?",
+    "options": ["The slab colour","The number of pedestrians","Whether the slabs were pressure washed","Loss of support caused by leaking drainage, poor compaction or washout"],
+    "correct": 3,
+    "explanation": "Recurring settlement indicates an underlying support or water-management defect that must be corrected first.",
+    "id": "pmo-set2-a14-k22",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S22",
+    "concept": "S22 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "How should empty sealant cartridges contaminated with hazardous residue be handled?",
+    "options": ["Place them with clean recyclable plastics","Burn them to reduce volume","Follow COSHH and site waste procedures, segregating them into the correct waste stream","Wash residue into a drain"],
+    "correct": 2,
+    "explanation": "Contaminated waste must be segregated and disposed of through the approved route.",
+    "id": "pmo-set2-a14-s22",
+    "type": "Skill",
+    "status": "approved"
+  },
+  {
+    "ksb": "B1",
+    "concept": "B1 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Two compliant repair options are available: one uses reclaimed matching paving and the other uses new imported paving. What best demonstrates B1?",
+    "options": ["Consider suitability, durability and embodied impact, using reclaimed material where it meets requirements","Choose new material because it is unused","Choose whichever arrives first","Use reclaimed material even if it is unsafe"],
+    "correct": 0,
+    "explanation": "Sustainable practice balances reuse and environmental impact with fitness for purpose and compliance.",
+    "id": "pmo-set2-a14-b1",
+    "type": "Behaviour",
+    "status": "approved"
+  }
+]);
+
+window.MCQQuestionBank.register("property-maintenance-operative-st0171-v1-1",15,[
+  {
+    "ksb": "K24",
+    "concept": "K24 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "A maintenance record contains a tenant's personal details. How should it be handled?",
+    "options": ["Share it with anyone helping on the repair","Photograph it on a personal phone for convenience","I don't know","Store and send it only through authorised secure systems"],
+    "correct": 3,
+    "explanation": "Personal data must be limited to authorised use and protected through approved systems in line with data protection requirements.",
+    "id": "pmo-approved-a15-k24",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K25",
+    "concept": "K25 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "The same repair fails repeatedly. What best supports continuous improvement?",
+    "options": ["Repeat the repair using more material","Record the failure, investigate the cause and change the method","Allocate the task to a different operative without review","I don't know"],
+    "correct": 1,
+    "explanation": "Continuous improvement relies on evidence, root-cause review and controlled changes, rather than repeatedly treating the same symptom.",
+    "id": "pmo-approved-a15-k25",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K31",
+    "concept": "K31 approved question",
+    "difficulty": "Standard",
+    "style": "workplace-scenario",
+    "question": "Why should an operative record CPD and new training?",
+    "options": ["To replace all workplace supervision","To allow work on any system without approval","To show competence development and recognise limits of authority","I don't know"],
+    "correct": 2,
+    "explanation": "CPD records show how competence is maintained and developed, while helping operatives understand when specialist support or authorisation is required.",
+    "id": "pmo-approved-a15-k31",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K24",
+    "concept": "K24 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A job record contains photographs taken inside an occupied home. What is the safest way to manage them?",
+    "options": ["Store them on a personal phone until the job is signed off","Send them to the team through a personal messaging group","Keep every image indefinitely in case it becomes useful","Upload only necessary images to the authorised secure system and delete local copies as required"],
+    "correct": 3,
+    "explanation": "Only necessary data should be captured and stored through authorised secure systems, with retention and deletion handled under data-protection procedures.",
+    "id": "pmo-challenging-a15-k24",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K31",
+    "concept": "K31 challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "An operative has watched an online course about testing fire alarms but has not been assessed or authorised. What does CPD allow them to do?",
+    "options": ["Use the learning to improve awareness while continuing to work only within assessed competence and authority","Carry out any fire-alarm test because the course counts as competence","Sign off fire-alarm certificates under supervision","Train colleagues immediately because the material is current"],
+    "correct": 0,
+    "explanation": "CPD develops knowledge but does not automatically grant competence or authority. Work limits remain until training, assessment and authorisation are complete.",
+    "id": "pmo-challenging-a15-k31",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "K24",
+    "concept": "K24 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "A maintenance report includes a tenant’s medical information that is irrelevant to the repair. What is the best data-protection response?",
+    "options": ["Copy it into every job note","Record only necessary information and restrict access to authorised users","Send it to all contractors for awareness","Store it in a personal messaging app"],
+    "correct": 1,
+    "explanation": "Data minimisation and controlled access are core data-protection principles.",
+    "id": "pmo-set2-a15-k24",
+    "type": "Knowledge",
+    "status": "approved"
+  },
+  {
+    "ksb": "S20",
+    "concept": "S20 additional challenging question",
+    "difficulty": "Challenging",
+    "style": "workplace-scenario",
+    "question": "Which job record best supports future maintenance?",
+    "options": ["“Fixed leak”","A photo with no description","Exact location, defect found, isolation used, parts fitted, tests completed, remaining concerns and date","The customer’s first name only"],
+    "correct": 2,
+    "explanation": "Useful records are specific, traceable and document diagnosis, action, testing and outstanding issues.",
+    "id": "pmo-set2-a15-s20",
+    "type": "Skill",
+    "status": "approved"
+  }
+]);

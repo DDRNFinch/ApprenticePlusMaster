@@ -1,9 +1,23 @@
 {
-  "name": "Apprentice+ Trowel Occupations",
+  "name": "Apprentice+",
   "short_name": "Apprentice+",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f7faf8",
-  "theme_color": "#18a84b",
-  "description": "City & Guilds Level 3 NVQ Diploma in Trowel Occupations course pack"
+  "background_color": "#f7f8f5",
+  "theme_color": "#58b51f",
+  "description": "Local apprenticeship evidence pack builder",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }

@@ -1,30 +1,72 @@
-'use strict';
-async function generatePracticalSpecificationPDF({course,assignment,profile,data,specificationId}){
- const W=1240,H=1754,M=82,TEAL='#08372c',GREEN='#79d22f',SPEC='#C62828',INK='#17282b',MUTED='#617174',PALE='#f1f7f4',WHITE='#ffffff';
- const clean=v=>String(v??'').replace(/[\u2010-\u2015]/g,'-').replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"');
- const makeCanvas=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c};
- const c=makeCanvas(),x=c.getContext('2d');
- const wrap=(ctx,text,max,font='400 22px Arial')=>{ctx.font=font;const out=[];for(const p of clean(text||'-').split(/\n/)){let line='';for(const w of p.split(/\s+/)){const t=line?line+' '+w:w;if(ctx.measureText(t).width>max&&line){out.push(line);line=w}else line=t}out.push(line||' ')}return out};
- const drawLines=(ctx,text,px,py,max,lineH=30,font='400 22px Arial',limit=12)=>{ctx.font=font;ctx.fillStyle=INK;const lines=wrap(ctx,text,max,font).slice(0,limit);lines.forEach((l,i)=>ctx.fillText(l,px,py+i*lineH));return py+lines.length*lineH};
- const parse=window.practicalSpecificationSections?window.practicalSpecificationSections(data.activity):{title:'Practical task',description:data.activity,dimensions:'Refer to task',materials:'Select suitable materials',requirements:'Complete safely and accurately',difficulty:data.activityTaskType||'Custom',duration:'Set by assessor'};
- x.fillStyle=WHITE;x.fillRect(0,0,W,H);x.fillStyle=SPEC;x.fillRect(0,0,W,18);x.fillRect(0,0,18,H);x.fillStyle=SPEC;x.fillRect(M,54,W-2*M,138);x.fillStyle=WHITE;x.font='800 25px Arial';x.fillText('APPRENTICE+  |  PRACTICAL TASK SPECIFICATION',M+28,98);x.font='700 38px Arial';x.fillText(clean(parse.title).slice(0,52),M+28,151);x.font='600 18px Arial';x.fillText(`Practical Assessment ${assignment.n}  |  ${clean(course.name)}`,M+28,181);x.fillStyle=SPEC;x.fillRect(W-M-270,205,270,38);x.fillStyle=WHITE;x.font='700 16px Arial';x.textAlign='center';x.fillText('SPECIFICATION SHEET',W-M-135,230);x.textAlign='left';
- let y=228;x.fillStyle=PALE;x.fillRect(M,y,W-2*M,132);const meta=[['SPECIFICATION ID',specificationId],['DIFFICULTY',parse.difficulty],['ESTIMATED DURATION',parse.duration],['DATE ISSUED',data.activityGeneratedAt?new Date(data.activityGeneratedAt).toLocaleDateString('en-GB'):new Date().toLocaleDateString('en-GB')],['LEARNER',profile?.fullName||'-'],['COURSE STANDARD',course.standard||'-']];meta.forEach((m,i)=>{const col=i%3,row=Math.floor(i/3),px=M+24+col*350,py=y+28+row*58;x.fillStyle=MUTED;x.font='700 14px Arial';x.fillText(m[0],px,py);x.fillStyle=INK;x.font='700 19px Arial';x.fillText(clean(m[1]).slice(0,31),px,py+25)});y+=176;
- const section=(title,text,maxLines=12)=>{x.fillStyle=SPEC;x.font='700 24px Arial';x.fillText(title,M,y);x.fillStyle=SPEC;x.fillRect(M,y+12,W-2*M,4);y+=48;y=drawLines(x,text,M,y,W-2*M,29,'400 21px Arial',maxLines)+24};
- section('Job brief',parse.description,14);section('Dimensions and specification',parse.dimensions,15);section('Suggested materials',parse.materials,11);section('Completion requirements',parse.requirements||'Complete the task safely, accurately and to the issued specification. Check the finished work and correct defects before presenting it for assessment.',10);
- x.fillStyle=SPEC;x.fillRect(0,H-70,W,70);x.fillStyle=WHITE;x.font='600 16px Arial';x.fillText('The assessor observes and marks the existing official KSB criteria.',M,H-28);x.textAlign='right';x.fillText(specificationId,W-M,H-28);x.textAlign='left';
- const pages=[dataUrlBytes(c.toDataURL('image/jpeg',0.92))];
- const d=data.practicalDrawing;
- if(d){
-  const c2=makeCanvas(),g=c2.getContext('2d');g.fillStyle=WHITE;g.fillRect(0,0,W,H);g.fillStyle=SPEC;g.fillRect(0,0,W,18);g.fillStyle=TEAL;g.fillRect(M,50,W-2*M,100);g.fillStyle=WHITE;g.font='800 28px Arial';g.fillText('DIMENSIONED DRAWING',M+28,95);g.font='600 17px Arial';g.fillText(`${clean(parse.title)}  |  ${specificationId}`,M+28,127);
-  const sx=720/d.width,sy=430/d.height,fw=720,fh=430,fx=160,fy=240,red=SPEC;
-  g.fillStyle=PALE;g.strokeStyle=INK;g.lineWidth=4;g.fillRect(fx,fy,fw,fh);g.strokeRect(fx,fy,fw,fh);
-  if(d.hasOpening){const ox=fx+(d.leftPier||0)*sx,ow=d.openingW*sx,oh=d.openingH*sy,oy=fy+fh-oh;g.fillStyle=WHITE;g.fillRect(ox,oy,ow,oh);g.strokeRect(ox,oy,ow,oh)}
-  const dimH=(x1,y1,x2,label)=>{g.strokeStyle=red;g.lineWidth=2;g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y1);g.moveTo(x1,y1-10);g.lineTo(x1,y1+10);g.moveTo(x2,y1-10);g.lineTo(x2,y1+10);g.stroke();g.fillStyle=red;g.font='700 18px Arial';g.textAlign='center';g.fillText(label,(x1+x2)/2,y1-12);g.textAlign='left'};
-  const dimV=(x1,y1,y2,label)=>{g.strokeStyle=red;g.lineWidth=2;g.beginPath();g.moveTo(x1,y1);g.lineTo(x1,y2);g.moveTo(x1-10,y1);g.lineTo(x1+10,y1);g.moveTo(x1-10,y2);g.lineTo(x1+10,y2);g.stroke();g.save();g.fillStyle=red;g.font='700 18px Arial';g.translate(x1-18,(y1+y2)/2);g.rotate(-Math.PI/2);g.textAlign='center';g.fillText(label,0,0);g.restore();g.textAlign='left'};
-  g.fillStyle=INK;g.font='800 25px Arial';g.fillText('FRONT ELEVATION',fx,fy-70);dimH(fx,fy-34,fx+fw,`${d.width} mm`);dimV(fx-44,fy,fy+fh,`${d.height} mm`);
-  if(d.hasOpening){const ox=fx+(d.leftPier||0)*sx,ow=d.openingW*sx,oh=d.openingH*sy,oy=fy+fh-oh;dimH(ox,oy-25,ox+ow,`${d.openingW} mm`);dimV(ox-30,oy,fy+fh,`${d.openingH} mm`)}
-  const py=850,ph=110;g.fillStyle=INK;g.font='800 25px Arial';g.fillText('PLAN VIEW',fx,py-45);g.fillStyle=PALE;g.strokeStyle=INK;g.lineWidth=4;g.fillRect(fx,py,fw,ph);g.strokeRect(fx,py,fw,ph);if(d.hasReturn){g.fillRect(fx+fw-ph,py-140,ph,140);g.strokeRect(fx+fw-ph,py-140,ph,140)}dimH(fx,py+ph+40,fx+fw,`${d.width} mm`);dimV(fx-44,py,py+ph,`${d.depth} mm`);
-  g.fillStyle=INK;g.font='800 25px Arial';g.fillText('WRITTEN DIMENSION SCHEDULE',M,1120);g.fillStyle=SPEC;g.fillRect(M,1136,W-2*M,4);let ty=1180;(d.details||[]).forEach((line,i)=>{if(ty>1585)return;g.fillStyle=i%2?WHITE:PALE;g.fillRect(M,ty-25,W-2*M,40);g.fillStyle=INK;g.font='600 19px Arial';g.fillText(`• ${clean(line)}`,M+18,ty);ty+=42});g.fillStyle=SPEC;g.font='800 19px Arial';g.fillText('DO NOT SCALE THIS DRAWING — USE WRITTEN DIMENSIONS',M,H-105);g.fillStyle=MUTED;g.font='600 16px Arial';g.fillText(d.scale||'Not to scale',M,H-72);g.textAlign='right';g.fillText(specificationId,W-M,H-72);g.textAlign='left';pages.push(dataUrlBytes(c2.toDataURL('image/jpeg',0.94)));
+const CACHE='apprentice-plus-v1.6.19-assignment-banner-cleanup';
+const CURRENT_VERSION='V1.6.19';
+const RELEASE_NOTES_URL='./release-notes.json';
+const FALLBACK_UPDATE_INFO={
+ version:CURRENT_VERSION,
+ features:['This update includes Apprentice+ improvements and fixes.']
+};
+const APP_SHELL=['./','./index.html','./styles.css?v=1.6.19','./functional-skills-bank.js?v=1.5.20','./trade-courses-bank.js?v=1.5.20','./analytics-foundation.js?v=1.5.64','./analytics-integration.js?v=1.5.64','./app.js?v=1.6.19','./release-notes.json','./technical-drawing-viewer.html','./cadmate.html','./manifest.json','./pdf-generator.js?v=1.5.20','./logo-apprentice-plus.png','./icon-192.png','./icon-512.png','./icon-1024.png','./apple-touch-icon.png','./favicon-32.png','./favicon-64.png'];
+
+async function loadUpdateInfo(){
+ try{
+  let response;
+  try{response=await fetch(RELEASE_NOTES_URL,{cache:'no-store'});}catch(_error){response=null;}
+  if(!response||!response.ok)response=await caches.match(RELEASE_NOTES_URL);
+  if(!response)return FALLBACK_UPDATE_INFO;
+  const data=await response.json();
+  const release=data?.releases?.[CURRENT_VERSION];
+  const features=Array.isArray(release?.features)?release.features.filter(Boolean).map(String).slice(0,8):[];
+  return {
+   version:CURRENT_VERSION,
+   title:String(release?.title||''),
+   features:features.length?features:FALLBACK_UPDATE_INFO.features
+  };
+ }catch(error){
+  console.warn('Unable to load release notes',error);
+  return FALLBACK_UPDATE_INFO;
  }
- const pdf=makeImagePDF(pages,W,H),safe=clean(parse.title).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').slice(0,50);downloadBlob(pdf,'application/pdf',`${safe||'Practical-Task'}-${specificationId}.pdf`);
 }
+
+self.addEventListener('install',event=>{
+ event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()));
+});
+
+self.addEventListener('message',event=>{
+ if(event.data?.type==='GET_UPDATE_INFO'){
+  event.waitUntil(loadUpdateInfo().then(info=>event.source?.postMessage({type:'UPDATE_INFO',info})));
+ }
+ if(event.data?.type==='SKIP_WAITING')self.skipWaiting();
+});
+
+self.addEventListener('activate',event=>{
+ event.waitUntil(
+  caches.keys()
+   .then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key))))
+   .then(()=>self.clients.claim())
+ );
+});
+
+self.addEventListener('fetch',event=>{
+ if(event.request.method!=='GET')return;
+ const url=new URL(event.request.url);
+ if(url.origin!==self.location.origin)return;
+ const isCoreFile=url.pathname.endsWith('/')||['index.html','app.js','functional-skills-bank.js',
+  'trade-courses-bank.js','analytics-foundation.js','analytics-integration.js','qrcode-browser.js','pdf-generator.js','specification-sheet.js','styles.css','cadmate.html','manifest.json','release-notes.json','service-worker.js'].some(name=>url.pathname.endsWith('/'+name));
+ if(isCoreFile){
+  event.respondWith(
+   fetch(event.request,{cache:'no-store'})
+    .then(response=>{
+     if(response&&response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));}
+     return response;
+    })
+    .catch(()=>caches.match(event.request).then(cached=>cached||caches.match('./index.html')))
+  );
+  return;
+ }
+ event.respondWith(
+  caches.match(event.request).then(cached=>cached||fetch(event.request).then(response=>{
+   if(response&&response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));}
+   return response;
+  }))
+ );
+});
