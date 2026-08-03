@@ -3202,3 +3202,6 @@ body.technical-drawing-active{overflow:hidden!important;position:fixed!important
 }
 
 
+
+/* V1.6.13 monthly portfolio upload */
+.monthly-portfolio-card{display:grid;gap:16px;margin-top:18px}.monthly-portfolio-card .number{margin-bottom:4px}.monthly-portfolio-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:15px}.monthly-portfolio-stats>div{background:var(--surface-soft,#f3f7f4);border:1px solid var(--border,#dce7df);border-radius:13px;padding:10px}.monthly-portfolio-stats span{display:block;color:var(--muted,#66756e);font-size:11px;font-weight:700;margin-bottom:4px}.monthly-portfolio-stats strong{display:block;font-size:14px;color:var(--ink,#0f2328);overflow-wrap:anywhere}@media(max-width:420px){.monthly-portfolio-stats{grid-template-columns:1fr}.monthly-portfolio-card .btn-row{display:grid}.monthly-portfolio-card .btn{width:100%}}

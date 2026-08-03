@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.6.12';
+const APP_VERSION='V1.6.13';
 
 const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
 const TECHNICAL_DRAWING_PREFIX={
@@ -4525,9 +4525,11 @@ function renderHome(){
  app.innerHTML=shell(`${courseHeader()}<div class="section-heading"><div><h2>${COURSE.nvqUnits?'Evidence Packs':'Assignments'}</h2><p class="muted">${done} of ${courseAssignments().length} complete</p></div></div><section class="assignment-list">${courseAssignments().map(a=>{
   const sts=COURSE.nvqUnits?[['camera','photos'],['statement','statement'],['video','discussion'],['witness','witness'],['observation','practical'],['microphone','professionalDiscussion']]:[['camera','photos'],['statement','statement'],['video','walkthrough'],['witness','witness'],['hammer','practical'],['microphone','professionalDiscussion']];
   const needsOptional=!!a.selectOptional;const packNumber=COURSE.nvqUnits?(needsOptional?'Evidence Pack 9 · Optional Unit':`Evidence Pack ${a.n} · Unit ${a.unit}${a.optional?' · Optional':''}`):`Assignment ${a.n}`;const packTitle=needsOptional?'Select one of Units 238, 690, 828 or 837':a.title;const homeCoverage=!needsOptional?(COURSE.nvqUnits?nvqCoverageSummary(a.n):ksbCoverageSummary(a.n)):null;
-  return `<button class="assignment-card ${assignmentComplete(a.n)?'complete':''} ${assignmentSubmitted(a.n)?'submitted':''} ${assignmentRPL(a.n)?'rpl':''}" data-open="${a.n}">${assignmentRPL(a.n)?'<span class="submitted-ribbon rpl-ribbon">RPL</span>':packUploaded(a.n)?'<span class="submitted-ribbon">SUBMITTED</span>':''}<div class="assignment-head"><div><div class="number">${packNumber}</div><h3>${esc(packTitle)}</h3></div><span class="status-pill ${assignmentComplete(a.n)?'done':''}">${assignmentRPL(a.n)?'Completed by RPL':packUploaded(a.n)?'Submitted':assignmentComplete(a.n)?'Evidence ready':'In progress'}</span></div><div class="icons nvq-six-icons">${sts.map(([i,s])=>{const status=assignmentRPL(a.n)?'complete':s==='walkthrough'?walkthroughStatus(a.n):sectionStatus(a.n,s);return `<div class="icon-state ${status==='complete'?'done':status==='incomplete'?'warning':''}">${appIcon(i,'state-icon')}${statusMark(status)}</div>`}).join('')}</div><div class="ksb-row">${needsOptional?'<span class="ksb-mini">Choose unit</span>':a.ksbs.map(k=>{const count=homeCoverage?.coverage?.[k[0]]?.count||0;return `<span class="ksb-mini ${count>=(COURSE.nvqUnits?3:2)?'coverage-complete':count>0?'coverage-partial':'coverage-none'}" title="${count}/${COURSE.nvqUnits?3:2} distinct evidence types collected">${k[0]}</span>`}).join('')}</div></button>`}).join('')}</section><section class="card panel entire-portfolio-card"><div><h3>Download Entire Portfolio</h3><p class="muted">Downloads every evidence item that has been saved inside the assignments. Unfinished assignments are included when they contain saved evidence; blank or unsaved sections are excluded.</p></div><button class="btn" id="downloadEntirePortfolio">Download Entire Portfolio</button></section>`);
+  return `<button class="assignment-card ${assignmentComplete(a.n)?'complete':''} ${assignmentSubmitted(a.n)?'submitted':''} ${assignmentRPL(a.n)?'rpl':''}" data-open="${a.n}">${assignmentRPL(a.n)?'<span class="submitted-ribbon rpl-ribbon">RPL</span>':packUploaded(a.n)?'<span class="submitted-ribbon">SUBMITTED</span>':''}<div class="assignment-head"><div><div class="number">${packNumber}</div><h3>${esc(packTitle)}</h3></div><span class="status-pill ${assignmentComplete(a.n)?'done':''}">${assignmentRPL(a.n)?'Completed by RPL':packUploaded(a.n)?'Submitted':assignmentComplete(a.n)?'Evidence ready':'In progress'}</span></div><div class="icons nvq-six-icons">${sts.map(([i,s])=>{const status=assignmentRPL(a.n)?'complete':s==='walkthrough'?walkthroughStatus(a.n):sectionStatus(a.n,s);return `<div class="icon-state ${status==='complete'?'done':status==='incomplete'?'warning':''}">${appIcon(i,'state-icon')}${statusMark(status)}</div>`}).join('')}</div><div class="ksb-row">${needsOptional?'<span class="ksb-mini">Choose unit</span>':a.ksbs.map(k=>{const count=homeCoverage?.coverage?.[k[0]]?.count||0;return `<span class="ksb-mini ${count>=(COURSE.nvqUnits?3:2)?'coverage-complete':count>0?'coverage-partial':'coverage-none'}" title="${count}/${COURSE.nvqUnits?3:2} distinct evidence types collected">${k[0]}</span>`}).join('')}</div></button>`}).join('')}</section>${monthlyPortfolioCard()}`);
  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{state.assignment=+b.dataset.open;state.view='assignment';render()});
  document.getElementById('downloadEntirePortfolio').onclick=downloadEntirePortfolio;
+ const openMonthlyPortfolio=document.getElementById('openMonthlyPortfolio');if(openMonthlyPortfolio)openMonthlyPortfolio.onclick=openPortfolioSite;
+ const confirmMonthlyUploadButton=document.getElementById('confirmMonthlyUpload');if(confirmMonthlyUploadButton)confirmMonthlyUploadButton.onclick=confirmMonthlyPortfolioUpload;
  const openWorkSearch=document.getElementById('openWorkSearch');if(openWorkSearch)openWorkSearch.onclick=showWorkSearchLauncher;
 
 }
@@ -5218,29 +5220,84 @@ async function collectWalkthroughEvidence(n,a){
  }
  return items;
 }
+const MONTHLY_PORTFOLIO_KEY=()=>`${COURSE.id}:monthlyPortfolioUpload`;
+const PORTFOLIO_SECTIONS=['practical','photos','statement','discussion','professionalDiscussion','witness','supporting'];
+function monthlyPortfolioState(){return state.data[MONTHLY_PORTFOLIO_KEY()]||{}}
+function currentMetKsbCodes(){
+ const met=[];
+ courseAssignments().filter(a=>!a.selectOptional).forEach(a=>(a.ksbs||[]).forEach(([code,summary])=>{
+  const key=COURSE.nvqUnits?`${a.unit||a.n}:${code}`:code,required=COURSE.nvqUnits?3:2;
+  if((assignmentRPL(a.n)||evidenceCoverageCount(a.n,code)>=required)&&!met.some(x=>x.key===key))met.push({key,code,summary,assignment:a.n,title:a.title});
+ }));
+ return met;
+}
+function portfolioEvidenceSnapshot(){
+ const assignments={};
+ courseAssignments().filter(a=>!a.selectOptional).forEach(a=>{
+  const sections={};PORTFOLIO_SECTIONS.forEach(section=>sections[section]=sectionData(a.n,section).versions.length);
+  sections.walkthrough=(walkthroughMeta(a.n)&&Object.values(walkthroughMeta(a.n)).filter(x=>x?.blobKey).length)||0;
+  assignments[a.n]={title:a.title,sections};
+ });
+ const stats=completedKsbStats();
+ return {capturedAt:new Date().toISOString(),assignments,metKsbs:currentMetKsbCodes(),progress:stats.percentage,completedKsbs:stats.completed,totalKsbs:stats.total};
+}
+function portfolioDelta(){
+ const status=monthlyPortfolioState(),before=status.snapshot||{assignments:{},metKsbs:[],progress:0,completedKsbs:0};
+ const current=portfolioEvidenceSnapshot(),oldMet=new Set((before.metKsbs||[]).map(x=>x.key)),newKsbs=current.metKsbs.filter(x=>!oldMet.has(x.key));
+ const newEvidence=[];
+ for(const [n,a] of Object.entries(current.assignments))for(const [section,count] of Object.entries(a.sections||{})){
+  const previous=Number(before.assignments?.[n]?.sections?.[section]||0),added=Math.max(0,Number(count)-previous);
+  if(added)newEvidence.push({assignment:Number(n),title:a.title,section,previous,count,added,newAttempts:Array.from({length:added},(_,i)=>previous+i+1)});
+ }
+ return {status,before,current,newKsbs,newEvidence,progressGain:Math.max(0,current.progress-Number(before.progress||0)),ksbGain:Math.max(0,current.completedKsbs-Number(before.completedKsbs||0))};
+}
+function friendlyEvidenceSection(section){return ({practical:'Practical assessment',photos:'Photographic evidence',statement:'Learner statement',discussion:'Video walkthrough',walkthrough:'Video walkthrough',professionalDiscussion:'Professional discussion',witness:'Witness testimony',supporting:'Supporting evidence'})[section]||section}
+function monthlyPortfolioCard(){
+ const d=portfolioDelta(),last=d.status.uploadedAt?new Date(d.status.uploadedAt).toLocaleString('en-GB'):'Not uploaded yet',downloaded=!!d.status.downloadedAt&&!d.status.uploadedAt;
+ return `<section class="card panel entire-portfolio-card monthly-portfolio-card"><div><div class="number">Monthly portfolio upload</div><h3>Upload this month's new evidence</h3><p class="muted">The ZIP is organised into one folder per assignment and starts with update-summary PDFs showing what has changed since the previous confirmed upload.</p><div class="monthly-portfolio-stats"><div><span>Last uploaded</span><strong>${esc(last)}</strong></div><div><span>Additional KSBs met</span><strong>+${d.ksbGain}</strong></div><div><span>Progress gained</span><strong>+${d.progressGain}%</strong></div><div><span>New evidence items</span><strong>${d.newEvidence.reduce((n,x)=>n+x.added,0)}</strong></div></div></div><div class="btn-row"><button class="btn" id="downloadEntirePortfolio">${d.status.uploadedAt?'Download Monthly Update':'Download First Portfolio Upload'}</button>${downloaded?'<button class="btn secondary" id="openMonthlyPortfolio">Open Online Portfolio</button><button class="btn" id="confirmMonthlyUpload">Evidence Uploaded Online</button>':''}</div></section>`;
+}
+function wrapPdfText(ctx,text,maxWidth,font){ctx.font=font;const words=String(text||'').split(/\s+/),lines=[];let line='';for(const word of words){const test=line?`${line} ${word}`:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);return lines}
+function createMonthlySummaryPdf(delta,ksbOnly=false){
+ const W=1240,H=1754,M=84,pages=[];let c,x,y;
+ const page=()=>{c=document.createElement('canvas');c.width=W;c.height=H;x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle='#0f766e';x.fillRect(0,0,W,20);x.fillStyle='#0f2328';x.font='800 44px Arial';x.fillText(ksbOnly?'New KSBs Met Since Last Upload':'Monthly Portfolio Update Summary',M,92);x.fillStyle='#5d6d67';x.font='18px Arial';x.fillText(`${state.profile?.fullName||'Learner'} · ${COURSE.name} · ${new Date().toLocaleDateString('en-GB')}`,M,132);x.fillStyle='#dff5e7';x.fillRect(M,165,W-2*M,4);y=210;pages.push(c)};page();
+ const heading=t=>{if(y>H-180)page();x.fillStyle='#0f2328';x.font='800 25px Arial';x.fillText(t,M,y);y+=38};
+ const line=(t,bold=false)=>{const lines=wrapPdfText(x,t,W-2*M,bold?'700 18px Arial':'18px Arial');for(const l of lines){if(y>H-100)page();x.fillStyle=bold?'#0f2328':'#344a42';x.font=bold?'700 18px Arial':'18px Arial';x.fillText(l,M,y);y+=27}y+=5};
+ heading('Upload comparison');line(`Previous confirmed upload: ${delta.status.uploadedAt?new Date(delta.status.uploadedAt).toLocaleString('en-GB'):'First portfolio upload'}`);line(`New KSBs met: ${delta.newKsbs.length}`);line(`Course progress gained: ${delta.progressGain}%`);line(`New evidence items: ${delta.newEvidence.reduce((n,e)=>n+e.added,0)}`);
+ heading('New KSBs met');if(delta.newKsbs.length)delta.newKsbs.forEach(k=>line(`${k.code} — ${k.summary} (Assignment ${k.assignment}: ${k.title})`));else line('No additional KSBs have become fully met since the previous confirmed upload.');
+ if(!ksbOnly){heading('New evidence and ZIP locations');if(delta.newEvidence.length)delta.newEvidence.forEach(e=>line(`Assignment ${e.assignment}: ${e.title} / ${friendlyEvidenceSection(e.section)} — ${e.added} new item${e.added===1?'':'s'} (attempt${e.added===1?'':'s'} ${e.newAttempts.join(', ')})`));else line('No new saved evidence was detected. The portfolio still contains the latest saved evidence in each assignment folder.');heading('ZIP structure');line('00 - Monthly Portfolio Update Summary.pdf');line('01 - New KSBs Met Since Last Upload.pdf');line('Assignment 01 - [Assignment name] / evidence PDF and attached media');line('Assignment 02 - [Assignment name] / evidence PDF and attached media');}
+ pages.forEach((canvas,i)=>{const cx=canvas.getContext('2d');cx.fillStyle='#0f766e';cx.fillRect(0,H-58,W,58);cx.fillStyle='#fff';cx.font='600 15px Arial';cx.fillText(`Apprentice+ ${APP_VERSION}`,M,H-23);cx.textAlign='right';cx.fillText(`Page ${i+1} of ${pages.length}`,W-M,H-23)});
+ return makeImagePDF(pages.map(canvas=>dataUrlBytes(canvas.toDataURL('image/jpeg',.92))),W,H);
+}
+function newEvidenceMapForAssignment(delta,n){const map={};delta.newEvidence.filter(e=>e.assignment===n).forEach(e=>map[e.section]=e.newAttempts);return map}
 async function downloadEntirePortfolio(){
  const assignments=courseAssignments().filter(a=>a&&!a.selectOptional&&assignmentHasSavedPortfolioEvidence(a.n));
  if(!assignments.length)return toast('No saved assignment evidence is available to download');
  if(!window.generateEvidencePackPDF||!window.makeZipBlob)return toast('Portfolio generator unavailable');
- const button=document.getElementById('downloadEntirePortfolio');if(button){button.disabled=true;button.textContent='Preparing portfolio...'}
+ const delta=portfolioDelta(),button=document.getElementById('downloadEntirePortfolio'),portfolioUrl=normalisePortfolioUrl(state.profile?.portfolioUrl),portfolioWindow=portfolioUrl?window.open('about:blank','_blank'):null;if(portfolioWindow)portfolioWindow.opener=null;if(button){button.disabled=true;button.textContent='Preparing monthly upload...'}
  try{
-  toast(`Preparing ${assignments.length} saved assignment${assignments.length===1?'':'s'}...`);
-  const allEntries=[];
+  toast(`Preparing ${assignments.length} assignment folder${assignments.length===1?'':'s'}...`);
+  const allEntries=[{name:'00 - Monthly Portfolio Update Summary.pdf',data:createMonthlySummaryPdf(delta,false)},{name:'01 - New KSBs Met Since Last Upload.pdf',data:createMonthlySummaryPdf(delta,true)}];
   for(let index=0;index<assignments.length;index++){
    const a=assignments[index],sections={};
-   ['practical','photos','statement','discussion','professionalDiscussion','witness','supporting'].forEach(section=>sections[section]=sectionData(a.n,section).versions.map(version=>structuredClone(version)));
+   PORTFOLIO_SECTIONS.forEach(section=>sections[section]=sectionData(a.n,section).versions.map(version=>structuredClone(version)));
    sections.walkthrough=walkthroughSaved(a.n)?await collectWalkthroughEvidence(a.n,a):[];
-   const result=await generateEvidencePackPDF({course:COURSE,assignment:a,profile:state.profile,sections,branding:state.branding,returnPackage:true});
+   const result=await generateEvidencePackPDF({course:COURSE,assignment:a,profile:state.profile,sections,branding:state.branding,returnPackage:true,newEvidence:newEvidenceMapForAssignment(delta,a.n)});
    const folder=`Assignment ${String(a.n).padStart(2,'0')} - ${safeZipName(a.title||'Evidence')}`;
    for(const entry of result.entries||[])allEntries.push({name:`${folder}/${entry.name}`,data:entry.data});
    toast(`Prepared assignment ${index+1} of ${assignments.length}`);
   }
-  if(!allEntries.length)throw new Error('No saved evidence files were generated');
-  const learner=safeZipName(state.profile?.fullName||'Learner'),course=safeZipName(COURSE.name||'Course');
-  await downloadBlob(makeZipBlob(allEntries),'application/zip',`${learner}-${course}-Entire-Portfolio.zip`);
-  analyticsEvent('entire_portfolio_exported',{course_id:COURSE.id,assignment_count:assignments.length,file_count:allEntries.length});
-  toast('Entire portfolio download started — check your Downloads folder');
- }catch(error){console.error('Entire portfolio download failed',error);toast(`Unable to download entire portfolio${error?.message?`: ${error.message}`:''}`)}finally{if(button){button.disabled=false;button.textContent='Download Entire Portfolio'}}
+  const learner=safeZipName(state.profile?.fullName||'Learner'),course=safeZipName(COURSE.name||'Course'),date=new Date().toISOString().slice(0,10);
+  await downloadBlob(makeZipBlob(allEntries),'application/zip',`${learner}-${course}-Monthly-Portfolio-${date}.zip`);
+  state.data[MONTHLY_PORTFOLIO_KEY()]={...delta.status,downloadedAt:new Date().toISOString(),pendingSnapshot:delta.current,pendingNewKsbs:delta.newKsbs.map(x=>x.key),pendingProgressGain:delta.progressGain};
+  await saveData();analyticsEvent('monthly_portfolio_exported',{course_id:COURSE.id,assignment_count:assignments.length,file_count:allEntries.length,new_ksbs:delta.newKsbs.length,progress_gain:delta.progressGain});
+  render();toast('Monthly portfolio downloaded — upload it to your online portfolio');if(portfolioWindow)portfolioWindow.location.href=portfolioUrl;else if(!portfolioUrl)toast('Add the online portfolio link in Learner Details to open it automatically');
+ }catch(error){if(portfolioWindow)portfolioWindow.close();console.error('Monthly portfolio download failed',error);toast(`Unable to download monthly portfolio${error?.message?`: ${error.message}`:''}`)}finally{if(button){button.disabled=false;button.textContent='Download Monthly Update'}}
+}
+async function confirmMonthlyPortfolioUpload(){
+ const status=monthlyPortfolioState();if(!status.downloadedAt||!status.pendingSnapshot)return toast('Download the latest monthly portfolio first');
+ if(!confirm('Confirm that the downloaded monthly portfolio ZIP has been uploaded to the learner’s online portfolio.'))return;
+ state.data[MONTHLY_PORTFOLIO_KEY()]={snapshot:status.pendingSnapshot,downloadedAt:status.downloadedAt,uploadedAt:new Date().toISOString()};
+ await saveData();analyticsEvent('monthly_portfolio_upload_confirmed',{course_id:COURSE.id});render();toast('Monthly evidence upload confirmed');
 }
 
 async function downloadPack(n){

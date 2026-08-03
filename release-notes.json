@@ -1,6 +1,23 @@
 {
-  "latest": "V1.6.12",
+  "latest": "V1.6.13",
   "releases": [
+    {
+      "version": "V1.6.13",
+      "date": "2026-08-03",
+      "title": "Monthly Portfolio Uploads",
+      "features": [
+        "Replaced Download Entire Portfolio with a tracked monthly portfolio upload workflow.",
+        "Shows the last confirmed upload, additional KSBs met, progress gained and new evidence count.",
+        "Creates assignment folders plus front summary and new-KSB PDF documents.",
+        "Marks newly added evidence pages with a NEW EVIDENCE stamp.",
+        "Opens the learner's online portfolio after download and records Evidence Uploaded Online confirmation."
+      ],
+      "items": [
+        "Each ZIP begins with 00 - Monthly Portfolio Update Summary.pdf and 01 - New KSBs Met Since Last Upload.pdf.",
+        "Every assignment has its own folder containing its evidence PDF and attached media.",
+        "The next monthly comparison starts only after the learner confirms the upload online."
+      ]
+    },
     {
       "version": "V1.6.12",
       "date": "2026-08-02",
@@ -79,7 +96,7 @@
         "Replaced the CADMate SVG download with Save PNG.",
         "Added a filename dialog before each drawing download.",
         "Automatically adds the .png file extension.",
-        "Exports the current CADMate preview as a 2400 × 1600 landscape PNG.",
+        "Exports the current CADMate preview as a 2400 \u00d7 1600 landscape PNG.",
         "Exports only the drawing canvas with a white background and no CADMate controls.",
         "Suggests a filename from the selected material, bond, wall length, returns and view."
       ],
@@ -183,7 +200,7 @@
       ],
       "items": [
         "Existing Practical Assessment drawings and assessment content remain unchanged.",
-        "Zoom is limited from Fit Page to 6×.",
+        "Zoom is limited from Fit Page to 6\u00d7.",
         "The drawing remains in memory while the viewer is open."
       ]
     },
