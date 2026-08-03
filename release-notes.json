@@ -4,8 +4,11 @@
     {
       "version": "V1.0",
       "date": "2026-08-03",
-      "title": "Optimised Portfolio Media and Upload Safety",
+      "title": "Multi-select KSB RPL and Course OTJ Shortcut",
       "features": [
+        "Individual RPL now supports selecting and marking multiple KSBs together in one saved action.",
+        "The individual RPL checklist and recorded list are ordered numerically as Knowledge, Skills and Behaviours.",
+        "Every apprenticeship-standard course now has an OTJMate shortcut directly below its standard number in the Course title tile, including the learner's live OTJ total.",
         "All video recorded inside Apprentice+ now uses a consistent quality-controlled 720p profile at approximately 11 MB per minute.",
         "Professional Discussion and NoteMate voice recordings now use efficient mono speech audio at approximately 0.4 MB per minute.",
         "The Monthly Upload card now estimates the complete portfolio size against a 900 MB safety target and checks the exact ZIP against Aptem's 1 GB limit before download.",
