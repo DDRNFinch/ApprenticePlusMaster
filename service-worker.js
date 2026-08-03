@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.6.29-linked-monthly-pack';
-const CURRENT_VERSION='V1.6.29';
+const CACHE='apprentice-plus-v1.6.31-assignment-monthly-pack';
+const CURRENT_VERSION='V1.6.31';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,

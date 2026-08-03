@@ -1,6 +1,18 @@
 {
-  "latest": "V1.6.29",
+  "latest": "V1.6.31",
   "releases": [
+    {
+      "version": "V1.6.31",
+      "date": "2026-08-03",
+      "title": "Assignment-Based Monthly Upload Packs",
+      "changes": [
+        "Monthly uploads are now organised into one folder per updated assignment.",
+        "Each assignment folder includes Contents.pdf and all related evidence files.",
+        "New OTJMate evidence is exported as one PDF per entry in a separate OTJ folder.",
+        "Removed unreliable local-file hyperlinks from the monthly summary.",
+        "Kept file and folder names short to avoid Windows path-length errors."
+      ]
+    },
     {
       "version": "V1.6.29",
       "title": "Compact Linked Monthly Upload Pack",
