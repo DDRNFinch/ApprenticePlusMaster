@@ -6,6 +6,9 @@
       "date": "2026-08-03",
       "title": "Compact Course and Assignment Layout",
       "features": [
+        "Removed the purple ASSESSOR ONLY ribbon from the Learning Outcome Video Walkthrough.",
+        "Learning Outcome Learner Statements now require 30 words for every selected Learning Outcome, with the minimum updating live as outcomes are selected.",
+        "Removed the unnecessary notes box from Learning Outcome Photographic Evidence while retaining outcome selection, photographs and learner signature.",
         "The main Course title tile is smaller and no longer repeats the standard number, version, level or evidence-pack count.",
         "KSB-course assignment cards now use the single-heading format AS1 - Assignment title.",
         "Learning Outcome course evidence cards now use the matching EP1 - Evidence Pack title format.",
