@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.6.15';
+const APP_VERSION='V1.6.16';
 
 const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
 const TECHNICAL_DRAWING_PREFIX={
@@ -4875,16 +4875,37 @@ function supportFileCard(f,i,locked){const isImage=(f.type||'').startsWith('imag
 function bindSection(a,s,sd,d,locked){
  bindTechnicalDrawingButtons(document);
  document.querySelectorAll('.autosave').forEach(el=>el.oninput=async()=>{d[el.dataset.field]=el.value;await commit(a.n,s,sd);if(s==='statement')updateStatement(a,d);if(s==='supporting'&&el.dataset.field==='type')return renderSection();updateSectionSubmit(a,s,d)});
- document.querySelectorAll('[data-score-code]').forEach(b=>b.onclick=async()=>{d.scores[b.dataset.scoreCode]=+b.dataset.score;await commit(a.n,s,sd);renderSection()});
+ document.querySelectorAll('[data-score-code]').forEach(b=>b.onclick=async()=>{
+  const code=b.dataset.scoreCode,score=+b.dataset.score,row=b.closest('.score-buttons');
+  d.scores=d.scores||{};d.scores[code]=score;
+  row?.querySelectorAll('[data-score-code]').forEach(button=>{
+   const active=button===b;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));
+  });
+  b.blur();
+  updateSectionSubmit(a,s,d);
+  await commit(a.n,s,sd);
+ });
  document.querySelectorAll('[data-nvq-toggle]').forEach(b=>b.onclick=async()=>{const code=b.dataset.nvqToggle;d.scores=d.scores||{};d.scores[code]=+d.scores[code]===5?0:5;d.feedback=generateNvqNarrative(a,d,s==='practical'?'assessor':'witness');await commit(a.n,s,sd);renderSection()});
- document.querySelectorAll('[data-ksb-evidence-toggle]').forEach(b=>b.onclick=async()=>{const code=b.dataset.ksbEvidenceToggle;d.ksbEvidence=d.ksbEvidence||[];d.ksbEvidence=d.ksbEvidence.includes(code)?d.ksbEvidence.filter(x=>x!==code):[...d.ksbEvidence,code];await commit(a.n,s,sd);renderSection()});
+ document.querySelectorAll('[data-ksb-evidence-toggle]').forEach(b=>b.onclick=async()=>{
+  const code=b.dataset.ksbEvidenceToggle,card=b.closest('.skill-assessment');
+  d.ksbEvidence=d.ksbEvidence||[];const selected=!d.ksbEvidence.includes(code);
+  d.ksbEvidence=selected?[...d.ksbEvidence,code]:d.ksbEvidence.filter(x=>x!==code);
+  card?.classList.toggle('skill-selected',selected);b.setAttribute('aria-pressed',String(selected));
+  const tick=b.querySelector('.tick-box');if(tick)tick.textContent=selected?'✓':'';
+  if(/^B/i.test(code))card?.querySelectorAll('[data-score-code]').forEach(button=>button.disabled=!selected);
+  b.blur();updateSectionSubmit(a,s,d);await commit(a.n,s,sd);
+ });
  document.querySelectorAll('[data-statement-ksb-toggle]').forEach(b=>b.onclick=async()=>{const code=b.dataset.statementKsbToggle;d.ksbEvidence=d.ksbEvidence||[];d.ksbEvidence=d.ksbEvidence.includes(code)?d.ksbEvidence.filter(x=>x!==code):[...d.ksbEvidence,code];await commit(a.n,s,sd);renderSection()});
  document.querySelectorAll('[data-lo-photo]').forEach(b=>b.onclick=()=>showOutcomePhotoModal(a.n,s,sd,d,b.dataset.loPhoto,locked));
  document.querySelectorAll('[data-record-code]').forEach(b=>b.onclick=()=>recordDiscussionOutcome(a.n,s,sd,d,b.dataset.recordCode));
  document.querySelectorAll('[data-record-pd-code]').forEach(b=>b.onclick=()=>recordProfessionalDiscussionOutcome(a.n,s,sd,d,b.dataset.recordPdCode));
  document.querySelectorAll('[data-delete-recording]').forEach(b=>b.onclick=async()=>{delete d.recordings[b.dataset.deleteRecording];await commit(a.n,s,sd);renderSection();toast('Recording deleted')});
  const ng=document.getElementById('generateNvqNarrative');if(ng)ng.onclick=async()=>{d.narrativeRevision=Number(d.narrativeRevision||0)+1;d.feedback=generateNvqNarrative(a,d,s==='practical'?'assessor':'witness');if(!d.feedback)return toast('Select at least one learning outcome');await commit(a.n,s,sd);renderSection()};
- const gf=document.getElementById('generateFeedback');if(gf)gf.onclick=async()=>{const generated=generateFeedbackSections(a,d,s==='practical');d.feedbackSummary=generated.summary;d.feedbackDevelopment=generated.areas;await commit(a.n,s,sd);renderSection()};
+ const gf=document.getElementById('generateFeedback');if(gf)gf.onclick=async()=>{
+  const generated=generateFeedbackSections(a,d,s==='practical');d.feedbackSummary=generated.summary;d.feedbackDevelopment=generated.areas;
+  const fields=document.querySelectorAll('.generated-feedback-text');if(fields[0])fields[0].value=d.feedbackSummary||'';if(fields[1])fields[1].value=d.feedbackDevelopment||'';
+  gf.blur();await commit(a.n,s,sd);toast('Assessment comments updated');
+ };
  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=async()=>{d.tab=b.dataset.tab;await commit(a.n,s,sd);renderSection()});
  if(!locked)setupSignature(a.n,s,sd,d);
  const cam=document.getElementById('cameraInput'),gal=document.getElementById('galleryInput');if(cam)cam.onchange=e=>addPhotos(e.target.files,a.n,s,sd,d);if(gal)gal.onchange=e=>addPhotos(e.target.files,a.n,s,sd,d);
