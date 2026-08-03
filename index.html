@@ -8,14 +8,20 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=1.6.26">
+  <link rel="stylesheet" href="styles.css?v=1.6.28">
   <title>Apprentice+</title>
   <script>
   (() => {
     const desktopQuery = window.matchMedia('(min-width: 960px) and (pointer: fine)');
     const applyDesktopMode = () => {
-      document.documentElement.classList.toggle('desktop-mode', desktopQuery.matches);
-      document.documentElement.dataset.layoutMode = desktopQuery.matches ? 'desktop' : 'mobile';
+      const desktop = desktopQuery.matches;
+      const width = window.innerWidth || document.documentElement.clientWidth || 0;
+      const scale = desktop ? (width >= 1600 ? 80 : width >= 1280 ? 90 : 100) : 100;
+      document.documentElement.classList.toggle('desktop-mode', desktop);
+      document.documentElement.classList.remove('desktop-scale-80','desktop-scale-90','desktop-scale-100');
+      if (desktop) document.documentElement.classList.add(`desktop-scale-${scale}`);
+      document.documentElement.dataset.layoutMode = desktop ? 'desktop' : 'mobile';
+      document.documentElement.dataset.desktopScale = String(scale);
     };
     applyDesktopMode();
     desktopQuery.addEventListener?.('change', applyDesktopMode);
@@ -77,7 +83,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics-compat.js"></script>
   <script src="analytics-foundation.js?v=1.5.68"></script>
-  <script src="app.js?v=1.6.26"></script>
+  <script src="app.js?v=1.6.28"></script>
   <script src="analytics-integration.js?v=1.5.68"></script>
   <script>
   (() => {

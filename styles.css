@@ -3432,3 +3432,17 @@ body.technical-drawing-active{overflow:hidden!important;position:fixed!important
   html.desktop-mode .help-tour-actions{margin-top:18px!important;padding-top:18px!important;border-top:1px solid var(--border)!important}
   html.desktop-mode .help-tour-nav .btn{min-width:120px!important;min-height:48px!important}
 }
+
+
+/* V1.6.28 — adaptive desktop UI scale */
+@media (min-width:960px) and (pointer:fine){
+  html.desktop-mode.desktop-scale-100 #app{zoom:1}
+  html.desktop-mode.desktop-scale-90 #app{zoom:.9}
+  html.desktop-mode.desktop-scale-80 #app{zoom:.8}
+  html.desktop-mode.desktop-scale-90 .notification-bell,
+  html.desktop-mode.desktop-scale-90 .notification-bell-panel,
+  html.desktop-mode.desktop-scale-90 .notification-bell-backdrop{zoom:.9}
+  html.desktop-mode.desktop-scale-80 .notification-bell,
+  html.desktop-mode.desktop-scale-80 .notification-bell-panel,
+  html.desktop-mode.desktop-scale-80 .notification-bell-backdrop{zoom:.8}
+}
