@@ -1,6 +1,27 @@
 {
-  "latest": "V1.6.38",
+  "latest": "V1.0",
   "releases": [
+    {
+      "version": "V1.0",
+      "date": "2026-08-03",
+      "title": "Portfolio Building Off-the-Job Time",
+      "features": [
+        "Every saved assignment evidence item now adds 0.2 hours automatically to the learner's off-the-job total.",
+        "Each separately saved Video Walkthrough criterion also adds its own 0.2-hour Portfolio building record.",
+        "OTJMate now has a dedicated Portfolio building section showing the evidence source, date, automatic hours and export status.",
+        "Portfolio building records are derived from saved evidence, remain in sync automatically and are kept separate from editable manual OTJ entries.",
+        "OTJMate PDF exports and monthly OTJ PDFs contain a clearly labelled Portfolio building section.",
+        "Every assignment evidence record page is labelled OFF-THE-JOB - PORTFOLIO BUILDING - 0.2 HOURS.",
+        "Monthly portfolio uploads include new Portfolio building records without duplicating records already captured in a confirmed upload.",
+        "Saved walkthrough clips and legacy recorded walkthroughs are always included as playable media in assignment and monthly ZIP packages.",
+        "Evidence PDFs use one lossless record per submission, with extra pages only for continuation text or the actual submitted media, removing duplicate detail pages.",
+        "The displayed app version, update metadata and cached asset version have been reset to V1.0."
+      ],
+      "items": [
+        "The cumulative RPL, complete evidence PDF, monthly learner progress, Academy activity and combined OTJ features remain included.",
+        "Deleting an archived OTJ PDF makes its manual and Portfolio building records available for export again."
+      ]
+    },
     {
       "version": "V1.6.38",
       "date": "2026-08-03",
@@ -1099,7 +1120,7 @@
       ]
     }
   },
-  "latestVersion": "V1.6.33",
+  "latestVersion": "V1.0",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",
