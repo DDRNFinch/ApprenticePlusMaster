@@ -15,6 +15,7 @@
         "Monthly portfolio uploads include new Portfolio building records without duplicating records already captured in a confirmed upload.",
         "Saved walkthrough clips and legacy recorded walkthroughs are always included as playable media in assignment and monthly ZIP packages.",
         "Evidence PDFs use one lossless record per submission, with extra pages only for continuation text or the actual submitted media, removing duplicate detail pages.",
+        "Photographic evidence now uses the linked KSB or learning-outcome code and official wording in each displayed and exported photo filename instead of the phone's original random filename.",
         "The displayed app version, update metadata and cached asset version have been reset to V1.0."
       ],
       "items": [

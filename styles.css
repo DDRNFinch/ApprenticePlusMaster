@@ -1763,6 +1763,24 @@ body.page-help-open,body.help-tour-open{overflow:hidden;touch-action:none}
 :focus-visible{outline:3px solid rgba(152,220,37,.58);outline-offset:2px}
 .progress-rings .ring-green{filter:drop-shadow(0 2px 3px rgba(7,95,47,.18))}
 
+/* KSB-linked photo filenames */
+.practical-photo-slot.filled .linked-photo-filename{
+ left:0;right:0;bottom:0;width:100%;min-height:30px;max-height:42px;padding:4px 5px;border-radius:0;
+ display:flex;align-items:center;justify-content:center;white-space:normal;overflow:hidden;text-align:center;
+ font-size:8px;line-height:1.15;font-weight:800;background:rgba(6,56,44,.88);box-sizing:border-box;
+}
+.lo-photo-control.has-photo{position:relative;width:150px;height:112px;grid-template-rows:78px 34px;overflow:hidden;padding:0;align-content:stretch;background:#fff}
+.outcome-card.with-photo:has(.lo-photo-control.has-photo),.outcome-tick:has(.lo-photo-control.has-photo){grid-template-columns:minmax(0,1fr) 156px}
+.lo-photo-control.has-photo img{width:100%;height:78px;object-fit:cover}
+.lo-photo-control.has-photo .linked-photo-filename{display:flex;align-items:center;justify-content:center;padding:3px 5px;color:#06382c;background:#eff8f2;font-size:8px;line-height:1.12;text-transform:none;white-space:normal;overflow:hidden;text-align:center}
+.linked-photo-modal-name{margin:0 0 14px;padding:9px 11px;border-radius:10px;background:#eff8f2;color:#06382c;font-size:12px;font-weight:800;line-height:1.3;overflow-wrap:anywhere}
+@media(max-width:460px){
+ .lo-photo-control.has-photo{width:116px;height:98px;grid-template-rows:66px 32px}
+ .outcome-card.with-photo:has(.lo-photo-control.has-photo),.outcome-tick:has(.lo-photo-control.has-photo){grid-template-columns:minmax(0,1fr) 120px}
+ .lo-photo-control.has-photo img{height:66px}
+ .lo-photo-control.has-photo .linked-photo-filename{font-size:7px;padding:3px}
+}
+
 /* V1.11.1: keep absolutely positioned course controls fixed inside help phone previews */
 .tour-phone-scale .course-card .course-search-launch.tour-phone-focus,
 .page-help-phone-scale .course-card .course-search-launch.page-help-phone-focus{
