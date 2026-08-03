@@ -1,148 +1,6017 @@
-(function(){
 'use strict';
-const A=()=>window.ApprenticeAnalytics;
-let currentScreen='unknown';
-let screenEnteredAt=Date.now();
-const startedScreens=new Map();
-const DAILY_KEY='apprenticeplus.analytics.daily.v1';
-const OWNER_STATS_KEY='apprenticeplus.analytics.ownerStats.v1';
-function readDaily(){try{const d=JSON.parse(localStorage.getItem(DAILY_KEY)||'{}');return d&&typeof d==='object'?d:{}}catch{return {}}}
-function writeDaily(d){try{localStorage.setItem(DAILY_KEY,JSON.stringify(d))}catch{}}
-function dayKey(){return new Date().toISOString().slice(0,10)}
-function countDaily(metric){const all=readDaily(),day=dayKey();if(!all[day])all[day]={};all[day][metric]=(all[day][metric]||0)+1;Object.keys(all).sort().slice(0,-7).forEach(k=>delete all[k]);writeDaily(all)}
-function sendDailySummary(){const all=readDaily(),day=dayKey(),d=all[day]||{};if(!Object.keys(d).length)return;track('engagement_summary',{day_offset:0,screen_views:d.screen_views||0,ui_actions:d.ui_actions||0,assessments_started:d.assessments_started||0,assessments_completed:d.assessments_completed||0,exports:d.exports||0,tool_opens:d.tool_opens||0,evidence_actions:d.evidence_actions||0});}
-const SAFE_DATA_KEYS=['action','view','tab','section','subject','type','tool','difficulty','scale','course','n','mode','kind','status'];
-const RESULT_SCREENS=new Set(['trade_result','functional_result','epa_result','epa_discussion_result','epa_results','knowledge_result']);
-const TEST_SCREENS=new Set(['trade_test','functional_test','epa_test','epa_discussion','epa_practical','knowledge_test']);
-function slug(value,max=80){return String(value??'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,max)||'unknown'}
-function readOwnerStats(){try{const x=JSON.parse(localStorage.getItem(OWNER_STATS_KEY)||'{}');return x&&typeof x==='object'?x:{days:{},recent:[]}}catch{return {days:{},recent:[]}}}
-function writeOwnerStats(x){try{localStorage.setItem(OWNER_STATS_KEY,JSON.stringify(x))}catch{}}
-function friendlyActivity(name,params={}){
- const feature=String(params.feature||params.screen||params.assessment_type||params.document_type||'').replace(/_/g,' ');
- const labels={session_start:'App session started',session_end:'App session ended',assessment_started:feature?`${feature} started`:'Assessment started',assessment_completed:feature?`${feature} completed`:'Assessment completed',document_export:feature?`${feature} exported`:'Document exported',app_update:'App updated',first_open:'First app use',javascript_error:'Technical error detected',promise_rejection:'Technical error detected'};
- return labels[name]||'';
-}
-function recordOwnerStat(name,params={}){
- const all=readOwnerStats(),day=dayKey();all.days=all.days||{};const d=all.days[day]||(all.days[day]={events:0,sessions:0,seconds:0,screenViews:0,testsStarted:0,testsCompleted:0,exports:0,evidence:0,tools:{},screens:{},features:{},errors:0});d.events++;
- if(name==='session_start')d.sessions++;
- if(name==='session_end')d.seconds+=Math.max(0,Number(params.duration_seconds||0));
- if(name==='screen_view'||name.endsWith('_opened')){d.screenViews++;const screen=slug(params.screen||name.replace(/_opened$/,''));d.screens[screen]=(d.screens[screen]||0)+1;}
- if(name==='assessment_started')d.testsStarted++;
- if(name==='assessment_completed')d.testsCompleted++;
- if(name==='document_export')d.exports++;
- const feature=slug(params.feature||params.screen||params.assessment_type||params.document_type||'');
- if(feature){d.features[feature]=(d.features[feature]||0)+1;if(['measuremate','materialmate','drawingmate','feedbackmate','projectmate','otjmate','notemate','notepad'].includes(feature))d.tools[feature]=(d.tools[feature]||0)+1;}
- if(name.endsWith('_submitted')||name.endsWith('_saved')){if(['photographic_evidence','learner_statement','video_walkthrough','witness_testimony','professional_discussion','practical_assessment'].includes(feature))d.evidence++;}
- if(name==='javascript_error'||name==='promise_rejection')d.errors++;
- const text=friendlyActivity(name,params);if(text){all.recent=all.recent||[];all.recent.unshift({text,at:new Date().toISOString()});all.recent=all.recent.slice(0,20);}
- Object.keys(all.days).sort().slice(0,-30).forEach(k=>delete all.days[k]);writeOwnerStats(all);
-}
-function ownerUsageSummary(){
- const all=readOwnerStats(),keys=Object.keys(all.days||{}).sort().slice(-7),today=all.days?.[dayKey()]||{};const total={events:0,sessions:0,seconds:0,screenViews:0,testsStarted:0,testsCompleted:0,exports:0,evidence:0,tools:{},screens:{},features:{},errors:0};
- keys.forEach(k=>{const d=all.days[k]||{};['events','sessions','seconds','screenViews','testsStarted','testsCompleted','exports','evidence','errors'].forEach(x=>total[x]+=Number(d[x]||0));['tools','screens','features'].forEach(group=>Object.entries(d[group]||{}).forEach(([n,v])=>total[group][n]=(total[group][n]||0)+Number(v||0)));});
- const top=o=>Object.entries(o||{}).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([name,count])=>({name,count}));
- return {today,sevenDays:total,topTools:top(total.tools),topScreens:top(total.screens),topFeatures:top(total.features),recent:(all.recent||[]).slice(0,10),daysTracked:keys.length};
-}
-function clearOwnerUsage(){try{localStorage.removeItem(OWNER_STATS_KEY)}catch{}return true}
-function track(name,params){try{recordOwnerStat(name,params||{});return A()?.trackEvent?.(name,params)}catch{return false}}
-function safeDataset(el){const out={};if(!el?.dataset)return out;SAFE_DATA_KEYS.forEach(k=>{if(el.dataset[k]!=null&&el.dataset[k]!=='')out[k]=slug(el.dataset[k])});return out}
-function controlId(el){return slug(el?.id||el?.getAttribute?.('name')||el?.getAttribute?.('role')||el?.tagName||'control')}
-function controlType(el){if(!el)return'unknown';if(el.matches?.('a'))return el.hasAttribute('download')?'download_link':'link';if(el.matches?.('button'))return'button';if(el.matches?.('select'))return'select';if(el.matches?.('textarea'))return'textarea';if(el.matches?.('input'))return slug(el.type||'input');return slug(el.tagName||'control')}
-function actionFrom(el){const id=controlId(el);const words=['submit','save','start','finish','complete','download','export','generate','open','close','pause','resume','delete','remove','add','record','play','print','search','select','view','retry','retake','install','update','send','upload'];return words.find(w=>id.includes(w))||'activate'}
-function semanticFeature(el){const id=controlId(el);const classes=slug(el?.className||'');const combined=id+'_'+classes;const map=[['drawingmate','drawingmate'],['materialmate','materialmate'],['measuremate','measuremate'],['projectmate','projectmate'],['notepad','notemate'],['notemate','notemate'],['otj','otjmate'],['feedback','feedbackmate'],['certificate','certificates'],['functional','functional_skills'],['trade','trade_courses'],['epa','epa'],['walkthrough','video_walkthrough'],['witness','witness_testimony'],['discussion','professional_discussion'],['practical','practical_assessment'],['photo','photographic_evidence'],['statement','learner_statement'],['assignment','assignment'],['portfolio','portfolio'],['search','search'],['settings','settings'],['reward','rewards']];for(const [needle,value] of map)if(combined.includes(needle))return value;return currentScreen}
-function screenCategory(screen){if(screen.startsWith('epa'))return'epa';if(screen.startsWith('functional'))return'functional_skills';if(screen.startsWith('trade'))return'trade_courses';if(screen.includes('knowledge'))return'knowledge';if(['measuremate','materialmate','drawingmate','feedbackmate','projectmate','otjmate','notepad','resources','tools'].includes(screen))return'toolbox';if(['assignment','section','walkthrough'].includes(screen))return'evidence';return screen}
-const CORE_SCREEN_EVENTS={home:'home_opened',tools:'toolbox_opened',resources:'toolbox_opened',academy:'academy_opened','trade-courses':'trade_courses_opened',library:'trade_courses_opened','functional-skills':'functional_skills_opened',epa:'epa_opened','epa-results':'epa_results_opened',certificates:'certificates_opened',measuremate:'measuremate_opened',materialmate:'materialmate_opened',drawingmate:'drawingmate_opened',projectmate:'projectmate_opened',otjmate:'otjmate_opened',notepad:'notemate_opened',feedbackmate:'feedbackmate_opened'};
-const ASSESSMENT_NAMES={'trade-test':'trade_course','trade-result':'trade_course','functional-test':'functional_skills','functional-result':'functional_skills','epa-test':'epa_knowledge','epa-result':'epa_knowledge','epa-discussion':'epa_discussion','epa-discussion-result':'epa_discussion','epa-practical':'epa_practical','knowledge-test':'assignment_knowledge','knowledge-result':'assignment_knowledge'};
-function validEventName(value){let n=slug(value,40);if(!/^[a-z]/.test(n))n='event_'+n;return n.slice(0,40)}
-function sendNamedEvent(name,params){return track(validEventName(name),params)}
-function coreActionEvent(info){
- const f=slug(info.feature||'unknown'),a=slug(info.action||'activate');
- if(f==='unknown'||f==='current_screen')return'';
- const useful=new Set(['open','start','finish','complete','submit','send','save','download','export','generate','pause','resume','retry','retake','install','update','search','record','play','print','upload','select']);
- if(!useful.has(a))return'';
- return validEventName(f+'_'+(a==='finish'?'completed':a));
-}
-function screenTransition(nextRaw){
- const next=slug(nextRaw);
- const now=Date.now();
- if(currentScreen!==next){
-  if(currentScreen!=='unknown')sendNamedEvent(currentScreen+'_closed',{screen:currentScreen,category:screenCategory(currentScreen),duration_seconds:Math.max(1,Math.round((now-screenEnteredAt)/1000))});
-  currentScreen=next;screenEnteredAt=now;sendNamedEvent(CORE_SCREEN_EVENTS[next]||next+'_opened',{screen:next,category:screenCategory(next)});countDaily('screen_views');if(screenCategory(next)==='toolbox')countDaily('tool_opens');
+
+const COURSES={
+ 'site-carpentry-v1-4':{
+  id:'site-carpentry-v1-4',name:'Site Carpentry',standard:'ST0264',version:'1.4',level:'2',
+  assignments:[
+   {n:1,title:'Health & Safety',ksbs:[['S1','Follow health and safety procedures'],['S2','Use PPE, RPE and LEV correctly'],['K1','Health and safety legislation'],['K2','Safety control equipment'],['K3','Safe systems of work'],['B1','Prioritise health and safety']]},
+   {n:2,title:'Standards, Regulations & Sustainability',ksbs:[['S3','Follow environmental procedures'],['S4','Follow industry regulations'],['K4','Sustainable working practices'],['K7','Building standards and regulations'],['K40','Employment and business basics'],['B2','Work sustainably']]},
+   {n:3,title:'Preparation & Drawings',ksbs:[['S5','Prepare a safe working area'],['S6','Interpret drawings and specifications'],['K5','Building construction principles'],['K6','Digital design principles'],['K8','Read drawings and specifications'],['B4','Develop skills and knowledge']]},
+   {n:4,title:'Estimates & Materials',ksbs:[['S7','Estimate materials and cutting lists'],['S16','Size timber from tables'],['K9','Timber types and properties'],['K10','Timber decay and repairs'],['K12','Material estimating techniques']]},
+   {n:5,title:'Tools & Equipment',ksbs:[['S9','Use hand tools safely'],['S10','Use power tools safely'],['S11','Maintain and sharpen hand tools'],['K14','Hand tool techniques'],['K15','Tool maintenance techniques'],['K17','Power tool techniques']]},
+   {n:6,title:'Jigs & Levels',ksbs:[['S12','Produce woodworking jigs'],['S19','Use laser levels'],['K16','Jig construction techniques'],['K29','Laser level operation']]},
+   {n:7,title:'Communication & Teamwork',ksbs:[['S8','Communicate using construction terminology'],['S13','Support wellbeing'],['K13','Construction communication'],['K18','Effective teamwork'],['K19','Equality, diversity and inclusion'],['K20','Mental health awareness'],['B3','Promote inclusion'],['B5','Work effectively in teams']]},
+   {n:8,title:'Structural & Partition Walls',ksbs:[['S14','Construct structural and partition walls'],['S15','Install structural fixings'],['K22','Structural fixings and timber sizing']]},
+   {n:9,title:'Floor Joists & Coverings',ksbs:[['S14','Install floor joists and coverings'],['K27','Floor joist installation techniques']]},
+   {n:10,title:'Service Encasement & Cladding',ksbs:[['S17','Install service encasements and cladding'],['K28','Encasement and cladding techniques']]},
+   {n:11,title:'Wall & Floor Units',ksbs:[['S17','Install wall and floor units'],['S20','Form timber connections'],['K11','Carpentry products and ironmongery'],['K28','Wall and floor unit installation']]},
+   {n:12,title:'Stairs, Handrails & Spindles',ksbs:[['S14','Construct straight flights of stairs'],['S17','Install handrails and spindles'],['K21','Measure and fit stair components'],['K27','Stair installation techniques'],['K28','Handrail and spindle installation']]},
+   {n:13,title:'Doors & Windows',ksbs:[['S17','Install internal and external doors'],['S21','Measure, cut, hinge and recess doors'],['K28','Door installation techniques']]},
+   {n:14,title:'Skirting & Architrave',ksbs:[['S17','Install skirting and architraves'],['S22','Splice and scribe timber'],['K24','Timber splicing and scribing'],['K28','Skirting and architrave installation']]},
+   {n:15,title:'Roofing',ksbs:[['S18','Construct pitched and trussed roofs'],['K25','Pitched roof installation'],['K26','Warm and cold flat roof systems']]}
+  ]
+ },
+ 'bricklayer-st0095-v1-2':{
+  id:'bricklayer-st0095-v1-2',name:'Bricklayer',standard:'ST0095',version:'1.2',level:'2',
+  assignments:[
+   {n:1,title:'Health & Safety',ksbs:[['S1','Comply with health and safety regulations, standards, and guidance.'],['S2','Identify and use personal protective equipment (PPE).'],['K1','Health and safety regulations, CoSHH, fire safety, asbestos, manual handling, signage, working at height, electrical safety, RPE and dust suppression.'],['K2','Safety control equipment and correct use of PPE.'],['K3','Safe systems of work including inductions, toolbox talks, risk assessments, method statements and hazard identification.'],['B1','Put health, safety and wellbeing first.']]},
+   {n:2,title:'Standards, Regulations & Sustainability',ksbs:[['S3','Comply with environmental and sustainability requirements and segregate resources for reuse, recycling and disposal.'],['S4','Comply with industry regulations, standards, and guidance.'],['K4','Environmental impact, efficient resource use, recycling, reuse, contamination prevention and safe waste disposal.'],['K5','Sustainability considerations including thermal qualities, airtightness and ventilation.'],['K7','British Standards, building regulations and warranty provider standards.'],['B2','Consider the environment when using resources and carrying out processes.']]},
+   {n:3,title:'Preparation & Drawings',ksbs:[['S5','Read and interpret information from drawings and specifications.'],['S7','Prepare and maintain a safe working area.'],['K10','Interpret and extract relevant information from drawings and specifications.'],['K9','Modern methods of construction including precast components, profiles, frame and cladding systems and masonry supports.'],['K11','Basic principles of digital design and modelling systems.']]},
+   {n:4,title:'Estimates & Materials',ksbs:[['S6','Estimate and select bricks, blocks, mortar, wall ties, insulation and other required resources.'],['K8','Materials and characteristics including masonry units, mortar, DPC, ties, lintels, fire stopping and insulation.'],['K6','Building principles including foundations, walls, roofs, floors, services, insulation and moisture, air and fire protection.'],['K12','Simple resource estimation for masonry units, mortar, ties, DPCs, trays and lintels.']]},
+   {n:5,title:'Tools & Equipment',ksbs:[['S8','Select and use hand tools.'],['S9','Maintain and store hand tools.'],['K13','Use, maintenance and storage of bricklaying hand tools.'],['K14','Use and limitations of disc cutters, mixers and drills.'],['B1','Put health, safety and wellbeing first.']]},
+   {n:6,title:'Cavity Walling',ksbs:[['S10','Set out a brick and block cavity wall with an opening to given tolerances.'],['S11','Construct a cavity wall with return and opening, lintel, soldiers, sill, closure, insulation, fire stopping, cavity tray, DPC and weep holes.'],['K21','Cavity wall setting out using openings, levels, profiles, gauge rods and squares.'],['K22','Cavity wall construction, openings, ties, insulation, DPCs, trays, weep holes, lintels and fire stopping.'],['B3','Take ownership of given work.']]},
+   {n:7,title:'Jointing & Mixing Mortar',ksbs:[['S12','Apply half round, flush, weather struck and recessed joint finishes.'],['S14','Gauge and hand mix mortar to ratio.'],['K17','Joint finishes: half round, flush, weather struck and recessed.'],['K19','Principles of expansion joints.'],['K20','Mortar ratios, silos, pre-mixed mortar, gauging, hand and mechanical mixing.']]},
+   {n:8,title:'Solid Walling',ksbs:[['S13','Set out and construct a simple brick solid wall with capping.'],['K15','English, Flemish, garden wall and broken bonds.'],['K16','Solid wall setting out, construction and capping methods.'],['K18','Decorative walling and piers including projecting and contrasting brick, piers and banding.'],['K23','Brick-on-edge and soldier course setting out and construction.']]},
+   {n:9,title:'Repair & Protection',ksbs:[['S16','Carry out a simple repair such as replacing damaged bricks.'],['K24','Construction defects and repair methods.'],['S17','Protect materials and finished work.'],['K25','Protection from frost, water and construction damage.'],['B3','Take ownership of given work.']]},
+   {n:10,title:'Communication & Teamwork',ksbs:[['S18','Communicate verbally using construction terminology.'],['S20','Apply team-working principles to own work and the wider build team.'],['K26','Verbal communication techniques and construction terminology.'],['K27','Principles of good team working.'],['B6','Team-focus to meet team goals and consider the wider build team.'],['B5','Seek learning and development opportunities.']]},
+   {n:11,title:'EDI & Wellbeing',ksbs:[['S19','Follow equity, diversity and inclusion guidance.'],['S21','Identify wellbeing support available to self and others.'],['K28','Inclusion, equity and diversity in the workplace.'],['K31','Mental and physical wellbeing and how to access support.'],['B4','Contribute to an inclusive and diverse culture.']]},
+   {n:12,title:'Raked Walling & Cutting',ksbs:[['S22','Construct a brick wall with a raking cut, such as a gable or garden wall.'],['S15','Measure and cut bricks and blocks using hand tools to given tolerances.'],['K30','Setting out and construction techniques for brick walls with raking cuts.'],['K29','Methods of cutting bricks and blocks using hand tools.'],['B2','Consider the environment when using resources and carrying out processes.']]}
+  ]
+ },
+ 'architectural-joiner-st0264-v1-4':{
+  id:'architectural-joiner-st0264-v1-4',name:'Architectural Joiner',standard:'ST0264',version:'1.4',level:'2',
+  assignments:[
+   {n:1,title:'Health & Safety',ksbs:[['S1','Comply with health and safety regulations, standards and guidance.'],['S2','Identify and use PPE, RPE, dust suppression and LEV.'],['K1','Health and safety regulations, CoSHH, fire safety, asbestos awareness, manual handling, PUWER, electrical safety and workplace hazards.'],['K2','Selection and use of PPE, RPE, LEV and other safety control equipment.'],['K3','Safe systems of work including inductions, toolbox talks, risk assessments, method statements and hazard identification.'],['B1','Put health, safety and wellbeing first.']]},
+   {n:2,title:'Standards, Regulations & Sustainability',ksbs:[['S3','Comply with environmental and sustainability requirements and segregate resources for reuse, recycling and disposal.'],['S4','Comply with relevant industry regulations, standards and guidance.'],['K4','Efficient resource use, recycling, reuse, waste disposal and sustainable forestry.'],['K7','British standards, building regulations and warranty-provider standards relevant to joinery.'],['K40','Employment types, small-business start-up principles and tax.'],['B2','Consider the environment when using resources and carrying out processes.']]},
+   {n:3,title:'Preparation & Drawings',ksbs:[['S5','Prepare and maintain a safe working area.'],['S6','Interpret and use information from drawings and specifications.'],['K5','Building principles and modern construction methods relevant to joinery installation and manufacture.'],['K6','Basic principles of digital design and modelling systems.'],['K8','Interpret and extract relevant information from drawings and specifications.'],['B4','Seek learning and development opportunities.']]},
+   {n:4,title:'Estimates & Materials',ksbs:[['S7','Estimate required materials and produce an accurate cutting list.'],['K9','Characteristics and uses of hardwood, softwood, boards, laminated timber and carcassing.'],['K10','Timber moisture, wet rot, dry rot, insect attack and suitable repair methods.'],['K12','Estimate timber lengths, fixings and other materials and produce cutting lists.']]},
+   {n:5,title:'Tools & Equipment',ksbs:[['S9','Select, use and store joinery hand tools.'],['S10','Select, use and store portable power tools.'],['S11','Maintain and sharpen hand tools.'],['K14','Use and storage of chisels, planes, saws, hammers, squares, bevels, gauges and levels.'],['K15','Hand-tool maintenance and sharpening techniques.'],['K17','Use and storage of circular saws, drills, planers, routers, sanders, multifunction tools and nail guns.']]},
+   {n:6,title:'Jigs and Levels',ksbs:[['S12','Produce accurate jigs for repeatable joinery work.'],['K16','Jig design and production techniques.'],['K29','Use, calibrate and store laser levels safely and accurately.']]},
+   {n:7,title:'Communication & Teamwork',ksbs:[['S8','Communicate verbally using appropriate construction and joinery terminology.'],['S13','Identify wellbeing support available to self and others.'],['K13','Effective verbal communication techniques and construction terminology.'],['K18','Principles of effective team working.'],['K19','Inclusion, equity and diversity in the workplace.'],['K20','Mental and physical wellbeing and how to access support.'],['B3','Contribute to an inclusive and diverse culture.'],['B5','Work with the wider team to meet shared goals.']]},
+   {n:8,title:'Setting Out',ksbs:[['S23','Produce setting-out details and rods and mark out timber joinery products accurately.'],['K32','Setting-out and marking-out techniques and the effects of marking errors on joinery manufacture.']]},
+   {n:9,title:'Joints and Connections',ksbs:[['S24','Produce dovetail, bridle, mortise-and-tenon and halving joints.'],['S25','Form joinery connections using dowels, biscuits, staples and adhesives.'],['K11','Uses of mastics, preservatives, wood fillers, plastics and ironmongery in joinery products.'],['K33','Types and production methods for dovetail, mortise-and-tenon, bridle and halving joints.'],['K35','Joinery connection methods using dowels, biscuits, staples and adhesives.']]},
+   {n:10,title:'Windows',ksbs:[['S26','Manufacture and assemble a timber window with casement, glazing rebates and associated ironmongery.'],['K34','Manufacture and assembly techniques for standard right-angled timber windows.']]},
+   {n:11,title:'Door Frames & Linings',ksbs:[['S27','Manufacture and assemble timber door frames and linings.'],['K36','Manufacture and assembly techniques for timber door frames and linings.'],['K39','Select and install appropriate ironmongery for frames and linings.']]},
+   {n:12,title:'Staircases',ksbs:[['S27','Manufacture and assemble a straight timber staircase.'],['S28','Manufacture staircase spindles and balustrade components as second-fix joinery products.'],['K36','Manufacture and assembly techniques for straight timber staircases.'],['K37','Second-fix manufacture techniques relevant to staircase components, mouldings and associated timber products.']]},
+   {n:13,title:'Timber Doors',ksbs:[['S28','Manufacture and assemble timber doors as second-fix joinery products.'],['S29','Fit door locks, handles, hinges and latches accurately.'],['K37','Manufacture and assembly techniques for timber doors.'],['K30','Requirements of compliant fire-door assemblies.']]},
+   {n:14,title:'Wall & Floor Units',ksbs:[['S28','Manufacture and assemble timber wall and floor units.'],['K37','Manufacture and assembly techniques for timber wall and floor units.'],['K38','Finish manufactured timber products by sanding, painting, waxing, polishing, oiling or applying preservative.']]},
+   {n:15,title:'Machinery',ksbs:[['S30','Inspect, prepare and operate fixed joinery machinery safely.'],['K31','Safe inspection, preparation and operation of crosscut saws, band saws, planers, thicknessers and mortisers.']]}
+  ]
  }
- if(next==='home')setTimeout(detectAssignmentCompletions,0);
- if(TEST_SCREENS.has(next)&&!startedScreens.has(next)){startedScreens.set(next,now);const assessment=ASSESSMENT_NAMES[next]||next;sendNamedEvent(assessment+'_started',{assessment_type:assessment});countDaily('assessments_started');}
- if(RESULT_SCREENS.has(next)){const source=next.replace(/_result(s)?$/,'_test');const started=startedScreens.get(source)||startedScreens.get(next.replace('_result',''))||now;const assessment=ASSESSMENT_NAMES[next]||next;const duration=Math.max(1,Math.round((now-started)/1000));sendNamedEvent(assessment+'_completed',{assessment_type:assessment,duration_seconds:duration});countDaily('assessments_completed');startedScreens.delete(source);}
-}
-function installScreenHook(){
- const original=A()?.trackScreen;
- if(typeof original!=='function')return;
- const wrapped=function(name){const result=original.call(A(),name);screenTransition(name);return result};
- A().trackScreen=wrapped;window.trackScreen=wrapped;
-}
-function clickHandler(event){
- const el=event.target?.closest?.('button,a,[role="button"],input[type="button"],input[type="submit"],label[data-action],[data-action]');if(!el)return;
- const info={screen:currentScreen,category:screenCategory(currentScreen),control_id:controlId(el),control_type:controlType(el),action:actionFrom(el),feature:semanticFeature(el),...safeDataset(el)};
- const named=coreActionEvent(info);if(named)sendNamedEvent(named,{feature:info.feature,action:info.action,screen:currentScreen});countDaily('ui_actions');if(['photographic_evidence','learner_statement','video_walkthrough','witness_testimony','professional_discussion','practical_assessment'].includes(info.feature))countDaily('evidence_actions');
- const action=info.action,feature=info.feature;
- if(['download','export','print'].includes(action)||el.hasAttribute?.('download')){sendNamedEvent(feature+'_exported',{screen:currentScreen,feature,action});countDaily('exports');}
- if(action==='search')sendNamedEvent(feature+'_searched',{screen:currentScreen,feature});
-}
-function changeHandler(event){
- const el=event.target;if(!el?.matches?.('input,select,textarea'))return;
- const params={screen:currentScreen,field_id:controlId(el),field_type:controlType(el),feature:semanticFeature(el),...safeDataset(el)};
- if(el.type==='file'){params.file_count=Number(el.files?.length||0);params.file_category=(el.accept||'').includes('video')?'video':(el.accept||'').includes('image')?'image':(el.accept||'').includes('audio')?'audio':'file';sendNamedEvent(params.feature+'_file_added',params);return;}
- if(el.type==='checkbox'||el.type==='radio'){params.state=el.checked?'on':'off';sendNamedEvent(params.feature+'_setting_changed',{feature:params.feature,state:params.state,screen:currentScreen});return;}
- if(el.matches('select')){params.option_index=Math.max(0,el.selectedIndex);sendNamedEvent(params.feature+'_option_selected',{feature:params.feature,screen:currentScreen,option_index:params.option_index});}
-}
-function submitHandler(event){const form=event.target;if(!form?.matches?.('form'))return;const feature=semanticFeature(form);sendNamedEvent(feature+'_form_submitted',{screen:currentScreen,feature});}
-function mediaHandler(event){const el=event.target;if(!el?.matches?.('video,audio'))return;const feature=semanticFeature(el);sendNamedEvent(feature+'_'+event.type,{screen:currentScreen,feature,media_type:el.tagName.toLowerCase(),duration_seconds:Number.isFinite(el.duration)?Math.round(el.duration):0});}
+ , 'property-maintenance-operative-st0171-v1-1':{
+  id:'property-maintenance-operative-st0171-v1-1',name:'Property Maintenance Operative',standard:'ST0171',version:'1.1',level:'2',
+  assignments:[
+   {n:1,title:'Health & Safety',ksbs:[
+    ['K3','Health and safety regulations, relevance to the occupation and the operative’s responsibilities. Health and Safety at Work Act Control of Substances Hazardous to Health (COSHH). Manual handling. Personal Protective Equipment (PPE). Working at height. Safety equipment: guards, signage, fire extinguishers.'],
+    ['K4','Risks and hazards associated with property maintenance activities, and their mitigation using risk assessment.'],
+    ['S3','Comply with statutory health and safety regulations and requirements.'],
+    ['S4','Comply with risk assessments, and organise the workplace, to safeguard themselves and the property.'],
+    ['B2','Prioritise and promote health and safety.']
+   ]},
+   {n:2,title:'Planning & Preparing Maintenance Work',ksbs:[
+    ['K1','The principles and requirements of planned preventative maintenance (PPM) and reactive maintenance.'],
+    ['K2','The range of building types and characteristic uses, their common methods of construction and typical defects, and the impact that property maintenance operations may have on building safety.'],
+    ['K6','Importance of establishing a safe and tidy work area, using appropriate access equipment, providing protection to adjacent areas, and consideration for the safety of other property users.'],
+    ['S1','Plan the sequence of work required to carry out routine property maintenance operations.'],
+    ['S6','Uses safe working practices when carrying out property maintenance tasks including the use of PPE, signage, barriers, access equipment and ensuring work area is prepared and reinstated.'],
+    ['B3','Takes responsibility for completion of own work.']
+   ]},
+   {n:3,title:'Regulations, Materials & Technical Information',ksbs:[
+    ['K5','Key regulatory and legislative requirements (including building regulations, the building safety bill, and BSI Flex 8670), and an awareness of how these apply to varying property types, and their impact on property maintenance operatives’ responsibilities.'],
+    ['K23','Technical sources of information and data used in property maintenance operations.'],
+    ['K30','The rights and responsibilities of an employee and employer and an awareness of equality, diversity and inclusion, safeguarding and prevent.'],
+    ['S2','Identify and select the appropriate materials and components for property maintenance tasks, ensuring these are compliant with relevant regulatory requirements and manufacturer’s specifications.'],
+    ['S5','Comply with key regulatory and legislative requirements, including building regulations.'],
+    ['B5','Contribute to equality, diverse and inclusive culture.']
+   ]},
+   {n:4,title:'Tools, Equipment & Safe Isolation',ksbs:[
+    ['K7','Common hand and power tools and equipment used in routine property maintenance tasks and how to use safely.'],
+    ['K8','The common components of electrical and electronic systems, how to safely isolate electrical supplies and the procedures for correctly reporting identified faults.'],
+    ['S7','Select, and use work tools and equipment for property maintenance tasks, applying all safeguards, and ensuring the correct functioning of equipment.'],
+    ['S8','Safely isolate and secure electrical or electronic supplies prior to performing property maintenance operations.']
+   ]},
+   {n:5,title:'Emergency Systems & Routine Testing',ksbs:[
+    ['K9','The common forms of emergency equipment and signage, their importance within buildings and the preventative and possible corrective maintenance required.'],
+    ['K31','The purpose of continuing professional development (CPD) and how this supports them to understand their limits for personal authority and competence.'],
+    ['S9','Apply and implement routine emergency system checks, testing and routine maintenance, identifying and reporting faults as required.'],
+    ['S25','Escalates issues beyond their level of competence and authority.'],
+    ['B6','Seek learning and development opportunities.']
+   ]},
+   {n:6,title:'Plumbing & Drainage Repairs',ksbs:[
+    ['K10','The principles and components of plumbing systems, how to safely isolate, store and drain down water supplies to diagnose faults and clear blockages.'],
+    ['K11','The principles and components of common above and below ground drainage systems, the issues that poor drainage can have on properties and how to diagnose faults and clear blockages.'],
+    ['K12','The principles of good water hygiene to preserve and maintain the health of water systems within buildings and how these are checked and legally certified to minimise water hygiene and legionella risks.'],
+    ['S10','Perform maintenance and repairs to plumbing systems, including fault identification, safe isolation of supply, replacing components and clearing blockages.'],
+    ['S11','Perform maintenance and repairs to external drainage systems, including clearing blockages and replacing components.']
+   ]},
+   {n:7,title:'Environmental & Energy Systems',ksbs:[
+    ['K13','The principles and components of common environmental and energy management systems and their methods of operation.'],
+    ['K25','The purpose of quality assurance and continuous improvement and how these improve commonly occurring faults or inefficiencies.'],
+    ['S12','Perform maintenance and repairs to environmental and energy management systems, including fault identification, safe isolation of supply, replacing components.'],
+    ['S21','Inspect own work, ensuring it is delivered to the given specifications.']
+   ]},
+   {n:8,title:'Windows, Doors & Glazing Repairs',ksbs:[
+    ['K14','The common defects found in windows, doors, and glazing systems, the characteristics, uses and limitations of the materials and components used within them, and how these are used to meet statutory regulations.'],
+    ['K27','Methods of communication and when to use industry terminology to match the style to the audience.'],
+    ['K28','The importance of customer service to their organisation, how to provide feedback to ensure customers are informed of property maintenance.'],
+    ['S13','Use carpentry and joinery skills to perform repairs to windows, doors and glazing units, and their associated fittings.'],
+    ['S24','Provide customer feedback whilst maintaining customer service.']
+   ]},
+   {n:9,title:'Plastering, Painting & Decorating Repairs',ksbs:[
+    ['K15','The common types of materials and processes used to prepare, repair and finish plaster defects.'],
+    ['K16','The common causes of painting and decorating defects, and the types of materials, chemicals and processes used in painting and decorating activities. How paints and chemicals are stored and disposed of safely.'],
+    ['K26','Environmental regulations and requirements: Environmental Protection Act, safe disposal of waste, minimising waste (re-use and re-cycle), waste contractors permit, energy efficiency, and contribution to net zero outcomes.'],
+    ['S14','Perform repairs to plastered surfaces, including surface preparation, fixing and mixing materials and compounds.'],
+    ['S15','Use painting and decorating skills to prepare surfaces for decoration, apply paint using brushes and rollers, and complete sealing activities using gun appliances.']
+   ]},
+   {n:10,title:'Wall & Floor Finishes',ksbs:[
+    ['K17','The common causes of tiling defects and the types of materials and processes used in tiling activities.'],
+    ['K18','The common causes of flooring defects and the types of materials and processes used in flooring repairs.'],
+    ['S16','Perform tiling repairs, including setting out, surface preparation and cutting around obstacles.'],
+    ['S17','Perform flooring repairs, including setting out, surface preparation and cutting around obstacles.']
+   ]},
+   {n:11,title:'Masonry Repairs',ksbs:[
+    ['K19','The common forms of masonry and damp proofing defects, materials and processes used in masonry repair activities: Mixing mortars, replacing defective pointing, laying and bonding of masonry, coping repairs and damp-proofing.'],
+    ['K29','The roles and responsibilities of property maintenance operatives and the purpose and inter-dependencies of other trade operatives.'],
+    ['S18','Perform planned, responsive or temporary repairs to buildings or their immediate surroundings, attending to minor defects within either masonry, roofing, fencing or railing, groundwork or landscaping.']
+   ]},
+   {n:12,title:'Roofing Repairs',ksbs:[
+    ['K20','The common types of roof structures, defects and the types of materials and processes used in remedial and temporary repair.'],
+    ['K25','The purpose of quality assurance and continuous improvement and how these improve commonly occurring faults or inefficiencies.'],
+    ['S18','Perform planned, responsive or temporary repairs to buildings or their immediate surroundings, attending to minor defects within either masonry, roofing, fencing or railing, groundwork or landscaping.'],
+    ['S21','Inspect own work, ensuring it is delivered to the given specifications.'],
+    ['B4','Team focuses to meet goals.']
+   ]},
+   {n:13,title:'Fencing & Railing Repairs',ksbs:[
+    ['K21','The common types of fencing and railing systems, their typical defects, and the types of materials and processes used in repairs.'],
+    ['K27','Methods of communication and when to use industry terminology to match the style to the audience.'],
+    ['S18','Perform planned, responsive or temporary repairs to buildings or their immediate surroundings, attending to minor defects within either masonry, roofing, fencing or railing, groundwork or landscaping.'],
+    ['S23','Use and adapt communication methods for different situations and when, working with colleagues and stakeholders, using industry terminology as appropriate.']
+   ]},
+   {n:14,title:'Groundwork & Landscaping Repairs',ksbs:[
+    ['K22','The common types of groundwork and landscaping systems, their typical defects and the types of materials and processes used in remedial repair.'],
+    ['K26','Environmental regulations and requirements: Environmental Protection Act, safe disposal of waste, minimising waste (re-use and re-cycle), waste contractors permit, energy efficiency, and contribution to net zero outcomes.'],
+    ['S18','Perform planned, responsive or temporary repairs to buildings or their immediate surroundings, attending to minor defects within either masonry, roofing, fencing or railing, groundwork or landscaping.'],
+    ['S22','Comply with environmental regulations and procedures. Segregate resources for reuse, recycling and disposal.'],
+    ['B1','Prioritise and promote sustainable working practices.']
+   ]},
+   {n:15,title:'Quality, Reporting & Professional Practice',ksbs:[
+    ['K24','The methods to record information and data via written and digital means and the importance of data protection and security.'],
+    ['K25','The purpose of quality assurance and continuous improvement and how these improve commonly occurring faults or inefficiencies.'],
+    ['K31','The purpose of continuing professional development (CPD) and how this supports them to understand their limits for personal authority and competence.'],
+    ['S19','Select and use technical literature and other sources of information and data to address property maintenance problems.'],
+    ['S20','Record and report information, using digital and written techniques.']
+   ]}
+  ]
+ }
+, 'trowel-nvq-6570-05':{
+  id:'trowel-nvq-6570-05',name:'Level 3 NVQ Diploma in Trowel Occupations',standard:'6570-05',version:'1.1',level:'3',nvqUnits:true,
+  assignments:[
+   {n:1,unit:'102',optional:false,title:'Conforming to general health, safety and welfare in the workplace',criteria:{LO1:'1.1 • 1.2 • 1.3 • 1.4 • 1.5 • 1.6 • 1.7 • 1.8',LO2:'2.1 • 2.2 • 2.3 • 2.4 • 2.5 • 2.6',LO3:'3.1 • 3.2 • 3.3 • 3.4 • 3.5 • 3.6 • 3.7 • 3.8',LO4:'4.1 • 4.2 • 4.3',LO5:'5.1 • 5.2'},ksbs:[['LO1','Comply with all workplace health, safety and welfare legislation requirements.'],['LO2','Recognise hazards associated with the workplace that have not been previously controlled and report them in accordance with organisational procedures.'],['LO3','Comply with organisational policies and procedures to contribute to health, safety and welfare.'],['LO4','Work responsibly to contribute to workplace health, safety and welfare whilst carrying out work in the relevant occupational area.'],['LO5','Comply with and support all organisational security arrangements and approved procedures.']]},
+   {n:2,unit:'234',optional:false,title:'Erecting masonry cladding in the workplace',criteria:{LO1:'1.1 • 1.2 • 1.3 • 1.4',LO2:'2.1 • 2.2 • 2.3',LO3:'3.1 • 3.2 • 3.3 • 3.4 • 3.5',LO4:'4.1 • 4.2 • 4.3 • 4.4 • 4.5 • 4.6 • 4.7',LO5:'5.1 • 5.2 • 5.3 • 5.4 • 5.5',LO6:'6.1 • 6.2',LO7:'7.1 • 7.2 • 7.3 • 7.4 • 7.5 • 7.6 • 7.7'},ksbs:[['LO1','Interpret the given information relating to the work and resources when erecting masonry cladding.'],['LO2','Know how to comply with relevant legislation and official guidance when erecting masonry cladding.'],['LO3','Maintain safe and healthy working practices when erecting masonry cladding.'],['LO4','Select the required quantity and quality of resources for the methods of work to erect masonry cladding.'],['LO5','Minimise the risk of damage to the work and surrounding area when erecting masonry cladding.'],['LO6','Complete the work within the allocated time when erecting masonry cladding.'],['LO7','Comply with the given contract information to erect masonry cladding to the required specification.']]},
+   {n:3,unit:'235',optional:false,title:'Erecting masonry structures in the workplace',criteria:{LO1:'1.1 • 1.2 • 1.3 • 1.4',LO2:'2.1 • 2.2 • 2.3',LO3:'3.1 • 3.2 • 3.3 • 3.4 • 3.5',LO4:'4.1 • 4.2 • 4.3 • 4.4 • 4.5 • 4.6 • 4.7',LO5:'5.1 • 5.2 • 5.3 • 5.4 • 5.5',LO6:'6.1 • 6.2',LO7:'7.1 • 7.2 • 7.3 • 7.4 • 7.5 • 7.6 • 7.7'},ksbs:[['LO1','Interpret the given information relating to the work and resources when erecting masonry structures.'],['LO2','Know how to comply with relevant legislation and official guidance when erecting masonry structures.'],['LO3','Maintain safe and healthy working practices when erecting masonry structures.'],['LO4','Select the required quantity and quality of resources for the methods of work to erect masonry structures.'],['LO5','Minimise the risk of damage to the work and surrounding area when erecting masonry structures.'],['LO6','Complete the work within the allocated time when erecting masonry structures.'],['LO7','Comply with the given contract information to erect masonry structures to the required specification.']]},
+   {n:4,unit:'303',optional:false,title:'Confirming the occupational method of work in the workplace',criteria:{LO1:'1.1 • 1.2 • 1.3 • 1.4',LO2:'2.1 • 2.2',LO3:'3.1 • 3.2 • 3.3 • 3.4 • 3.5',LO4:'4.1 • 4.2 • 4.3 • 4.4'},ksbs:[['LO1','Assess available project data accurately to determine the occupational method of work.'],['LO2','Obtain additional information from alternative sources where the available project data is insufficient.'],['LO3','Identify work methods that make best use of resources and meet project, statutory and contractual requirements.'],['LO4','Confirm and communicate the selected work method to relevant personnel.']]},
+   {n:5,unit:'300',optional:false,title:'Confirming work activities and resources for an occupational work area in the workplace',criteria:{LO1:'1.1 • 1.2 • 1.3 • 1.4 • 1.5',LO2:'2.1 • 2.2 • 2.3 • 2.4 • 2.5',LO3:'3.1 • 3.2 • 3.3 • 3.4 • 3.5',LO4:'4.1 • 4.2 • 4.3 • 4.4 • 4.5',LO5:'5.1 • 5.2 • 5.3 • 5.4 • 5.5'},ksbs:[['LO1','Identify work activities, assess required resources and plan the sequence of work.'],['LO2','Obtain clarification and advice where the resources required are not available.'],['LO3','Evaluate the work activities and the requirements of any significant external factors against the project requirements.'],['LO4','Identify work activities which influence each other and make the best use of resources.'],['LO5','Identify changed circumstances that require alterations to the work programme and justify them to decision makers.']]},
+   {n:6,unit:'313',optional:false,title:'Erect masonry to form architectural and decorative structures in the workplace',criteria:{LO1:'1.1 • 1.2 • 1.3 • 1.4',LO2:'2.1 • 2.2 • 2.3',LO3:'3.1 • 3.2 • 3.3 • 3.4 • 3.5',LO4:'4.1 • 4.2 • 4.3 • 4.4 • 4.5 • 4.6 • 4.7',LO5:'5.1 • 5.2 • 5.3 • 5.4 • 5.5',LO6:'6.1 • 6.2',LO7:'7.1 • 7.2 • 7.3 • 7.4 • 7.5 • 7.6 • 7.7'},ksbs:[['LO1','Interpret the given information relating to the work and resources when erecting masonry to form architectural and decorative structures.'],['LO2','Know how to comply with relevant legislation and official guidance when erecting architectural and decorative masonry.'],['LO3','Maintain safe and healthy working practices when erecting architectural and decorative masonry.'],['LO4','Select the required quantity and quality of resources for the methods of work.'],['LO5','Minimise the risk of damage to the work and surrounding area.'],['LO6','Complete the work within the allocated time.'],['LO7','Comply with the given contract information to erect architectural and decorative masonry to the required specification.']]},
+   {n:7,unit:'502',optional:false,title:'Developing and maintaining good occupational working relationships in the workplace',criteria:{LO1:'1.1 • 1.2 • 1.3',LO2:'2.1 • 2.2 • 2.3 • 2.4',LO3:'3.1 • 3.2 • 3.3',LO4:'4.1 • 4.2 • 4.3',LO5:'5.1 • 5.2'},ksbs:[['LO1','Develop, maintain and encourage working relationships to promote goodwill and trust.'],['LO2','Inform relevant people about work activities with an appropriate level of detail and urgency.'],['LO3','Offer advice and help to relevant people about work activities and encourage questions, clarification and comments.'],['LO4','Clarify proposals with relevant people and discuss alternative suggestions.'],['LO5','Resolve differences of opinion in ways that minimise offence and maintain goodwill, trust and respect.']]},
+   {n:8,unit:'701',optional:false,title:'Setting out to form masonry structures in the workplace',criteria:{LO1:'1.1 • 1.2 • 1.3 • 1.4',LO2:'2.1 • 2.2 • 2.3',LO3:'3.1 • 3.2 • 3.3 • 3.4 • 3.5',LO4:'4.1 • 4.2 • 4.3 • 4.4 • 4.5 • 4.6 • 4.7',LO5:'5.1 • 5.2 • 5.3 • 5.4 • 5.5',LO6:'6.1 • 6.2',LO7:'7.1 • 7.2 • 7.3 • 7.4 • 7.5 • 7.6'},ksbs:[['LO1','Interpret the given information relating to the work and resources when setting out masonry structures.'],['LO2','Know how to comply with relevant legislation and official guidance when setting out masonry structures.'],['LO3','Maintain safe and healthy working practices when setting out masonry structures.'],['LO4','Select the required quantity and quality of resources for the methods of work.'],['LO5','Minimise the risk of damage to the work and surrounding area.'],['LO6','Complete the work within the allocated time.'],['LO7','Comply with the given contract information to set out masonry structures to the required specification.']]},
+   {n:9,unit:'',optional:true,selectOptional:true,title:'Select an optional unit',criteria:{},ksbs:[]}
+  ],
+  optionalUnits:[
+   {n:9,unit:'238',optional:true,title:'Erecting thin joint masonry structures in the workplace',criteria:{LO1:'1.1 • 1.2 • 1.3 • 1.4',LO2:'2.1 • 2.2 • 2.3',LO3:'3.1 • 3.2 • 3.3 • 3.4 • 3.5',LO4:'4.1 • 4.2 • 4.3 • 4.4 • 4.5 • 4.6 • 4.7',LO5:'5.1 • 5.2 • 5.3 • 5.4 • 5.5',LO6:'6.1 • 6.2',LO7:'7.1 • 7.2 • 7.3 • 7.4 • 7.5 • 7.6 • 7.7'},ksbs:[['LO1','Interpret the given information relating to the work and resources when erecting thin joint masonry structures.'],['LO2','Know how to comply with relevant legislation and official guidance.'],['LO3','Maintain safe and healthy working practices.'],['LO4','Select the required quantity and quality of resources.'],['LO5','Minimise the risk of damage to the work and surrounding area.'],['LO6','Complete the work within the allocated time.'],['LO7','Comply with the given contract information to erect thin joint masonry structures to the required specification.']]},
+   {n:9,unit:'690',optional:true,title:'Repairing and maintaining masonry structures in the workplace',criteria:{LO1:'1.1 • 1.2 • 1.3 • 1.4',LO2:'2.1 • 2.2 • 2.3',LO3:'3.1 • 3.2 • 3.3 • 3.4 • 3.5',LO4:'4.1 • 4.2 • 4.3 • 4.4 • 4.5 • 4.6 • 4.7',LO5:'5.1 • 5.2 • 5.3 • 5.4 • 5.5',LO6:'6.1 • 6.2',LO7:'7.1 • 7.2 • 7.3 • 7.4 • 7.5 • 7.6 • 7.7'},ksbs:[['LO1','Interpret the given information relating to the work and resources when repairing and maintaining masonry structures.'],['LO2','Know how to comply with relevant legislation and official guidance.'],['LO3','Maintain safe and healthy working practices.'],['LO4','Select the required quantity and quality of resources.'],['LO5','Minimise the risk of damage to the work and surrounding area.'],['LO6','Complete the work within the allocated time.'],['LO7','Comply with the given contract information to repair and maintain masonry structures to the required specification.']]},
+   {n:9,unit:'828',optional:true,title:'Installing and forming specialist masonry elements in the workplace',criteria:{LO1:'1.1 • 1.2 • 1.3 • 1.4',LO2:'2.1 • 2.2 • 2.3',LO3:'3.1 • 3.2 • 3.3 • 3.4 • 3.5',LO4:'4.1 • 4.2 • 4.3 • 4.4 • 4.5 • 4.6 • 4.7',LO5:'5.1 • 5.2 • 5.3 • 5.4 • 5.5',LO6:'6.1 • 6.2',LO7:'7.1 • 7.2 • 7.3 • 7.4 • 7.5 • 7.6 • 7.7'},ksbs:[['LO1','Interpret the given information relating to the work and resources when installing and forming specialist masonry elements.'],['LO2','Know how to comply with relevant legislation and official guidance.'],['LO3','Maintain safe and healthy working practices.'],['LO4','Select the required quantity and quality of resources.'],['LO5','Minimise the risk of damage to the work and surrounding area.'],['LO6','Complete the work within the allocated time.'],['LO7','Comply with the given contract information to install and form specialist masonry elements to the required specification.']]},
+   {n:9,unit:'837',optional:true,title:'Installing drainage in the workplace',criteria:{LO1:'1.1 • 1.2 • 1.3 • 1.4',LO2:'2.1 • 2.2 • 2.3',LO3:'3.1 • 3.2 • 3.3 • 3.4 • 3.5',LO4:'4.1 • 4.2 • 4.3 • 4.4 • 4.5 • 4.6 • 4.7',LO5:'5.1 • 5.2 • 5.3 • 5.4 • 5.5',LO6:'6.1 • 6.2',LO7:'7.1 • 7.2 • 7.3 • 7.4 • 7.5 • 7.6 • 7.7'},ksbs:[['LO1','Interpret the given information relating to the work and resources when installing drainage.'],['LO2','Know how to comply with relevant legislation and official guidance when installing drainage.'],['LO3','Maintain safe and healthy working practices when installing drainage.'],['LO4','Select the required quantity and quality of resources for the methods of work.'],['LO5','Minimise the risk of damage to the work and surrounding area.'],['LO6','Complete the work within the allocated time.'],['LO7','Comply with the given contract information to install drainage to the required specification.']]}
+  ]
+ }
 
-const COURSE_COMPLETION_KEY='apprenticeplus.analytics.courseCompletions.v1';
-function completionState(){try{const x=JSON.parse(localStorage.getItem(COURSE_COMPLETION_KEY)||'{}');return x&&typeof x==='object'?x:{}}catch{return {}}}
-function writeCompletionState(x){try{localStorage.setItem(COURSE_COMPLETION_KEY,JSON.stringify(x))}catch{}}
-function courseId(){try{return slug(window.COURSE?.id||window.ACTIVE_COURSE_ID||'current_course')}catch{return'current_course'}}
-function detectAssignmentCompletions(){
+
+};
+
+// Short learner-facing prompt titles. Full KSB wording remains unchanged for
+// assessment scoring, evidence records, version history and PDF generation.
+const LEARNER_PROMPTS={
+ 'bricklayer-st0095-v1-2':{
+  1:{S1:'Safe working',S2:'PPE & RPE',K1:'Site hazards',K2:'Safety equipment',K3:'Safe systems',B1:'Health & wellbeing'},
+  2:{S3:'Waste management',S4:'Industry standards',K4:'Environmental impact',K5:'Building performance',K7:'Building regulations',B2:'Sustainable working'},
+  3:{S5:'Read drawings',S7:'Prepare workspace',K10:'Drawing details',K9:'Modern construction',K11:'Digital design'},
+  4:{S6:'Estimate resources',K8:'Masonry materials',K6:'Building principles',K12:'Quantity calculations'},
+  5:{S8:'Use hand tools',S9:'Maintain tools',K13:'Hand tools',K14:'Power tools',B1:'Safe tool use'},
+  6:{S10:'Set out cavity',S11:'Build cavity wall',K21:'Cavity setting out',K22:'Cavity components',B3:'Own your work'},
+  7:{S12:'Joint finishes',S14:'Mix mortar',K17:'Joint types',K19:'Expansion joints',K20:'Mortar ratios'},
+  8:{S13:'Build solid wall',K15:'Brick bonds',K16:'Wall construction',K18:'Decorative brickwork',K23:'Edge courses'},
+  9:{S16:'Repair brickwork',K24:'Defects & repairs',S17:'Protect work',K25:'Weather protection',B3:'Own your work'},
+  10:{S18:'Site communication',S20:'Team working',K26:'Construction terms',K27:'Good teamwork',B6:'Team goals',B5:'Keep developing'},
+  11:{S19:'Follow EDI',S21:'Wellbeing support',K28:'Inclusive workplace',K31:'Mental wellbeing',B4:'Support inclusion'},
+  12:{S22:'Raking cuts',S15:'Cut bricks',K30:'Raked walling',K29:'Hand cutting',B2:'Reduce waste'}
+ },
+ 'architectural-joiner-st0264-v1-4':{
+  1:{S1:'Safe working',S2:'PPE & RPE',K1:'Workshop hazards',K2:'Safety equipment',K3:'Safe systems',B1:'Health & wellbeing'},
+  2:{S3:'Waste management',S4:'Industry standards',K4:'Sustainable timber',K7:'Building regulations',K40:'Employment basics',B2:'Sustainable working'},
+  3:{S5:'Prepare workspace',S6:'Read drawings',K5:'Building methods',K6:'Digital design',K8:'Drawing details',B4:'Keep developing'},
+  4:{S7:'Cutting lists',K9:'Timber types',K10:'Timber defects',K12:'Material estimates'},
+  5:{S9:'Use hand tools',S10:'Use power tools',S11:'Sharpen tools',K14:'Hand tools',K15:'Tool maintenance',K17:'Power tools'},
+  6:{S12:'Produce jigs',K16:'Jig techniques',K29:'Laser levels'},
+  7:{S8:'Site communication',S13:'Wellbeing support',K13:'Construction terms',K18:'Good teamwork',K19:'Inclusive workplace',K20:'Mental wellbeing',B3:'Support inclusion',B5:'Team goals'},
+  8:{S23:'Setting out',K32:'Marking accuracy'},
+  9:{S24:'Timber joints',S25:'Joinery connections',K11:'Joinery products',K33:'Joint techniques',K35:'Connection methods'},
+  10:{S26:'Make windows',K34:'Window assembly'},
+  11:{S27:'Frames & linings',K36:'Frame assembly',K39:'Fit ironmongery'},
+  12:{S27:'Make staircases',S28:'Spindles & balustrades',K36:'Stair assembly',K37:'Second-fix products'},
+  13:{S28:'Make timber doors',S29:'Fit door ironmongery',K37:'Door assembly',K30:'Fire doors'},
+  14:{S28:'Make fitted units',K37:'Unit assembly',K38:'Timber finishes'},
+  15:{S30:'Operate machinery',K31:'Machine safety'}
+ }
+ , 'property-maintenance-operative-st0171-v1-1':{
+  1:{K3:'Safety law',K4:'Risk assessment',S3:'Follow safety rules',S4:'Control workplace risks',B2:'Promote safety'},
+  2:{K1:'Planned & reactive work',K2:'Buildings & defects',K6:'Prepare work area',S1:'Plan work sequence',S6:'Set up safely',B3:'Complete own work'},
+  3:{K5:'Building regulations',K23:'Technical information',K30:'Workplace responsibilities',S2:'Select correct materials',S5:'Meet regulations',B5:'Support inclusion'},
+  4:{K7:'Tools & equipment',K8:'Electrical systems',S7:'Use tools safely',S8:'Isolate supplies safely'},
+  5:{K9:'Emergency systems',K31:'Limits & development',S9:'Test emergency systems',S25:'Escalate faults',B6:'Keep developing'},
+  6:{K10:'Plumbing systems',K11:'Drainage systems',K12:'Water hygiene',S10:'Repair plumbing',S11:'Repair drainage'},
+  7:{K13:'Energy systems',K25:'Quality improvement',S12:'Repair energy systems',S21:'Inspect finished work'},
+  8:{K14:'Doors & glazing defects',K27:'Adapt communication',K28:'Customer service',S13:'Repair doors & windows',S24:'Customer handover'},
+  9:{K15:'Plaster defects',K16:'Decorating defects',K26:'Environmental duties',S14:'Repair plaster',S15:'Prepare & decorate'},
+  10:{K17:'Tiling defects',K18:'Flooring defects',S16:'Repair tiling',S17:'Repair flooring'},
+  11:{K19:'Masonry defects',K29:'Trade responsibilities',S18:'Repair masonry'},
+  12:{K20:'Roof defects',K25:'Quality checks',S18:'Repair roofing',S21:'Inspect repair',B4:'Work as team'},
+  13:{K21:'Fencing defects',K27:'Trade communication',S18:'Repair fencing',S23:'Communicate with others'},
+  14:{K22:'Groundwork defects',K26:'Environmental duties',S18:'Repair groundworks',S22:'Reuse & recycle',B1:'Work sustainably'},
+  15:{K24:'Record information',K25:'Quality improvement',K31:'Professional development',S19:'Use technical guidance',S20:'Report completed work'}
+ }
+
+};
+function learnerPromptTitle(assignmentNumber,code,fallback){
+ return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
+}
+
+const APP_VERSION='V1.6.20';
+
+const TECHNICAL_DRAWING_BASE='https://ddrnfinch.github.io/ApprenticePlusMaster/drawings/';
+const TECHNICAL_DRAWING_PREFIX={
+ 'bricklayer-st0095-v1-2':'BWK',
+ 'site-carpentry-v1-4':'SC',
+ 'architectural-joiner-st0264-v1-4':'AJ',
+ 'property-maintenance-operative-st0171-v1-1':'PMO'
+};
+function technicalDrawingInfo(assignmentNumber){
+ const prefix=TECHNICAL_DRAWING_PREFIX[COURSE.id],number=Number(assignmentNumber);
+ if(!prefix||!Number.isFinite(number))return null;
+ const assignment=courseAssignments().find(item=>Number(item.n)===number),file=`${prefix}AS${number}.png`;
+ return {file,url:`${TECHNICAL_DRAWING_BASE}${file}`,title:assignment?.title||`Practical Assessment ${number}`,assignmentNumber:number};
+}
+function technicalDrawingCard(assignmentNumber){
+ const info=technicalDrawingInfo(assignmentNumber);
+ if(!info)return'';
+ return `<section class="technical-drawing-preview no-print" data-technical-drawing-card="${assignmentNumber}"><button type="button" class="technical-drawing-preview-button" data-open-technical-drawing="${assignmentNumber}" aria-label="Open ${esc(info.title)} full screen"><img src="${esc(info.url)}" alt="${esc(info.title)} technical drawing" loading="lazy"><span class="technical-drawing-preview-overlay"><strong>${appIcon('drawing')} Technical drawing</strong><small>Tap to open full screen, pinch to zoom, print or save as PDF</small></span></button><div class="technical-drawing-preview-missing" hidden><strong>Drawing coming soon</strong><span>${esc(info.file)} has not been uploaded yet.</span></div></section>`;
+}
+async function technicalDrawingImageData(info){
+ const response=await fetch(info.url,{cache:'no-store'});if(!response.ok)throw new Error(`Drawing unavailable (${response.status})`);
+ const blob=await response.blob();return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob)});
+}
+async function downloadTechnicalDrawingPDF(info,button,previewWindow){
+ const original=button?.innerHTML;if(button){button.disabled=true;button.textContent='Creating PDF…'}
  try{
-  const seen=completionState(),cid=courseId();seen[cid]=seen[cid]||{};
-  document.querySelectorAll('.assignment-card[data-open]').forEach(card=>{
-   const n=Math.max(0,Number(card.dataset.open||0));if(!n)return;
-   const complete=card.classList.contains('complete')||card.classList.contains('rpl');
-   if(complete&&!seen[cid][n]){seen[cid][n]=true;sendNamedEvent('assignment_completed',{course_id:cid,assignment_number:n,completion_type:card.classList.contains('rpl')?'rpl':'evidence'});}
-  });
-  writeCompletionState(seen);
- }catch{}
+  const source=await technicalDrawingImageData(info),image=await loadImage(source),W=1240,H=1754;
+  const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  const scale=Math.min(W/image.naturalWidth,H/image.naturalHeight),w=image.naturalWidth*scale,h=image.naturalHeight*scale,x=(W-w)/2,y=(H-h)/2;ctx.drawImage(image,x,y,w,h);
+  const jpeg=canvas.toDataURL('image/jpeg',.98),bytes=makeImagePDF([dataUrlBytes(jpeg)],W,H),name=info.file.replace(/\.png$/i,'.pdf'),blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob);
+  // Opening the PDF in the device viewer is more reliable than a hidden download in installed Android PWAs.
+  if(previewWindow&&!previewWindow.closed){previewWindow.location.replace(url)}else window.open(url,'_blank');
+  const a=document.createElement('a');a.href=url;a.download=name;a.rel='noopener';a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),120000);
+  analyticsEvent('technical_drawing_pdf_downloaded',{course:COURSE.id,assignment:info.assignmentNumber});toast('A4 PDF opened. Use the download icon to save it.');
+ }catch(error){try{previewWindow?.close()}catch{}console.error('Technical drawing PDF failed',error);toast('Unable to create the PDF. Use Print and choose Save as PDF.')}finally{if(button){button.disabled=false;button.innerHTML=original}}
 }
-function courseAnalyticsClick(event){
- const el=event.target?.closest?.('button,a,[role="button"]');if(!el)return;
- const cid=courseId();
- if(el.matches?.('.assignment-card[data-open]'))sendNamedEvent('assignment_opened',{course_id:cid,assignment_number:Math.max(0,Number(el.dataset.open||0)),source:'course_home'});
- if(el.id==='openWorkSearch')sendNamedEvent('assignment_search_opened',{course_id:cid});
- if(el.id==='workSearchButton')sendNamedEvent('assignment_search_performed',{course_id:cid,search_source:'typed'});
- if(el.matches?.('[data-work-suggestion]'))sendNamedEvent('assignment_search_suggestion_used',{course_id:cid});
- if(el.matches?.('[data-work-assignment]')){const n=Math.max(0,Number(el.dataset.workAssignment||0));sendNamedEvent('assignment_search_result_opened',{course_id:cid,assignment_number:n});sendNamedEvent('assignment_opened',{course_id:cid,assignment_number:n,source:'search'});}
- if(el.id==='courseProgressBtn')sendNamedEvent('course_progress_viewed',{course_id:cid});
- if(el.id==='applyCourse'){const selected=document.getElementById('courseSelect')?.value||'';sendNamedEvent('course_selected',{course_id:slug(selected||cid),selection_source:'admin'});}
- if(el.matches?.('[data-settings-tab]'))sendNamedEvent('settings_section_opened',{settings_section:slug(el.dataset.settingsTab||'unknown')});
- if(el.matches?.('[data-open-certificate]')){const key=String(el.dataset.openCertificate||'');sendNamedEvent('certificate_viewed',{certificate_type:slug(key.split(':')[0]||'unknown')});}
- if(el.id==='printCertificate')sendNamedEvent('certificate_exported',{export_type:'print_or_pdf'});
- if(el.id==='openCertificates')sendNamedEvent('certificate_library_opened',{});
- if(el.id==='openSettings')sendNamedEvent('settings_opened',{});
- if(el.id==='learnerProgressBtn')sendNamedEvent('learner_profile_opened',{});
- if(el.id==='downloadEntirePortfolio')sendNamedEvent('portfolio_export_started',{course_id:cid});
+function printTechnicalDrawing(info){
+ const win=window.open('','_blank');if(!win)return toast('Allow pop-ups to print this drawing');
+ win.document.write(`<!doctype html><html><head><title>${esc(info.title)}</title><style>@page{size:A4 portrait;margin:0}html,body{margin:0;width:210mm;height:297mm;background:#fff}body{display:flex;align-items:center;justify-content:center}img{display:block;width:210mm;height:297mm;object-fit:contain}</style></head><body><img src="${esc(info.url)}" alt="${esc(info.title)}"></body></html>`);win.document.close();
+ const image=win.document.querySelector('img');image.onload=()=>setTimeout(()=>{win.focus();win.print()},250);image.onerror=()=>{win.close();toast('Drawing unavailable')};
+ analyticsEvent('technical_drawing_printed',{course:COURSE.id,assignment:info.assignmentNumber});
+}
+function openTechnicalDrawing(assignmentNumber){
+ const info=technicalDrawingInfo(assignmentNumber);
+ if(!info)return toast('No technical drawing is configured for this course');
+ analyticsEvent('technical_drawing_opened',{course:COURSE.id,assignment:Number(assignmentNumber)});
+ try{
+  sessionStorage.setItem('apprenticeplus.drawingReturn.v1',JSON.stringify({href:location.href,scrollY:window.scrollY||0,title:info.title}));
+ }catch{}
+ const params=new URLSearchParams({src:info.url,title:info.title,file:info.file||'',assignment:String(assignmentNumber)});
+ location.href=`technical-drawing-viewer.html?${params.toString()}`;
+}
+function bindTechnicalDrawingButtons(scope=document){
+ scope.querySelectorAll('[data-technical-drawing-card]').forEach(card=>{const image=card.querySelector('img'),button=card.querySelector('.technical-drawing-preview-button'),missing=card.querySelector('.technical-drawing-preview-missing');if(!image||!button||!missing)return;const available=()=>{button.hidden=false;missing.hidden=true},unavailable=()=>{button.hidden=true;missing.hidden=false};image.onload=available;image.onerror=unavailable;if(image.complete)(image.naturalWidth?available:unavailable)()});
+ scope.querySelectorAll('[data-open-technical-drawing]').forEach(button=>button.onclick=()=>openTechnicalDrawing(Number(button.dataset.openTechnicalDrawing)));
 }
 
-function installDownloadHooks(){
- const originalPrint=window.print;window.print=function(){sendNamedEvent(currentScreen+'_pdf_exported',{screen:currentScreen,export_type:'print_or_pdf'});return originalPrint.apply(this,arguments)};
- const originalOpen=window.open;window.open=function(url,target,features){try{const u=String(url||'');if(u.startsWith('blob:')||/\.pdf($|\?)/i.test(u))sendNamedEvent(currentScreen+'_document_opened',{screen:currentScreen,document_type:'generated_document'})}catch{}return originalOpen.apply(this,arguments)};
+function analyticsEvent(name,params={}){
+ try{
+  const safe={};
+  for(const [key,value] of Object.entries(params||{})){
+   if(value===undefined||value===null||value==='')continue;
+   if(typeof value==='number'||typeof value==='boolean')safe[key]=value;
+   else safe[key]=String(value).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80);
+  }
+  return window.ApprenticeAnalytics?.trackEvent?.(name,safe);
+ }catch{return false}
 }
-function installLifecycle(){
- document.addEventListener('click',clickHandler,true);document.addEventListener('click',courseAnalyticsClick,true);document.addEventListener('change',changeHandler,true);document.addEventListener('submit',submitHandler,true);
- ['play','pause','ended'].forEach(type=>document.addEventListener(type,mediaHandler,true));
- window.addEventListener('beforeinstallprompt',()=>track('install_prompt_shown'));
- window.addEventListener('appinstalled',()=>track('app_installed'));
- window.addEventListener('apprenticeplus:update-ready',()=>track('update_available'));
- document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sendNamedEvent(currentScreen+'_closed',{screen:currentScreen,category:screenCategory(currentScreen),duration_seconds:Math.max(1,Math.round((Date.now()-screenEnteredAt)/1000))})});
+const EVIDENCE_EVENT_NAMES={
+ photos:'photographic_evidence_submitted',
+ statement:'learner_statement_submitted',
+ discussion:'video_walkthrough_submitted',
+ professionalDiscussion:'professional_discussion_submitted',
+ witness:'witness_testimony_submitted',
+ practical:'practical_assessment_submitted',
+ supporting:'supporting_evidence_submitted'
+};
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
+window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;document.getElementById('installAppModal')?.remove();toast('Apprentice+ installed');});
+let ACTIVE_COURSE_ID='trowel-nvq-6570-05';
+let COURSE=COURSES[ACTIVE_COURSE_ID];
+
+const app=document.getElementById('app');
+const toastEl=document.getElementById('toast');
+let state={view:'home',assignment:null,section:null,profile:null,data:{},dev:false,academySearch:'',academyTopic:null,epaMock:null,knowledgeTest:null,walkthroughCode:null,resourceSearch:'',notepadSearchOpen:false,editingNoteId:null,branding:null,projectMateTab:'home',activeProjectId:null,otjMateTab:'home',editingOtjId:null,remindMateTab:'home',editingReminderId:null,learningSupportTab:'home',epaDiscussion:null,epaPractical:null,functionalTest:null,tradeTest:null};
+let db;
+const NAV_STATE_KEY='apprenticeplus.navigation.v1';
+let restoringNavigation=false;
+let navigationReady=false;
+let lastNavigationSignature='';
+function navigationSnapshot(scrollY=window.scrollY||0){return {view:state.view,assignment:state.assignment,section:state.section,academyTopic:state.academyTopic,academySearch:state.academySearch,walkthroughCode:state.walkthroughCode,resourceSearch:state.resourceSearch,notepadSearchOpen:state.notepadSearchOpen,editingNoteId:state.editingNoteId,scrollY,courseId:ACTIVE_COURSE_ID}}
+function navigationSignature(snapshot){return JSON.stringify([snapshot.courseId,snapshot.view,snapshot.assignment,snapshot.section,snapshot.academyTopic,snapshot.walkthroughCode])}
+function saveNavigationSnapshot(snapshot=navigationSnapshot()){
+ try{localStorage.setItem(NAV_STATE_KEY,JSON.stringify(snapshot))}catch{}
 }
-function init(){if(!A()){setTimeout(init,100);return}installScreenHook();installDownloadHooks();installLifecycle();window.ApprenticeAnalytics.getUsageSummary=ownerUsageSummary;window.ApprenticeAnalytics.clearUsageSummary=clearOwnerUsage;A()?.setUserProperties?.({analytics_level:'full_anonymous',integration_version:'v1_5_66'});window.addEventListener('pagehide',sendDailySummary);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sendDailySummary()});track('analytics_integration_ready',{coverage:'named_events_cleanup_complete'});}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+function validRestoredView(snapshot){
+ const allowed=new Set(['home','assignment','academy','library','lesson','epa','epa-results','epa-result','epa-practical','walkthrough','section','resources','notepad','tools','measuremate','materialmate','drawingmate','cadmate','skillscard','feedbackmate','projectmate','otjmate','remindmate','learning-support','settings']);
+ if(!snapshot||snapshot.courseId!==ACTIVE_COURSE_ID||!allowed.has(snapshot.view))return false;
+ if(['assignment','walkthrough','section'].includes(snapshot.view)&&!assignment(Number(snapshot.assignment)))return false;
+ if(snapshot.view==='section'&&!['practical','photos','statement','discussion','professionalDiscussion','witness','supporting'].includes(snapshot.section))return false;
+ return true;
+}
+function applyNavigationSnapshot(snapshot){
+ if(!validRestoredView(snapshot))return false;
+ state.view=snapshot.view;state.assignment=snapshot.assignment==null?null:Number(snapshot.assignment);state.section=snapshot.section||null;state.academyTopic=snapshot.academyTopic||null;state.academySearch=snapshot.academySearch||'';state.walkthroughCode=snapshot.walkthroughCode||null;state.resourceSearch=snapshot.resourceSearch||'';state.notepadSearchOpen=!!snapshot.notepadSearchOpen;state.editingNoteId=snapshot.editingNoteId||null;
+ return true;
+}
+function recordNavigation(){
+ if(!navigationReady)return;
+ const snapshot=navigationSnapshot(0),signature=navigationSignature(snapshot);
+ saveNavigationSnapshot(snapshot);
+ if(restoringNavigation){lastNavigationSignature=signature;return}
+ if(!lastNavigationSignature){history.replaceState(snapshot,'');lastNavigationSignature=signature;return}
+ if(signature!==lastNavigationSignature){history.pushState(snapshot,'');lastNavigationSignature=signature}else history.replaceState(snapshot,'');
+}
+let scrollSaveTimer=0;
+window.addEventListener('scroll',()=>{clearTimeout(scrollSaveTimer);scrollSaveTimer=setTimeout(()=>{if(!navigationReady)return;const snapshot=navigationSnapshot();saveNavigationSnapshot(snapshot);history.replaceState(snapshot,'')},100)},{passive:true});
+window.addEventListener('popstate',event=>{
+ const snapshot=event.state;
+ if(!validRestoredView(snapshot))return;
+ restoringNavigation=true;applyNavigationSnapshot(snapshot);lastNavigationSignature=navigationSignature(snapshot);render();requestAnimationFrame(()=>{window.scrollTo(0,Number(snapshot.scrollY)||0);restoringNavigation=false});
+});
+
+function cloneData(value){
+ try{if(typeof globalThis.structuredClone==='function')return globalThis.structuredClone(value)}catch(error){console.warn('structuredClone failed; using JSON fallback',error)}
+ try{return JSON.parse(JSON.stringify(value))}catch(error){console.warn('JSON clone failed; returning original value',error);return value}
+}
+function uid(){
+ try{if(globalThis.crypto&&typeof globalThis.crypto.randomUUID==='function')return globalThis.crypto.randomUUID()}catch(error){console.warn('randomUUID unavailable',error)}
+ return Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)
+}
+function today(){return new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date())}
+function esc(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function appIcon(name,extra=''){
+ const paths={
+  observation:'<path d="M9 5h6M9 3h6a2 2 0 0 1 2 2v1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1V5a2 2 0 0 1 2-2Z"/><path d="m8 14 2.2 2.2L16 10.5"/>',
+  camera:'<path d="M4 8a2 2 0 0 1 2-2h2l1.2-2h5.6L16 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.5"/>',
+  statement:'<path d="M6 3h8l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h5M8 13h8M8 17h5"/><path d="m15.5 18.5 3-3 1.5 1.5-3 3-2 .5Z"/>',
+  supporting:'<path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M8 12h8M8 16h5"/>',
+  discussion:'<path d="M12 3a8 8 0 0 0-8 8c0 2.2.9 4.2 2.4 5.7L5 21l4.5-2.1c.8.2 1.6.3 2.5.3a8 8 0 1 0 0-16.2Z"/><path d="M8.5 10.5h7M8.5 14h4"/><path d="M18 16v3M16.5 17.5h3"/>',
+  witness:'<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>',
+  hammer:'<path d="m14 5 5 5"/><path d="m12.5 6.5 3-3 5 5-3 3"/><path d="M13.5 9.5 5 18a2.1 2.1 0 0 0 3 3l8.5-8.5"/>',
+  gallery:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m5 17 4-4 3 3 2-2 5 5"/>',
+  video:'<rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3Z"/>',
+  file:'<path d="M6 3h8l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h5M8 13h8M8 17h6"/>',
+  resources:'<path d="M4 4h6a2 2 0 0 1 2 2v14a3 3 0 0 0-3-3H4Z"/><path d="M20 4h-6a2 2 0 0 0-2 2v14a3 3 0 0 1 3-3h5Z"/>',
+  toolbox:'<path d="M4 8h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"/><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M2 13h20M10 13v2h4v-2"/>',
+  microphone:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/>',
+  note:'<path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  course:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 8h8v8H8z"/>',
+  academy:'<path d="m3 10 9-7 9 7-9 5Z"/><path d="M7 13v5c3 2 7 2 10 0v-5M21 10v6"/>',
+  revision:'<path d="M12 3a9 9 0 1 0 8.2 5.3"/><path d="M20 3v6h-6M12 7v5l3 2"/>',
+  library:'<path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v15H6a2 2 0 0 1-2-2Z"/><path d="M8 7h8M8 11h8M8 15h5"/>',
+  questionPack:'<path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M8 7h8"/><path d="M9.5 11a2.5 2.5 0 1 1 4.1 1.9c-.9.7-1.6 1.1-1.6 2.1"/><path d="M12 18h.01"/><path d="M3 7v12a2 2 0 0 0 2 2"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+  close:'<path d="M6 6l12 12M18 6 6 18"/>',
+  tools:'<path d="M14.7 6.3a4 4 0 0 0-5 5L3.5 17.5a2.1 2.1 0 0 0 3 3l6.2-6.2a4 4 0 0 0 5-5l-2.4 2.4-3-3Z"/><path d="m15 15 5 5"/><path d="m17 13 4 4"/>',
+  project:'<path d="M4 4h16v16H4z"/><path d="M8 4V2h8v2M8 9h8M8 13h5M8 17h3"/><path d="m15 16 2 2 4-5"/>',
+  drawing:'<path d="M4 3h16v18H4z"/><path d="M8 7h8M8 11h5M8 15h8"/><path d="m15 13 3 3-4 4-3-3Z"/>',
+  lock:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/>',
+  college:'<path d="m3 10 9-6 9 6"/><path d="M5 10v9h14v-9M9 19v-6h6v6M3 21h18"/>',
+  qr:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM18 18h3v3h-3zM18 14h3M14 18v3"/>',
+  download:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/>',
+  award:'<circle cx="12" cy="8" r="5"/><path d="m8.5 12-1 9 4.5-2 4.5 2-1-9"/>',
+  functional:'<path d="M4 5a2 2 0 0 1 2-2h5a3 3 0 0 1 3 3v14a3 3 0 0 0-3-3H4Z"/><path d="M20 5a2 2 0 0 0-2-2h-1a3 3 0 0 0-3 3v14a3 3 0 0 1 3-3h3Z"/><path d="m7 10 2 2 3-4"/>',
+  certificate:'<path d="M6 3h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M8 7h8M8 11h5"/><circle cx="15.5" cy="13.5" r="2.5"/><path d="m14 16-1 5 2.5-1.5L18 21l-1-5"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21h-4v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H3v-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3.1V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1v4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>',
+  eye:'<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>',
+  eyeSquint:'<path d="M3 12s3.5-3.5 9-3.5 9 3.5 9 3.5-3.5 3.5-9 3.5S3 12 3 12Z"/><path d="M8 12h8M6.5 8.5 5 7M17.5 8.5 19 7"/>',
+  moveVertical:'<path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/>',
+  volume:'<path d="M11 5 6.5 9H3v6h3.5L11 19Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/>',
+  previousSentence:'<path d="M6 5v14"/><path d="m18 6-8 6 8 6Z"/>',
+  nextSentence:'<path d="M18 5v14"/><path d="m6 6 8 6-8 6Z"/>',
+  pause:'<path d="M8 5v14M16 5v14"/>',
+  stopSquare:'<rect x="6" y="6" width="12" height="12" rx="1"/>',
+  warning:'<path d="M12 3 2.8 20h18.4Z"/><path d="M12 9v5M12 17h.01"/>'
+ };
+ return `<svg class="app-icon ${extra}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${paths[name]||paths.file}</svg>`;
+}
+function statusMark(status){return status==='complete'?'<span class="modern-status complete">✓</span>':status==='incomplete'?'<span class="modern-status warning">!</span>':'<span class="modern-status pending"></span>'}
+function toast(msg){toastEl.textContent=msg;toastEl.classList.add('show');const a=typeof accessibilitySettings==='function'?accessibilitySettings():null;if(a?.visualAlerts)toastEl.classList.add('a11y-toast');if(a?.vibration&&navigator.vibrate)navigator.vibrate(25);setTimeout(()=>{toastEl.classList.remove('show');toastEl.classList.remove('a11y-toast')},1900)}
+function key(a,s){return `${COURSE.id}:${a}:${s}`}
+function legacyKey(a,s){return `${a}:${s}`}
+function sectionData(a,s){return state.data[key(a,s)]||{draft:blankSection(s),versions:[]}}
+function blankSection(s){
+ const base={id:uid(),submitted:false,date:'',signature:'',createdAt:Date.now()};
+ if(s==='practical')return {...base,tutor:'',activityTaskType:'',activity:'',activitySpecId:'',activityGeneratedAt:'',practicalDrawing:null,scores:{},feedbackSummary:'',feedbackDevelopment:'',feedback:'',photos:[],outcomePhotos:{}};
+ if(s==='photos')return {...base,photos:[],outcomePhotos:{},ksbEvidence:[],captions:{}};
+ if(s==='statement')return {...base,text:'',ksbEvidence:[]};
+ if(s==='witness')return {...base,type:'Witness testimony',personName:'',role:'',organisation:'',activity:'',scores:{},feedbackSummary:'',feedbackDevelopment:'',feedback:'',files:[],outcomePhotos:{}};
+ if(s==='discussion'||s==='professionalDiscussion')return {...base,assessor:'',activity:'',recordings:{},notes:{}};
+ return {...base,tab:'files',type:'Supporting evidence',personName:'',role:'',organisation:'',activity:'',scores:{},feedbackSummary:'',feedbackDevelopment:'',feedback:'',files:[],outcomePhotos:{}};
+}
+function optionalSelectionKey(){return `${COURSE.id}:optionalUnitSelection`}
+function selectedOptionalUnitNumber(){return String(state.data[optionalSelectionKey()]||'')}
+function selectedOptionalUnit(){const number=selectedOptionalUnitNumber();return (COURSE.optionalUnits||[]).find(a=>String(a.unit)===number)||null}
+function assignment(n){
+ const base=COURSE.assignments.find(a=>a.n===n);
+ if(base?.selectOptional){const selected=selectedOptionalUnit();return selected?{...selected,n:base.n,optional:true,selectOptional:false}:{...base}}
+ return base;
+}
+function courseAssignments(){return COURSE.assignments.map(a=>assignment(a.n))}
+
+function current(a,s){return sectionData(a,s).draft}
+function completed(a,s){return sectionData(a,s).versions.length>0}
+function sectionHasEvidence(a,s){
+ const sd=sectionData(a,s),d=sd.draft||{};
+ if(sd.versions.length>0)return true;
+ if(s==='practical')return !!(d.tutor||d.activity||d.signature||(d.photos||[]).length||Object.keys(d.scores||{}).length);
+ if(s==='photos')return !!((d.photos||[]).length||Object.keys(d.outcomePhotos||{}).length||d.signature);
+ if(s==='statement')return !!((d.text||'').trim()||d.signature);
+ if(s==='discussion'||s==='professionalDiscussion')return !!(d.assessor||d.activity||d.signature||Object.keys(d.recordings||{}).length||Object.values(d.notes||{}).some(Boolean));
+ return !!(d.personName||d.role||d.organisation||d.activity||d.signature||(d.files||[]).length||Object.keys(d.scores||{}).length);
+}
+function sectionStatus(a,s){if(!sectionHasEvidence(a,s))return 'none';return sectionReadyForPack(a,s)?'complete':'incomplete'}
+function latestVersion(a,s){const versions=sectionData(a,s).versions;return versions.length?versions[versions.length-1]:null}
+function skillCriteriaFor(a){
+ const skills=a.ksbs.filter(([code])=>String(code).toUpperCase().startsWith('S'));
+ return skills.map(([code,summary])=>({code,summary,criteria:buildSkillCriteria(summary)}));
+}
+function buildSkillCriteria(summary){
+ const text=String(summary||'').replace(/[.]+$/,'').trim();
+ const lower=text.toLowerCase();
+ const action=text.charAt(0).toLowerCase()+text.slice(1);
+ let prep='Selected the correct tools, equipment and materials needed to '+action+'.';
+ let method='Used an appropriate sequence and working method to '+action+'.';
+ let accuracy='Completed the work accurately and in line with the drawing, specification or required tolerance.';
+ let quality='Checked the finished work, corrected defects and left it to the required quality standard.';
+ if(/health|safety|ppe|rpe|lev|safe working/.test(lower)){prep='Identified the main hazards and selected the correct PPE, RPE and control measures.';method='Followed the safe system of work and used tools, equipment and controls correctly.';accuracy='Applied the relevant safety requirements consistently throughout the activity.';quality='Maintained good housekeeping, protected others and left the work area safe.'}
+ else if(/communicat|team|wellbeing|inclusion|equity|diversity/.test(lower)){prep='Identified who needed information, support or involvement before starting the activity.';method='Used clear, appropriate communication and worked constructively with others.';accuracy='Shared accurate information using suitable trade terminology and checked understanding.';quality='Responded professionally, supported the team and reflected on how communication could improve.'}
+ else if(/interpret|drawing|specification|digital design/.test(lower)){prep='Selected the correct drawing, specification or digital information for the task.';method='Extracted the relevant dimensions, symbols, notes and construction requirements.';accuracy='Transferred the information accurately into the practical work or setting-out process.';quality='Cross-checked the completed work against the source information and corrected discrepancies.'}
+ else if(/estimate|select.*material|resource|cutting list|size timber/.test(lower)){prep='Identified the materials, quantities and specification required for the task.';method='Used an appropriate estimating, measuring or selection method.';accuracy='Calculated or selected resources accurately with suitable allowances for waste and cutting.';quality='Checked the result against the task requirements and justified the final selection.'}
+ else if(/tool|equipment|maintain|sharpen/.test(lower)){prep='Selected tools and equipment that were suitable, serviceable and safe for the task.';method='Set up and used each tool correctly, following manufacturer and workplace guidance.';accuracy='Controlled the tools accurately to achieve the required dimensions and finish.';quality='Checked, cleaned, maintained and stored the tools correctly after use.'}
+ else if(/set out|measure|level|laser|mark out/.test(lower)){prep='Selected suitable measuring, marking and setting-out equipment.';method='Established accurate datum points, lines, levels, centres or profiles in the correct sequence.';accuracy='Checked all dimensions, angles, levels and tolerances throughout the work.';quality='Verified the completed setting out against the drawing or specification before work continued.'}
+ else if(/construct|build|install|fit|form|produce|apply|mix|repair|cut|splice|scribe/.test(lower)){prep='Selected and prepared the correct tools, equipment, materials and work area for this skill.';method='Used the correct practical sequence and trade technique to '+action+'.';accuracy='Maintained the required measurements, alignment, tolerances and component positioning.';quality='Checked workmanship, finish and compliance with the specification, correcting defects where needed.'}
+ else if(/environment|sustainab|recycl|waste/.test(lower)){prep='Identified the environmental controls and resource requirements before starting.';method='Used materials efficiently and followed the correct reuse, recycling and disposal procedures.';accuracy='Segregated resources correctly and prevented contamination or avoidable waste.';quality='Left the area compliant, tidy and with environmental impacts minimised.'}
+ return [prep,method,accuracy,quality];
+}
+function practicalScoreKeys(a){return skillCriteriaFor(a).flatMap(s=>s.criteria.map((_,i)=>`${s.code}::${i+1}`))}
+function practicalScoringSummary(a,d){const scores=d?.scores||{},keys=practicalScoreKeys(a),graded=keys.map(k=>+scores[k]||0).filter(v=>v>=1&&v<=5);if(graded.length)return {graded:graded.length,achieved:graded.reduce((sum,v)=>sum+v,0),maximum:graded.length*5,percentage:Math.round((graded.reduce((sum,v)=>sum+v,0)/(graded.length*5))*100)};const legacy=skillCriteriaFor(a).map(s=>+scores[s.code]||0).filter(v=>v>=1&&v<=5);if(legacy.length)return {graded:legacy.length,achieved:legacy.reduce((sum,v)=>sum+v,0),maximum:legacy.length*5,percentage:Math.round((legacy.reduce((sum,v)=>sum+v,0)/(legacy.length*5))*100)};return {graded:0,achieved:0,maximum:0,percentage:null}}
+function practicalPercentageScore(a,d){return practicalScoringSummary(a,d).percentage}
+function practicalHasScores(a,d){return practicalScoringSummary(a,d).graded>0}
+function practicalResultText(a,d){const result=practicalScoringSummary(a,d);return result.percentage===null?'Not yet graded':`${result.percentage}% — ${gradeForPercentage(result.percentage)}`}
+function percentageScore(a,d){const max=a.ksbs.length*5;if(!max)return 0;const achieved=a.ksbs.reduce((sum,[code])=>sum+(+d?.scores?.[code]||0),0);return Math.round((achieved/max)*100)}
+function gradeForPercentage(p){return p>=90?'Distinction':p>=80?'Merit':p>=70?'Pass':'Fail'}
+function assessmentPassed(a,d,isPractical=false){if(!d)return false;const pct=isPractical?practicalPercentageScore(a,d):percentageScore(a,d);return pct!==null&&pct>=70}
+function sectionReadyForPack(n,s){const latest=latestVersion(n,s);if(!latest)return false;if(s==='practical')return COURSE.nvqUnits?true:assessmentPassed(assignment(n),latest,true);if(s==='witness')return true;if(s==='supporting'&&latest.tab!=='files')return assessmentPassed(assignment(n),latest);return true}
+function packStatusKey(n){return `${COURSE.id}:packStatus:${n}`}
+function invalidatePackStatus(n){const current=state.data[packStatusKey(n)];if(!current||current.rpl)return;state.data[packStatusKey(n)]={...current,downloaded:false,uploaded:false,changedAt:new Date().toISOString()}}
+function knowledgeResultKey(n){return `${COURSE.id}:knowledgeAssessment:${n}`}
+function knowledgeAttempts(n){return Array.isArray(state.data[knowledgeResultKey(n)])?state.data[knowledgeResultKey(n)]:[]}
+function knowledgePassedAttempts(n){return knowledgeAttempts(n).filter(x=>Number(x.percentage)>=70)}
+function knowledgeStatus(n){const attempts=knowledgeAttempts(n);if(!attempts.length)return 'none';return knowledgePassedAttempts(n).length?'complete':'incomplete'}
+function walkthroughMetaKey(n){return `${COURSE.id}:walkthrough:${n}`}
+function walkthroughMeta(n){return state.data[walkthroughMetaKey(n)]||{}}
+function walkthroughCriteria(a){return (a?.ksbs||[]).filter(([code])=>/^[KSB]/i.test(String(code)))}
+function walkthroughKnowledge(a){return walkthroughCriteria(a)}
+function walkthroughComplete(n,code){return !!walkthroughMeta(n)[code]?.blobKey}
+function walkthroughSaved(n){return !!walkthroughMeta(n)._saved}
+function walkthroughStatus(n){const a=assignment(n),items=walkthroughKnowledge(a);if(!items.length)return 'complete';const done=items.filter(([code])=>walkthroughComplete(n,code)).length;return walkthroughSaved(n)&&done>0?'complete':done?'incomplete':'none'}
+function walkthroughCount(n){const items=walkthroughKnowledge(assignment(n));return {done:items.filter(([code])=>walkthroughComplete(n,code)).length,total:items.length}}
+async function saveWalkthroughVideo(n,code,video,{name,type}={}){
+ if(!video||!String(type||video.type||'').startsWith('video/'))throw new Error('A valid video recording is required');
+ if(!video.size)throw new Error('The recording is empty');
+ const mime=String(type||video.type||'video/webm').split(';')[0].trim()||'video/webm';
+ const blobKey=`walkthrough-video:${COURSE.id}:${n}:${code}:${uid()}`;
+ // ArrayBuffer storage is more reliable than structured-cloning a MediaRecorder Blob on Android browsers.
+ const buffer=await video.arrayBuffer();
+ await putStore(blobKey,{kind:'walkthrough-video',buffer,type:mime});
+ const meta=walkthroughMeta(n),old=meta[code];
+ const defaultExt=mime.includes('mp4')?'mp4':'webm';
+ meta[code]={blobKey,name:name||video.name||`${code}-walkthrough.${defaultExt}`,type:mime,size:video.size,date:today(),createdAt:Date.now()};
+ meta._saved=false;
+ state.data[walkthroughMetaKey(n)]=meta;
+ invalidatePackStatus(n);
+ await saveData();
+ if(old?.blobKey){try{await deleteStore(old.blobKey)}catch(error){console.warn(error)}}
+ state.view='walkthrough';state.assignment=n;state.walkthroughCode=null;
+ saveNavigationSnapshot(navigationSnapshot(window.scrollY||0));
+ renderWalkthrough();
+ requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,Number(loadNavigationSnapshot()?.scrollY)||0)));
+ analyticsEvent('video_walkthrough_clip_saved',{assignment_number:n,criterion_type:String(code||'').charAt(0),course_id:COURSE.id});
+ toast('Video saved');
+ return true;
+}
+function storedWalkthroughBlob(value,meta){
+ if(value instanceof Blob)return value;
+ if(value?.kind==='walkthrough-video'&&value.buffer)return new Blob([value.buffer],{type:value.type||meta?.type||'video/webm'});
+ if(value instanceof ArrayBuffer)return new Blob([value],{type:meta?.type||'video/webm'});
+ return null;
+}
+async function saveWalkthroughOverall(n){
+ const count=walkthroughCount(n);if(!count.done)return toast('Add at least one KSB video before saving the walkthrough');
+ const scrollY=window.scrollY||0,meta=walkthroughMeta(n);
+ meta._saved=true;meta._savedAt=Date.now();state.data[walkthroughMetaKey(n)]=meta;
+ invalidatePackStatus(n);await saveData();
+ state.assignment=n;state.walkthroughCode=null;state.view='walkthrough';
+ saveNavigationSnapshot(navigationSnapshot(scrollY));renderWalkthrough();
+ requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,scrollY)));
+ analyticsEvent('video_walkthrough_submitted',{assignment_number:n,clips_saved:count.done,course_id:COURSE.id});
+ toast('Walkthrough saved');
+}
+async function removeWalkthroughVideo(n,code){const scrollY=window.scrollY||0,meta=walkthroughMeta(n),item=meta[code];if(item?.blobKey){try{await deleteStore(item.blobKey)}catch(error){console.warn(error)}}delete meta[code];meta._saved=false;state.data[walkthroughMetaKey(n)]=meta;invalidatePackStatus(n);await saveData();state.view='walkthrough';state.assignment=n;state.walkthroughCode=null;saveNavigationSnapshot(navigationSnapshot(scrollY));renderWalkthrough();requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,scrollY)))}
+function walkthroughPrompt(code,text,a){return learnerPromptTitle(a.n,code,text)||text}
+function preferredWalkthroughMime(){
+ const types=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp8,opus','video/webm;codecs=vp8','video/webm'];
+ return types.find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||'';
+}
+function walkthroughRecorderIcon(){return `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6.5" width="12.5" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 10l4-2v8l-4-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="9.75" cy="12" r="2.1" fill="none" stroke="currentColor" stroke-width="2"/></svg>`}
+async function openWalkthroughRecorder(n,code,text,a,fallbackInput){
+ if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){toast('In-app recording is not supported on this device');fallbackInput?.click();return}
+ let stream;
+ try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:960},height:{ideal:540}},audio:true})}
+ catch(error){console.warn('Camera permission or access failed',error);toast('Camera access was unavailable. Choose a video instead.');fallbackInput?.click();return}
+ const prompt=walkthroughPrompt(code,text,a);
+ app.insertAdjacentHTML('beforeend',`<div class="walk-recorder-modal" id="walkRecorderModal"><div class="walk-recorder-sheet"><button class="walk-recorder-close" id="walkRecorderClose" aria-label="Exit recorder">×</button><div class="walk-recorder-camera"><video id="walkRecorderPreview" autoplay muted playsinline></video><div class="walk-recorder-live" id="walkRecorderLive">Ready</div></div><div class="walk-recorder-prompt"><div class="walk-recorder-code">${esc(code)}</div><h3>${esc(prompt)}</h3><details><summary>Show prompts</summary><p>${esc(text)}</p></details><div class="walk-recorder-controls"><button class="btn secondary" id="walkRecorderCancel">Exit</button><button class="walk-record-button" id="walkRecorderStart" aria-label="Start recording"><span></span></button><button class="btn secondary" id="walkRecorderChoose">Choose video</button></div><div class="walk-recorder-review hide" id="walkRecorderReview"><video id="walkRecorderPlayback" controls playsinline></video><div class="btn-row"><button class="btn secondary" id="walkRecorderRetake">Retake</button><button class="btn" id="walkRecorderUse">Save video</button></div><button class="link-button walk-exit-review" id="walkRecorderExitReview">Exit without saving</button></div></div></div></div>`);
+ const modal=document.getElementById('walkRecorderModal'),preview=document.getElementById('walkRecorderPreview'),live=document.getElementById('walkRecorderLive'),start=document.getElementById('walkRecorderStart'),review=document.getElementById('walkRecorderReview'),playback=document.getElementById('walkRecorderPlayback');
+ preview.srcObject=stream;
+ let recorder=null,chunks=[],recordedBlob=null,recordedUrl='',timer=null,seconds=0,closing=false;
+ const stopTracks=()=>stream?.getTracks().forEach(t=>t.stop());
+ const clearRecorded=()=>{if(recordedUrl)URL.revokeObjectURL(recordedUrl);recordedUrl='';recordedBlob=null;playback.removeAttribute('src');playback.load()};
+ const close=()=>{if(closing)return;closing=true;if(recorder?.state==='recording'){recorder.onstop=null;try{recorder.stop()}catch{}}clearInterval(timer);stopTracks();clearRecorded();modal.remove()};
+ const showReady=()=>{review.classList.add('hide');modal.querySelector('.walk-recorder-controls').classList.remove('hide');preview.parentElement.classList.remove('reviewing');live.textContent='Ready';start.classList.remove('recording')};
+ const begin=()=>{chunks=[];seconds=0;const mime=preferredWalkthroughMime();try{recorder=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:900000,audioBitsPerSecond:64000}:{videoBitsPerSecond:900000,audioBitsPerSecond:64000})}catch(error){console.error(error);toast('Recording could not start');return}recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};recorder.onerror=error=>{console.error('Video recorder error',error);toast('The recording could not be completed on this device')};recorder.onstop=()=>{clearInterval(timer);const recordedType=String(recorder.mimeType||mime||'video/webm').split(';')[0].trim()||'video/webm';recordedBlob=new Blob(chunks,{type:recordedType});recordedUrl=URL.createObjectURL(recordedBlob);playback.pause();playback.src=recordedUrl;playback.preload='metadata';playback.load();review.classList.remove('hide');modal.querySelector('.walk-recorder-controls').classList.add('hide');preview.parentElement.classList.add('reviewing');live.textContent='Recording complete — press play to check it'};recorder.start(1000);start.classList.add('recording');live.textContent='● 00:00';timer=setInterval(()=>{seconds++;live.textContent=`● ${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`},1000)};
+ const stop=()=>{if(recorder?.state==='recording')recorder.stop()};
+ start.onclick=()=>recorder?.state==='recording'?stop():begin();
+ document.getElementById('walkRecorderCancel').onclick=close;
+ document.getElementById('walkRecorderClose').onclick=close;
+ document.getElementById('walkRecorderExitReview').onclick=close;
+ document.getElementById('walkRecorderChoose').onclick=()=>{close();fallbackInput?.click()};
+ document.getElementById('walkRecorderRetake').onclick=()=>{clearRecorded();showReady()};
+ document.getElementById('walkRecorderUse').onclick=async()=>{
+  if(!recordedBlob)return;
+  const useButton=document.getElementById('walkRecorderUse'),retakeButton=document.getElementById('walkRecorderRetake');
+  const mime=recordedBlob.type||'video/webm',ext=mime.includes('mp4')?'mp4':'webm',recordingName=`${code}-walkthrough-${Date.now()}.${ext}`;
+  const videoToSave=recordedBlob;
+  useButton.disabled=true;retakeButton.disabled=true;useButton.textContent='Saving…';live.textContent='Saving…';
+  close();
+  state.view='walkthrough';state.assignment=n;state.walkthroughCode=null;
+  try{await saveWalkthroughVideo(n,code,videoToSave,{name:recordingName,type:mime})}
+  catch(error){console.error('Walkthrough video save failed',error)}
+ };
+ modal.onclick=e=>{if(e.target===modal&&recorder?.state!=='recording')close()};
+}
+function renderWalkthrough(){
+ const a=assignment(state.assignment);if(!a){state.view='home';render();return}
+ const items=walkthroughKnowledge(a),progress=walkthroughCount(a.n),thumbnailUrls=[];
+ if(!items.length){app.innerHTML=shell(`<button class="back" id="walkBack">← Assignment ${a.n}</button><section class="card panel"><h2>Video Walkthrough</h2><p class="muted">No Knowledge, Skill or Behaviour criteria are mapped to this assignment.</p></section>`);document.getElementById('walkBack').onclick=()=>{state.view='assignment';render()};return}
+ app.innerHTML=shell(`<button class="back no-print" id="walkBack">← Assignment ${a.n}</button><section class="walkthrough-head"><div><div class="number">Video Walkthrough</div><h2>${esc(a.title)}</h2><p>${progress.done} of ${progress.total} KSB criteria recorded</p></div><span class="status-pill ${walkthroughSaved(a.n)?'done':''}">${progress.done}/${progress.total}</span></section><div class="walkthrough-progress"><span style="width:${progress.total?(progress.done/progress.total)*100:0}%"></span></div><section class="walkthrough-tile-list">${items.map(([code,text])=>{const done=walkthroughComplete(a.n,code),meta=walkthroughMeta(a.n)[code],title=learnerPromptTitle(a.n,code,text);return `<article class="walkthrough-mini-tile ${done?'complete':''}"><div class="walkthrough-mini-copy"><strong class="walkthrough-mini-code">${esc(code)} ${evidenceCoverageBadge(a.n,code)}</strong><h3>${esc(title)}</h3><p>${esc(text)}</p>${done?`<div class="walkthrough-mini-saved">✓ Video saved${meta?.date?` · ${esc(meta.date)}`:''}</div><div class="walkthrough-mini-actions"><button class="link-button" data-view-walk="${esc(code)}">View</button><button class="link-button" data-remove-walk="${esc(code)}">Remove</button></div>`:''}</div><input class="sr-only" id="walkVideoInput-${esc(code)}" type="file" accept="video/*"><button class="walkthrough-video-button ${done?'has-thumbnail':''}" data-record-walk="${esc(code)}" aria-label="${done?'Replace':'Record'} ${esc(code)} video">${done?`<video class="walkthrough-video-thumbnail" data-walk-thumb="${esc(code)}" muted playsinline preload="metadata"></video><span class="walkthrough-thumbnail-label">REPLACE</span>`:`${walkthroughRecorderIcon()}<span>ADD VIDEO</span>`}</button></article>`}).join('')}</section><section class="card panel walkthrough-save-panel ${walkthroughSaved(a.n)?'complete':''}"><div><h3>${walkthroughSaved(a.n)?'Walkthrough saved':'Save walkthrough'}</h3><p class="muted">${walkthroughSaved(a.n)?`${progress.done} of ${progress.total} KSB criteria are included. Further videos remain optional.`:'Record only the relevant Knowledge, Skill or Behaviour criteria, then save the walkthrough. Every criterion does not need a video.'}</p></div><button class="btn" id="saveWalkthroughOverall" ${progress.done?'':'disabled'}>${walkthroughSaved(a.n)?'Save updated walkthrough':'Save walkthrough'}</button></section>`);
+ const releaseThumbs=()=>thumbnailUrls.splice(0).forEach(url=>URL.revokeObjectURL(url));
+ document.getElementById('walkBack').onclick=()=>{releaseThumbs();state.view='assignment';state.walkthroughCode=null;render()};
+ document.getElementById('saveWalkthroughOverall').onclick=()=>saveWalkthroughOverall(a.n);
+ document.querySelectorAll('[data-record-walk]').forEach(button=>button.onclick=()=>{releaseThumbs();const code=button.dataset.recordWalk,item=items.find(([k])=>k===code),input=document.getElementById(`walkVideoInput-${code}`);openWalkthroughRecorder(a.n,code,item?.[1]||'',a,input)});
+ items.forEach(([code])=>{const input=document.getElementById(`walkVideoInput-${code}`);input.onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{await saveWalkthroughVideo(a.n,code,file)}catch(error){console.error('Walkthrough video save failed',error)}}});
+ document.querySelectorAll('[data-remove-walk]').forEach(button=>button.onclick=async()=>{releaseThumbs();await removeWalkthroughVideo(a.n,button.dataset.removeWalk);toast('Video removed')});
+ document.querySelectorAll('[data-view-walk]').forEach(button=>button.onclick=async()=>{const code=button.dataset.viewWalk,meta=walkthroughMeta(a.n)[code],stored=await getStore(meta?.blobKey),blob=storedWalkthroughBlob(stored,meta);if(!blob)return toast('Video file could not be opened');const url=URL.createObjectURL(blob);app.insertAdjacentHTML('beforeend',`<div class="modal" id="walkVideoModal"><div class="modal-card video-modal"><video id="walkSavedPlayback" controls playsinline webkit-playsinline preload="metadata"></video><p class="muted hide" id="walkPlaybackError">This device cannot play the saved format in the browser. Use the button below to open or save the original video.</p><div class="btn-row"><button class="btn secondary" id="openWalkVideoFile">Open / save video</button><button class="btn secondary" id="closeWalkVideo">Close</button></div></div></div>`);const player=document.getElementById('walkSavedPlayback'),errorText=document.getElementById('walkPlaybackError');player.src=url;player.load();player.onerror=()=>errorText.classList.remove('hide');document.getElementById('openWalkVideoFile').onclick=()=>{const link=document.createElement('a');link.href=url;link.download=meta?.name||`${code}-walkthrough.${blob.type.includes('mp4')?'mp4':'webm'}`;document.body.appendChild(link);link.click();link.remove()};document.getElementById('closeWalkVideo').onclick=()=>{player.pause();player.removeAttribute('src');player.load();URL.revokeObjectURL(url);document.getElementById('walkVideoModal').remove()}});
+ document.querySelectorAll('[data-walk-thumb]').forEach(async video=>{const code=video.dataset.walkThumb,meta=walkthroughMeta(a.n)[code];try{const stored=await getStore(meta?.blobKey),blob=storedWalkthroughBlob(stored,meta);if(!blob)return;const url=URL.createObjectURL(blob);thumbnailUrls.push(url);video.src=url;video.currentTime=.1;video.addEventListener('loadeddata',()=>{try{video.currentTime=Math.min(.2,video.duration||.2)}catch{}},{once:true})}catch(error){console.warn('Thumbnail unavailable',error)}});
+}
+function assignmentRPL(n){return !!state.data[packStatusKey(n)]?.rpl}
+function evidenceSections(){return ['photos','statement',COURSE.nvqUnits?'discussion':'walkthrough','witness','practical','professionalDiscussion']}
+function evidenceCapability(section){
+ if(COURSE.nvqUnits)return 'ALL LO';
+ return ({photos:'S',statement:'K-B',walkthrough:'K-S-B',witness:'S-B',practical:'S-B',professionalDiscussion:'K-B'}[section]||'');
+}
+function evidenceCodesFromVersion(a,section,v){
+ if(!v)return [];
+ if(section==='photos')return selectedKsbCodes(a,v);
+ if(section==='statement')return COURSE.nvqUnits?statementSelectedKsbCodes(a,v):statementSelectedKsbCodes(a,v).filter(code=>/^[KB]/i.test(code));
+ if(section==='witness')return COURSE.nvqUnits?selectedNvqOutcomes(a,v).map(([code])=>code):selectedKsbCodes(a,v).filter(code=>/^[SB]/i.test(code));
+ if(section==='practical')return COURSE.nvqUnits?selectedNvqOutcomes(a,v).map(([code])=>code):selectedPracticalSkillCodes(a,v);
+ if(section==='discussion'||section==='professionalDiscussion')return Object.keys(v.recordings||{}).filter(code=>!!v.recordings?.[code]?.data);
+ return [];
+}
+function previouslyUsedCodesForEvidenceType(n,section){
+ const a=assignment(n),used=new Set();
+ if(!a)return used;
+ sectionData(n,section).versions.forEach(v=>evidenceCodesFromVersion(a,section,v).forEach(code=>used.add(code)));
+ return used;
+}
+function applyEvidenceReuseLocks(a,section,d){
+ const used=previouslyUsedCodesForEvidenceType(a.n,section);
+ if(!used.size)return;
+ const selectors=['[data-ksb-evidence-toggle]','[data-nvq-toggle]','[data-record-code]','[data-record-pd-code]'];
+ document.querySelectorAll(selectors.join(',')).forEach(button=>{
+  const code=button.dataset.ksbEvidenceToggle||button.dataset.nvqToggle||button.dataset.recordCode||button.dataset.recordPdCode;
+  if(!used.has(code))return;
+  button.disabled=true;
+  button.setAttribute('aria-disabled','true');
+  button.title=`${code} already has ${sectionTitleText(section)} evidence. Choose a different evidence type to increase coverage.`;
+  const card=button.closest('.outcome-tick,.outcome-card,.skill-assessment,.discussion-outcome,.walkthrough-mini-tile')||button.parentElement;
+  if(card){card.classList.add('evidence-type-used');if(!card.querySelector('.evidence-type-used-note'))card.insertAdjacentHTML('beforeend','<span class="evidence-type-used-note">Already evidenced by this type</span>')}
+ });
+}
+function sectionTitleText(section){return ({photos:'Photographic Evidence',statement:'Learner Statement',discussion:'Video Walkthrough',walkthrough:'Video Walkthrough',witness:'Witness Testimony',practical:COURSE.nvqUnits?'Assessor Observation':'Practical Assessment',professionalDiscussion:'Professional Discussion'}[section]||'this evidence type')}
+function nvqOutcomeCoverage(n){
+ const a=assignment(n),result={};if(!a||!COURSE.nvqUnits)return result;
+ a.ksbs.forEach(([code])=>result[code]={count:0,sources:[]});
+ const add=(code,source)=>{if(result[code]&&!result[code].sources.includes(source)){result[code].sources.push(source);result[code].count=Math.min(3,result[code].sources.length)}};
+ sectionData(n,'practical').versions.forEach(v=>selectedNvqOutcomes(a,v).forEach(([code])=>add(code,'Assessor observation')));
+ sectionData(n,'photos').versions.forEach(v=>selectedKsbCodes(a,v).forEach(code=>add(code,'Photographic evidence')));
+ sectionData(n,'statement').versions.forEach(v=>selectedKsbCodes(a,v).forEach(code=>add(code,'Learner statement')));
+ sectionData(n,'discussion').versions.forEach(v=>Object.keys(v.recordings||{}).filter(code=>!!v.recordings?.[code]?.data).forEach(code=>add(code,'Video walkthrough')));
+ sectionData(n,'professionalDiscussion').versions.forEach(v=>Object.keys(v.recordings||{}).filter(code=>!!v.recordings?.[code]?.data).forEach(code=>add(code,'Professional discussion')));
+ sectionData(n,'witness').versions.forEach(v=>selectedNvqOutcomes(a,v).forEach(([code])=>add(code,'Witness testimony')));
+ return result;
+}
+function nvqCoverageComplete(n){const values=Object.values(nvqOutcomeCoverage(n));return values.length>0&&values.every(item=>item.count>=3)}
+function nvqCoverageSummary(n){const coverage=nvqOutcomeCoverage(n),items=Object.entries(coverage),met=items.filter(([,v])=>v.count>=3).length;return {coverage,total:items.length,met,requirementsMet:items.reduce((sum,[,v])=>sum+Math.min(3,v.count),0),requirementsTotal:items.length*3,missing:items.filter(([,v])=>v.count<3).map(([code,v])=>`${code} ${v.count}/3`)}}
+function selectedKsbCodes(a,d){
+ const valid=new Set(a.ksbs.map(([code])=>code));
+ const explicit=Array.isArray(d?.ksbEvidence)?d.ksbEvidence:[];
+ const photoLinked=Object.keys(d?.outcomePhotos||{}).filter(code=>!!d.outcomePhotos?.[code]?.data);
+ const scored=Object.keys(d?.scores||{}).map(k=>String(k).split('::')[0]).filter(code=>Object.entries(d?.scores||{}).some(([key,value])=>String(key).split('::')[0]===code&&Number(value)>0));
+ const recorded=Object.keys(d?.recordings||{}).filter(code=>!!d.recordings?.[code]?.data);
+ return [...new Set([...explicit,...photoLinked,...scored,...recorded].filter(code=>valid.has(code)))];
+}
+function selectedPracticalSkillCodes(a,d){
+ const allowed=new Set(a.ksbs.filter(([code])=>/^[SB]/i.test(String(code))).map(([code])=>code));
+ const explicit=Array.isArray(d?.ksbEvidence)?d.ksbEvidence.filter(code=>allowed.has(code)):[];
+ if(explicit.length)return explicit;
+ const scored=Object.keys(d?.scores||{}).map(k=>String(k).split('::')[0]);
+ return [...new Set(scored.filter(code=>allowed.has(code)))];
+}
+function ksbEvidenceCoverage(n){
+ const a=assignment(n),result={};if(!a||COURSE.nvqUnits)return result;
+ a.ksbs.forEach(([code])=>result[code]={count:0,sources:[]});
+ const add=(code,source)=>{if(result[code]&&!result[code].sources.includes(source)){result[code].sources.push(source);result[code].count=Math.min(2,result[code].sources.length)}};
+ sectionData(n,'photos').versions.forEach(v=>selectedKsbCodes(a,v).filter(code=>/^S/i.test(code)).forEach(code=>add(code,'Photographic evidence')));
+ sectionData(n,'statement').versions.forEach(v=>selectedKsbCodes(a,v).forEach(code=>add(code,'Learner statement')));
+ walkthroughKnowledge(a).forEach(([code])=>{if(walkthroughComplete(n,code))add(code,'Video walkthrough')});
+ sectionData(n,'witness').versions.forEach(v=>selectedKsbCodes(a,v).filter(code=>/^[SB]/i.test(code)).forEach(code=>add(code,'Witness testimony')));
+ sectionData(n,'practical').versions.forEach(v=>selectedPracticalSkillCodes(a,v).forEach(code=>add(code,'Practical assessment')));
+ sectionData(n,'professionalDiscussion').versions.forEach(v=>Object.keys(v.recordings||{}).filter(code=>/^[KB]/i.test(code)&&!!v.recordings?.[code]?.data).forEach(code=>add(code,'Professional discussion')));
+ return result;
+}
+function ksbCoverageComplete(n){const values=Object.values(ksbEvidenceCoverage(n));return values.length>0&&values.every(item=>item.count>=2)}
+function ksbCoverageSummary(n){const coverage=ksbEvidenceCoverage(n),items=Object.entries(coverage);return {coverage,total:items.length,met:items.filter(([,v])=>v.count>=2).length,requirementsMet:items.reduce((sum,[,v])=>sum+Math.min(2,v.count),0),requirementsTotal:items.length*2,missing:items.filter(([,v])=>v.count<2).map(([code,v])=>`${code} ${v.count}/2`)}}
+function evidenceCoverageCount(n,code){const coverage=COURSE.nvqUnits?nvqOutcomeCoverage(n):ksbEvidenceCoverage(n);return Number(coverage?.[code]?.count||0)}
+function evidenceCoverageBadge(n,code){const count=evidenceCoverageCount(n,code),required=COURSE.nvqUnits?3:2;return count>=required?`<span class="evidence-status-pill evidence-complete-note" title="${required}/${required} evidence requirement completed">✓ Completed</span>`:count>0?`<span class="evidence-status-pill evidence-progress-note" title="${count}/${required} distinct evidence types collected">${count}/${required}</span>`:''}
+
+function assignmentComplete(n){return assignmentRPL(n)||(COURSE.nvqUnits?nvqCoverageComplete(n):ksbCoverageComplete(n))}
+function packDownloaded(n){return !!state.data[packStatusKey(n)]?.downloaded}
+function packUploaded(n){return !!state.data[packStatusKey(n)]?.uploaded}
+function assignmentSubmitted(n){return assignmentRPL(n)||packUploaded(n)}
+function clampPct(n){return Math.max(0,Math.min(100,Math.round(Number(n)||0)))}
+function courseTimePercent(){
+ const start=state.profile?.courseStartDate,end=state.profile?.plannedEndDate;if(!start||!end)return null;
+ const a=new Date(`${start}T00:00:00`),b=new Date(`${end}T00:00:00`),now=new Date();
+ if(!Number.isFinite(a.getTime())||!Number.isFinite(b.getTime())||b<=a)return null;
+ return clampPct(((now-a)/(b-a))*100);
+}
+function assignmentHasAnyEvidence(n){
+ return evidenceSections().some(s=>sectionHasEvidence(n,s))||walkthroughCount(n).done>0;
+}
+function assignmentHasSavedPortfolioEvidence(n){
+ return ['practical','photos','statement','discussion','professionalDiscussion','witness','supporting'].some(section=>sectionData(n,section).versions.length>0)||walkthroughSaved(n);
+}
+function completedKsbStats(){
+ const outcomes=new Map();
+ courseAssignments().filter(a=>!a.selectOptional).forEach(a=>(a.ksbs||[]).forEach(([code])=>{
+  // NVQ Learning Outcome numbers repeat across units, so each unit/outcome pair is separate.
+  // For KSB courses the code remains the unique course-wide identifier.
+  const outcomeKey=COURSE.nvqUnits?`${a.unit||a.n}:${code}`:code;
+  if(!outcomes.has(outcomeKey))outcomes.set(outcomeKey,false);
+  const required=COURSE.nvqUnits?3:2;
+  if(assignmentRPL(a.n)||evidenceCoverageCount(a.n,code)>=required)outcomes.set(outcomeKey,true);
+ }));
+ const total=outcomes.size||1,completed=[...outcomes.values()].filter(Boolean).length;
+ return {total,completed,percentage:clampPct(completed/total*100)};
+}
+function courseProgressStats(){
+ const total=courseAssignments().length||1;
+ const submitted=courseAssignments().filter(a=>assignmentComplete(a.n)).length;
+ const ksb=completedKsbStats();
+ const green=clampPct(submitted/total*100);
+ const yellow=ksb.percentage;
+ const red=courseTimePercent();
+ let label='Add course dates',tone='neutral',difference=null;
+ if(red!==null){difference=Math.max(green,yellow)-red;if(green>red+5){label='Ahead of target';tone='ahead'}else if(green>=red-5||yellow>=red){label='On target';tone='target'}else{label='Behind target';tone='behind'}}
+ return {total,completed:submitted,submitted,ksbCompleted:ksb.completed,ksbTotal:ksb.total,green,yellow,red,label,tone,difference};
+}
+function formatDateInput(value){if(!value)return 'Not added';const d=new Date(`${value}T00:00:00`);return Number.isFinite(d.getTime())?new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}).format(d):value}
+
+async function openDB(){
+ return new Promise((resolve,reject)=>{const r=indexedDB.open('ApprenticePlusDB',1);r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains('store'))d.createObjectStore('store')};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+}
+async function getStore(k){return new Promise((res,rej)=>{const r=db.transaction('store').objectStore('store').get(k);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function putStore(k,v){return new Promise((res,rej)=>{const r=db.transaction('store','readwrite').objectStore('store').put(v,k);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+async function deleteStore(k){return new Promise((res,rej)=>{const r=db.transaction('store','readwrite').objectStore('store').delete(k);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+async function load(){
+ state.profile=await getStore('profile')||null;
+ state.data=await getStore('data')||{};
+ state.dev=false;
+ await putStore('dev',false);
+ state.branding=await getStore(BRANDING_KEY)||null;
+ ACTIVE_COURSE_ID=await getStore('activeCourse')||'site-carpentry-v1-4';
+ if(!COURSES[ACTIVE_COURSE_ID])ACTIVE_COURSE_ID='site-carpentry-v1-4';
+ COURSE=COURSES[ACTIVE_COURSE_ID];
+ applyAccessibilitySettings();
+ // Migration safety: copy old Site Carpentry keys into course-scoped keys. Never delete legacy records.
+ let migrated=false;
+ Object.keys(state.data).forEach(k=>{if(/^\d+:(practical|photos|statement|supporting)$/.test(k)){const nk=`site-carpentry-v1-4:${k}`;if(state.data[nk]===undefined){state.data[nk]=state.data[k];migrated=true}}});
+ Object.keys(state.data).forEach(k=>{const match=k.match(/^(.+):(\d+):supporting$/);if(!match)return;const witnessKey=`${match[1]}:${match[2]}:witness`;if(state.data[witnessKey]===undefined&&state.data[k]){state.data[witnessKey]=structuredClone(state.data[k]);migrated=true}});
+ if(migrated)await saveData();
+ let restored=null;try{restored=JSON.parse(localStorage.getItem(NAV_STATE_KEY)||'null')}catch{}
+ const restoredApplied=restored?applyNavigationSnapshot(restored):false;
+ try{
+  localStorage.removeItem('apprenticeplus.operatingMode.v1');
+  localStorage.removeItem('apprenticeplus.assessorRegisters.v1');
+  document.body.classList.remove('assessor-mode');
+ }catch{}
+ const assessorOnlyViews=new Set(['assessor-workspace','assessor-section','assessor-reports','assessor-report-category','registers-home','register-create','register-live','register-templates','register-learners','register-history']);
+ if(assessorOnlyViews.has(state.view)){
+  state.view='home';
+  state.assignment=null;
+  state.section=null;
+ }
+ navigationReady=true;
+ const restoredScroll=restoredApplied?Number(restored?.scrollY)||0:0;
+ const initial=navigationSnapshot(restoredScroll);lastNavigationSignature=navigationSignature(initial);history.replaceState(initial,'');
+ render();requestAnimationFrame(()=>window.scrollTo(0,restoredScroll));await importBrandingFromHash();if(!state.profile)showOnboarding()
+}
+async function saveData(){await putStore('data',state.data)}
+async function saveProfile(){await putStore('profile',state.profile)}
+
+
+function shell(content){
+ const resourceViews=['resources','notepad','tools','measuremate','materialmate','drawingmate','cadmate','skillscard','feedbackmate','projectmate','otjmate','remindmate','learning-support','settings'];
+ const reportViews=['academy','library','trade-courses','trade-test','trade-result','functional-skills','certificates','academy-knowledge','knowledge-slides'];
+ const active=resourceViews.includes(state.view)?'resources':reportViews.includes(state.view)?'academy':'course';
+ const firstName=state.profile?.fullName?.split(' ')?.[0]||'Learner';
+ return `<main class="shell"><header class="topbar"><div class="brand"><div class="logo update-logo-wrap"><img src="logo-apprentice-plus.png" alt="Apprentice+ logo"><button type="button" class="update-notification-badge no-print" id="updateNotificationButton" aria-label="1 app update ready" hidden>1</button></div><div><div class="brand-title-row"><h1>Apprentice<span class="brand-plus">+</span></h1></div><p class="subtitle brand-tagline">Your Course, Your Way</p></div>${state.branding?.logo?`<div class="college-header-brand"><img src="${state.branding.logo}" alt="${esc(state.branding.name||'College')} logo"><span>${esc(state.branding.name||'')}</span></div>`:''}</div>${state.profile?`<div class="learner-help-wrap"><span class="pill learner-progress-button" id="learnerProgressBtn">${esc(firstName)}</span><button type="button" class="page-help-button no-print" id="pageHelpButton" aria-label="How to use this page">i</button></div>`:''}</header>${content}<button type="button" class="app-version-bottom no-print" id="developerVersionTrigger" aria-label="App version">${APP_VERSION}</button><nav class="bottom-nav no-print" aria-label="Main navigation"><button class="bottom-nav-item ${active==='resources'?'active':''}" data-nav="resources" aria-label="Toolbox"><span>${appIcon('toolbox','nav-icon')}</span><strong>Toolbox</strong></button><button class="bottom-nav-item ${active==='course'?'active':''}" data-nav="course" aria-label="Course"><span>${appIcon('course','nav-icon')}</span><strong>Course</strong></button><button class="bottom-nav-item ${active==='academy'?'active':''}" data-nav="academy" aria-label="Academy"><span>${appIcon('academy','nav-icon')}</span><strong>Academy</strong></button></nav></main>`;
+}
+function courseHeader(){const p=courseProgressStats(),red=p.red??0;return `<section class="course-card"><div class="course-summary"><div class="course-copy"><div class="course-title-row"><h2>${COURSE.name}</h2><span class="target-status ${p.tone}">${p.label}</span></div><div class="meta"><span class="pill">${COURSE.standard}</span><span class="pill">Version ${COURSE.version}</span><span class="pill">Level ${COURSE.level}</span><span class="pill green">${courseAssignments().length} evidence packs</span></div></div><div class="progress-rings" id="courseProgressBtn" role="button" tabindex="0" aria-label="Open learner progress summary" style="--green:${p.green*3.6}deg;--yellow:${p.yellow*3.6}deg;--red:${red*3.6}deg"><span class="ring ring-green"></span><span class="ring ring-yellow"></span><span class="ring ring-red"></span><strong>${p.green}%</strong></div></div><button type="button" class="course-search-launch no-print" id="openWorkSearch" aria-label="Find an assignment" title="Find an assignment"><svg class="search-silhouette" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M10.5 2a8.5 8.5 0 1 0 5.28 15.16l4.66 4.65a1.5 1.5 0 0 0 2.12-2.12l-4.66-4.65A8.5 8.5 0 0 0 10.5 2Zm0 3a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg></button></section>`}
+
+function showWorkSearchLauncher(){const modal=document.createElement('div');modal.className='modal work-search-launcher-modal';modal.id='workSearchLauncherModal';modal.innerHTML=`<section class="modal-card work-search-launcher" role="dialog" aria-modal="true" aria-labelledby="workSearchTitle"><button class="icon-close-button" id="closeWorkSearchLauncher" aria-label="Close assignment search">${appIcon('close')}</button><div class="work-search-launcher-icon">${appIcon('search')}</div><h2 id="workSearchTitle">What are you working on today?</h2><p class="work-search-help">Choose a common activity below or describe the work in your own words.</p><div class="work-search-row"><input class="input" id="workSearchInput" type="search" autocomplete="off" placeholder="e.g. cavity walling, mortices, CNC machine, fixing a tap"><button class="btn" id="workSearchButton">Search</button></div><div class="work-search-suggestions" id="workSearchSuggestions" aria-live="polite"></div></section>`;document.body.appendChild(modal);const close=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)close()};modal.querySelector('#closeWorkSearchLauncher').onclick=close;bindWorkSearch();setTimeout(()=>modal.querySelector('#workSearchInput')?.focus(),50)}
+const WORK_SEARCH_GROUPS=[
+ {terms:['cnc','computer numerical control','computer controlled machine','machining centre','router'],suggestions:['CNC machine','Machine setting','Machine safety']},
+ {terms:['mortice','mortise','mortices','mortises','tenon','mortice and tenon'],suggestions:['Mortice and tenon','Mortice lock','Cutting joints']},
+ {terms:['cavity wall','cavity walling','cavity masonry','wall ties','insulation cavity'],suggestions:['Cavity wall','Wall ties','Cavity insulation']},
+ {terms:['bricklaying','brickwork','masonry','lay bricks','laying bricks','blockwork'],suggestions:['Cavity wall','Solid wall','Raking back']},
+ {terms:['tap','taps','fixing a tap','replace tap','plumbing fitting','water fitting'],suggestions:['Tap replacement','Water isolation','Leak testing']},
+ {terms:['door','doors','door set','door frame','hanging a door','hinges'],suggestions:['Door lining','Door hanging','Ironmongery']},
+ {terms:['window','windows','window frame','glazing'],suggestions:['Window fitting','Window frame','Glazing']},
+ {terms:['roof','roofing','roof structure','rafters','truss'],suggestions:['Roof structure','Trussed roof','Roof timbers']},
+ {terms:['stairs','staircase','stair','strings','treads','risers'],suggestions:['Staircase setting out','Strings and treads','Handrails and spindles']},
+ {terms:['floor','flooring','joists','floor joists'],suggestions:['Floor joists','Floor structure','Floor finishes']},
+ {terms:['wall','walling','partition','partitions'],suggestions:['Partition wall','Wall setting out','Wall finishes']},
+ {terms:['health safety','safe working','ppe','risk assessment','method statement'],suggestions:['PPE','Risk assessment','Safe system of work']},
+ {terms:['drawing','drawings','plans','specification','setting out'],suggestions:['Read drawings','Setting out','Specifications']},
+ {terms:['maintenance','repair','repairs','replace','replacement'],suggestions:['Fault diagnosis','Repair work','Replacement components']},
+ {terms:['painting','paint','decorating','decoration'],suggestions:['Surface preparation','Paint application','Finishing coats']},
+ {terms:['tiling','tiles','tile'],suggestions:['Wall tiling','Floor tiling','Setting out tiles']},
+ {terms:['plaster','plastering','render','rendering'],suggestions:['Plaster repair','Surface preparation','Rendering']}
+];
+const WORK_SEARCH_STOPWORDS=new Set('a an and are as at be been before being by can carry complete correctly demonstrate for from how in into is it its of on or out safely show the their them they this to use using with work working workplace relevant appropriate activities activity requirements procedures'.split(' '));
+function normaliseWorkSearch(value){return String(value||'').toLowerCase().replace(/\b(mortise)\b/g,'mortice').replace(/\b(bricks)\b/g,'brick').replace(/\b(walls)\b/g,'wall').replace(/\b(doors)\b/g,'door').replace(/\b(windows)\b/g,'window').replace(/\b(tiles)\b/g,'tile').replace(/\b(repairs)\b/g,'repair').replace(/[^a-z0-9]+/g,' ').trim()}
+function workStem(word){return String(word||'').replace(/(ing|tion|ments|ment|ers|ies|ed|es|s)$/,'')}
+function workTokens(value){return normaliseWorkSearch(value).split(/\s+/).filter(w=>w.length>1&&!WORK_SEARCH_STOPWORDS.has(w)).map(workStem)}
+function workBigrams(value){const s=normaliseWorkSearch(value).replace(/\s+/g,' '),out=new Set();for(let i=0;i<s.length-1;i++)out.add(s.slice(i,i+2));return out}
+function workSimilarity(a,b){const A=workBigrams(a),B=workBigrams(b);if(!A.size||!B.size)return 0;let hit=0;A.forEach(x=>{if(B.has(x))hit++});return (2*hit)/(A.size+B.size)}
+function expandedWorkTerms(query){const q=normaliseWorkSearch(query),terms=new Set(workTokens(q));WORK_SEARCH_GROUPS.forEach(group=>{const matched=group.terms.some(term=>q.includes(normaliseWorkSearch(term))||normaliseWorkSearch(term).includes(q)||workSimilarity(q,term)>.68);if(matched)[...group.terms,...group.suggestions].forEach(term=>workTokens(term).forEach(word=>terms.add(word)))});return [...terms]}
+function assignmentSearchText(a){return [a.title,...(a.ksbs||[]).flatMap(k=>k)].join(' ')}
+function initialWorkSearchOptions(){const assignments=courseAssignments().filter(a=>!a.selectOptional),seen=new Set(),ranked=[];const add=(label,score)=>{const clean=String(label||'').replace(/^[A-Z]+\d*[:.\-]\s*/,'').replace(/\s+/g,' ').trim();const key=normaliseWorkSearch(clean);if(clean.length<3||clean.length>34||seen.has(key))return;seen.add(key);ranked.push({label:clean,score})};assignments.forEach((a,i)=>{add(a.title,120-i);const titleTokens=workTokens(a.title);if(titleTokens.length>=2)add(titleTokens.slice(0,3).join(' '),90-i);(a.ksbs||[]).forEach(k=>{const text=String(k[1]||'');const phrases=text.split(/[.;:]/).map(x=>x.trim()).filter(Boolean);phrases.forEach(phrase=>{const tokens=workTokens(phrase);if(tokens.length>=2&&tokens.length<=5)add(tokens.join(' '),55-i)})})});WORK_SEARCH_GROUPS.forEach((g,i)=>{const corpus=normaliseWorkSearch(assignments.map(assignmentSearchText).join(' '));g.suggestions.forEach(s=>{if(workTokens(s).some(t=>corpus.includes(t)))add(s,80-i)})});return ranked.sort((a,b)=>b.score-a.score).slice(0,8).map(x=>x.label)}
+function workSearchResults(query){const q=normaliseWorkSearch(query),qTokens=expandedWorkTerms(q),assignments=courseAssignments().filter(a=>!a.selectOptional);const scored=assignments.map(a=>{const title=normaliseWorkSearch(a.title),criteria=normaliseWorkSearch((a.ksbs||[]).map(k=>k.join(' ')).join(' ')),all=`${title} ${criteria}`,allTokens=new Set(workTokens(all));let score=0;if(title===q)score+=180;else if(title.includes(q)||q.includes(title))score+=125;if(criteria.includes(q))score+=85;for(const term of qTokens){if(workTokens(title).includes(term))score+=28;else if(allTokens.has(term))score+=14;else{const closest=[...allTokens].reduce((m,t)=>Math.max(m,workSimilarity(term,t)),0);if(closest>.72)score+=8*closest}}const titleFuzzy=workSimilarity(q,title),allFuzzy=workSimilarity(q,all);score+=titleFuzzy*75+allFuzzy*30;const matches=(a.ksbs||[]).map(k=>({k,score:workSimilarity(q,k.join(' '))+workTokens(k.join(' ')).filter(t=>qTokens.includes(t)).length*.35})).filter(x=>x.score>.18).sort((x,y)=>y.score-x.score).slice(0,3).map(x=>x.k);return {a,score,matches,confidence:score>=115?'Strong match':score>=55?'Close match':'Possible match'}}).sort((x,y)=>y.score-x.score||x.a.n-y.a.n);const positive=scored.filter(x=>x.score>16);return (positive.length?positive:scored).slice(0,12)}
+function showWorkSearchResults(query){const results=workSearchResults(query),strong=results.some(r=>r.score>=55);const modal=document.createElement('div');modal.className='modal work-search-modal';modal.id='workSearchModal';modal.innerHTML=`<section class="modal-card work-search-results"><button class="icon-close-button" id="closeWorkSearch" aria-label="Close search results">${appIcon('close')}</button><div class="work-search-heading"><span>${appIcon('search')}</span><div><h2>${strong?'Matching assignments':'Best available matches'}</h2><p>${strong?`Results for “${esc(query)}”`:`No exact match for “${esc(query)}”, so these are the closest assignments in your course.`}</p></div></div><div class="work-search-result-list">${results.map(({a,matches,confidence},i)=>`<button class="work-search-result" data-work-assignment="${a.n}"><span class="work-search-rank">${i+1}</span><span><small>${COURSE.nvqUnits?'Evidence Pack':'Assignment'} ${a.n} · ${confidence}</small><strong>${esc(a.title)}</strong>${matches.length?`<em>${matches.map(k=>`${esc(k[0])}: ${esc(k[1])}`).join(' · ')}</em>`:`<em>Closest match based on the assignment title and course criteria.</em>`}</span><span class="work-search-arrow">›</span></button>`).join('')}</div><div class="work-search-refine"><strong>Not quite right?</strong><span>Try adding the task, tool, material or area of work, such as “cutting roof timbers” or “repairing a leaking tap”.</span></div><button class="btn secondary" id="closeWorkSearchBottom">Close</button></section>`;document.body.appendChild(modal);const close=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)close()};modal.querySelector('#closeWorkSearch').onclick=close;modal.querySelector('#closeWorkSearchBottom').onclick=close;modal.querySelectorAll('[data-work-assignment]').forEach(b=>b.onclick=()=>{state.assignment=Number(b.dataset.workAssignment);state.view='assignment';close();render();window.scrollTo({top:0,behavior:'instant'});showAssignmentSearchPrompt()})}
+function showAssignmentSearchPrompt(){const note=document.createElement('div');note.className='assignment-search-prompt';note.innerHTML=`<strong>Gather evidence for this assignment</strong><span>Use the evidence tiles below to save what you are doing today.</span>`;document.body.appendChild(note);requestAnimationFrame(()=>note.classList.add('show'));setTimeout(()=>{note.classList.remove('show');setTimeout(()=>note.remove(),250)},2000)}
+function workSearchSuggestions(query){const q=normaliseWorkSearch(query);if(!q)return initialWorkSearchOptions();const direct=WORK_SEARCH_GROUPS.filter(group=>group.terms.some(term=>q.includes(normaliseWorkSearch(term))||normaliseWorkSearch(term).includes(q)||workSimilarity(q,term)>.6)).flatMap(group=>group.suggestions);const results=workSearchResults(q).slice(0,5).map(x=>x.a.title);return [...new Set([...direct,...results])].slice(0,6)}
+function renderWorkSearchSuggestions(){const input=document.getElementById('workSearchInput'),wrap=document.getElementById('workSearchSuggestions');if(!input||!wrap)return;const hasQuery=normaliseWorkSearch(input.value).length>0,suggestions=workSearchSuggestions(input.value);wrap.innerHTML=suggestions.length?`<span class="work-search-suggestion-label">${hasQuery?'Close suggestions':'Popular course activities'}</span><div class="work-search-pill-row">${suggestions.map(term=>`<button type="button" class="work-search-pill" data-work-suggestion="${esc(term)}">${esc(term)}</button>`).join('')}</div>${!hasQuery?'<span class="work-search-prehint">These options are generated from the current course assignments.</span>':''}`:'';wrap.querySelectorAll('[data-work-suggestion]').forEach(pill=>pill.onclick=()=>{input.value=pill.dataset.workSuggestion||pill.textContent;showWorkSearchResults(input.value.trim());document.getElementById('workSearchLauncherModal')?.remove()})}
+function bindWorkSearch(){const input=document.getElementById('workSearchInput'),button=document.getElementById('workSearchButton');if(!input||!button)return;const run=()=>{const q=input.value.trim();if(q.length<2)return toast('Type what you are doing today');showWorkSearchResults(q);document.getElementById('workSearchLauncherModal')?.remove()};button.onclick=run;input.oninput=renderWorkSearchSuggestions;input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();run()}};renderWorkSearchSuggestions()}
+
+let lastRenderedPageSignature='';
+function currentPageSignature(){return JSON.stringify([ACTIVE_COURSE_ID,state.view,state.assignment,state.section,state.academyTopic,state.walkthroughCode,state.projectMateTab,state.learningSupportTab])}
+function scrollNewPageToTop(signature){
+ if(restoringNavigation)return;
+ if(lastRenderedPageSignature&&signature!==lastRenderedPageSignature){
+  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'instant'})));
+ }
+ lastRenderedPageSignature=signature;
+}
+function ensureVideoSubmissionBottomSpacer(){
+ const isVideoPage=state.view==='walkthrough'||(state.view==='section'&&['discussion','walkthrough'].includes(state.section));
+ if(!isVideoPage)return;
+ if(app.querySelector('.video-page-bottom-spacer'))return;
+ const spacer=document.createElement('div');
+ spacer.className='video-page-bottom-spacer';
+ spacer.setAttribute('aria-hidden','true');
+ app.appendChild(spacer);
+}
+
+
+const REMOVED_APPRENTICE_PASS_KEY='apprenticeplus.permanentPass.v1';
+try{localStorage.removeItem(REMOVED_APPRENTICE_PASS_KEY)}catch{}
+
+function render(){const pageSignature=currentPageSignature();recordNavigation();window.ApprenticeAnalytics?.trackScreen(state.view||'unknown');if(state.view==='resources')renderResources();else if(state.view==='notepad')renderNotepad();else if(state.view==='tools')renderTools();else if(state.view==='measuremate')renderMeasureMate();else if(state.view==='materialmate')renderMaterialMate();else if(state.view==='drawingmate')renderDrawingMate();else if(state.view==='cadmate')renderCADMate();else if(state.view==='skillscard')renderSkillsCard();else if(state.view==='feedbackmate')renderFeedbackMate();else if(state.view==='projectmate')renderProjectMate();else if(state.view==='otjmate')renderOTJMate();else if(state.view==='remindmate')renderRemindMate();else if(state.view==='learning-support')renderLearningSupport();else if(state.view==='settings')renderSettings();else if(state.view==='home')renderHome();else if(state.view==='assignment')renderAssignment();else if(state.view==='academy')renderAcademy();else if(state.view==='library'||state.view==='trade-courses')renderTradeCourses();else if(state.view==='trade-test')renderTradeCourseTest();else if(state.view==='trade-result')renderTradeCourseResult();else if(state.view==='functional-skills')renderFunctionalSkills();else if(state.view==='knowledge-slides')renderKnowledgeSlides();else if(state.view==='academy-knowledge')renderAcademyKnowledge();else if(state.view==='functional-test')renderFunctionalSkillsTest();else if(state.view==='functional-result')renderFunctionalSkillsResult();else if(state.view==='certificates')renderCertificates();else if(state.view==='lesson')renderAcademyLesson();else if(state.view==='epa')renderEpaMockHome();else if(state.view==='epa-results')renderEpaResults();else if(state.view==='epa-test')renderEpaMockTest();else if(state.view==='epa-result')renderEpaMockResult();else if(state.view==='epa-discussion')renderEpaDiscussion();else if(state.view==='epa-discussion-result')renderEpaDiscussionResult();else if(state.view==='epa-practical')renderEpaPractical();else if(state.view==='knowledge-test')renderAssignmentKnowledgeTest();else if(state.view==='knowledge-result')renderAssignmentKnowledgeResult();else if(state.view==='walkthrough')renderWalkthrough();else renderSection();ensureVideoSubmissionBottomSpacer();enhanceVoiceToText(app);applyAccessibilityToCurrentView();syncReadAloudControl();attachPageHelp();scrollNewPageToTop(pageSignature)}
+
+let activeSpeechRecognition=null;
+let activeSpeechButton=null;
+function speechRecognitionConstructor(){return window.SpeechRecognition||window.webkitSpeechRecognition||null}
+function voiceTextEligible(el){
+ if(!el||el.dataset.voiceTextReady==='1'||el.disabled||el.readOnly)return false;
+ if(el.matches('textarea'))return true;
+ if(!el.matches('input'))return false;
+ const type=(el.getAttribute('type')||'text').toLowerCase();
+ return ['text','search','email','url','tel'].includes(type);
+}
+function spokenInsertion(base,start,end,spoken){
+ const before=base.slice(0,start),after=base.slice(end),clean=String(spoken||'').trim();
+ if(!clean)return base;
+ const leftGap=before&&!/\s$/.test(before)?' ':'';
+ const rightGap=after&&!/^\s|^[.,!?;:]/.test(after)?' ':'';
+ return before+leftGap+clean+rightGap+after;
+}
+function stopVoiceToText(){
+ if(activeSpeechRecognition){try{activeSpeechRecognition.stop()}catch{}}
+}
+function beginVoiceToText(target,button){
+ const Recognition=speechRecognitionConstructor();
+ if(!Recognition){toast('Voice to text is not supported on this browser');return}
+ if(activeSpeechRecognition){
+  const same=activeSpeechButton===button;
+  stopVoiceToText();
+  if(same)return;
+ }
+ const recognition=new Recognition();
+ const base=target.value||'';
+ const start=Number.isInteger(target.selectionStart)?target.selectionStart:base.length;
+ const end=Number.isInteger(target.selectionEnd)?target.selectionEnd:start;
+ let inserted=false;
+ recognition.lang='en-GB';
+ // Android Chromium can repeat the same final phrase several times in continuous mode.
+ // Use one clean utterance per tap so spoken text is inserted exactly once.
+ recognition.continuous=false;
+ recognition.interimResults=false;
+ recognition.maxAlternatives=1;
+ activeSpeechRecognition=recognition;
+ activeSpeechButton=button;
+ button.classList.add('listening');
+ button.setAttribute('aria-pressed','true');
+ button.title='Stop voice to text';
+ target.focus();
+ recognition.onresult=event=>{
+  if(inserted)return;
+  const result=event.results?.[event.resultIndex]||event.results?.[0];
+  const spoken=String(result?.[0]?.transcript||'').trim();
+  if(!spoken)return;
+  inserted=true;
+  target.value=spokenInsertion(base,start,end,spoken);
+  const insertedAt=target.value.indexOf(spoken,start);
+  const cursor=insertedAt>=0?insertedAt+spoken.length:target.value.length;
+  try{target.setSelectionRange(cursor,cursor)}catch{}
+  target.dispatchEvent(new Event('input',{bubbles:true}));
+  // Stop immediately after the first recognised phrase to prevent duplicate Android results.
+  try{recognition.stop()}catch{}
+ };
+ recognition.onerror=event=>{
+  if(event.error==='not-allowed'||event.error==='service-not-allowed')toast('Microphone permission is needed for voice to text');
+  else if(event.error!=='no-speech'&&event.error!=='aborted')toast('Voice to text could not start');
+ };
+ recognition.onend=()=>{
+  if(activeSpeechRecognition!==recognition)return;
+  button.classList.remove('listening');
+  button.setAttribute('aria-pressed','false');
+  button.title='Voice to text';
+  activeSpeechRecognition=null;
+  activeSpeechButton=null;
+  target.dispatchEvent(new Event('change',{bubbles:true}));
+ };
+ try{recognition.start();toast('Listening… speak now')}catch{recognition.onend();toast('Voice to text could not start')}
+}
+function enhanceVoiceToText(root=document){
+ if(!accessibilitySettings().voiceInput)return;
+ root.querySelectorAll('textarea,input').forEach(target=>{
+  if(!voiceTextEligible(target))return;
+  target.dataset.voiceTextReady='1';
+  const wrap=document.createElement('div');
+  wrap.className='voice-text-field';
+  target.parentNode.insertBefore(wrap,target);
+  wrap.appendChild(target);
+  const button=document.createElement('button');
+  button.type='button';
+  button.className='voice-text-button no-print';
+  button.innerHTML=appIcon('microphone','voice-text-icon');
+  button.title='Voice to text';
+  button.setAttribute('aria-label','Start voice to text');
+  button.setAttribute('aria-pressed','false');
+  button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();beginVoiceToText(target,button)});
+  wrap.appendChild(button);
+ });
+}
+const voiceTextObserver=new MutationObserver(records=>{
+ records.forEach(record=>record.addedNodes.forEach(node=>{if(node.nodeType===1)enhanceVoiceToText(node.matches?.('textarea,input')?node.parentElement:node)}));
+});
+voiceTextObserver.observe(app,{childList:true,subtree:true});
+
+
+function isAcademyKnowledge(code){return COURSE.nvqUnits||String(code).toUpperCase().startsWith('K')}
+function courseRevisionTopics(){
+ const topics=[];
+ courseAssignments().forEach(a=>a.ksbs.filter(([code])=>isAcademyKnowledge(code)).forEach(([code,text],index)=>topics.push({key:`${a.n}:${code}`,code,text,title:learnerPromptTitle(a.n,code,text),assignment:a.n,assignmentTitle:a.title,index})));
+ return topics;
+}
+function academyStyle(topic){const styles=['Explanation','Workplace scenario','Why it matters','Step by step','Problem solving','Trade insight'];return styles[(topic.assignment+topic.index-1)%styles.length]}
+function academyContext(topic){
+ const course=COURSE.name.toLowerCase();
+ if(course.includes('brick'))return 'bricklaying work on site';
+ if(course.includes('site carpentry'))return 'site carpentry work';
+ if(course.includes('joiner'))return 'architectural joinery work';
+ if(course.includes('property'))return 'property maintenance work';
+ return 'trowel occupation work in the workplace';
+}
+function cleanCriterion(text){return String(text||'').trim().replace(/[.]$/,'')}
+function academyLessonData(topic){
+ const wording=cleanCriterion(topic.text),context=academyContext(topic),style=academyStyle(topic);
+ const openings={
+  'Explanation':`This topic explains how to ${wording.charAt(0).toLowerCase()+wording.slice(1)}.`,
+  'Workplace scenario':`Imagine you are carrying out ${context} and must demonstrate that you can ${wording.charAt(0).toLowerCase()+wording.slice(1)}.`,
+  'Why it matters':`Understanding how to ${wording.charAt(0).toLowerCase()+wording.slice(1)} is important because it affects safety, quality and the finished result.`,
+  'Step by step':`A reliable approach to this topic starts by understanding the requirement to ${wording.charAt(0).toLowerCase()+wording.slice(1)}.`,
+  'Problem solving':`Problems during ${context} are easier to prevent when you understand how to ${wording.charAt(0).toLowerCase()+wording.slice(1)}.`,
+  'Trade insight':`Experienced workers treat the requirement to ${wording.charAt(0).toLowerCase()+wording.slice(1)} as part of professional practice, not as an extra task.`
+ };
+ const body=`${openings[style]} Before starting, check the relevant information, planned method, materials, tools and workplace conditions. Think about what could change the task and what controls or checks are needed. During the work, follow the agreed process, communicate concerns promptly and compare progress with the specification or expected standard. Do not rely on habit where drawings, instructions or site conditions require a different approach. A competent worker can explain why each decision was made, recognise when advice is needed and record important information. In practice, this knowledge helps you complete ${context} safely, accurately, efficiently and with less risk of defects, waste or delay.`;
+ const points=[`Explain the meaning of: ${wording}.`,`Check information, resources and workplace conditions before acting.`,`Follow the agreed method and confirm the finished work meets the required standard.`];
+ const questions=[
+  {q:`In your own words, what does “${wording}” require you to understand?`,a:`It requires an understanding of the information, decisions and actions needed to meet this requirement during ${context}.`},
+  {q:`What should you check before applying this knowledge in the workplace?`,a:'Check the relevant drawings or instructions, the planned method, resources, hazards, controls and required quality standard.'},
+  {q:`How would this knowledge help prevent a problem or defect?`,a:'It supports informed decisions, early checks, correct methods and timely communication before an error affects safety, quality, cost or programme.'},
+  {q:`Challenge: describe one workplace example where this requirement would change what you do.`,a:`A suitable answer should name a realistic ${context} situation, explain the decision made and link it clearly to the stated requirement.`}
+ ];
+ return {style,body,points,questions};
+}
+const ACADEMY_CERTIFICATES_KEY='academyCertificates:v1';
+function academyCertificates(){const rows=state.data[ACADEMY_CERTIFICATES_KEY];return rows&&typeof rows==='object'&&!Array.isArray(rows)?rows:{}}
+function certificateKey(type,subject){return `${type}:${subject}`}
+function certificateThresholds(type,total){
+ if(type==='functional'||type==='trade')return {passScore:13,pass:'13/15',merit:'14/15',distinction:'15/15'};
+ const pass=Math.ceil(total*.70),merit=Math.ceil(total*.80),distinction=Math.ceil(total*.90);
+ return {passScore:pass,pass:`${pass}/${total} (70%)`,merit:`${merit}/${total} (80%)`,distinction:`${distinction}/${total} (90%)`};
+}
+function certificateCourseTitle(type,subject){
+ if(type==='functional')return functionalSkillsConfig(subject).title;
+ if(type==='trade')return tradeCourseConfig(subject).title;
+ if(type==='knowledge'){const a=courseAssignments().find(x=>String(x.n)===String(subject));return a?`Assignment ${a.n}: ${a.title}`:`Assignment ${subject} Knowledge Assessment`}
+ return 'Academy MCQ Assessment';
+}
+function saveAcademyCertificate(type,subject,result){
+ const limits=certificateThresholds(type,result.total);
+ if(result.score<limits.passScore)return false;
+ const key=certificateKey(type,subject),certs=academyCertificates(),existing=certs[key];
+ if(existing&&Number(existing.score)>=Number(result.score))return false;
+ certs[key]={id:existing?.id||uid(),key,type,subject:String(subject),title:certificateCourseTitle(type,subject),learner:state.profile?.fullName||'Learner',college:state.branding?.name||'College name not configured',collegeLogo:state.branding?.logo||'',apprenticeLogo:'logo-apprentice-plus.png',score:result.score,total:result.total,percentage:result.percentage,grade:result.grade,date:result.date||today(),thresholds:limits,course:COURSE.name,standard:COURSE.standard||'',updatedAt:new Date().toISOString()};
+ state.data[ACADEMY_CERTIFICATES_KEY]=certs;return true;
+}
+function certificateDocument(cert){
+ const collegeLogo=cert.collegeLogo?`<img class="cert-college-logo" src="${cert.collegeLogo}" alt="${esc(cert.college)} logo">`:`<div class="cert-college-placeholder">COLLEGE</div>`;
+ return `<article class="training-certificate"><div class="certificate-border"><header class="certificate-brand-row"><div>${collegeLogo}<strong>${esc(cert.college)}</strong></div><img class="cert-apprentice-logo" src="logo-apprentice-plus.png" alt="Apprentice+ logo"></header><div class="certificate-kicker">IN-HOUSE TRAINING CERTIFICATE</div><h1>Certificate of Achievement</h1><p class="certificate-presented">This certificate is presented to</p><h2>${esc(cert.learner)}</h2><p class="certificate-completed">for successfully completing the Apprentice+ MCQ assessment</p><h3>${esc(cert.title)}</h3><div class="certificate-award"><span>${esc(cert.grade)}</span><strong>${cert.score}/${cert.total} · ${cert.percentage}%</strong></div><p class="certificate-disclaimer"><strong>This is not a qualification.</strong> It is an in-house training certificate issued by ${esc(cert.college)} through Apprentice+ to recognise completion of an internal learning assessment.</p><footer><div><span>Date awarded</span><strong>${esc(cert.date)}</strong></div><div><span>Course</span><strong>${esc(cert.course)}</strong></div><div><span>Certificate ID</span><strong>${esc(cert.id)}</strong></div></footer></div></article>`;
+}
+function openCertificate(cert){
+ const wrap=document.createElement('div');wrap.className='modal certificate-modal';wrap.innerHTML=`<section class="certificate-modal-card"><div class="certificate-toolbar no-print"><button class="btn secondary" id="closeCertificate">Close</button><button class="btn" id="printCertificate">Print / save PDF</button></div>${certificateDocument(cert)}</section>`;document.body.appendChild(wrap);wrap.querySelector('#closeCertificate').onclick=()=>wrap.remove();wrap.onclick=e=>{if(e.target===wrap)wrap.remove()};wrap.querySelector('#printCertificate').onclick=()=>window.print();
+}
+function renderAcademy(){
+ app.innerHTML=shell(`<section class="academy-hero"><div class="number">${esc(COURSE.name)}</div><h2>Academy</h2></section><section class="academy-grid academy-square-grid"><button class="academy-square-tile knowledge" id="openKnowledgeSlides"><span class="academy-square-icon">${appIcon('library')}</span><strong>Knowledge Slides</strong></button><button class="academy-square-tile knowledge" id="openLibrary"><span class="academy-square-icon">${appIcon('questions')}</span><strong>Trade Courses</strong></button><button class="academy-square-tile epa" id="openEpaMock"><span class="academy-square-icon">${appIcon('academy')}</span><strong>EPA Academy</strong></button><button class="academy-square-tile functional" id="openFunctionalSkills"><span class="academy-square-icon">${appIcon('functional')}</span><strong>Functional Skills</strong></button><button class="academy-square-tile certificates" id="openCertificates"><span class="academy-square-icon">${appIcon('certificate')}</span><strong>Certificates</strong></button></section>`);
+ document.getElementById('openKnowledgeSlides').onclick=()=>{state.view='knowledge-slides';render();window.scrollTo(0,0)};
+ document.getElementById('openLibrary').onclick=()=>{state.view='trade-courses';render();window.scrollTo(0,0)};
+ document.getElementById('openEpaMock').onclick=()=>{if(COURSE.nvqUnits){toast('EPA Academy is available for apprenticeship standard courses');return}state.view='epa';state.assignment=null;state.section=null;render();window.scrollTo(0,0)};
+ document.getElementById('openFunctionalSkills').onclick=()=>{state.view='functional-skills';render();window.scrollTo(0,0)};
+ document.getElementById('openCertificates').onclick=()=>{state.view='certificates';render();window.scrollTo(0,0)};
+}
+function functionalSkillsHistoryKey(subject){return `functionalSkills:${subject}:history:v1`}
+function functionalSkillsHistory(subject){const rows=state.data[functionalSkillsHistoryKey(subject)];return Array.isArray(rows)?rows:[]}
+function bestMcqResult(rows){return Array.isArray(rows)&&rows.length?rows.reduce((best,row)=>Number(row?.score)>Number(best?.score)?row:best,rows[0]):null}
+function compactMcqStatus(result,total=15){if(!result)return 'Not Started';const score=Number(result.score)||0;const grade=score>=15?'Distinction':score===14?'Merit':score===13?'Pass':'Fail';return `${grade} ${score}/${Number(result.total)||total}`}
+function functionalSkillsGrade(score){return score===15?'Distinction':score===14?'Merit':score===13?'Pass':'Not achieved'}
+function startFunctionalSkillsTest(subject){
+ const bank=FUNCTIONAL_SKILLS_BANKS?.[subject];
+ if(!Array.isArray(bank)||bank.length!==15)return toast('This Functional Skills test is not ready.');
+ state.functionalTest={subject,questions:cloneData(bank),answers:{},index:0};
+ state.view='functional-test';render();window.scrollTo(0,0);
+}
+function functionalSkillsConfig(subject){
+ const map={english1:{title:'English Level 1',short:'English L1',icon:'library'},maths1:{title:'Maths Level 1',short:'Maths L1',icon:'revision'},english:{title:'English Level 2',short:'English L2',icon:'library'},maths:{title:'Maths Level 2',short:'Maths L2',icon:'revision'}};
+ return map[subject]||{title:'Functional Skills',short:'Functional Skills',icon:'functional'};
+}
+const ACADEMY_KNOWLEDGE_PROGRESS_KEY='academyKnowledgeProgress:v2';
+function academyKnowledgeProgress(){const p=state.data[ACADEMY_KNOWLEDGE_PROGRESS_KEY];return p&&typeof p==='object'?p:{}}
+function academyKnowledgeSubjects(section){return section==='functional'?['english1','maths1','english','maths']:['legislation','manualHandling','equalityDiversity','cscs','fireSafety','coshh','mentalHealth','safeguarding','environmentalAwareness']}
+function academyKnowledgeSubjectConfig(section,subject){return section==='functional'?functionalSkillsConfig(subject):tradeCourseConfig(subject)}
+function academyKnowledgeDeck(section,subject){
+ const bank=section==='functional'?FUNCTIONAL_SKILLS_BANKS?.[subject]:window.TRADE_COURSES_BANK?.[subject],cfg=academyKnowledgeSubjectConfig(section,subject);
+ return Array.isArray(bank)?bank.map((q,index)=>({...cloneData(q),subject,title:cfg.title,slide:index+1})):[];
+}
+function academyKnowledgeProgressId(section,subject){return `${section}:${subject}`}
+function academyKnowledgeMeta(section,subject){const cfg=academyKnowledgeSubjectConfig(section,subject);return {title:`${cfg.title} Knowledge`,back:'Knowledge Slides',view:'knowledge-slides',icon:cfg.icon}}
+function openAcademyKnowledge(section,subject){
+ const deck=academyKnowledgeDeck(section,subject);if(!deck.length)return toast('Knowledge slides are not ready.');
+ const progress=academyKnowledgeProgress(),progressId=academyKnowledgeProgressId(section,subject),saved=progress[progressId]||{};
+ state.academyKnowledge={section,subject,progressId,index:Math.min(Number(saved.index)||0,deck.length-1),deck};state.view='academy-knowledge';render();window.scrollTo(0,0);
+}
+async function saveAcademyKnowledgePosition(progressId,index,complete=false){
+ const all=academyKnowledgeProgress(),previous=all[progressId]||{};all[progressId]={index,complete:!!(complete||previous.complete),updatedAt:new Date().toISOString()};state.data[ACADEMY_KNOWLEDGE_PROGRESS_KEY]=all;await saveData();
+}
+function knowledgeSubjectsSection(section){
+ const progress=academyKnowledgeProgress(),cards=academyKnowledgeSubjects(section).map(subject=>{const cfg=academyKnowledgeSubjectConfig(section,subject),deck=academyKnowledgeDeck(section,subject),progressId=academyKnowledgeProgressId(section,subject),saved=progress[progressId]||{},complete=!!saved.complete,viewed=complete?deck.length:Math.min((Number(saved.index)||0)+1,deck.length);return `<button class="academy-knowledge-subject ${complete?'complete':''}" data-open-knowledge-section="${section}" data-open-knowledge-subject="${subject}"><span class="academy-knowledge-subject-icon">${appIcon(cfg.icon||'library')}</span><span class="academy-knowledge-subject-copy"><small>LEARN BEFORE THE TEST</small><strong>${esc(cfg.title)} Knowledge${complete?' ✓':''}</strong><em>${deck.length} teaching slides · ${complete?'Completed':`${viewed}/${deck.length} progress`}</em></span><span class="academy-knowledge-subject-action">${complete?'Revise':'Learn'} →</span></button>`}).join('');
+ return `<section class="academy-knowledge-subsection"><div class="academy-subsection-heading"><div><small>KNOWLEDGE TRAINING</small><h3>Learn by subject</h3><p>Choose the specific subject you want to train before taking its test.</p></div></div><div class="academy-knowledge-subject-grid">${cards}</div></section>`;
+}
+function renderKnowledgeSlides(){
+ app.innerHTML=shell(`<button class="back no-print" id="knowledgeSlidesHomeBack">← Academy</button><section class="academy-destination-head"><div class="academy-destination-icon">${appIcon('library')}</div><div><div class="number">Academy</div><h2>Knowledge Slides</h2><p class="muted">Choose one subject to study. Every pack contains exactly 15 teaching slides and saves its progress separately.</p></div></section><section class="academy-knowledge-group"><div class="academy-subsection-heading"><div><small>TRADE KNOWLEDGE</small><h3>Trade Course slide packs</h3></div></div>${knowledgeSubjectsSection('trade')}</section><section class="academy-knowledge-group"><div class="academy-subsection-heading"><div><small>FUNCTIONAL SKILLS KNOWLEDGE</small><h3>English and Maths slide packs</h3></div></div>${knowledgeSubjectsSection('functional')}</section>`);
+ document.getElementById('knowledgeSlidesHomeBack').onclick=()=>{state.view='academy';render()};
+ document.querySelectorAll('[data-open-knowledge-subject]').forEach(b=>b.onclick=()=>openAcademyKnowledge(b.dataset.openKnowledgeSection,b.dataset.openKnowledgeSubject));
+}
+function renderAcademyKnowledge(){
+ const session=state.academyKnowledge;if(!session?.deck?.length){state.view='knowledge-slides';render();return}
+ const meta=academyKnowledgeMeta(session.section,session.subject),deck=session.deck,i=Math.max(0,Math.min(Number(session.index)||0,deck.length-1)),q=deck[i],correct=q.options?.[q.answerIndex]||'',isLast=i===deck.length-1;
+ app.innerHTML=shell(`<button class="back no-print" id="knowledgeSlidesBack">← ${esc(meta.back)}</button><section class="knowledge-slide-shell"><header class="knowledge-slide-head"><div><div class="number">${esc(q.title)} · Slide ${i+1} of ${deck.length}</div><h2>${esc(q.ksb)}</h2></div><span class="status-pill">${Math.round((i+1)/deck.length*100)}%</span></header><div class="epa-progress"><span style="width:${((i+1)/deck.length)*100}%"></span></div><article class="knowledge-teaching-slide"><section class="knowledge-slide-block scenario"><small>WORKPLACE SCENARIO</small><h3>${esc(q.scenario)}</h3></section><section class="knowledge-slide-block answer"><small>KEY LEARNING</small><h3>${esc(correct)}</h3></section><section class="knowledge-slide-block explanation"><small>WHY THIS IS CORRECT</small><p>${esc(q.explanation)}</p></section><section class="knowledge-slide-block takeaway"><small>REMEMBER</small><p>${esc(q.keyTakeaway)}</p></section></article><div class="knowledge-slide-controls"><button class="btn secondary" id="knowledgeSlidePrev" ${i===0?'disabled':''}>Previous</button>${isLast?'<button class="btn" id="knowledgeSlideComplete">Complete Knowledge</button>':'<button class="btn" id="knowledgeSlideNext">Next</button>'}</div></section>`);
+ document.getElementById('knowledgeSlidesBack').onclick=async()=>{await saveAcademyKnowledgePosition(session.progressId,i,false);state.academyKnowledge=null;state.view=meta.view;render()};
+ document.getElementById('knowledgeSlidePrev').onclick=async()=>{session.index=Math.max(0,i-1);await saveAcademyKnowledgePosition(session.progressId,session.index,false);renderAcademyKnowledge()};
+ const next=document.getElementById('knowledgeSlideNext');if(next)next.onclick=async()=>{session.index=Math.min(deck.length-1,i+1);await saveAcademyKnowledgePosition(session.progressId,session.index,false);renderAcademyKnowledge()};
+ const complete=document.getElementById('knowledgeSlideComplete');if(complete)complete.onclick=async()=>{await saveAcademyKnowledgePosition(session.progressId,i,true);toast('Knowledge slides completed');state.academyKnowledge=null;state.view=meta.view;render();window.scrollTo(0,0)};
+}
+function renderFunctionalSkills(){
+ const subjects=['english1','maths1','english','maths'];
+ const cards=subjects.map(subject=>{const cfg=functionalSkillsConfig(subject),rows=functionalSkillsHistory(subject),r=bestMcqResult(rows);return `<article class="academy-destination-card functional-test-card"><span>${appIcon(cfg.icon)}</span><h3>${esc(cfg.title)}</h3><span class="status-pill mcq-best-status ${r?.score>=13?'done':r?'fail':''}">${esc(compactMcqStatus(r))}</span><div class="epa-tile-stat"><strong>${rows.length}</strong><span>attempt${rows.length===1?'':'s'} recorded</span></div><button class="btn" data-start-functional="${subject}">Start test</button></article>`}).join('');
+ app.innerHTML=shell(`<button class="back no-print" id="functionalSkillsBack">← Academy</button><section class="academy-destination-head"><div class="academy-destination-icon">${appIcon('functional')}</div><div><div class="number">Academy</div><h2>Functional Skills</h2><p class="muted">Level 1 and Level 2 tests · Pass 13/15 · Merit 14/15 · Distinction 15/15.</p></div></section><section class="academy-destination-grid">${cards}</section>`);
+ document.getElementById('functionalSkillsBack').onclick=()=>{state.view='academy';render()};
+ document.querySelectorAll('[data-start-functional]').forEach(b=>b.onclick=()=>startFunctionalSkillsTest(b.dataset.startFunctional));
+}
+function renderFunctionalSkillsTest(){
+ const test=state.functionalTest;if(!test?.questions?.length){state.view='functional-skills';render();return}
+ const i=test.index,q=test.questions[i],committed=test.answers[i],picked=test.pendingAnswer?.index===i?test.pendingAnswer.value:committed,total=test.questions.length,title=functionalSkillsConfig(test.subject).title;
+ const options=q.options.map((o,n)=>`<label class="epa-option ${picked===n?'selected':''}"><input type="radio" name="functionalAnswer" value="${n}" ${picked===n?'checked':''}><span><b>${String.fromCharCode(65+n)}</b>${esc(o)}</span></label>`).join('');
+ app.innerHTML=shell(`<button class="back no-print" id="quitFunctional">← Functional Skills</button><section class="epa-test-head"><div><div class="number">${esc(title)} · Question ${i+1} of ${total}</div><h2>${esc(q.ksb)}</h2></div><span class="status-pill">${Object.keys(test.answers).length}/${total} answered</span></section><div class="epa-progress"><span style="width:${((i+1)/total)*100}%"></span></div><section class="card panel epa-question"><h3>${esc(q.scenario)}</h3><div class="epa-options">${options}</div></section><div class="mcq-question-actions"><button class="btn secondary" id="functionalPrev" ${i===0?'disabled':''}>Previous</button><button class="btn" id="functionalSubmit" ${picked===undefined?'disabled':''}>${i===total-1?'Submit test':'Submit answer'}</button></div>`);
+ document.getElementById('quitFunctional').onclick=()=>{if(Object.keys(test.answers).length&&!confirm('Leave this test? Your current answers will not be saved.'))return;state.functionalTest=null;state.view='functional-skills';render()};
+ document.querySelectorAll('input[name="functionalAnswer"]').forEach(r=>r.onchange=()=>{test.pendingAnswer={index:i,value:Number(r.value)};renderFunctionalSkillsTest()});
+ document.getElementById('functionalPrev').onclick=()=>{test.pendingAnswer=null;test.index=Math.max(0,i-1);renderFunctionalSkillsTest();window.scrollTo(0,0)};
+ document.getElementById('functionalSubmit').onclick=async()=>{if(picked===undefined)return;test.answers[i]=Number(picked);test.pendingAnswer=null;if(i<total-1){test.index=i+1;renderFunctionalSkillsTest();window.scrollTo(0,0);return}if(Object.keys(test.answers).length<total)return toast(`Answer all ${total} questions before submitting`);const score=test.questions.reduce((n,x,j)=>n+(test.answers[j]===x.answerIndex?1:0),0),result={id:uid(),date:today(),subject:test.subject,score,total,percentage:Math.round(score/total*100),grade:functionalSkillsGrade(score),questions:cloneData(test.questions),answers:cloneData(test.answers)};const history=functionalSkillsHistory(test.subject);history.push(result);state.data[functionalSkillsHistoryKey(test.subject)]=history;saveAcademyCertificate('functional',test.subject,result);await saveData();state.functionalTest={...test,result};state.view='functional-result';render();window.scrollTo(0,0)};
+}
+function renderFunctionalSkillsResult(){
+ const test=state.functionalTest,r=test?.result;if(!test||!r){state.view='functional-skills';render();return}
+ const title=functionalSkillsConfig(test.subject).title,wrong=test.questions.map((q,i)=>({q,i,picked:test.answers[i]})).filter(x=>x.picked!==x.q.answerIndex),achieved=r.score>=13;
+ app.innerHTML=shell(`<button class="back no-print" id="functionalResultBack">← Functional Skills</button><section class="card panel"><div class="panel-body"><div class="number">${esc(title)} Functional Skills result</div><h2>${r.score}/${r.total} · ${r.percentage}%</h2><span class="status-pill ${achieved?'done':''}">${esc(r.grade)}</span><p class="muted" style="margin-top:12px">${achieved?`You achieved ${esc(r.grade)}. This attempt has been recorded.`:'You need at least 13 correct answers to pass. This attempt has been recorded.'}</p><div class="functional-grade-scale"><span class="${r.score===13?'active':''}">Pass 13/15</span><span class="${r.score===14?'active':''}">Merit 14/15</span><span class="${r.score===15?'active':''}">Distinction 15/15</span></div></div></section>${wrong.length?`<section class="card panel"><div class="panel-body"><h3>Review incorrect answers</h3>${wrong.map(({q,i,picked})=>`<div class="functional-review-item"><strong>${i+1}. ${esc(q.scenario)}</strong><p><b>Your answer:</b> ${esc(q.options[picked]||'Not answered')}</p><p><b>Correct answer:</b> ${esc(q.options[q.answerIndex])}</p><p>${esc(q.explanation)}</p><div class="key-takeaway"><b>Key takeaway</b><span>${esc(q.keyTakeaway)}</span></div></div>`).join('')}</div></section>`:'<section class="card panel"><div class="panel-body"><h3>All answers correct</h3><p class="muted">You achieved Distinction with 15/15.</p></div></section>'}<div class="btn-row"><button class="btn" id="functionalResit">Take another attempt</button><button class="btn secondary" id="functionalDone">Return to Functional Skills</button></div>`);
+ document.getElementById('functionalResit').onclick=()=>startFunctionalSkillsTest(test.subject);
+ document.getElementById('functionalDone').onclick=document.getElementById('functionalResultBack').onclick=()=>{state.functionalTest=null;state.view='functional-skills';render()};
+}
+
+function tradeCourseConfig(subject){
+ const map={
+  legislation:{title:'Legislation',description:'UK construction health, safety, environmental and building legislation.',icon:'course'},
+  manualHandling:{title:'Manual Handling',description:'TILE assessments, lifting technique, team handling and mechanical aids.',icon:'toolbox'},
+  equalityDiversity:{title:'Equality & Diversity',description:'Equality Act duties, inclusion, discrimination and workplace behaviour.',icon:'functional'},
+  cscs:{title:'CSCS',description:'Construction-site health, safety and environmental awareness practice.',icon:'academy'},
+  fireSafety:{title:'Fire Safety',description:'Fire prevention, alarms, evacuation, extinguishers and emergency controls.',icon:'academy'},
+  coshh:{title:'COSHH',description:'Hazardous substances, exposure controls, RPE, storage, spills and health protection.',icon:'academy'},
+  mentalHealth:{title:'Mental Health Awareness',description:'Recognising warning signs, managing stress, supporting colleagues and accessing professional help.',icon:'academy'},
+  safeguarding:{title:'Safeguarding & Professional Standards',description:'Safeguarding, GDPR, conduct, whistleblowing, British values, Prevent, ethics and professional responsibilities.',icon:'academy'},
+  environmentalAwareness:{title:'Environmental Awareness',description:'Pollution prevention, protected species, sustainable sourcing, resource efficiency and environmental site controls.',icon:'academy'}
+ };
+ return map[subject]||{title:'Trade Course',description:'Trade knowledge test.',icon:'library'};
+}
+function tradeCourseHistoryKey(subject){return `tradeCourse:${subject}:history:v1`}
+function tradeCourseHistory(subject){const rows=state.data[tradeCourseHistoryKey(subject)];return Array.isArray(rows)?rows:[]}
+function tradeCourseGrade(score){return score===15?'Distinction':score===14?'Merit':score===13?'Pass':'Not achieved'}
+function startTradeCourseTest(subject){
+ const bank=window.TRADE_COURSES_BANK?.[subject];
+ if(!Array.isArray(bank)||bank.length!==15)return toast('This Trade Course test is not ready.');
+ state.tradeTest={subject,questions:cloneData(bank),answers:{},index:0};
+ state.view='trade-test';render();window.scrollTo(0,0);
+}
+function renderTradeCourses(){
+ const subjects=['legislation','manualHandling','equalityDiversity','cscs','fireSafety','coshh','mentalHealth','safeguarding','environmentalAwareness'];
+ const cards=subjects.map(subject=>{const config=tradeCourseConfig(subject),rows=tradeCourseHistory(subject),r=bestMcqResult(rows);return `<article class="academy-destination-card functional-test-card"><span>${appIcon(config.icon)}</span><h3>${esc(config.title)}</h3><p>${esc(config.description)}</p><span class="status-pill mcq-best-status ${r?.score>=13?'done':r?'fail':''}">${esc(compactMcqStatus(r))}</span><div class="epa-tile-stat"><strong>${rows.length}</strong><span>attempt${rows.length===1?'':'s'} recorded</span></div><button class="btn" data-start-trade="${subject}">Start ${esc(config.title)} test</button></article>`}).join('');
+ app.innerHTML=shell(`<button class="back no-print" id="tradeCoursesBack">← Academy</button><section class="academy-destination-head"><div class="academy-destination-icon">${appIcon('library')}</div><div><div class="number">Academy</div><h2>Trade Courses</h2><p class="muted">Each course contains 15 questions. Pass: 13/15 · Merit: 14/15 · Distinction: 15/15.</p></div></section><section class="academy-destination-grid">${cards}</section>`);
+ document.getElementById('tradeCoursesBack').onclick=()=>{state.view='academy';render()};
+ document.querySelectorAll('[data-start-trade]').forEach(b=>b.onclick=()=>startTradeCourseTest(b.dataset.startTrade));
+}
+function renderTradeCourseTest(){
+ const test=state.tradeTest;if(!test?.questions?.length){state.view='trade-courses';render();return}
+ const config=tradeCourseConfig(test.subject),i=test.index,q=test.questions[i],committed=test.answers[i],picked=test.pendingAnswer?.index===i?test.pendingAnswer.value:committed,total=test.questions.length;
+ const options=q.options.map((o,n)=>`<label class="epa-option ${picked===n?'selected':''}"><input type="radio" name="tradeAnswer" value="${n}" ${picked===n?'checked':''}><span><b>${String.fromCharCode(65+n)}</b>${esc(o)}</span></label>`).join('');
+ app.innerHTML=shell(`<button class="back no-print" id="quitTradeTest">← Trade Courses</button><section class="epa-test-head"><div><div class="number">${esc(config.title)} · Question ${i+1} of ${total}</div><h2>${esc(q.ksb)}</h2></div><span class="status-pill">${Object.keys(test.answers).length}/${total} answered</span></section><div class="epa-progress"><span style="width:${((i+1)/total)*100}%"></span></div><section class="card panel epa-question"><h3>${esc(q.scenario)}</h3><div class="epa-options">${options}</div></section><div class="mcq-question-actions"><button class="btn secondary" id="tradePrev" ${i===0?'disabled':''}>Previous</button><button class="btn" id="tradeSubmit" ${picked===undefined?'disabled':''}>${i===total-1?'Submit test':'Submit answer'}</button></div>`);
+ document.getElementById('quitTradeTest').onclick=()=>{if(Object.keys(test.answers).length&&!confirm('Leave this test? Your current answers will not be saved.'))return;state.tradeTest=null;state.view='trade-courses';render()};
+ document.querySelectorAll('input[name="tradeAnswer"]').forEach(r=>r.onchange=()=>{test.pendingAnswer={index:i,value:Number(r.value)};renderTradeCourseTest()});
+ document.getElementById('tradePrev').onclick=()=>{test.pendingAnswer=null;test.index=Math.max(0,i-1);renderTradeCourseTest();window.scrollTo(0,0)};
+ document.getElementById('tradeSubmit').onclick=async()=>{if(picked===undefined)return;test.answers[i]=Number(picked);test.pendingAnswer=null;if(i<total-1){test.index=i+1;renderTradeCourseTest();window.scrollTo(0,0);return}if(Object.keys(test.answers).length<total)return toast(`Answer all ${total} questions before submitting`);const score=test.questions.reduce((n,x,j)=>n+(test.answers[j]===x.answerIndex?1:0),0),result={id:uid(),date:today(),subject:test.subject,score,total,percentage:Math.round(score/total*100),grade:tradeCourseGrade(score),questions:cloneData(test.questions),answers:cloneData(test.answers)};const history=tradeCourseHistory(test.subject);history.push(result);state.data[tradeCourseHistoryKey(test.subject)]=history;saveAcademyCertificate('trade',test.subject,result);await saveData();state.tradeTest={...test,result};state.view='trade-result';render();window.scrollTo(0,0)};
+}
+function renderTradeCourseResult(){
+ const test=state.tradeTest,r=test?.result;if(!test||!r){state.view='trade-courses';render();return}
+ const config=tradeCourseConfig(test.subject),wrong=test.questions.map((q,i)=>({q,i,picked:test.answers[i]})).filter(x=>x.picked!==x.q.answerIndex),achieved=r.score>=13;
+ app.innerHTML=shell(`<button class="back no-print" id="tradeResultBack">← Trade Courses</button><section class="card panel"><div class="panel-body"><div class="number">${esc(config.title)} result</div><h2>${r.score}/${r.total} · ${r.percentage}%</h2><span class="status-pill ${achieved?'done':''}">${esc(r.grade)}</span><p class="muted" style="margin-top:12px">${achieved?`You achieved ${esc(r.grade)}. This attempt has been recorded.`:'You need at least 13 correct answers to pass. This attempt has been recorded.'}</p><div class="functional-grade-scale"><span class="${r.score===13?'active':''}">Pass 13/15</span><span class="${r.score===14?'active':''}">Merit 14/15</span><span class="${r.score===15?'active':''}">Distinction 15/15</span></div></div></section>${wrong.length?`<section class="card panel"><div class="panel-body"><h3>Review incorrect answers</h3>${wrong.map(({q,i,picked})=>`<div class="functional-review-item"><strong>${i+1}. ${esc(q.scenario)}</strong><p><b>Your answer:</b> ${esc(q.options[picked]||'Not answered')}</p><p><b>Correct answer:</b> ${esc(q.options[q.answerIndex])}</p><p>${esc(q.explanation)}</p><div class="key-takeaway"><b>Key takeaway</b><span>${esc(q.keyTakeaway)}</span></div></div>`).join('')}</div></section>`:'<section class="card panel"><div class="panel-body"><h3>All answers correct</h3><p class="muted">You achieved Distinction with 15/15.</p></div></section>'}<div class="btn-row"><button class="btn" id="tradeResit">Take another attempt</button><button class="btn secondary" id="tradeDone">Return to Trade Courses</button></div>`);
+ document.getElementById('tradeResit').onclick=()=>startTradeCourseTest(test.subject);
+ document.getElementById('tradeDone').onclick=document.getElementById('tradeResultBack').onclick=()=>{state.tradeTest=null;state.view='trade-courses';render()};
+}
+function renderCertificates(){
+ const certs=Object.values(academyCertificates()).sort((a,b)=>new Date(b.updatedAt||0)-new Date(a.updatedAt||0));
+ const cards=certs.map(c=>`<article class="certificate-library-card"><div class="certificate-library-head"><span>${appIcon('certificate')}</span><div><small>${esc(c.type==='functional'?'Functional Skills':c.type==='trade'?'Trade Course':'Course Knowledge')}</small><h3>${esc(c.title)}</h3></div></div><div class="certificate-library-score"><strong>${esc(c.grade)}</strong><span>${c.score}/${c.total} · ${c.percentage}%</span></div><p>${esc(c.learner)} · ${esc(c.date)}</p><button class="btn" data-open-certificate="${esc(c.key)}">View / download</button></article>`).join('');
+ app.innerHTML=shell(`<button class="back no-print" id="certificatesBack">← Academy</button><section class="academy-destination-head"><div class="academy-destination-icon">${appIcon('certificate')}</div><div><div class="number">Academy</div><h2>Certificates</h2><p class="muted">The best passing certificate for each non-EPA MCQ assessment is stored here.</p></div></section>${certs.length?`<section class="certificate-library-grid">${cards}</section>`:`<section class="card panel"><div class="panel-body academy-empty-state"><span>${appIcon('certificate')}</span><h3>No certificates yet</h3><p>Pass a Functional Skills, Trade Course or assignment knowledge MCQ to earn an in-house training certificate.</p></div></section>`}`);
+ document.getElementById('certificatesBack').onclick=()=>{state.view='academy';render()};document.querySelectorAll('[data-open-certificate]').forEach(b=>b.onclick=()=>{const cert=academyCertificates()[b.dataset.openCertificate];if(cert)openCertificate(cert)});
+}
+function renderKnowledgeLibrary(){
+ const q=String(state.academySearch||'').trim().toLowerCase();
+ const all=courseRevisionTopics();
+ const assignments=courseAssignments().map(a=>{const items=all.filter(t=>t.assignment===a.n).filter(t=>!q||`${t.code} ${t.title} ${t.text} ${a.title}`.toLowerCase().includes(q));return {...a,topics:items}}).filter(a=>a.topics.length);
+ app.innerHTML=shell(`<button class="back no-print" id="academyBack">← Academy</button><section class="library-head"><div class="number">${esc(COURSE.name)} · ${esc(COURSE.standard)}</div><h2>Knowledge Library</h2><p class="muted">Lessons are built automatically from the course wording. Only Knowledge KSBs are shown for apprenticeship standards; NVQ sessions use the Learning Outcome wording.</p><div class="field academy-search"><label for="academySearch">Search knowledge sessions</label><input class="input" id="academySearch" value="${esc(state.academySearch||'')}" placeholder="Search topics or assignments..."></div></section><section class="revision-assignment-list">${assignments.length?assignments.map(a=>`<details class="revision-assignment" ${q?'open':''}><summary><span><small>${COURSE.nvqUnits?`Unit ${esc(a.unit||'Optional')}`:`Assignment ${a.n}`}</small><strong>${esc(a.title)}</strong></span><span class="topic-count">${a.topics.length}</span></summary><div class="revision-topic-list">${a.topics.map(t=>`<button class="revision-topic academy-topic-button" data-topic="${esc(t.key)}"><div><small>${esc(t.code)} · ${esc(academyStyle(t))}</small><h3>${esc(t.title)}</h3><p>${esc(t.text)}</p></div><span class="status-pill">Open lesson</span></button>`).join('')}</div></details>`).join(''):`<section class="card panel"><h3>No matching knowledge sessions</h3><p class="muted" style="margin-top:6px">Try another search.</p></section>`}</section>`);
+ document.getElementById('academyBack').onclick=()=>{state.view='academy';render()};
+ document.querySelectorAll('[data-topic]').forEach(b=>b.onclick=()=>{state.academyTopic=b.dataset.topic;state.view='lesson';render();window.scrollTo(0,0)});
+ const search=document.getElementById('academySearch');search.oninput=()=>{state.academySearch=search.value;renderKnowledgeLibrary();const next=document.getElementById('academySearch');next.focus();next.setSelectionRange(next.value.length,next.value.length)};
+}
+function renderAcademyLesson(){
+ const topic=courseRevisionTopics().find(t=>t.key===state.academyTopic);if(!topic){state.view='library';render();return}
+ const lesson=academyLessonData(topic);const a=courseAssignments().find(x=>x.n===topic.assignment);
+ app.innerHTML=shell(`<button class="back no-print" id="lessonBack">← Knowledge Library</button><article class="academy-lesson"><header class="lesson-head"><div class="number">${COURSE.nvqUnits?`Unit ${esc(a?.unit||'Optional')} · ${esc(topic.code)}`:`Assignment ${topic.assignment} · ${esc(topic.code)}`}</div><h2>${esc(topic.text)}</h2><span class="lesson-style">${esc(lesson.style)}</span></header><section class="lesson-card teaching-block"><h3>What this means</h3><p>${esc(lesson.body)}</p></section><section class="lesson-card"><h3>Key points</h3><ul>${lesson.points.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></section><section class="lesson-card"><h3>Quick check</h3><div class="lesson-questions">${lesson.questions.map((x,i)=>`<details class="lesson-question"><summary><span>${i===lesson.questions.length-1?'Challenge':`Question ${i+1}`}</span>${esc(x.q)}</summary><div class="model-answer"><strong>Model answer</strong><p>${esc(x.a)}</p></div></details>`).join('')}</div></section><section class="lesson-card framework-note"><strong>Generated from the course framework</strong><p>This session uses the original ${COURSE.nvqUnits?'Learning Outcome':'Knowledge KSB'} wording. No XP or scores are attached.</p></section></article>`);
+ document.getElementById('lessonBack').onclick=()=>{state.view='library';render()};
+}
+
+
+
+// v1.3.20 EPA professional-judgement banks: Bricklayer, Site Carpentry and Architectural Joinery
+// Locked MCQ writing standard: realistic workplace judgement, four plausible trade-language answers,
+// no joke/"I do not care" distractors, no official-sounding giveaway, and an explanation for coaching.
+// Questions are deliberately stored as an approved, fixed bank. Nothing is generated at runtime.
+const EPA_MCQ_WRITING_STANDARD=Object.freeze({
+ id:'apprentice-plus-professional-judgement-v1',
+ title:'Professional judgement MCQ standard',
+ rules:Object.freeze([
+  'Use a realistic workplace scenario rather than a definition-only question.',
+  'Write four answers that a competent tradesperson could genuinely consider.',
+  'Do not use joke, careless, reckless or “I do not care” distractors.',
+  'Make the EPA best-practice answer sound like natural trade language.',
+  'Keep answer length and tone balanced so wording does not reveal the answer.',
+  'Use realistic alternatives: a common shortcut, a logical partial answer or a reasonable decision that misses one key point.',
+  'Test professional judgement without trick wording.',
+  'Include an explanation and a short key takeaway for coaching after an incorrect answer.'
+ ])
+});
+const EPA_KNOWLEDGE_PRACTICE_BANKS={
+ 'bricklayer-st0095-v1-2':[
+  {
+   code:'K1',
+   question:'You are about to cut a chase in an old internal wall, but the refurbishment survey does not clearly cover that room. What is the best next step?',
+   options:["Use hand tools and keep the dust down while you open a small test area","Wear suitable RPE and make the chase in short sections","Ask someone who worked in the building whether asbestos was found elsewhere","Check the survey information with the supervisor before disturbing the wall"],
+   correct:3,
+   explanation:'Checking the survey first is the strongest choice because the material must be confirmed before it is disturbed. Using hand tools or RPE may reduce exposure, but neither tells you whether asbestos is present. Asking someone familiar with the job is useful background, but it is not a reliable substitute for the survey.',
+   keyTakeaway:'When asbestos information is unclear, confirm it before breaking into the material.',
+   id:'brick-epa-v139-k1'
+  },
+  {
+   code:'K2',
+   question:'While dry-cutting dense blocks outside, you are wearing a face-fit-tested mask, but the water suppression keeps stopping. What is the best way to carry on?',
+   options:["Cut in shorter bursts and step away while the dust settles","Keep the mask on and position yourself upwind of the cutter","Stop cutting until the suppression is working properly again","Swap with another bricklayer so neither person gets the full exposure"],
+   correct:2,
+   explanation:'Stopping until the suppression works controls the dust where it is made. The mask is still important, but it should not be relied on as the main control. Short bursts, working upwind or sharing the cutting may reduce individual exposure, yet the same uncontrolled dust is still being produced.',
+   keyTakeaway:'Control silica dust at the cutter first; RPE is the backup, not the whole plan.',
+   id:'brick-epa-v139-k2'
+  },
+  {
+   code:'K3',
+   question:'You arrive at a plot where the method statement covers the walling, but access has changed and materials are now being lifted over the work area. What should you do before starting?',
+   options:["Start the low-level work and review the lifting once the first course is laid","Agree a safe exclusion area with the lifting team and have the plan reviewed","Keep one person watching the lift while the rest of the gang carries on","Move the brick stacks closer so less time is spent under the lifting route"],
+   correct:1,
+   explanation:'The changed access and lifting route alter the risks, so the work plan needs reviewing before the gang starts. A lookout can help during an agreed lift, but it does not replace a proper exclusion area. Starting part of the task or moving materials closer still puts people into a changed setup that has not been assessed.',
+   keyTakeaway:'When site conditions change, update the safe system before work begins.',
+   id:'brick-epa-v139-k3'
+  },
+  {
+   code:'K4',
+   question:'At the end of a walling job, you have clean half-bricks, hardened mortar, plastic packaging and a small amount of usable sand left. What is the best way to deal with them?',
+   options:["Keep the usable materials together and put each waste type in its proper stream","Put everything in the general skip because the quantities are small","Save the half-bricks and sand, then put the mortar and plastic together","Leave the materials by the plot so the next trade can take what they need"],
+   correct:0,
+   explanation:'Separating reusable materials from each waste stream gives the best chance of reuse and recycling while avoiding contamination. A mixed skip is convenient but can make recovery harder. Saving only some materials is partly right, although mortar and plastic still need separating. Leaving items for others can create clutter and does not confirm they will be managed properly.',
+   keyTakeaway:'Reuse what is sound, then separate the remaining waste correctly.',
+   id:'brick-epa-v139-k4'
+  },
+  {
+   code:'K5',
+   question:'A delivery of bricks arrives just as the site team is discussing a change to the opening size. You need the bricks near the scaffold without blocking access. What is the best response?',
+   options:["Ask for the final detail, then agree a safe storage point with the relevant people","Unload beside the scaffold and adjust the stacks once the opening is agreed","Put the packs where they were shown on the original logistics plan","Split the delivery between two nearby spaces so one route stays open"],
+   correct:0,
+   explanation:'Confirming the latest information and agreeing the storage point prevents wasted handling, blocked access and materials ending up in the wrong place. Following the old plan may normally be reasonable, but the job has changed. Splitting or temporarily placing the packs keeps work moving, although it risks extra handling and confusion.',
+   keyTakeaway:'Clear, timely communication prevents small site changes becoming bigger problems.',
+   id:'brick-epa-v139-k5'
+  },
+  {
+   code:'K6',
+   question:'You are working in an occupied area and the client asks why the doorway cannot be used for the next hour. How should you explain it?',
+   options:["Tell them the area is closed because that is how the job has been set up","Say the site manager has decided it and direct any questions to the office","Give a brief warning about falling materials and ask them to use another door","Explain the work taking place, the temporary risk and the safe alternative route"],
+   correct:3,
+   explanation:'A clear explanation of the task, the temporary risk and the alternative route gives the client enough information to act safely. A brief warning may be useful, but it does not fully explain the arrangement. Referring everything elsewhere or simply stating the area is closed can sound dismissive and may leave the person unsure about what to do.',
+   keyTakeaway:'Good communication tells people what is happening, why it matters and what they should do.',
+   id:'brick-epa-v139-k6'
+  },
+  {
+   code:'K7',
+   question:'While setting out a cavity wall, the drawing dimension works, but the opening shown would leave less bearing for the lintel than the manufacturer requires. What should you do?',
+   options:["Keep the drawing dimension because it is the latest issued information","Increase the bearing equally at both ends and record the small change","Raise the conflict before building and get the opening detail confirmed","Use a stronger mortar at the bearings to make up for the short length"],
+   correct:2,
+   explanation:'The drawing and lintel requirement conflict, so the detail needs confirming before masonry fixes the opening size. Following the drawing is understandable, but it could leave inadequate bearing. Changing the opening yourself may solve one issue while creating another. Stronger mortar does not replace the required lintel bearing.',
+   keyTakeaway:'Do not guess when drawings and product requirements disagree; get the detail resolved first.',
+   id:'brick-epa-v139-k7'
+  },
+  {
+   code:'K8',
+   question:'While you are building, a new batch of facing bricks arrives slightly wetter and darker than the packs already in use. The wall must continue today. What is the best approach?',
+   options:["Use the new packs on a separate elevation so the colour difference is contained","Blend bricks from several packs and check the finished appearance as you go","Lay the wetter bricks with a slightly drier mortar to balance the suction","Leave the new packs open for an hour, then continue from the same pack"],
+   correct:1,
+   explanation:'Blending from several packs reduces noticeable banding and lets you monitor the appearance throughout the work. Keeping one batch on a separate elevation may still create a visible change at corners. Adjusting mortar consistency to compensate can affect joint quality. Briefly opening the packs may not bring the bricks to a consistent moisture or shade.',
+   keyTakeaway:'Blend facing bricks across packs and keep checking colour and consistency during the build.',
+   id:'brick-epa-v139-k8'
+  },
+  {
+   code:'K9',
+   question:'Precast masonry panels are being installed above the area where your gang is due to build. The programme shows both tasks happening together. What is the best way to plan your work?',
+   options:["Build the opposite end first and move closer once each panel is fixed","Work beneath the completed panels while the next panel is being prepared","Agree separate work zones and timings so the lifting operation stays clear","Keep the gang mobile and pause whenever a panel passes over the workface"],
+   correct:2,
+   explanation:'Separate zones and agreed timings manage the interface between masonry work and the lifting operation. Moving around or pausing when a load approaches sounds practical, but it relies on people reacting at the right moment. Working under completed panels may still place the gang inside the lifting exclusion zone for the next installation.',
+   keyTakeaway:'Modern construction methods need trades to coordinate space, sequence and lifting—not just their own task.',
+   id:'brick-epa-v139-k9'
+  },
+  {
+   code:'K10',
+   question:'Before starting a return wall, you notice the plan dimension and the written specification give different cavity widths. What should you use for setting out?',
+   options:["Use the plan because dimensions on drawings are normally set out first","Check the latest revision and get the conflicting information clarified","Use the specification because written information usually carries more detail","Use the cavity width already built on the next plot as the working reference"],
+   correct:1,
+   explanation:'Checking the revision and resolving the conflict is the only choice that confirms which requirement is current. Either the plan or specification might be correct, so choosing one by habit is risky. A neighbouring plot can offer a useful comparison, but it may have a different revision or detail.',
+   keyTakeaway:'When project information conflicts, verify the current detail before setting out.',
+   id:'brick-epa-v139-k10'
+  },
+  {
+   code:'K11',
+   question:'The latest tablet model shows a masonry support angle in a different position from the printed drawing in your work area. What is the best way to proceed?',
+   options:["Check the revision details and get the position confirmed before building","Use the tablet model because digital information is usually the newest","Use the printed drawing because it has already been issued to the gang","Set it midway between both positions so either detail can still be adjusted"],
+   correct:0,
+   explanation:'The model and drawing conflict, so the revision and support position need confirming before the masonry fixes it in place. Either source could be current, which makes choosing one by format unreliable. Splitting the difference may look practical, but it creates an unapproved position that may suit neither design.',
+   keyTakeaway:'Treat digital models like any other project information: check revisions and resolve conflicts before building.',
+   id:'brick-epa-v139-k11'
+  },
+  {
+   code:'K12',
+   question:'You calculate 1,050 facing bricks for an elevation, but the packs contain 500 and the brick has a noticeable colour variation. What is the best order quantity?',
+   options:["Order 1,050 and use any shortfall from spare bricks already on site","Order three full packs and return the unopened pack if it is not needed","Order two packs now and arrange a smaller top-up once the wall is underway","Order 1,100 so the exact estimate is covered with a small allowance"],
+   correct:3,
+   explanation:'Ordering 1,100 covers the measured quantity plus a sensible allowance while limiting excess material. Ordering exactly 1,050 leaves no room for cuts or damage. Three full packs create a large surplus and returning a matching batch may not be simple. A later top-up risks delay and a visible batch difference.',
+   keyTakeaway:'Allow for realistic waste without creating unnecessary surplus or relying on a later matching delivery.',
+   id:'brick-epa-v139-k12'
+  },
+  {
+   code:'K13',
+   question:'Your spirit level has taken a fall and now gives a slightly different reading when you turn it end for end. You still have several corners to build. What is the best response?',
+   options:["Use the same face of the level each time so the readings stay consistent","Use it for short work only and check the corners later with a longer level","Adjust each reading by the amount it appears to be out","Check it against another level and take it out of use if it is inaccurate"],
+   correct:3,
+   explanation:'A level that gives different reversed readings may be inaccurate, so it should be checked and removed from use if faulty. Using one face or estimating a correction can repeat the same error through the work. Checking later may reveal a problem only after several courses need rebuilding.',
+   keyTakeaway:'Check suspect hand tools straight away; consistent use does not make an inaccurate tool reliable.',
+   id:'brick-epa-v139-k13'
+  },
+  {
+   code:'K14',
+   question:'A block needs a narrow service notch, and the large disc cutter would remove more material than the drawing allows. What is the best approach?',
+   options:["Make two shallow cuts with the disc cutter and knock out the centre","Cut the notch wider and fill around the service with mortar afterwards","Use a smaller suitable tool that gives better control over the notch","Drill a row of holes and finish the shape with the disc cutter"],
+   correct:2,
+   explanation:'A suitable smaller tool gives the control needed to keep the notch within the required size. Shallow disc cuts or drilled holes may work in some situations, but both can still damage the unit or exceed the detail. Making the opening wider and filling it later changes the intended masonry support around the service.',
+   keyTakeaway:'Choose equipment for the accuracy and limits of the task, not simply the fastest tool available.',
+   id:'brick-epa-v139-k14'
+  },
+  {
+   code:'K15',
+   question:'While building a one-brick-thick wall in English bond, the corner begins to show too many straight vertical joints. What is the best way to correct it?',
+   options:["Take the corner back to the point where the bond first went wrong","Use extra queen closers in the next course to break up the joints","Change to Flemish bond at the corner and continue English bond along the wall","Use three-quarter bats in the bed joints until the lap is recovered"],
+   correct:0,
+   explanation:'Taking the corner back to the first incorrect course restores the intended bond and lap properly. Adding closers or bats later may hide some straight joints but can introduce irregular bond and small pieces. Changing bond at the corner creates a different detail rather than correcting the original setting out.',
+   keyTakeaway:'When bond is lost, correct it at the first faulty course rather than trying to disguise it higher up.',
+   id:'brick-epa-v139-k15'
+  },
+  {
+   code:'K16',
+   question:'You are setting out a capped garden wall and find the pier positions leave an awkward short brick at one end. What is the best adjustment?',
+   options:["Move the nearest pier slightly so the end brick becomes a half brick","Recheck the overall size, bond and pier positions before fixing the layout","Spread the small difference through the perpend joints across the wall","Keep the pier positions and cut the end brick neatly to the remaining space"],
+   correct:1,
+   explanation:'Rechecking the full layout shows whether the issue comes from the overall dimension, bond or pier spacing and allows an agreed adjustment before work starts. Moving one pier may affect the design, while spreading joint sizes can leave inconsistent work. A neat cut may be acceptable in some details, but it should not be the first answer to poor setting out.',
+   keyTakeaway:'Set out the whole wall, bond and features together before accepting an awkward closing piece.',
+   id:'brick-epa-v139-k16'
+  },
+  {
+   code:'K17',
+   question:'A freshly built wall is due to receive a weather-struck finish, but the mortar is still very soft and pulls when you test a joint. What is the best approach?',
+   options:["Wait until the mortar firms enough to hold a clean, consistent profile","Finish the joints now with light pressure so the face stays clean","Brush the joints first, then strike them once the surface has dried","Add a little dry cement to the jointing tool to stop the mortar dragging"],
+   correct:0,
+   explanation:'Waiting for the right firmness allows the joint to compact and hold a clean weather-struck profile. Working too early can smear the face and pull mortar from the joint. Brushing first may roughen or weaken the surface, and adding dry cement changes the joint rather than solving the timing issue.',
+   keyTakeaway:'Joint finish depends on timing; work the mortar when it is firm enough to shape and compact cleanly.',
+   id:'brick-epa-v139-k17'
+  },
+  {
+   code:'K18',
+   question:'A decorative band is specified across a long elevation, but the contrasting bricks are a slightly different height from the main bricks. What is the best way to keep the band level?',
+   options:["Use slightly thinner bed joints in the courses below the band","Gauge the band separately and agree how the difference will be taken up","Lay the band to a line and make up the height in the course above","Sort the contrasting bricks and use only the shortest ones"],
+   correct:1,
+   explanation:'Gauging the decorative bricks separately shows the true difference and allows it to be distributed or detailed without spoiling the line. Altering only one or two bed joints can make the variation obvious. Correcting above the band transfers the problem, and selecting only shorter units may not provide enough bricks or a consistent result.',
+   keyTakeaway:'Check the gauge of decorative units before laying them and plan where any size difference will be absorbed.',
+   id:'brick-epa-v139-k18'
+  },
+  {
+   code:'K19',
+   question:'An expansion joint is shown close to a return, but moving it one brick would make the bond and sealant detail much neater. What is the best decision?',
+   options:["Move it one brick and keep the joint width exactly as specified","Keep it where shown and use cut bricks to maintain the bond","Split the difference by widening two nearby perpends","Check whether the designer will accept the small change before setting it out"],
+   correct:3,
+   explanation:'The joint position controls movement in the wall, so even a small change should be confirmed before setting out. Leaving it as shown may be correct, but the awkward detail could indicate a coordination issue worth raising. Moving it without approval or widening ordinary joints changes how the wall accommodates movement.',
+   keyTakeaway:'Expansion joints are part of the movement design; do not relocate them just to simplify the brickwork.',
+   id:'brick-epa-v139-k19'
+  },
+  {
+   code:'K20',
+   question:'A silo mortar delivery feels noticeably wetter than the previous batch, although the colour and mix ticket look right. What is the best next step?',
+   options:["Use it on the inner leaf first and see how it handles over a few courses","Add a little cement and sand until it matches the previous batch","Pause its use and have the consistency checked before laying with it","Spread it on the boards for a while so some moisture can come out"],
+   correct:2,
+   explanation:'A noticeable change in consistency should be checked before it is built into the work. Trying it on the inner leaf still risks weak or inconsistent joints. Adding materials changes the designed mix, while leaving it exposed can make consistency vary further across the batch.',
+   keyTakeaway:'Do not alter supplied mortar by guesswork; stop and check any unexpected change before use.',
+   id:'brick-epa-v139-k20'
+  },
+  {
+   code:'K21',
+   question:'While setting out a cavity wall with a window opening, your gauge works at one jamb but leaves a narrow cut at the other. What is the best next step?',
+   options:["Keep the first jamb fixed and adjust the perpends across the opening","Make the narrow cut at the less visible jamb and keep the courses level","Recheck the opening, bond and gauge from both ends before fixing the profiles","Move the window opening slightly so full and half bricks work at both jambs"],
+   correct:2,
+   explanation:'Rechecking the full setting out before fixing the profiles finds whether the issue comes from the opening size, bond or gauge. Adjusting perpends can make joints inconsistent, while accepting a narrow cut may weaken the detail. Moving the opening could affect the drawings and other trades, so it should not be done without agreement.',
+   keyTakeaway:'Set out both jambs, the bond and the gauge together before committing to the wall position.',
+   id:'brick-epa-v139-k21'
+  },
+  {
+   code:'K22',
+   question:'While building above a new window, the cavity tray is fitted but one end does not turn up as shown on the detail. What is the best response?',
+   options:["Carry on and seal the end of the tray once the lintel course is complete","Form the stop end before carrying on with the brickwork above","Add an extra weep vent near the low end to deal with any water","Lap a small piece of DPC over the end and bed it into the next joint"],
+   correct:1,
+   explanation:'The stop end needs forming correctly before it is covered because it keeps water from running off the end of the tray into the cavity. Sealing it later may leave gaps that cannot be checked. An extra weep does not control water escaping sideways, and a loose DPC patch may not form a reliable sealed end.',
+   keyTakeaway:'Complete and check cavity trays, stop ends and outlets before building over them.',
+   id:'brick-epa-v139-k22'
+  },
+  {
+   code:'K23',
+   question:'You are laying a soldier course over an opening and the final joint would be much wider than the others. What is the best way to deal with it?',
+   options:["Re-gauge the soldiers and share the difference evenly across the opening","Make the wider joint at the centre so it looks balanced from both sides","Cut the last soldier narrower and keep all the joints the same size","Use slightly thicker joints near each end and normal joints through the middle"],
+   correct:0,
+   explanation:'Re-gauging and sharing the difference evenly gives a balanced soldier course without one obvious closing joint. A single wide joint stands out, while narrowing one soldier changes the unit width and appearance. Altering only the end joints can still make the spacing look uneven.',
+   keyTakeaway:'Gauge decorative courses across the full length so any difference is shared evenly.',
+   id:'brick-epa-v139-k23'
+  },
+  {
+   code:'K24',
+   question:'While replacing a spalled brick, the bricks around it look sound but the joint above is cracked. What is the best approach before fitting the replacement?',
+   options:["Replace the damaged brick and repoint the cracked joint once the mortar firms","Use a stronger mortar around the new brick to stop the crack returning","Fit the replacement slightly loose so any further movement is taken in the joints","Open the area enough to check what caused the damage before completing the repair"],
+   correct:3,
+   explanation:'Checking the cause before finishing the repair reduces the chance of replacing the brick while leaving the original problem behind. Repointing alone may hide continuing movement or moisture. Stronger mortar can push damage into the masonry, while deliberately loose work will not provide a sound repair.',
+   keyTakeaway:'A lasting repair deals with the cause as well as the visible damage.',
+   id:'brick-epa-v139-k24'
+  },
+  {
+   code:'K25',
+   question:'A newly built wall is finished late in the day and a sharp frost is forecast overnight. The mortar has started to firm but is not fully set. What is the best protection?',
+   options:["Lay plastic sheeting directly over the top courses and weight it down with bricks","Cover the wall securely with insulated protection without trapping it against the fresh work","Brush the joints firm, then leave the wall open so the mortar can dry naturally","Build one extra sacrificial course and remove it after the cold weather passes"],
+   correct:1,
+   explanation:'Secure insulated protection helps retain heat and keeps frost and rain off without marking the fresh face. Plastic laid directly on the wall can smear joints and hold water against the masonry. Leaving it exposed risks frost damage, while a sacrificial course does not protect the mortar already laid.',
+   keyTakeaway:'Protect fresh masonry from frost and water without letting the covering damage the work.',
+   id:'brick-epa-v139-k25'
+  },
+  {
+   code:'K26',
+   question:'A telehandler driver asks where to place the next brick delivery, but the usual storage area is being used for drainage work. What is the best reply?',
+   options:["Put it beside the nearest scaffold and leave enough room for the gang to pass","Split the packs between several open plots so no single route is blocked","Hold the delivery while you agree a safe location with the supervisor and driver","Use the original drop point and ask the drainage gang to work around the packs"],
+   correct:2,
+   explanation:'Agreeing a safe location with the people coordinating the site avoids blocked access, unstable ground and repeated handling. The nearest scaffold may not have enough capacity or safe access. Splitting packs can create several obstructions, while using the original area ignores the changed site conditions.',
+   keyTakeaway:'Clear site communication means confirming changes before materials are moved or unloaded.',
+   id:'brick-epa-v139-k26'
+  },
+  {
+   code:'K27',
+   question:'Your gang is ready to start the outer leaf, but the insulation team has not finished the section ahead and everyone is under programme pressure. What is the best team decision?',
+   options:["Start where the insulation is complete and agree a sequence that keeps both teams moving","Build the outer leaf first and leave access points for the insulation to be fitted later","Move the bricklayers to another plot and let the insulation team finish the whole elevation","Help fit the remaining insulation so the brickwork can start at the planned position"],
+   correct:0,
+   explanation:'Agreeing a workable sequence uses the completed area and keeps both teams productive without covering unfinished work. Leaving access points can compromise continuity and quality. Moving the whole gang may lose time unnecessarily, while carrying out another trade’s task may create competence and responsibility issues.',
+   keyTakeaway:'Good teamwork coordinates the sequence so progress does not come at the cost of finished quality.',
+   id:'brick-epa-v139-k27'
+  },
+  {
+   code:'K28',
+   question:'A new labourer on the gang is quiet during the briefing and later says they did not understand some of the site terms. What is the best response?',
+   options:["Give them simpler jobs until they pick up the language from the rest of the gang","Ask the supervisor to repeat future briefings more slowly for everyone","Pair them with the most experienced bricklayer and let them learn by watching","Explain the terms privately and check they are comfortable asking again"],
+   correct:3,
+   explanation:'A private explanation and an open invitation to ask questions helps the person understand without putting them on the spot. Simpler work or observation may help them settle in but does not confirm they understand safety and task information. Slowing every briefing may not address the specific terms they missed.',
+   keyTakeaway:'An inclusive gang checks that everyone understands and makes it easy to speak up.',
+   id:'brick-epa-v139-k28'
+  },
+  {
+   code:'K29',
+   question:'You need several half bricks for a tight repair where a disc cutter cannot be used. The first brick splits unevenly with the bolster. What is the best adjustment?',
+   options:["Use a heavier hammer so the brick breaks cleanly with one firm strike","Cut each brick slightly oversize and trim the face after it is bedded","Soak the bricks first so they are less likely to shatter during cutting","Score the cut line around the brick, support it properly and use controlled blows"],
+   correct:3,
+   explanation:'Scoring the line, supporting the unit and using controlled blows gives the best chance of an accurate hand cut. A heavier strike can make the break less predictable. Trimming after laying risks disturbing the repair, while soaking does not provide reliable control of the cut.',
+   keyTakeaway:'Accurate hand cutting comes from good marking, support and controlled blows rather than extra force.',
+   id:'brick-epa-v139-k29'
+  },
+  {
+   code:'K30',
+   question:'While setting out a raking garden wall, the line of the slope meets the bond with several small triangular cuts near the top. What is the best next step?',
+   options:["Keep the slope and use the small cuts because the coping will cover most of them","Adjust the starting height slightly and recheck the rake against the bond","Change to stack bond through the last few courses to reduce the cutting","Make the cuts from full bricks and use a stronger mortar around the narrow ends"],
+   correct:1,
+   explanation:'A small agreed adjustment to the starting height can improve the bond and remove weak slivers while keeping the intended rake. Accepting tiny cuts may leave fragile pieces. Changing the bond alters the appearance and strength, while stronger mortar does not make poor-shaped cuts sound.',
+   keyTakeaway:'Set out the rake and the bond together so the wall finishes without weak sliver cuts.',
+   id:'brick-epa-v139-k30'
+  },
+  {
+   code:'K31',
+   question:'A normally reliable bricklayer has become withdrawn, is making unusual mistakes and says they are barely sleeping. What is the best way to respond?',
+   options:["Have a quiet word, listen without judging and point them towards suitable support","Reduce their workload for the day and see whether they seem better tomorrow","Tell the supervisor straight away so the problem is formally recorded","Keep them on straightforward tasks and let close workmates watch out for them"],
+   correct:0,
+   explanation:'A private, supportive conversation gives the person a chance to explain what is happening and helps them reach suitable support. Reducing work may help briefly but does not address the underlying issue. Escalating immediately can be necessary where there is an urgent safety concern, but otherwise it may discourage them from opening up. Quietly monitoring them is caring, yet it still leaves the person without direct support.',
+   keyTakeaway:'Notice changes, speak privately and help the person reach the right support.',
+   id:'brick-epa-v1316-k31'
+  },
+  {
+   code:'S1',
+   question:'You are ready to start a small return wall, but the scaffold inspection tag shows yesterday’s date and a guardrail has been moved for a delivery. What is the best action?',
+   options:["Refit the guardrail, check it feels secure and then start the low-level work","Use the scaffold only for loading until the next formal inspection is completed","Stop and get the scaffold checked before using it for the brickwork","Work from the inside edge and keep materials away from the missing guardrail"],
+   correct:2,
+   explanation:'The altered scaffold should be checked by the right person before it is used. Replacing the rail yourself does not confirm the whole scaffold remains safe. Restricting its use or working away from the edge still means using a scaffold whose condition has changed since inspection.',
+   keyTakeaway:'When access equipment has been altered, get it checked before carrying on.',
+   id:'brick-epa-v1316-s1'
+  },
+  {
+   code:'S2',
+   question:'You need to rake out several mortar joints with a grinder in a partly enclosed area. The extraction is working, but fine dust is still hanging in the air. What is the best adjustment?',
+   options:["Keep the extraction running and take a short break after every few joints","Use the extraction with suitable face-fit-tested RPE and improve the airflow","Change to safety goggles and work closer to the joint so the cut is quicker","Move the extraction nozzle slightly back so it catches a wider spread of dust"],
+   correct:1,
+   explanation:'Using effective extraction, suitable RPE and better ventilation tackles the remaining dust through more than one control. Breaks reduce individual time in the area but do not improve the air. Goggles protect the eyes rather than the lungs, and moving the nozzle away usually captures less dust at source.',
+   keyTakeaway:'Match PPE and dust controls to the actual exposure, not just the tool being used.',
+   id:'brick-epa-v1316-s2'
+  },
+  {
+   code:'S3',
+   question:'At the end of a repair job, you have sound reclaimed bricks, broken clean brick, mortar rubble and plastic wrapping. Space in the skip area is tight. What is the best way to clear it?',
+   options:["Keep the full bricks and put the broken brick, mortar and wrapping into one mixed skip","Leave all masonry together for crushing and put the wrapping in the general waste","Use the broken brick as temporary hardstanding and clear everything else together","Stack the reusable bricks and separate the remaining materials into the correct waste streams"],
+   correct:3,
+   explanation:'Keeping sound bricks for reuse and separating the waste preserves value and avoids contaminating recyclable material. Mixing clean masonry with plastic reduces recovery options. Sending reusable units for crushing wastes a usable resource, while using rubble as temporary hardstanding may create housekeeping and removal problems unless it has been agreed.',
+   keyTakeaway:'Reuse first, then keep waste streams clean enough to recycle properly.',
+   id:'brick-epa-v1316-s3'
+  },
+  {
+   code:'S4',
+   question:'A drawing shows wall ties at the usual spacing, but the site detail beside a movement joint requires extra ties. The gang normally follows the drawing. What is the best approach?',
+   options:["Follow the specific joint detail and confirm any conflict before building past it","Use the usual spacing and add one extra tie at the top of the joint","Split the difference between the usual spacing and the joint detail","Match the ties on the previous plot because it has already passed inspection"],
+   correct:0,
+   explanation:'The specific detail governs the work at that location, and any conflict should be resolved before it is covered. Adding a token extra tie or averaging the spacing is not a designed solution. Copying another plot may repeat a different detail or an unnoticed error.',
+   keyTakeaway:'Use the detail that applies to the exact location and resolve clashes before covering the work.',
+   id:'brick-epa-v1316-s4'
+  },
+  {
+   code:'S5',
+   question:'The latest drawing changes an opening by 50 mm, but the printed copy on the plot still shows the old size. The lintel delivery matches the new schedule. What should you do?',
+   options:["Set out from the new schedule because the lintel confirms the change","Keep the old opening until a revised paper drawing reaches the plot","Check the current drawing revision and confirm the opening before setting out","Mark both sizes and let the supervisor choose when they next visit the plot"],
+   correct:2,
+   explanation:'Checking the current revision and confirming the dimension prevents the wall being built from mixed information. The lintel schedule supports the change but does not replace the drawing check. Waiting for paper may delay work unnecessarily, while marking both sizes leaves the key decision unresolved.',
+   keyTakeaway:'Before setting out, make sure every dimension comes from the latest confirmed information.',
+   id:'brick-epa-v1316-s5'
+  },
+  {
+   code:'S6',
+   question:'You are ordering materials for a short cavity wall with one window. Your first calculation gives exactly the number of bricks, blocks and ties shown by the dimensions. What is the best next step?',
+   options:["Order the exact quantities and use offcuts from nearby plots for any shortage","Add the same percentage to every item so the order has a simple allowance","Allow separately for cuts, breakage, returns and the actual tie arrangement","Round each quantity up to the nearest full pack and keep all surplus on the plot"],
+   correct:2,
+   explanation:'Different materials need different allowances based on how they will be used. A single blanket percentage can over-order some items and leave others short. Exact quantities ignore normal losses, while rounding everything to full packs may create unnecessary surplus and congestion.',
+   keyTakeaway:'Estimate each resource from the design, pack sizes and realistic job-specific waste.',
+   id:'brick-epa-v1316-s6'
+  },
+  {
+   code:'S7',
+   question:'During the morning, another trade starts storing pipe bundles beside your mortar spot and narrows the route to the scaffold. What is the best response?',
+   options:["Shift your mortar spot closer to the wall so the route remains usable","Leave a narrow pedestrian gap and ask the labourer to guide deliveries through","Move the pipe bundles to the nearest open area while the other trade is away","Agree a clear storage area with the other trade and restore the access route"],
+   correct:3,
+   explanation:'Speaking to the other trade and restoring an agreed route deals with the shared-workspace problem without creating a new one. Moving the mortar spot may crowd the workface. A narrow guided route is still poor access, while moving another trade’s materials without agreement can damage them or create conflict.',
+   keyTakeaway:'Maintain the work area by coordinating changes, not by passing the obstruction elsewhere.',
+   id:'brick-epa-v1316-s7'
+  },
+  {
+   code:'S8',
+   question:'You are trimming a small number of bricks by hand for a repair. The bolster is sound, but the club hammer has a slightly loose head. What is the best choice?',
+   options:["Use lighter blows and check the head again after each brick","Swap to a sound hammer before making the cuts","Hold the hammer lower down the handle so the head moves less","Use the brick hammer instead and make several smaller cuts"],
+   correct:1,
+   explanation:'A loose hammer head can worsen or detach during use, so a sound tool is the right choice. Lighter blows and a lower grip do not remove the defect. A brick hammer may suit some trimming, but changing the method only to avoid replacing an unsafe tool is not the best judgement.',
+   keyTakeaway:'Select a tool that suits the task and is in safe condition before you start.',
+   id:'brick-epa-v1316-s8'
+  },
+  {
+   code:'S9',
+   question:'After washing down at the end of the shift, your levels and trowels are clean but still damp, and the lock-up is cold. What is the best way to leave them?',
+   options:["Dry them, protect the metal surfaces and store them where they will not be damaged","Put them straight into the toolbox so they are secure before the site closes","Leave the toolbox lid open overnight so the moisture can escape naturally","Wrap the metal parts in a dry cloth and stack the tools beside the mortar mixer"],
+   correct:0,
+   explanation:'Drying, protecting and storing the tools properly prevents rust, damaged edges and inaccurate equipment. Locking damp tools away traps moisture. Leaving the box open reduces security, while cloth can hold damp against the metal and the mixer area is not controlled storage.',
+   keyTakeaway:'Clean tools are not finished until they are dry, protected and stored safely.',
+   id:'brick-epa-v1316-s9'
+  }
+,
+  {
+   code:"S10",
+   question:"You are setting out the first course of a blockwork inner skin for a cavity wall. The detailed drawings call for a clear internal room length of 4,000mm between block faces. How should you establish the corner block positions before laying the rest of the course?",
+   options:["Set the two end blocks in mortar using exact tape measurements, then immediately lay the full course through to line to keep up production speed.","Lay the corner blocks using a string line set to 4,005mm to leave an extra gap for plastering later.","Lay one corner block in mortar, line out the course, and chop the final block to fit whatever gap remains at the far corner.","Dry lay the first course without mortar to check the bond and measure the overall length, adjusting joint thickness slightly if needed to keep cuts to a minimum."],
+   correct:3,
+   explanation:"Dry laying the initial course allows you to verify brick or block bond, check overall measurements, and ensure opening sizes and tolerances match the drawings before applying mortar. Setting blocks directly in mortar without dry-checking risks improper bond or uneven cuts.",
+   keyTakeaway:"Always dry lay and check gauge and bond on setting-out courses before laying in mortar.",
+   id:"brick-epa-v1317-s10"
+  },
+  {
+   code:"S11",
+   question:"You are constructing a cavity wall section that includes a 900mm window opening. You are placing the cavity tray over the opening. How should the cavity tray be positioned and finished to ensure proper moisture management?",
+   options:["Keep the tray completely level across the cavity and seal both ends flat against the cavity insulation without weep holes.","Slope the tray downwards towards the outer leaf, ensuring it steps over the lintel with turned-up end dams and weep holes installed directly above.","Angle the tray backwards towards the inner blockwork leaf so water drains down into the internal cavity insulation.","Tuck the tray behind the lintel without end dams, relying on standard mortar joints to absorb any water ingress."],
+   correct:1,
+   explanation:"Cavity trays must shed water to the outer leaf, feature end dams to prevent water spilling off the edges into the cavity, and use weep holes to drain water outside. Angling backwards or leaving ends open directs water inside the building fabric.",
+   keyTakeaway:"Cavity trays must shed outwards with end dams and weep holes for reliable water discharge.",
+   id:"brick-epa-v1317-s11"
+  },
+  {
+   code:"S12",
+   question:"You are completing the external brickwork joints on a house build where the specification calls for a weather struck and cut joint finish. How should this joint be profiled to meet trade quality standards?",
+   options:["Recess the bottom edge of the horizontal joint into the wall while keeping the top edge flush, creating an upward slope.","Press a curved jointer iron deeply into the mortar joint to create a smooth, concave half-round profile.","Strike the horizontal joint so the top edge is recessed slightly into the wall and the bottom edge is flush with the lower brick, then cut the bottom edge crisp with a trowel.","Rake out the mortar to a depth of 10mm leaving a square, flat recessed channel with sharp interior corners."],
+   correct:2,
+   explanation:"A weather struck and cut joint slopes inward at the top edge so water sheds off the face of the upper brick down to the lower brick, with a clean cut line along the bottom edge. Inverting the slope catches water, while rounded or raked joints are different profile types.",
+   keyTakeaway:"Weather struck joints slope inward at the top to shed rainwater away from the mortar line.",
+   id:"brick-epa-v1317-s12"
+  },
+  {
+   code:"S13",
+   question:"You are building a 225mm one-brick-thick solid garden wall in English bond and capping it with a brick-on-edge coping. How should the capping course be constructed to prevent water penetration and finish cleanly?",
+   options:["Lay a continuous damp proof course under the brick-on-edge, bedding bricks on a rich mortar with neat, solid perpends, overhangs, and creasing tiles if specified.","Lay the brick-on-edge directly onto dry brickwork without DPC to allow the capping mortar to key strongly into the wall below.","Set the capping bricks horizontally on their flat face using standard mortar, leaving perpends open to allow ventilation.","Pour a thin liquid grout over flat bricks laid on top of the wall to seal the top course quickly."],
+   correct:0,
+   explanation:"Brick-on-edge cappings require a sound bedding mortar, full perpends, and a DPC beneath, or engineering bricks and tile creasing where specified, to stop water driving down through the top of a solid wall. Omitting the water barrier or leaving perpends open leads to frost damage and water ingress.",
+   keyTakeaway:"Solid wall cappings require proper water barriers and fully filled joints to resist weathering.",
+   id:"brick-epa-v1317-s13"
+  },
+  {
+   code:"S14",
+   question:"You are mixing a 1:1:6 cement, lime and sand mortar mix by hand on a mixing board for external facing brickwork. What is the correct method to ensure an even mix throughout?",
+   options:["Add all the water onto the board first, shovel in the sand, and mix in cement and lime at the end to prevent dust.","Shovel loose heaps of sand, cement and lime straight onto the board and splash water on top without dry mixing to save time.","Mix cement and water into a liquid slurry first, then throw sand on top and stir until thick.","Measure dry ingredients accurately using gauge boxes or buckets, heap and turn the dry materials together at least twice until uniform in colour, then add water gradually while turning."],
+   correct:3,
+   explanation:"Hand mixing requires batching with consistent containers and thoroughly mixing dry ingredients to a uniform colour before adding water. Adding water first or guessing shovel counts leads to weak, patchy or inconsistent mortar.",
+   keyTakeaway:"Always dry-blend batched mortar ingredients thoroughly before adding water.",
+   id:"brick-epa-v1317-s14"
+  },
+  {
+   code:"S15",
+   question:"You need to cut several facing bricks to form queen closers for a corner detail. Which tool and technique will produce the cleanest cut to accurate tolerances?",
+   options:["Mark the top face only and hit the brick hard with the blade of a brick hammer without scoring.","Use a hand saw designed for lightweight thermal blocks to slowly saw through the facing brick.","Mark the cut line around all four faces with a pencil and square, score along the line using a bolster chisel and club hammer, then split with a sharp, firm strike.","Grip the brick in a vice and snap it over a sharp timber edge by hitting the overhang with a mallet."],
+   correct:2,
+   explanation:"Scoring around all four sides of a brick with a bolster chisel creates a stress line that helps produce a clean, accurate split when struck firmly. Hitting without scoring or snapping over timber is more likely to cause jagged, unusable fractures.",
+   keyTakeaway:"Score all sides of a brick with a bolster chisel before striking for a clean split.",
+   id:"brick-epa-v1317-s15"
+  },
+  {
+   code:"S16",
+   question:"You are replacing three spalling bricks in an existing facing brick wall. How should you remove the damaged bricks without loosening or damaging the surrounding sound brickwork?",
+   options:["Hit the centre of the damaged bricks forcefully with a sledgehammer until they shatter out of the wall.","Stitch-drill small holes into the mortar joints around the damaged bricks, chisel out the joints carefully with a narrow plugging chisel, then ease the damaged bricks out.","Lever a large crowbar into the bed joint above the damaged bricks and pry upwards until the course lifts.","Use a wide bolster chisel straight into the brick face to break it apart while leaving mortar joints intact."],
+   correct:1,
+   explanation:"Drilling out and chiselling the mortar joints frees the damaged brick from the surrounding masonry, allowing it to be removed without transferring heavy impact forces that could crack surrounding bricks. Heavy hammering or prying risks damaging adjacent units.",
+   keyTakeaway:"Isolate damaged bricks by removing surrounding mortar joints before extraction.",
+   id:"brick-epa-v1317-s16"
+  },
+  {
+   code:"S18",
+   question:"You are reporting progress and material requirements to the site manager for an upcoming gable end build. Which statement uses correct construction terminology?",
+   options:["“We have finished setting out the inner leaf blockwork to damp level and will need two packs of engineering bricks for the DPC course tomorrow.”","“We’ve done the bottom row of concrete blocks inside and need some dark hard bricks for the waterproof layer tomorrow.”","“The inside wall is up to the floor line, so send up some heavy grey bricks to stop the damp getting through.”","“We finished the lower part of the wall and just need some proper bricks for the ground line before we crack on.”"],
+   correct:0,
+   explanation:"Professional site communication relies on precise trade terminology such as inner leaf blockwork, damp level, engineering bricks and DPC course. Informal descriptions can cause confusion or lead to the wrong materials being ordered.",
+   keyTakeaway:"Use precise trade terms when ordering materials or reporting site progress.",
+   id:"brick-epa-v1317-s18"
+  },
+  {
+   code:"S20",
+   question:"You are working as part of a four-person bricklaying team raising a high cavity wall section. The hod carrier is struggling to keep both bricks and mortar topped up for all masons. How should the team adapt?",
+   options:["Carry on laying at maximum speed so the site manager can see the bricklayers are not slowing down.","Tell the hod carrier to work faster and skip cleaning mortar boards between batches.","Stop work completely and wait in the canteen until additional labourers arrive on site.","Pause laying briefly to help stock up boards and split tasks effectively so the line rises evenly without overburdening one person."],
+   correct:3,
+   explanation:"Good teamwork involves supporting colleagues and adapting the workflow to maintain safety, quality and momentum across the build team. Ignoring the bottleneck can lead to poor mortar quality, safety risks or team friction.",
+   keyTakeaway:"Collaborate and support team members to maintain workflow, safety and build quality.",
+   id:"brick-epa-v1317-s20"
+  },
+  {
+   code:"S22",
+   question:"You are building a brick gable end wall that requires a raking cut along the roof pitch line. How should you establish and execute the raking cuts accurately?",
+   options:["Lay full bricks past the pitch line, then chop off the overhanging corners with a brick hammer after the mortar hardens.","Set up a string line along the exact roof pitch angle, mark each brick individually across its face, and cut precisely using a masonry saw or bolster.","Estimate the angle by eye and cut several bricks at once on a bench before laying the course.","Step the bricks back in full headers along the gable without cutting to let the roofers cover the gaps."],
+   correct:1,
+   explanation:"Raking cuts require marking the pitch line accurately with a line or bevel and cutting units individually to fit tightly against the raking angle within tolerance. Cutting hardened bricks in place or guessing angles results in uneven joints and weak edges.",
+   keyTakeaway:"Mark raking cuts directly from a precise pitch line to maintain accurate tolerances.",
+   id:"brick-epa-v1317-s22"
+  }
+ ],
+ 'site-carpentry-v1-4':[
+  {
+   code:"K1",
+   question:"You are preparing to cut timber in a confined area on site where dust accumulation is high. Under PUWER and CoSHH guidelines, what essential safety step must be taken regarding equipment and health protection?",
+   options:["Ensure power tools have valid safety inspections and combine local dust extraction (LEV) with a fitted FFP3 respirator.","Open a far window and use a standard dust mask while disabling the saw guard for faster cutting.","Sweep up the timber dust with a dry broom after finishing all the cuts for the day.","Use cordless tools only, as respiratory protection is not required for natural timber dust."],
+   correct:0,
+   explanation:"PUWER requires safe, inspected equipment, while CoSHH requires controlling hazardous wood dust at source using LEV and appropriate RPE (FFP3 mask).",
+   keyTakeaway:"Always combine inspected tools with effective LEV and RPE to control timber dust exposure.",
+   id:"site-carp-epa-v1318-k1"
+  },
+  {
+   code:"K2",
+   question:"When operating a portable circular saw to rip down sheet materials, how should local exhaust ventilation (LEV) and personal protective equipment (PPE) be used together?",
+   options:["Rely solely on safety glasses, as LEV is only needed when working with solid hardwoods.","Set the LEV hose next to the work bench without connecting it to the tool shroud.","Attach an extraction vacuum directly to the saw's dust port and wear eye protection and ear defenders.","Wear heavy leather gloves while feeding sheet material quickly past the unguarded blade."],
+   correct:2,
+   explanation:"Connecting LEV directly to the tool removes dust at the point of creation, while eye and hearing protection guard against flying particles and high noise levels.",
+   keyTakeaway:"Directly connect extraction to power tools and wear eye and hearing protection.",
+   id:"site-carp-epa-v1318-k2"
+  },
+  {
+   code:"K3",
+   question:"Before starting a first-fix roofing task on a busy site, where do you find the specific safe working sequence and control measures established for that task?",
+   options:["On the delivery note attached to the roof truss timber pack.","In the general health and safety poster displayed inside the site canteen.","By asking a colleague how they installed rafters on their previous project.","In the site-specific Method Statement and Risk Assessment (RAMS) reviewed during the toolbox talk."],
+   correct:3,
+   explanation:"RAMS and site toolbox talks provide the task-specific safe systems of work and control measures for high-risk operations like roofing.",
+   keyTakeaway:"Review task RAMS and attend safety briefings before starting structural tasks.",
+   id:"site-carp-epa-v1318-k3"
+  },
+  {
+   code:"K4",
+   question:"When sourcing timber for a commercial build committed to sustainable practices, what certification ensures the wood comes from sustainably managed forests?",
+   options:["CE / UKCA structural grading stamp only.","FSC (Forest Stewardship Council) or PEFC certification.","ISO 9001 quality management stamp.","Local sawmill delivery receipt."],
+   correct:1,
+   explanation:"FSC and PEFC chain-of-custody schemes verify that timber products originate from responsibly managed, sustainable forests.",
+   keyTakeaway:"Look for FSC or PEFC certification to verify sustainable timber sourcing.",
+   id:"site-carp-epa-v1318-k4"
+  },
+  {
+   code:"K5",
+   question:"Why is an airtightness membrane installed on the warm side of insulation in a modern timber-frame wall construction?",
+   options:["To prevent warm, moist internal air from entering the wall cavity and causing interstitial condensation.","To provide a rigid structural backing for fixing heavy external timber cladding.","To allow external rainwater to drain quickly down into the foundation footing.","To increase the fire resistance rating of the external plasterboard lining."],
+   correct:0,
+   explanation:"Vapour control layers placed on the warm side stop moist room air from migrating into cold insulation layers where it would condense and rot timber frames.",
+   keyTakeaway:"Vapour control layers prevent internal moisture from condensing inside the structural frame.",
+   id:"site-carp-epa-v1318-k5"
+  },
+  {
+   code:"K6",
+   question:"In a digital 3D BIM (Building Information Modelling) environment, how do digital models assist site carpenters before structural floor joists are installed?",
+   options:["By automatically sharpening hand chisels and saw blades prior to site delivery.","By replacing the need to use mechanical fixings or joist hangers during assembly.","By identifying spatial clashes where service pipes or ductwork cross joist locations before physical installation.","By calculating the exact moisture content of timber delivered to site."],
+   correct:2,
+   explanation:"3D digital design models allow trade teams to spot spatial clashes between structural timber elements and mechanical or electrical services before work begins.",
+   keyTakeaway:"BIM models identify clash locations between structural members and service runs early.",
+   id:"site-carp-epa-v1318-k6"
+  },
+  {
+   code:"K7",
+   question:"Which regulatory standard dictates structural safety, fire separation, and thermal insulation requirements for carpentry work in residential buildings in England?",
+   options:["The Highways Act regulatory manual.","The CDM 2015 client appointment duty register.","The Consumer Rights Act standard documentation.","The Building Regulations (Approved Documents A, B, and L)."],
+   correct:3,
+   explanation:"Building Regulations Part A, Part B and Part L set mandatory performance standards for building works.",
+   keyTakeaway:"Carpentry installations must meet the relevant Building Regulations Approved Documents.",
+   id:"site-carp-epa-v1318-k7"
+  },
+  {
+   code:"K8",
+   question:"On a working architectural drawing, what does a dashed line running through a floor plan view typically represent?",
+   options:["The boundary line for site material waste skips.","Hidden structural elements, such as floor joists or steel beams overhead.","An area where timber sanding is strictly prohibited.","A wall that must be constructed using non-standard metric timber."],
+   correct:1,
+   explanation:"In technical drawing standards, dashed lines indicate hidden details or structural members located above or below the immediate section plane.",
+   keyTakeaway:"Dashed lines on structural plans denote overhead or hidden structural members.",
+   id:"site-carp-epa-v1318-k8"
+  },
+  {
+   code:"K9",
+   question:"Why is manufactured Birch Plywood preferred over standard OSB/3 for constructing rigid site jigs and high-load structural gussets?",
+   options:["It is significantly cheaper and lighter than low-density fibreboards.","It does not require cutting tools and can be scored and snapped by hand.","Its cross-laminated veneer construction offers superior dimensional stability, smooth faces, and high shear strength.","It completely absorbs water without expanding or delaminating over time."],
+   correct:2,
+   explanation:"Plywood's cross-grained thin wood veneers provide multi-directional strength, high screw-holding power, and resistance to warping under load.",
+   keyTakeaway:"Plywood provides multi-directional strength and stability due to cross-laminated veneers.",
+   id:"site-carp-epa-v1318-k9"
+  },
+  {
+   code:"K10",
+   question:"What maximum moisture content threshold should structural timber typically not exceed before being enclosed within a modern building envelope?",
+   options:["20% (ideally 12-16% for internal finish timber).","35% moisture content.","5% moisture content.","50% moisture content."],
+   correct:0,
+   explanation:"Timber enclosed at over 20% moisture content is at risk of fungal decay and severe dimensional shrinkage as it dries in service.",
+   keyTakeaway:"Keep timber moisture below 20% to prevent fungal attack and shrinkage.",
+   id:"site-carp-epa-v1318-k10"
+  },
+  {
+   code:"K11",
+   question:"Which ironmongery component is specifically designed to allow an internal fire door to self-close fully into its frame rebate against a latch?",
+   options:["An overhead hydraulic door closer compliant with BS EN 1154.","A surface-mounted straight barrel bolt.","A pair of unrated brass decorative butt hinges.","A magnetic cabinet catch set into the door head."],
+   correct:0,
+   explanation:"Fire doors require certified self-closing devices to ensure the leaf shuts automatically and maintains fire compartmentation.",
+   keyTakeaway:"Fire doors require certified self-closing hardware to maintain fire seals.",
+   id:"site-carp-epa-v1318-k11"
+  },
+  {
+   code:"K12",
+   question:"You are calculating stud lengths for a 12-metre long stud wall with studs placed at 600mm centres. How do you calculate the total number of vertical studs required, excluding openings?",
+   options:["Multiply 12 metres by 0.6mm to get 7.2 studs.","Divide 12 metres by 2 and subtract 1 stud.","Divide the wall length by the spacing (12m / 0.6m = 20) and add 1 for the starting end stud (21 studs total).","Multiply 12 studs by 4 corners to equal 48 studs."],
+   correct:2,
+   explanation:"To calculate vertical studs for a run, divide the total length by the centre spacing distance and add one stud to cap the starting end.",
+   keyTakeaway:"Number of studs equals total length divided by spacing, plus one end stud.",
+   id:"site-carp-epa-v1318-k12"
+  },
+  {
+   code:"K13",
+   question:"When explaining a stair installation to a site supervisor, which term correctly describes the vertical height from top of one tread to the top of the next?",
+   options:["The going.","The rise.","The margin.","The pitch line."],
+   correct:1,
+   explanation:"Rise is the vertical distance between consecutive treads, whereas going is the horizontal depth from nosing to nosing.",
+   keyTakeaway:"Rise measures vertical step height; going measures horizontal step depth.",
+   id:"site-carp-epa-v1318-k13"
+  },
+  {
+   code:"K14",
+   question:"Which hand tool is designed specifically for laying out precise 90-degree lines across timber faces prior to sawing?",
+   options:["Sliding bevel.","Mortise gauge.","Chalk line reel.","Try square."],
+   correct:3,
+   explanation:"A try square has a fixed 90-degree stock and blade used to mark and check right-angled cuts on timber.",
+   keyTakeaway:"Use a try square to mark and verify precise 90-degree angles.",
+   id:"site-carp-epa-v1318-k14"
+  },
+  {
+   code:"K15",
+   question:"When sharpening a bevel-edged woodworking chisel using an oilstone or whetstone, what is the ideal primary bevel grinding angle?",
+   options:["45 degrees primary and 60 degrees secondary.","10 degrees primary and 15 degrees secondary.","25 degrees, with a secondary honing angle of approximately 30 degrees.","90 degrees square to the chisel back."],
+   correct:2,
+   explanation:"Standard chisels are ground to a 25-degree primary angle and honed at around 30 degrees to create a durable cutting edge.",
+   keyTakeaway:"Grind chisels to 25 degrees and hone a secondary micro-bevel at around 30 degrees.",
+   id:"site-carp-epa-v1318-k15"
+  },
+  {
+   code:"K16",
+   question:"Why are custom router jigs constructed with dedicated guide bush collars when routing multiple identical door hinge recesses?",
+   options:["To lubricate the router bit continuously during cutting.","To ensure exact repeatability and prevent the cutter from wandering outside the hinge footprint.","To eliminate the need for clamping the jig to the door edge.","To automatically adjust the routing depth between passes."],
+   correct:1,
+   explanation:"Jigs used with router guide bushes ensure identical, repeatable cuts across multiple workpieces without measuring each recess individually.",
+   keyTakeaway:"Router jigs ensure fast, identical and repeatable cuts.",
+   id:"site-carp-epa-v1318-k16"
+  },
+  {
+   code:"K17",
+   question:"When using a portable plunge saw with a guide rail to trim doors to length, what safety mechanism prevents the saw from kicking back along the track?",
+   options:["Wrapping electrical tape around the rail track ends.","Increasing plunge speed as fast as possible through thick wood.","Removing the lower guard from the blade housing.","An anti-kickback cam or cleat fitted to the saw base and an integrated riving knife."],
+   correct:3,
+   explanation:"Anti-kickback devices and riving knives prevent the saw blade from binding in the cut and pinching back toward the operator.",
+   keyTakeaway:"Anti-kickback features stop track saws binding or kicking back toward the user.",
+   id:"site-carp-epa-v1318-k17"
+  },
+  {
+   code:"K18",
+   question:"How does effective communication between carpenters and dryliners improve site progress during first-fix framing?",
+   options:["It ensures timber noggins are installed at correct height locations for fixing plasterboard edges and heavy wall items.","It allows dryliners to alter structural timber roof trusses without engineering approval.","It eliminates the need for site managers to inspect work quality.","It ensures all timber walls are left uninsulated until second fix."],
+   correct:0,
+   explanation:"Clear inter-trade communication ensures backing timber is placed where dryliners and other follow-on trades require solid fixings later.",
+   keyTakeaway:"Coordinate with follow-on trades to ensure backing support is placed correctly.",
+   id:"site-carp-epa-v1318-k18"
+  },
+  {
+   code:"K19",
+   question:"What is the primary goal of applying inclusion, equity, and diversity principles within a site construction team?",
+   options:["To assign the heaviest physical labour strictly to new apprentices.","To restrict specialised tool usage to senior workers only.","To create a respectful environment where every worker feels valued, safe, and able to contribute.","To eliminate the need for site toolbox talks and safety inductions."],
+   correct:2,
+   explanation:"EDI principles foster an environment of fairness, mutual respect, and psychological safety, improving overall safety and productivity.",
+   keyTakeaway:"EDI creates a fair, respectful and high-performing workplace environment.",
+   id:"site-carp-epa-v1318-k19"
+  },
+  {
+   code:"K20",
+   question:"If you notice a team member showing signs of severe physical exhaustion and emotional distress on site, what is the best immediate supportive response?",
+   options:["Tell them to work faster to distract themselves from their personal worries.","Assign them high-risk scaffold work to raise their energy levels.","Ignore their situation as mental health is unrelated to construction safety.","Speak to them privately, express care, and signpost them to site Mental Health First Aiders or confidential helpline resources."],
+   correct:3,
+   explanation:"Recognising early signs of mental or physical distress and directing colleagues to trained welfare resources promotes early intervention.",
+   keyTakeaway:"Identify signs of distress early and signpost available support services.",
+   id:"site-carp-epa-v1318-k20"
+  },
+  {
+   code:"K21",
+   question:"When fitting architrave around a door lining, why is a mitre joint cut at 45 degrees used at the top corners instead of a butt joint?",
+   options:["It neatly joins two decorative end profiles together while hiding end grain across the corner junction.","It increases the fire resistance rating of the timber door frame.","It allows architrave mouldings to expand up to 50mm during humid weather.","It eliminates the need for wood adhesive or pin fixings."],
+   correct:0,
+   explanation:"Mitre joints meet at half the overall angle to align matching moulding profiles continuously.",
+   keyTakeaway:"Mitring aligns decorative profiles seamlessly across corner intersections.",
+   id:"site-carp-epa-v1318-k21"
+  },
+  {
+   code:"K22",
+   question:"When sizing floor joists for a residential building using standard span tables, which two main factors determine the required timber depth?",
+   options:["The colour of the timber grain and the blade speed of the mitre saw.","The clear span distance between supports and the design load, including dead and imposed loads.","The brand of wood glue used on the joist ends.","The height of the skirting boards in the room below."],
+   correct:1,
+   explanation:"Span tables cross-reference clear span length against design loading to specify the minimum timber cross-section required for structural stability.",
+   keyTakeaway:"Timber spans are determined by clear span length and imposed loading requirements.",
+   id:"site-carp-epa-v1318-k22"
+  },
+  {
+   code:"K24",
+   question:"When joining two structural timber members end-to-end over a support using a spliced joint, what requirement must be met?",
+   options:["The splice can be held together using standard PVA glue and masking tape.","The joint cut must be positioned in the middle of the longest unsupported span.","The splice must be structurally engineered and fixed with the specified bolts or timber connectors.","The end grain must be left unsealed with an open 10mm gap between timbers."],
+   correct:2,
+   explanation:"Structural timber splices must transfer shear and tensile loads safely through engineered joint geometry and specified mechanical connectors.",
+   keyTakeaway:"Structural timber splices require specified mechanical fixings to transfer load safely.",
+   id:"site-carp-epa-v1318-k24"
+  },
+  {
+   code:"K25",
+   question:"In traditional cut roofing, what structural member connects the feet of opposing rafters to prevent outward spread on external walls?",
+   options:["Bargeboards.","Ceiling joists or suitable rafter ties.","Tilting fillets.","Fascia boards."],
+   correct:1,
+   explanation:"Ceiling joists or suitable ties act at the base of opposing rafters, preventing side walls from being pushed outward by roof loads.",
+   keyTakeaway:"Ceiling joists or rafter ties prevent the roof from spreading the walls.",
+   id:"site-carp-epa-v1318-k25"
+  },
+  {
+   code:"K26",
+   question:"In a warm flat roof design, where is the main thermal insulation layer positioned relative to the structural timber deck?",
+   options:["Above the timber roof deck, keeping the deck and structure at internal warm temperatures.","Directly below the ceiling plasterboard only, leaving an unventilated cavity above.","Underneath the ground floor concrete slab.","Loosely packed between joists with continuous cross-ventilation above."],
+   correct:0,
+   explanation:"Warm flat roofs place insulation on top of the deck, reducing condensation risk by keeping the deck timber inside the warm zone.",
+   keyTakeaway:"Warm flat roofs place insulation above the structural roof deck.",
+   id:"site-carp-epa-v1318-k26"
+  },
+  {
+   code:"K27",
+   question:"When constructing a load-bearing timber stud partition, what structural component is installed directly above a door opening to transfer loads around the opening?",
+   options:["A single 12mm plasterboard strip screwed to the head plate.","A softwood skirting board nailed flat across the opening.","A diagonal softwood noggin placed centrally in the doorway.","A structural header or lintel supported by jack studs."],
+   correct:3,
+   explanation:"Headers transfer vertical loads from above around wall openings down through the supporting studs.",
+   keyTakeaway:"Headers carry loads over partition openings and transfer them to supporting studs.",
+   id:"site-carp-epa-v1318-k27"
+  },
+  {
+   code:"K28",
+   question:"When fitting timber skirting boards along a wall with an internal 90-degree corner, which joint technique prevents gaps from opening up if timber shrinks?",
+   options:["A square butt joint without glue or fixings.","A half-lap edge joint held with carpet tape.","A straight 45-degree bevel cut along the top edge only.","A scribed joint, cutting the profile of one board over the face of the other."],
+   correct:3,
+   explanation:"Internal skirting corners are scribed to match the face profile, maintaining a tight visual joint even if timber shrinks in width later.",
+   keyTakeaway:"Use scribed joints on internal skirting corners to absorb timber movement cleanly.",
+   id:"site-carp-epa-v1318-k28"
+  },
+  {
+   code:"K29",
+   question:"Before using a self-levelling cross-line laser to mark datum lines for joist hangers across a large room, what calibration check should be performed?",
+   options:["Wipe the glass lens with heavy lubricating oil.","Place the unit on an uneven pile of loose timber cut-offs without locking the pendulum.","Check the laser line against a known datum and rotate the unit 180 degrees to confirm line-height consistency.","Charge the battery until it reaches maximum heat."],
+   correct:2,
+   explanation:"Verifying a laser level requires projecting a mark, rotating the level 180 degrees, and checking that the beam returns to the same height.",
+   keyTakeaway:"Verify laser accuracy over distance by performing a 180-degree rotation check.",
+   id:"site-carp-epa-v1318-k29"
+  },
+  {
+   code:"K40",
+   question:"What is a key tax obligation for a self-employed site carpenter working under the UK Construction Industry Scheme (CIS)?",
+   options:["Registering with HMRC for CIS so contractors can deduct tax at source, typically 20%, from labour payments.","Paying no income tax as long as tool costs exceed income.","Filing VAT returns weekly regardless of turnover level.","Paying employee National Insurance directly through the site main contractor's payroll."],
+   correct:0,
+   explanation:"Under CIS, contractors deduct advance tax directly from subcontractor labour payments and submit it to HMRC on their behalf.",
+   keyTakeaway:"CIS requires contractors to deduct advance tax at source from subcontractor labour.",
+   id:"site-carp-epa-v1318-k40"
+  },
+  {
+   code:"S1",
+   question:"You notice an unguarded floor opening on the first-floor joist deck where someone could fall. How do you demonstrate compliance with safety regulations?",
+   options:["Step over the gap carefully while carrying heavy timber lengths.","Stop work, secure a temporary guardrail or solid cover over the opening immediately, and label it clearly.","Cover the hole loosely with a sheet of thin cardboard.","Ignore it until floor boarding starts next week."],
+   correct:1,
+   explanation:"Work at height controls require effective edge protection or a secured rigid cover over floor openings.",
+   keyTakeaway:"Securely cover or guard all floor voids and edges before working near them.",
+   id:"site-carp-epa-v1318-s1"
+  },
+  {
+   code:"S2",
+   question:"You need to sand filled timber joints on installed window boards inside a completed room. How do you correctly apply safety control equipment?",
+   options:["Blow dust off the boards using an airline hose toward the doorway.","Connect an M-Class dust extraction vacuum to the sander and wear suitable FFP2 or FFP3 respiratory protection.","Wear eye protection only while keeping all windows tightly shut without extraction.","Use a wire brush by hand without any respiratory protection."],
+   correct:1,
+   explanation:"Fine timber and filler dust require suitable extraction attached to the tool along with suitable RPE.",
+   keyTakeaway:"Use tool extraction combined with RPE when sanding timber.",
+   id:"site-carp-epa-v1318-s2"
+  },
+  {
+   code:"S3",
+   question:"At the end of a first-fix framing shift, you have clean timber offcuts, treated wood scraps, and metal joist hanger offcuts. How should you process these waste materials?",
+   options:["Throw all wood and metal waste together into the general landfill skip.","Burn treated timber scraps on site to heat the working area.","Segregate untreated wood, treated wood, and scrap metal into their designated site recycling bins.","Bury metal fixings underneath the floor insulation boards."],
+   correct:2,
+   explanation:"Environmental guidance requires sorting site waste by material type so metals and suitable timber can be reclaimed or recycled.",
+   keyTakeaway:"Sort and segregate waste streams to support site material recycling.",
+   id:"site-carp-epa-v1318-s3"
+  },
+  {
+   code:"S4",
+   question:"When installing structural floor joists, the manufacturer's guidance states joist hangers must be fully nailed into solid backing using specified square twist nails. How do you ensure compliance?",
+   options:["Fill every designated nail hole in the hanger flange with the specified square twist nails.","Put two drywall screws through the top holes only to hold the hanger in place.","Use smooth oval wire nails in every second hole to save time.","Weld the galvanised hanger to the timber plate using a spot torch."],
+   correct:0,
+   explanation:"Structural fixings must follow the manufacturer's specification, using the correct nails in all designated holes to achieve the rated capacity.",
+   keyTakeaway:"Install specified fixings in all designated fixing holes to achieve the structural rating.",
+   id:"site-carp-epa-v1318-s4"
+  },
+  {
+   code:"S5",
+   question:"Before setting up a chop saw station inside a room under construction, how do you prepare a safe working area?",
+   options:["Set the saw directly on the floor surrounded by loose timber offcuts.","Block the main exit doorway with timber racks so materials stay close by.","Run extension leads through standing surface water across the access path.","Ensure adequate lighting, clear trip hazards, manage power cables, and set up a stable work stand with dust extraction."],
+   correct:3,
+   explanation:"Safe work area preparation requires clear access routes, stable equipment stands, good lighting, managed cables and suitable dust control.",
+   keyTakeaway:"Maintain clean, well-lit and uncluttered work zones around power tool stations.",
+   id:"site-carp-epa-v1318-s5"
+  },
+  {
+   code:"S6",
+   question:"You are reading a structural floor drawing and notice the joist spacing is specified as 400mm centres, but the site layout pencil mark shows 600mm centres. What should you do?",
+   options:["Lay the joists at 600mm centres because it uses fewer materials.","Split the difference and lay joists at 500mm centres.","Halt joist layout, check the specification drawing, and correct the layout marks before fixing.","Ignore the drawing and lay joists wherever existing wall ties are located."],
+   correct:2,
+   explanation:"Structural drawings must be followed. If site marks contradict the drawing, stop and verify before fixing structural elements.",
+   keyTakeaway:"Verify layout marks against structural drawings before installing components.",
+   id:"site-carp-epa-v1318-s6"
+  },
+  {
+   code:"S7",
+   question:"You are tasked with framing a stud partition wall measuring 6m long by 2.4m high. How do you produce an accurate timber cutting list?",
+   options:["Order 50 identical timber lengths without measuring the wall run.","Guess the required timber count by looking at a nearby completed room.","Order studs only and cut top plates out of spare floorboards.","Calculate top and bottom plates, studs at the specified centres, opening members and noggins, adding an appropriate waste allowance."],
+   correct:3,
+   explanation:"An accurate cutting list calculates plates, studs, noggins and opening components systematically from the actual dimensions, with a reasonable waste allowance.",
+   keyTakeaway:"Calculate all framing components systematically when compiling timber cutting lists.",
+   id:"site-carp-epa-v1318-s7"
+  },
+  {
+   code:"S8",
+   question:"You need to ask the site supervisor for additional ceiling joist timber. How do you communicate this using correct construction terminology?",
+   options:["We require twenty 47x145mm C24 graded timber lengths at 4.2 metres for the ceiling joists.","We need a bunch of medium-sized wood planks for the top floor ceiling.","Send up twenty long sticks of brown wood so we can finish the roof floor.","We need some structural timber cut to whatever size is available in the yard."],
+   correct:0,
+   explanation:"Clear professional communication requires exact dimensions, structural grade, intended use and required lengths.",
+   keyTakeaway:"Specify exact structural grade, dimensions and lengths when ordering materials.",
+   id:"site-carp-epa-v1318-s8"
+  },
+  {
+   code:"S9",
+   question:"How should sharp bevel-edged chisels be safely carried and stored when moving around a busy construction site?",
+   options:["Carried loose in trouser side pockets with blades facing upwards.","Stored inside a protective tool roll or box with edge guards fitted over the blades.","Tucked blade-first into a high-visibility vest chest pocket.","Balanced on top of an open stepladder while moving between rooms."],
+   correct:1,
+   explanation:"Protecting sharp edges in guards or tool rolls prevents edge damage and protects workers from puncture injuries.",
+   keyTakeaway:"Keep sharp hand tools sheathed or stored securely when moving around site.",
+   id:"site-carp-epa-v1318-s9"
+  },
+  {
+   code:"S10",
+   question:"When using a 110V plunge router to trim laminate edges, what operational step ensures tool control and user safety?",
+   options:["Climb-cut rapidly by pulling the router in the same direction as cutter rotation.","Hold the workpiece with one hand and operate the router with the other.","Adjust bit depth while the motor cable is plugged in and powered.","Feed the router against the cutter rotation with both hands on the handles, allowing the bit to reach full speed before engaging."],
+   correct:3,
+   explanation:"Feeding against cutter rotation helps prevent the tool grabbing and running out of control. Both hands should remain on the handles.",
+   keyTakeaway:"Maintain two-handed control on routers and feed against cutter rotation.",
+   id:"site-carp-epa-v1318-s10"
+  },
+  {
+   code:"S11",
+   question:"While planing a hardwood door edge, your hand plane blade begins to tear the timber grain and skip. How do you return the blade to good working condition?",
+   options:["Remove the iron, hone the secondary bevel on a fine stone, remove the wire burr from the back, and reset the plane correctly.","Hit the iron with a claw hammer to force it further through the sole opening.","Grind the iron on a high-speed dry bench grinder until the metal turns blue.","File the cutting edge rounded using a coarse rasp."],
+   correct:0,
+   explanation:"Proper sharpening requires honing a refined edge, removing the wire burr from the flat back, and resetting the plane correctly.",
+   keyTakeaway:"Hone blade edges on sharpening stones and remove burrs to maintain clean cuts.",
+   id:"site-carp-epa-v1318-s11"
+  },
+  {
+   code:"S12",
+   question:"You need to cut twenty identical timber wedge fillets for a flat roof firring installation. How do you produce a jig to ensure fast, safe and accurate repeatable cuts?",
+   options:["Mark each wedge individually by hand and cut every one freehand.","Construct a secure plywood fence jig that holds stock at the correct angle against a suitable saw stop.","Hold short timber blocks against a bare circular saw blade with your fingers.","Judge the angle by eye on each cut without using end stops or clamps."],
+   correct:1,
+   explanation:"A fixed jig with stops and a secure holding method produces repeatable cuts while keeping hands away from the blade.",
+   keyTakeaway:"Use custom guide jigs with end stops for accurate, safe repeatable cuts.",
+   id:"site-carp-epa-v1318-s12"
+  },
+  {
+   code:"S13",
+   question:"A colleague mentions feeling overwhelmed by financial pressure and personal stress. What practical action demonstrates identifying wellbeing support?",
+   options:["Advise them to work extra night shifts to double their pay.","Tell them feeling stressed is standard for site trades so they should ignore it.","Provide details for the Construction Industry Helpline or Employee Assistance Programme and encourage them to speak to a trained site representative.","Discuss their personal situation publicly with the rest of the site workforce."],
+   correct:2,
+   explanation:"Supporting a colleague involves connecting them with confidential industry support services and trained welfare staff.",
+   keyTakeaway:"Direct colleagues to confidential industry wellbeing services and trained advisers.",
+   id:"site-carp-epa-v1318-s13"
+  },
+  {
+   code:"S14",
+   question:"You are installing a straight flight of timber stairs between two structural floors. How do you ensure the stair stringers are secured accurately?",
+   options:["Rest the stair stringer loosely against the plasterboard wall and nail it through the floorboards.","Support the middle of the stair flight on temporary loose brick stacks.","Fix the stair head securely to the floor trimmer using the specified structural connection, ensuring top and bottom risers suit finished floor levels.","Screw the bottom step into carpet underlay without fixing the stair head."],
+   correct:2,
+   explanation:"Stair flights must be structurally tied to the floor trimmer at the top and anchored securely at the base, while maintaining consistent riser heights between finished floors.",
+   keyTakeaway:"Fix stair flights securely to floor trimmers, accounting for finished floor levels.",
+   id:"site-carp-epa-v1318-s14"
+  },
+  {
+   code:"S15",
+   question:"When securing a heavy timber sole plate down into a concrete floor slab, which structural fixing method should be applied?",
+   options:["Use 40mm panel pins driven into plastic wall plugs every 2 metres.","Drill and anchor using specified heavy-duty expansion bolts or concrete screws at the required centres.","Apply a thin bead of PVA wood glue along the damp proof membrane.","Weight the timber down with loose concrete blocks until framed walls are built on top."],
+   correct:1,
+   explanation:"Sole plates require rated mechanical anchors into the concrete slab to resist uplift and lateral loads.",
+   keyTakeaway:"Use rated mechanical masonry anchors to secure structural sole plates to concrete.",
+   id:"site-carp-epa-v1318-s15"
+  },
+  {
+   code:"S16",
+   question:"You need to select timber joists for a clear floor span of 3.8 metres. How do you size the timber correctly using standard sizing tables?",
+   options:["Use the relevant span table for the 3.8m clear span and expected loading to identify the required grade and section size.","Pick any timber depth as long as the wood looks clean and free of large knots.","Measure the wall thickness and choose a timber length that matches wall height.","Use 38x89mm studding timber doubled up with wood glue."],
+   correct:0,
+   explanation:"Timber span tables specify the minimum grade and section required for a particular clear span, spacing and loading condition.",
+   keyTakeaway:"Cross-reference span and loading against approved timber span tables to select joist sizes.",
+   id:"site-carp-epa-v1318-s16"
+  },
+  {
+   code:"S17",
+   question:"You are installing internal timber window boards above radiators during second-fix operations. How should these be fitted and secured?",
+   options:["Nail window boards loosely through window frame glazing beads using 100mm wire nails.","Rely on expanding foam alone without mechanical fixings or level checks.","Leave a 25mm forward slope so the board slides away from the wall line.","Cut the ends accurately to fit the reveals, pack the board level, and secure it with the specified adhesive or concealed mechanical fixings."],
+   correct:3,
+   explanation:"Window boards must fit the reveals neatly, be packed level and be secured using a suitable approved fixing method.",
+   keyTakeaway:"Fit window boards neatly to reveals, pack them level and fix them securely.",
+   id:"site-carp-epa-v1318-s17"
+  },
+  {
+   code:"S18",
+   question:"When framing a traditional cut rafter roof on site, how do you mark and cut the birdsmouth joint where rafters meet the timber wall plate?",
+   options:["Chop a square notch halfway through the wall plate so the rafter sits flat.","Cut the rafter completely flat on the end and butt-nail it to the side of the wall plate.","Mark the plumb and seat cuts from the roof pitch, keeping the notch within the permitted rafter depth, then cut neatly to bear on the plate.","Saw through the entire rafter and reconnect the pieces with nail plates over the wall plate."],
+   correct:2,
+   explanation:"A birdsmouth combines a plumb cut and a level seat cut so the rafter bears correctly on the wall plate without excessive loss of section.",
+   keyTakeaway:"Mark birdsmouth cuts from the roof pitch and keep the notch within the permitted rafter depth.",
+   id:"site-carp-epa-v1318-s18"
+  },
+  {
+   code:"S19",
+   question:"You are transferring a finished floor datum level across four rooms using a self-levelling cross-line laser. How do you ensure accuracy and protect the instrument?",
+   options:["Balance the laser loosely on an inverted bucket and tilt it by hand to reach high marks.","Mount the laser securely, allow it to self-level, mark points precisely, and lock the pendulum before moving it.","Leave the self-levelling lock disengaged while transporting the tool across rough ground.","Mark datum points using the wide outer edge of the laser beam."],
+   correct:1,
+   explanation:"Laser levels need a stable setup to self-level accurately, and the pendulum should be locked during transport to protect the mechanism.",
+   keyTakeaway:"Mount laser levels securely and lock the pendulum before transport.",
+   id:"site-carp-epa-v1318-s19"
+  },
+  {
+   code:"S20",
+   question:"When installing timber wall cladding outdoors, what fixing method prevents moisture from corroding nails and staining timber faces?",
+   options:["Use the specified stainless steel or hot-dip galvanised ring-shank nails, driven to the required finish.","Use untreated black mild steel wire nails.","Use indoor drywall screws driven flush into timber faces.","Glue cladding panels directly to masonry walls using PVA adhesive."],
+   correct:0,
+   explanation:"External timber cladding requires corrosion-resistant fixings to prevent rust staining and premature fixing failure.",
+   keyTakeaway:"Use stainless steel or suitably galvanised fixings for external timber cladding.",
+   id:"site-carp-epa-v1318-s20"
+  },
+  {
+   code:"S21",
+   question:"You are hanging a solid softwood internal door into a newly installed timber lining. How do you mark out and cut the hinge recesses?",
+   options:["Chisel a slot twice as deep as the hinge leaf so the hinge drops below the timber face.","Screw hinges directly onto the unrecessed face of the door edge.","Cut hinge recesses using a handsaw angled at 45 degrees into the door edge.","Mark hinge positions accurately, gauge the hinge-leaf depth, cut the recess cleanly, and fix the hinges flush with suitable screws."],
+   correct:3,
+   explanation:"Hinge recesses must be marked accurately and cut to the exact leaf thickness so the hinge sits flush and the door operates correctly.",
+   keyTakeaway:"Cut hinge recesses to the exact leaf depth so the hardware sits flush.",
+   id:"site-carp-epa-v1318-s21"
+  },
+  {
+   code:"S22",
+   question:"When fitting dado rails along an uneven wall face, how do you execute a scribed joint on an internal corner?",
+   options:["Cut two opposing 45-degree mitres and pack any gap behind with folded paper.","Butt both pieces together and fill the front voids with dark wood filler.","Fit the first moulding square into the corner, mitre the second to expose the profile, then cope along that profile for a tight fit.","Bevel both timber ends to 30 degrees and overlap them across the corner."],
+   correct:2,
+   explanation:"Scribing exposes the moulding profile with a mitre and then removes the waste behind it so the second piece fits tightly over the first.",
+   keyTakeaway:"Use a coping saw along the exposed profile to create tight internal scribed joints.",
+   id:"site-carp-epa-v1318-s22"
+  },
+  {
+   code:"B1",
+   question:"You notice that the main guardrail on a mobile scaffold tower has been unclipped and left hanging loose by another team. How do you demonstrate putting safety and wellbeing first?",
+   options:["Climb the tower quickly to grab a tool, taking care not to lean against the open side.","Stop work on or near the tower, prevent access, and report the defect so the tower can be made safe by a competent person.","Wait until the end of the shift to mention the loose guardrail.","Ignore the scaffold because your immediate carpentry task is on ground level."],
+   correct:1,
+   explanation:"Putting safety first means stopping exposure to the hazard and ensuring the equipment is made safe before use.",
+   keyTakeaway:"Take immediate ownership of safety hazards, regardless of who caused them.",
+   id:"site-carp-epa-v1318-b1"
+  },
+  {
+   code:"B2",
+   question:"When cutting short joist noggins out of 4.8m timber lengths, how do you demonstrate environmental consideration during work processes?",
+   options:["Plan the cutting sequence and use suitable existing offcuts before opening new full-length timber packs.","Cut every short noggin from fresh full-length timber and discard the remaining pieces.","Throw all timber offcuts under 2 metres into the general waste skip.","Order custom short noggins regardless of suitable stock already on site."],
+   correct:0,
+   explanation:"Environmental responsibility includes planning cuts to reduce waste and using suitable offcuts before opening new stock.",
+   keyTakeaway:"Use material offcuts productively to reduce site timber waste.",
+   id:"site-carp-epa-v1318-b2"
+  },
+  {
+   code:"B3",
+   question:"A female apprentice carpenter joins your first-fix team. How do you actively contribute to an inclusive and diverse culture on site?",
+   options:["Assign her light cleaning duties only so she avoids physical framing work.","Expect her to prove her skills before giving her access to power tools.","Avoid speaking to her so you do not accidentally say something wrong.","Treat her with equal respect, involve her fully in skilled framing tasks, and challenge non-inclusive behaviour."],
+   correct:3,
+   explanation:"An inclusive culture gives every team member equal respect, learning opportunities and access to skilled work.",
+   keyTakeaway:"Treat all colleagues equally and ensure everyone can participate in skilled work.",
+   id:"site-carp-epa-v1318-b3"
+  },
+  {
+   code:"B4",
+   question:"A specialist subcontractor is using a high-precision CNC timber routing system on site for prefabricated roof components. How do you demonstrate seeking learning and development opportunities?",
+   options:["Dismiss the technology as unnecessary compared with traditional hand sawing.","Ask permission to observe the setup, ask relevant technical questions, and read the component fabrication information.","Assume you will never need to understand automated machinery in your career.","Complain that automated machinery reduces traditional site hours."],
+   correct:1,
+   explanation:"Seeking development means showing initiative and learning about modern methods, equipment and processes.",
+   keyTakeaway:"Take initiative to learn modern methods and equipment from specialist trades.",
+   id:"site-carp-epa-v1318-b4"
+  },
+  {
+   code:"B5",
+   question:"Your carpentry team is tasked with boarding a floor deck before dryliners arrive to erect internal partitions. How do you demonstrate a team focus to meet goals?",
+   options:["Coordinate the floor layout and handover sequence with the drylining team so priority partition areas are ready on time.","Board floors randomly without discussing room priorities with follow-on trades.","Focus only on your own daily output regardless of whether partition areas are accessible.","Leave floor boarding incomplete around doorways so another trade can finish it later."],
+   correct:0,
+   explanation:"Team focus means coordinating with adjoining trades and considering the wider programme rather than only individual output.",
+   keyTakeaway:"Coordinate actively with adjoining trades to achieve project-wide milestones.",
+   id:"site-carp-epa-v1318-b5"
+  }
+ ],
+ "architectural-joiner-st0264-v1-4":[
+  {
+   code:"K1",
+   question:"You are preparing to cut timber in a workshop where fine wood dust accumulates quickly. Under PUWER and CoSHH regulations, what is the mandatory safety step regarding equipment and personal health protection?",
+   options:["Open a far window and wear a standard paper dust mask while disabling the saw guard for speed.","Sweep up all fine timber dust with a dry yard broom once at the end of every shift.","Ensure the saw has valid safety inspections and combine localized dust extraction (LEV) with a fitted FFP3 respirator.","Use cordless hand tools only, as respiratory protection is not required for natural softwoods."],
+   correct:2,
+   explanation:"PUWER requires safe, inspected machinery, while CoSHH mandates controlling hazardous wood dust at the point of creation using LEV paired with appropriate RPE (FFP3 mask).",
+   keyTakeaway:"Always combine inspected equipment with effective LEV and RPE to control timber dust exposure.",
+   id:"arch-epa-v1319-k1-1"
+  },
+  {
+   code:"K2",
+   question:"When operating a portable circular saw or router to process MDF sheet materials, how should local exhaust ventilation (LEV) and personal protective equipment (PPE) be configured?",
+   options:["Rely on safety glasses alone, as extraction systems are only required when machining solid oak.","Position an extraction hose nearby on the bench without physically connecting it to the tool shroud.","Wear heavy leather rigging gloves while feeding sheet material past an unguarded blade.","Connect continuous extraction directly to the tool dust shroud and wear eye protection along with ear defenders."],
+   correct:3,
+   explanation:"Directly connecting LEV removes toxic fine particulate at the source, while eye and hearing protection shield against projectile chips and high acoustic levels.",
+   keyTakeaway:"Directly attach extraction hoses to power tool shrouds and wear suitable PPE.",
+   id:"arch-epa-v1319-k2-2"
+  },
+  {
+   code:"K3",
+   question:"Before commencing high-risk machining or assembly work in a busy workshop, where do you find the precise safety sequence and control measures designed for that operation?",
+   options:["In the task-specific Method Statement and Risk Assessment (RAMS) reviewed during the safety induction or toolbox talk.","On the delivery advice note attached to the raw timber bundle.","In the general health and safety poster mounted inside the staff breakroom.","By asking a fellow apprentice how they performed the same task on a previous job."],
+   correct:0,
+   explanation:"RAMS documents and safety briefings set out the legally binding, safe systems of work and control measures required for workshop tasks.",
+   keyTakeaway:"Always review task RAMS and attend safety briefings prior to starting complex work.",
+   id:"arch-epa-v1319-k3-3"
+  },
+  {
+   code:"K4",
+   question:"When ordering timber stock for a sustainable build project, which international certification guarantees the raw material originated from responsibly managed forests?",
+   options:["CE / UKCA structural grading stamps only.","ISO 9001 quality assurance approval stamps.","FSC (Forest Stewardship Council) or PEFC certification.","Local saw mill weight delivery dockets."],
+   correct:2,
+   explanation:"FSC and PEFC chain-of-custody schemes verify that timber products originate from sustainably managed, environmentally sound forests.",
+   keyTakeaway:"Look for FSC or PEFC certification to verify sustainable timber sourcing.",
+   id:"arch-epa-v1319-k4-4"
+  },
+  {
+   code:"K5",
+   question:"Why is an airtightness membrane installed on the warm interior side of insulation in a modern timber-frame wall assembly?",
+   options:["To provide a rigid backing layer for attaching heavy decorative timber cladding.","To facilitate external rainwater drainage down into the concrete foundation slab.","To increase the structural load-bearing capacity of interior plasterboard linings.","To stop warm, moist room air from migrating into the timber frame cavity and creating interstitial condensation."],
+   correct:3,
+   explanation:"Vapour control layers placed on the warm interior side prevent moist indoor air from penetrating cold outer insulation zones where it would condense and rot structural timber.",
+   keyTakeaway:"Vapour control layers prevent internal moisture from condensing inside structural wall cavities.",
+   id:"arch-epa-v1319-k5-5"
+  },
+  {
+   code:"K6",
+   question:"In a 3D digital design environment (such as BIM or CAD), how do digital models support an architectural joiner prior to manufacturing bespoke staircase components?",
+   options:["By automatically setting the fence depth on workshop planer and thicknessing machinery.","By identifying spatial geometry clashes and component layout errors before cutting physical timber.","By eliminating the need to use mechanical jointing fixings or adhesives during assembly.","By calculating the exact moisture percentage contained inside incoming raw timber lots."],
+   correct:1,
+   explanation:"3D CAD/BIM digital models allow joiners and designers to spot geometrical clashes, headroom clearances, and assembly misalignments before physical production starts.",
+   keyTakeaway:"Digital 3D models highlight layout errors and spatial clashes before timber is cut.",
+   id:"arch-epa-v1319-k6-6"
+  },
+  {
+   code:"K7",
+   question:"Which mandatory regulatory framework dictates timber door fire ratings, staircase pitch angles, and structural safety parameters across England?",
+   options:["The Highways Act regulatory standard manual.","The Building Regulations (such as Approved Documents B, K, and M).","The Construction (Design and Management) client appointment register.","The Consumer Rights Act standard commercial template."],
+   correct:1,
+   explanation:"Building Regulations set mandatory minimum standards for fire safety (Part B), stair safety and guarding (Part K), and accessibility (Part M).",
+   keyTakeaway:"Joinery installations must strictly satisfy the relevant Approved Building Regulations.",
+   id:"arch-epa-v1319-k7-7"
+  },
+  {
+   code:"K8",
+   question:"On an architectural joinery elevation drawing, what does a dashed hidden line running across a cabinet door opening indicate?",
+   options:["The position where timber must be split and spliced together.","An area where surface sanding and clear finishing are prohibited.","The direction of swing and hinge pivot locations for the door leaf.","The location of internal moisture barrier membranes."],
+   correct:2,
+   explanation:"On elevation drawings, dashed or triangular lines pointing toward a frame edge indicate hinge placement and door swing direction.",
+   keyTakeaway:"Dashed swing lines on elevation drawings denote hinge positions and leaf opening directions.",
+   id:"arch-epa-v1319-k8-8"
+  },
+  {
+   code:"K9",
+   question:"Why is manufactured Birch Plywood preferred over standard chipboard for constructing rigid workshop jigs and curved joinery formers?",
+   options:["Its cross-laminated veneer construction offers superior dimensional stability, strong screw retention, and high shear resistance.","It is significantly cheaper and softer than low-density fibreboard products.","It can be scored with a utility knife and snapped cleanly by hand without power saws.","It absorbs water without expanding, swelling, or delaminating over prolonged outdoor exposure."],
+   correct:0,
+   explanation:"Plywood's cross-laminated wood veneers offer multi-directional strength, high structural rigidity, excellent screw holding, and resistance to warping.",
+   keyTakeaway:"Plywood provides exceptional structural stability and fix holding due to cross-laminated veneers.",
+   id:"arch-epa-v1319-k9-9"
+  },
+  {
+   code:"K10",
+   question:"What maximum timber moisture content range is recommended for indoor furniture and architectural joinery before processing to prevent warping?",
+   options:["22% to 28% moisture content.","35% to 40% moisture content.","0% to 2% moisture content.","8% to 12% moisture content."],
+   correct:3,
+   explanation:"Internal timber joinery should be conditioned to 8–12% moisture content to match heated internal environments and prevent severe shrinkage or timber movement.",
+   keyTakeaway:"Internal joinery timber must be kiln-dried to 8–12% moisture content before processing.",
+   id:"arch-epa-v1319-k10-10"
+  },
+  {
+   code:"K11",
+   question:"Which chemical formulation is recommended for filling pin holes and slight joint gaps in internal hardwood joinery prior to clear lacquering?",
+   options:["Standard exterior masonry gap sealant.","Unmixed expandable polyurethane gap foam.","Hydrated lime mortar mixed with PVA adhesive.","A color-matched solvent or acrylic timber filler blended with fine sanding dust from the same wood species."],
+   correct:3,
+   explanation:"Mixing fine sanding dust from the project's hardwood with a compatible binder creates an exact grain-matched filler that accepts clear finishes smoothly.",
+   keyTakeaway:"Blend project sanding dust with clear binders to create seamless, grain-matched wood fillers.",
+   id:"arch-epa-v1319-k11-11"
+  },
+  {
+   code:"K12",
+   question:"You are producing a cutting list for ten identical timber window frames. What essential allowance must be added to the raw timber stick lengths before machining?",
+   options:["Subtract 100mm per component to account for timber thermal expansion.","An allowance for cross-cutting square ends, tenon horns, and machine planing timber margins (typically 50mm extra per piece).","No allowance is required; order exact finished component sizes.","Multiply total cubic meters by four to cover glue line compression."],
+   correct:1,
+   explanation:"Cutting lists must incorporate machining allowances (over-length stock for horns, breakout, squaring, and cross-cutting trim).",
+   keyTakeaway:"Always include machining allowances and horn lengths on raw material cutting lists.",
+   id:"arch-epa-v1319-k12-12"
+  },
+  {
+   code:"K13",
+   question:"When discussing staircase manufacturing with a workshop manager, what trade term defines the total horizontal distance covered by a flight of stairs from first to last riser?",
+   options:["The total going.","The total rise.","The margin line.","The pitch line height."],
+   correct:0,
+   explanation:"The 'total going' is the complete horizontal measurement from the face of the first riser to the face of the top riser.",
+   keyTakeaway:"Total going measures the horizontal span; total rise measures total vertical elevation.",
+   id:"arch-epa-v1319-k13-13"
+  },
+  {
+   code:"K14",
+   question:"Which marking hand tool features two parallel spur pins adjusted by a thumbscrew to lay out double lines for mortise and tenon joints simultaneously?",
+   options:["Marking gauge.","Sliding bevel.","Mortise gauge.","Try square."],
+   correct:2,
+   explanation:"A mortise gauge features two pins (one fixed, one adjustable) to score both sides of a mortise or tenon in a single pass.",
+   keyTakeaway:"Mortise gauges score twin parallel lines for precise mortise and tenon layouts.",
+   id:"arch-epa-v1319-k14-14"
+  },
+  {
+   code:"K15",
+   question:"When re-sharpening a bevel-edged chisel on a sharpening stone, what critical step ensures a true cutting edge after honing the 30-degree secondary micro-bevel?",
+   options:["Grinding the back face at a 45-degree angle to create a double wedge.","Cooling the steel tip rapidly in cold oil without wiping away stone slurry.","Filing the flat back in circular patterns using a coarse cabinet rasp.","Laying the flat back of the chisel completely flush on the fine stone to stroke away the remaining wire burr."],
+   correct:3,
+   explanation:"Removing the wire burr flat from the polished back face is essential to achieve a razor-sharp, mirror-smooth cutting edge.",
+   keyTakeaway:"Keep the back of the chisel perfectly flat on fine stones to lap away wire burrs.",
+   id:"arch-epa-v1319-k15-15"
+  },
+  {
+   code:"K16",
+   question:"Why are dedicated wooden routing jigs built with toggle clamps and guide fence stops when manufacturing multiple identical curved door heads?",
+   options:["They reduce the electrical power consumed by overhead router motors.","They ensure precise component repeatability, secure workpiece stability, and eliminate hand positioning near cutters.","They allow joiners to use unsharpened router bits safely.","They eliminate the need to apply finish sanding to routed timber curves."],
+   correct:1,
+   explanation:"Routing jigs lock stock in place, guarantee identical dimensions across large batch runs, and keep hands safely away from high-speed cutters.",
+   keyTakeaway:"Jigs guarantee identical repeatability while improving operator workholding safety.",
+   id:"arch-epa-v1319-k16-16"
+  },
+  {
+   code:"K17",
+   question:"When setting up a biscuit jointer or plunge router to cut slot recesses in timber panels, what safety check must be performed before plugging into power?",
+   options:["Remove all lower blade guards to allow chips to clear freely.","Lubricate the cutting carbide tips with mineral engine oil.","Verify cutter sharpness, ensure the plunge spring returns smoothly, check fence depth locks, and confirm correct fence angle adjustment.","Lock the plunge trigger in the 'ON' position before connecting to power."],
+   correct:2,
+   explanation:"Always inspect cutter integrity, guard return springs, depth stops, and locking handles before connecting machinery to power.",
+   keyTakeaway:"Inspect guards, depth stops, and blade integrity prior to connecting tools to power.",
+   id:"arch-epa-v1319-k17-17"
+  },
+  {
+   code:"K18",
+   question:"How does clear communication between an architectural joiner and the finishing team improve productivity when producing batch cabinetry?",
+   options:["It ensures components are sanded to the correct grit level, labeled logically, and kept free of glue squeeze-out before stain application.","It allows finish sprayers to change drawer runner specifications without notice.","It eliminates the need for quality inspection checks prior to delivery.","It ensures timber joinery is shipped wet with un-cured adhesive."],
+   correct:0,
+   explanation:"Clear inter-departmental communication ensures machining tolerances, surface prep (sanding grit), and assembly sequences suit the final finish process.",
+   keyTakeaway:"Collaborate across teams to align surface preparations with final finishing requirements.",
+   id:"arch-epa-v1319-k18-18"
+  },
+  {
+   code:"K19",
+   question:"How do principles of equity and inclusion benefit a joinery workshop production environment?",
+   options:["By establishing a culture where every worker feels respected, supported, and empowered to contribute ideas and report safety concerns.","By ensuring heavy timber handling is restricted exclusively to younger workers.","By limiting high-precision machinery access to senior staff members only.","By removing standardized trade assessment criteria for new apprentices."],
+   correct:0,
+   explanation:"Inclusive environments promote mutual respect, fair opportunities, diverse perspectives, and strong team communication.",
+   keyTakeaway:"Inclusion creates a fair, supportive environment that drives safety and quality.",
+   id:"arch-epa-v1319-k19-19"
+  },
+  {
+   code:"K20",
+   question:"If a workshop team member exhibits signs of acute physical fatigue or emotional burnout while operating machinery, what is the appropriate immediate action?",
+   options:["Tell them to operate high-speed machinery faster to maintain production quotas.","Encourage them to take a break, offer supportive listening, and signpost them to designated Mental Health First Aiders or EAP resources.","Assign them to operate an unguarded spindle moulder to re-focus their attention.","Ignore their condition as mental health considerations do not apply in manufacturing environments."],
+   correct:1,
+   explanation:"Recognizing signs of distress, offering immediate support, and signposting to trained welfare resources protects worker wellbeing and workshop safety.",
+   keyTakeaway:"Address signs of fatigue or distress immediately and direct staff to professional support resources.",
+   id:"arch-epa-v1319-k20-20"
+  },
+  {
+   code:"K29",
+   question:"Before using a self-levelling cross-line laser to set out height datums for fitted cabinetry across a room, how do you verify its accuracy?",
+   options:["Clean the front glass lens using solvent thinners while the laser is running.","Set the unit on a sloping surface without unlocking the self-levelling pendulum.","Increase room lighting to maximum brightness to sharpen the laser line beam.","Project a beam line onto a wall, mark it, rotate the laser unit 180 degrees at the same distance, and verify the line aligns with the mark."],
+   correct:3,
+   explanation:"Checking laser calibration involves projecting a level mark, rotating the instrument 180 degrees, and checking that the beam hits the same mark.",
+   keyTakeaway:"Verify laser levels regularly using 180-degree benchmark checks.",
+   id:"arch-epa-v1319-k29-21"
+  },
+  {
+   code:"K30",
+   question:"What is a mandatory requirement when assembling an FD30 rated timber fire door frame assembly?",
+   options:["Fitting lightweight hollow core panels using standard plastic hinges.","Leaving a 15mm open air gap around the door perimeter without seals.","Installing approved intumescent seals into frame grooves and using fire-rated hinges installed with specified screw lengths.","Securing door linings with standard expanding foam without mechanical frame anchors."],
+   correct:2,
+   explanation:"Certified fire door assemblies require tested intumescent strip combinations, solid timber frame densities, and certified fire-rated ironmongery.",
+   keyTakeaway:"Fire doors require certified intumescent seals, solid frames, and tested hardware.",
+   id:"arch-epa-v1319-k30-22"
+  },
+  {
+   code:"K31",
+   question:"When setting up a workshop surface planer (joiner), where should the bridge guard be positioned relative to the timber stock?",
+   options:["Raised 100mm above the timber cutter block so the knives are clearly visible.","Removed completely from the machine table during short production runs.","Adjusted down close to the table surface leaving only enough clearance for the timber to slide under, or set close to the fence during edge planing.","Swung back behind the machine frame out of the way of the operator."],
+   correct:2,
+   explanation:"Bridge guards must cover the exposed cutter block as much as possible, positioned directly over the cutter block close to the timber or fence.",
+   keyTakeaway:"Bridge guards must shield the cutter block, leaving minimum operational clearance.",
+   id:"arch-epa-v1319-k31-23"
+  },
+  {
+   code:"K32",
+   question:"What is the primary purpose of creating a full-size 1:1 scale setting-out rod before manufacturing complex architectural joinery?",
+   options:["To serve as a disposable packing board when shipping finished joinery products.","To establish exact full-size lengths, joint details, section profiles, and hardware locations to prevent cumulative layout errors.","To calculate the total electrical consumption of workshop machinery.","To display final paint color options to the client on site."],
+   correct:1,
+   explanation:"Setting-out rods show 1:1 true dimensions, timber sections, and joint geometry, providing an accurate reference that eliminates measuring mistakes.",
+   keyTakeaway:"Setting-out rods establish exact 1:1 dimensions and joint alignments before cutting.",
+   id:"arch-epa-v1319-k32-24"
+  },
+  {
+   code:"K33",
+   question:"Which traditional joinery joint provides high resistance to tensile pull-out forces, making it ideal for connecting drawer sides to drawer fronts?",
+   options:["Half-lap corner joint.","Square butt joint.","Biscuit joint.","Dovetail joint."],
+   correct:3,
+   explanation:"Dovetail joints interlock pins and tails, creating high mechanical strength against forward tensile pulling forces.",
+   keyTakeaway:"Dovetail joints provide mechanical interlock against pulling forces.",
+   id:"arch-epa-v1319-k33-25"
+  },
+  {
+   code:"K34",
+   question:"When manufacturing a traditional stormproof timber casement window frame, what design feature prevents driving rain from penetrating the frame joints?",
+   options:["Machining drip grooves, weatherseal rebates, and stepped drained sills into the timber sections.","Applying clear interior PVA glue over outer frame faces.","Assembling all perimeter frame components using simple un-rebated butt joints.","Omitting lower sill slope angles so glass sits flat against timber."],
+   correct:0,
+   explanation:"Weatherproof timber windows rely on sloped sills, capillary drip grooves, gasket rebates, and rebate offsets to shed water outwards.",
+   keyTakeaway:"Weatherproof timber windows require sloped sills, drip channels, and compression seals.",
+   id:"arch-epa-v1319-k34-26"
+  },
+  {
+   code:"K35",
+   question:"When aligning and joining wide hardwood timber panels to form a tabletop, why are compressed beechwood biscuits used with PVA glue?",
+   options:["They eliminate the need to apply sash clamps during glue curing time.","They align panel surface faces flush and expand when absorbing moisture from glue to form a strong mechanical bond.","They allow panels to slide freely back and forth across joints after assembly.","They make timber edges completely fireproof along seam lines."],
+   correct:1,
+   explanation:"Compressed wood biscuits register faces flush and swell inside cut slots upon absorbing water-based glue, locking the joint firmly.",
+   keyTakeaway:"Biscuits align joint faces precisely and expand in water-based glue for a tight lock.",
+   id:"arch-epa-v1319-k35-27"
+  },
+  {
+   code:"K36",
+   question:"In timber staircase assembly, what component fits underneath the front edge of a tread to support the front nosing into the riser?",
+   options:["Bargeboards.","Architrave mouldings.","Wall cover fillets.","Glue blocks (glue blocks fitted into internal tread-to-riser corners)."],
+   correct:3,
+   explanation:"Triangular timber glue blocks are glued and screwed into the internal angles between treads and risers to eliminate squeaks and reinforce joints.",
+   keyTakeaway:"Tread-to-riser glue blocks stiffen stair assemblies and prevent squeaking.",
+   id:"arch-epa-v1319-k36-28"
+  },
+  {
+   code:"K37",
+   question:"When assembling a solid timber raised-and-fielded door panel inside a framed stiles-and-rails structure, how should the center panel be fitted?",
+   options:["Fitted loosely into frame grooves with expansion gaps and left unglued to allow for seasonal timber movement.","Glued continuously around all four edges with epoxy resin to lock it solid.","Nailed rigidly through the front face of stiles using heavy wire nails.","Screwed tightly to rails from behind without allowance for clearance gaps."],
+   correct:0,
+   explanation:"Floating solid wood panels must be left unglued within frame grooves so they can expand and contract across the grain without splitting.",
+   keyTakeaway:"Solid door panels must float within frame grooves to allow natural movement.",
+   id:"arch-epa-v1319-k37-29"
+  },
+  {
+   code:"K38",
+   question:"Before applying a polyurethane clear varnish to manufactured oak door linings, how should timber faces be prepared?",
+   options:["Washed down with heavy soap and water leaving the surface saturated.","Scuffed across the grain using coarse 40-grit steel rasp files.","Sanded progressively along the grain with fine abrasives, dusted clean, and checked for glue squeeze-out or defects.","Coated with oil-based engine grease to seal wood pores."],
+   correct:2,
+   explanation:"Quality timber finishing requires systematic sanding along the grain direction, removing excess glue, and thoroughly dusting timber faces.",
+   keyTakeaway:"Sand timber along the grain and remove all surface dust and excess glue before sealing.",
+   id:"arch-epa-v1319-k38-30"
+  },
+  {
+   code:"K39",
+   question:"When installing mortise locks into solid timber door stiles, what tool combination ensures an accurate mortise box cavity without splitting stile faces?",
+   options:["A handheld circular saw plunged repeatedly into stile edges.","A coarse rasp and claw hammer driven through stile faces.","An un-guided spade bit driven through the door face panels.","A dedicated chain or auger mortiser (or drill jig) followed by sharp hand chisels to square corners."],
+   correct:3,
+   explanation:"Mortising jigs or auger bits bore out internal core waste cleanly, allowing sharp chisels to square sides without stress cracking timber grain.",
+   keyTakeaway:"Bore out core waste cleanly before chiselling mortise pocket walls square.",
+   id:"arch-epa-v1319-k39-31"
+  },
+  {
+   code:"K40",
+   question:"What is a basic tax obligation for a self-employed architectural joiner running an independent workshop in the UK?",
+   options:["Filing weekly PAYE returns through an external main contractor.","Registering for Self Assessment with HMRC, maintaining accurate income/expense records, and filing annual tax returns.","Paying no income tax provided machinery tool purchases exceed material costs.","Submitting corporate accounts to Companies House every fortnight."],
+   correct:1,
+   explanation:"Self-employed sole traders must register with HMRC for Self Assessment, track business revenue/expenses, and submit yearly tax returns.",
+   keyTakeaway:"Self-employed joiners must keep business records and file Self Assessment tax returns.",
+   id:"arch-epa-v1319-k40-32"
+  },
+  {
+   code:"S1",
+   question:"You notice that a workshop spindle moulder guard has been removed and left off by a previous operator. How do you demonstrate compliance with safety regulations?",
+   options:["Operate the machine carefully without guards as long as wood feed speeds are kept slow.","Place a paper sign on the machine saying 'Take Care' and proceed with cutting timber.","Re-install and adjust all guards and pressure pads correctly, testing safety stops before turning on the machine.","Ignore the missing guard because another worker removed it."],
+   correct:2,
+   explanation:"Complying with PUWER regulations requires ensuring all guards, fences, and safety holding devices are correctly fitted before operating power machinery.",
+   keyTakeaway:"Never operate machinery without verifying all safety guards are correctly fitted.",
+   id:"arch-epa-v1319-s1-33"
+  },
+  {
+   code:"S2",
+   question:"You are preparing to cut multiple hardwood components on a band saw. How do you correctly apply safety control equipment?",
+   options:["Lower the adjustable blade guard to leave only the required cutting depth exposed, attach dust extraction, and use push sticks.","Raise the blade guard fully up to improve line-of-sight visibility.","Guide short timber blocks past the blade using your fingers directly behind the cut.","Disconnect dust extraction hoses to reduce noise levels in the workshop."],
+   correct:0,
+   explanation:"Safety controls on bandsaws require lowering blade guards close to workpieces, running extraction, and employing push sticks for narrow cuts.",
+   keyTakeaway:"Set blade guards close to stock and use push sticks on bandsaw operations.",
+   id:"arch-epa-v1319-s2-34"
+  },
+  {
+   code:"S3",
+   question:"At the conclusion of a joinery production run, you have clean timber cutoffs, laminate offcuts, and empty solvent glue tins. How should these be processed?",
+   options:["Segregate solid untreated wood, synthetic laminates, and hazardous chemical tins into designated disposal/recycling bins.","Throw all wood, laminate, and chemical containers into one general waste skip.","Burn synthetic laminate offcuts in an open outdoor shop barrel.","Pour leftover liquid solvent adhesives down workshop sink drains."],
+   correct:0,
+   explanation:"Environmental management requires sorting site waste by classification so clean wood can be recycled and hazardous waste processed safely.",
+   keyTakeaway:"Segregate waste materials into clean timber, synthetic, and hazardous waste streams.",
+   id:"arch-epa-v1319-s3-35"
+  },
+  {
+   code:"S4",
+   question:"When building a bespoke timber staircase, Building Regulations stipulate maximum pitch angles (42 degrees) and maximum open riser gaps (under 100mm). How do you ensure compliance?",
+   options:["Construct open riser gaps at 150mm to save timber material.","Increase stair pitch to 50 degrees to save horizontal floor space.","Ignore pitch regulations as long as handrails are fitted to both sides.","Calculate rise and going dimensions to maintain a pitch under 42 degrees, and fit riser lips or partial risers to keep gaps below 100mm."],
+   correct:3,
+   explanation:"Staircase construction must comply with Approved Document K: maximum 42-degree pitch for domestic stairs and maximum 100mm sphere test gaps between open treads.",
+   keyTakeaway:"Ensure stair designs satisfy pitch limits and child-safety gap regulations.",
+   id:"arch-epa-v1319-s4-36"
+  },
+  {
+   code:"S5",
+   question:"Before setting up a portable router table inside a joinery assembly bay, how do you prepare and maintain a safe working area?",
+   options:["Position the router table in a dark corner surrounded by loose timber offcuts.","Block main workshop emergency exit doors with long timber material racks.","Clear floor trip hazards, secure trailing power leads overhead, ensure adequate lighting, and keep offcut waste clear of foot zones.","Run extension leads through wet floor areas near water sinks."],
+   correct:2,
+   explanation:"Safe working areas require clear access routes, managed power cables, clean floor spaces, and effective lighting around machinery.",
+   keyTakeaway:"Keep machinery setup zones well-lit, clean, uncluttered, and hazard-free.",
+   id:"arch-epa-v1319-s5-37"
+  },
+  {
+   code:"S6",
+   question:"You are interpreting an architectural window detail sheet and note a drawing scale contradiction between the written dimension (1200mm) and scaled measurement (1100mm). What action should you take?",
+   options:["Scale the drawing using a ruler and ignore the written dimension.","Halt machining, refer to written specifications over scaled dimensions, and confirm true dimensions with the designer before cutting.","Split the difference and machine the frame to 1150mm.","Machine the unit to whatever timber size is currently available."],
+   correct:1,
+   explanation:"In technical drawing interpretation, written dimensions always take precedence over scaled measurements. Discrepancies must be clarified prior to cutting.",
+   keyTakeaway:"Never scale directly off detail drawings when written dimensions are provided; clarify discrepancies first.",
+   id:"arch-epa-v1319-s6-38"
+  },
+  {
+   code:"S7",
+   question:"You are tasked with producing six panelled hardwood doors. How do you produce an efficient timber cutting list?",
+   options:["Break down all components into finished sizes, add machining allowances for length/width, and group identical sections to minimize offcut waste.","Order random timber lengths without checking door specification sizes.","Guess total timber requirements based on looking at a completed door sample.","Order stiles and rails without adding machining or tenon horn length allowances."],
+   correct:0,
+   explanation:"Efficient cutting lists calculate exact finished component dimensions plus machining allowances, organizing profiles to optimize yield.",
+   keyTakeaway:"Group identical component sections and include machining allowances on cutting lists.",
+   id:"arch-epa-v1319-s7-39"
+  },
+  {
+   code:"S8",
+   question:"You need to explain a complex door frame manufacturing issue to your workshop manager. How do you communicate using correct joinery terminology?",
+   options:["“The long wooden side stick isn't deep enough so the big door thing doesn't shut right.”","“The rebate depth on the hinge stile is undersized by 3mm, preventing the door leaf from sitting flush against the stop.”","“The vertical upright board is crooked and the frame margin looks bad.”","“We need more wood lengths because the front doorway timber piece is wrong.”"],
+   correct:1,
+   explanation:"Professional joinery communication uses precise terms (rebate depth, hinge stile, door leaf, frame stop) to describe technical defects clearly.",
+   keyTakeaway:"Use exact trade terms to convey technical information clearly.",
+   id:"arch-epa-v1319-s8-40"
+  },
+  {
+   code:"S9",
+   question:"How should sharp hand chisels, wooden hand planes, and saws be safely stored on a joinery workbench during active use?",
+   options:["Piled on top of one another near the front bench edge.","Stored loose inside trouser side pockets with blades exposed.","Laid flat in designated tool wells or wooden racks with cutting edges pointing away from edge perimeters.","Balanced on top of stepladders near workspace walkways."],
+   correct:2,
+   explanation:"Storing hand tools neatly in bench wells or edge-guarded racks prevents accidental contact injuries and shields fine cutting edges from dulling.",
+   keyTakeaway:"Store sharp hand tools securely in tool wells or edge guards on the bench.",
+   id:"arch-epa-v1319-s9-41"
+  },
+  {
+   code:"S10",
+   question:"When using a portable circular saw to cut hardwood sheet materials, what operation ensures safe control and prevents kickback?",
+   options:["Hold the sheet material up with one hand while operating the saw with the other.","Remove the lower spring guard to prevent timber dust clogging.","Plunge the saw backward toward your body along the cut line.","Support the sheet fully on rigid workbench supports, adjust blade depth 3-5mm past material thickness, and maintain steady forward pressure with both hands."],
+   correct:3,
+   explanation:"Proper sheet cutting requires solid material support, setting blade depth slightly past material thickness, and keeping both hands on tool handles.",
+   keyTakeaway:"Support work fully, set correct blade depth, and maintain two-handed tool control.",
+   id:"arch-epa-v1319-s10-42"
+  },
+  {
+   code:"S11",
+   question:"While using a wooden smoothing plane, the blade begins tearing grain and producing thick uneven shavings. How do you maintain and re-set the tool?",
+   options:["Remove the iron, hone the edge on fine sharpening stones, reset the cap iron close to the cutting edge, and adjust the mouth depth fine.","Strike the wooden plane sole with a steel claw hammer to force the blade out.","Grind the plane iron dry on a bench grinder until metal turns deep blue.","File the cutting edge round using a rough steel file."],
+   correct:0,
+   explanation:"Proper hand plane maintenance involves honing a razor edge, setting the chipbreaker (cap iron) close to the edge (approx. 1mm), and setting fine blade projection.",
+   keyTakeaway:"Hone plane irons finely and set chipbreakers close to the edge to prevent grain tearout.",
+   id:"arch-epa-v1319-s11-43"
+  },
+  {
+   code:"S12",
+   question:"You need to rout fifty identical archway frame curves. How do you produce a jig to carry out this operation safely and accurately?",
+   options:["Mark each curve individually with a pencil and cut freehand using a jigsaw.","Hold short curved blocks against a bare shaper cutter with your fingers.","Construct a sturdy plywood template jig with toggle clamps, guide collar tracks, and smooth reference edges.","Eye up the routing line without guide collars or holding fences."],
+   correct:2,
+   explanation:"Production jigs made from stable plywood with clear guide faces and toggle clamps allow fast, repeatable, safe routing.",
+   keyTakeaway:"Build stable template jigs with toggle clamps for safe, accurate curved work.",
+   id:"arch-epa-v1319-s12-44"
+  },
+  {
+   code:"S13",
+   question:"A colleague appears distressed and mentions struggle with personal isolation and financial worries. How do you identify well-being support for them?",
+   options:["Advise them to work weekend shifts continuously to clear their debts.","Listen empathetically, keep details confidential, and signpost them to industry EAP services or site Mental Health First Aiders.","Tell them that feeling stressed is standard so they should ignore it.","Broadcast their personal situation to the entire workshop team."],
+   correct:1,
+   explanation:"Supporting colleague well-being involves offering non-judgmental support and connecting them to trained, confidential assistance programs.",
+   keyTakeaway:"Listen non-judgmentally and signpost colleagues to confidential support services.",
+   id:"arch-epa-v1319-s13-45"
+  },
+  {
+   code:"S23",
+   question:"You are setting out a timber rod for a door lining and frame assembly. How do you transfer section dimensions onto the rod accurately?",
+   options:["Sketch a quick rough 1:10 scale outline on a scrap timber offcut.","Measure timber profiles using a flexible soft tape measure and write numbers down without marking lines.","Set out vertical height lines only, leaving horizontal width details off the rod.","Draw full-size 1:1 cross-sections directly onto a clean, flat timber rod showing door thickness, rebate depths, frame dimensions, and clearance gaps."],
+   correct:3,
+   explanation:"Setting-out rods require true 1:1 scale drawings of horizontal and vertical sections detailing exact profiles, joint intersections, and clearances.",
+   keyTakeaway:"Produce clear 1:1 scale setting-out rods depicting exact component profiles and clearance gaps.",
+   id:"arch-epa-v1319-s23-46"
+  },
+  {
+   code:"S24",
+   question:"You are manufacturing a traditional hardwood corner cabinet frame requiring high joint strength. How do you cut and fit a bridle joint accurately?",
+   options:["Mark shoulder lines square, saw the open mortise slot and matching tenon tongue neatly, and pare faces to a snug push-fit.","Cut shoulders at 45 degrees and pin them together using thin panel pins.","Overlap square un-cut ends and join with PVA glue and staples.","Chisel out an oversized loose slot and fill gaps with wood filler."],
+   correct:0,
+   explanation:"Bridle joints require precise layout marking, accurate sawing along kerf lines, and light paring to achieve a firm hand-push mechanical fit.",
+   keyTakeaway:"Saw and pare bridle joint components to achieve a snug, accurate mechanical fit.",
+   id:"arch-epa-v1319-s24-47"
+  },
+  {
+   code:"S25",
+   question:"When joining two thick hardwood frames using dowel connections, what technique ensures dowels do not hydro-lock or split the joint upon assembly?",
+   options:["Using smooth, square steel rods driven in without glue.","Using fluted dowel pegs with chamfered ends and applying glue evenly into bored holes.","Filling dowel holes completely with dry expansion foam before inserting pins.","Drilling dowel holes 10mm shallower than dowel pin lengths."],
+   correct:1,
+   explanation:"Fluted dowels feature longitudinal grooves that allow air and excess liquid glue to escape, preventing hydraulic splitting when pressed.",
+   keyTakeaway:"Use fluted dowels to allow excess glue relief during joint assembly.",
+   id:"arch-epa-v1319-s25-48"
+  },
+  {
+   code:"S26",
+   question:"You are assembling a right-angled timber casement window frame. How do you ensure the assembled frame is square before glue sets?",
+   options:["Check one corner using a small sliding bevel set to 45 degrees.","Eyeball the outer stiles against a workshop wall line.","Measure diagonal dimensions from corner to corner until equal, and check internal corners with a large try square.","Clamp one side tightly while leaving the opposing side loose."],
+   correct:2,
+   explanation:"Equal diagonal cross-measurements confirm that a rectangular joinery frame is perfectly square.",
+   keyTakeaway:"Verify frame squareness by confirming equal corner-to-corner diagonal measurements.",
+   id:"arch-epa-v1319-s26-49"
+  },
+  {
+   code:"S27",
+   question:"When manufacturing a straight timber staircase in the workshop, how are treads and risers secured into stringer housing slots?",
+   options:["Nail treads loosely through stringer outer faces without wedges or adhesive.","Support treads on loose metal shelf brackets screwed to stringer faces.","Fill housing slots with expansion foam and push treads into place.","Spread glue in housing grooves, drive treads and risers home, and knock tight wooden wedges behind them glued into place."],
+   correct:3,
+   explanation:"Stair treads and risers are housed into stringer grooves and locked rigid using glued hardwood wedges driven tightly behind them.",
+   keyTakeaway:"Lock housed stair treads and risers tightly using glued timber wedges.",
+   id:"arch-epa-v1319-s27-50"
+  },
+  {
+   code:"S28",
+   question:"You are assembling a paneled timber door with decorative mouldings. How do you prepare moulding mitres at frame intersections?",
+   options:["Butt decorative mouldings square against each other without mitring.","Bisect corner angles accurately, cut 45-degree mitres using a fine-toothed mitre saw, and pare joints for tight light-tight seams.","Cut mitres at 30 degrees and fill corner gaps with plaster filler.","Overlap moulding ends and nail them down flat."],
+   correct:1,
+   explanation:"Precise decorative moulding work requires bisecting corner angles accurately (45 degrees for right angles) to form seamless, light-tight joints.",
+   keyTakeaway:"Cut moulding mitres accurately to form tight, seamless profile intersections.",
+   id:"arch-epa-v1319-s28-51"
+  },
+  {
+   code:"S29",
+   question:"You are recessing and fitting butt hinges into a solid hardwood door leaf edge. How do you ensure the door hangs correctly without binding?",
+   options:["Chisel hinge gains to exact leaf depth, keep screw pilot holes centered, and ensure hinge pins sit parallel to the door edge line.","Chisel gains twice as deep as hinge leaf thickness so hardware buries below wood faces.","Drive screws in at steep angles without drilling pilot holes.","Mount hinges onto un-recessed door edge faces using drywall screws."],
+   correct:0,
+   explanation:"Hinge gains must match leaf thickness precisely, with screws centered, to align hinge pins true and prevent door binding against frames.",
+   keyTakeaway:"Recess hinges flush and center pilot holes to ensure smooth, unhindered swing action.",
+   id:"arch-epa-v1319-s29-52"
+  },
+  {
+   code:"S30",
+   question:"Before turning on a fixed workshop planer/thicknesser machine to process a batch of timber, what pre-use inspection checks must be carried out?",
+   options:["Wipe down cutter blades with engine lubricant while the machine is running.","Remove top safety guards to view cutter block spinning speed.","Verify cutter block guard function, inspect blade condition, check table height locks, test emergency stop controls, and confirm dust extraction operation.","Turn on power before checking if loose tools are lying on machine tables."],
+   correct:2,
+   explanation:"Pre-use checks on fixed woodworking machinery require inspecting guards, blade sharpness, safety stops, worktable clamps, and dust extraction systems.",
+   keyTakeaway:"Perform systematic safety checks on guards, blades, and emergency stops before powering fixed machinery.",
+   id:"arch-epa-v1319-s30-53"
+  },
+  {
+   code:"B1",
+   question:"You notice that the safety guard on a fixed crosscut saw in the workshop is cracked and sticking open. How do you demonstrate putting safety first?",
+   options:["Continue using the saw carefully, making sure to keep your hands away from the blade.","Tape the cracked guard in the open position so it doesn't jam during your cuts.","Mention the issue to a colleague at the end of the shift.","Isolate/lockout the machine immediately, place a warning tag on it, and report the fault to the supervisor before anyone uses it."],
+   correct:3,
+   explanation:"Putting health and safety first requires taking immediate action to isolate unsafe machinery and report hazards before injuries occur.",
+   keyTakeaway:"Isolate damaged machinery immediately and report safety defects.",
+   id:"arch-epa-v1319-b1-54"
+  },
+  {
+   code:"B2",
+   question:"When cutting components for timber window frames, how do you demonstrate environmental consideration in your daily work?",
+   options:["Throw all timber pieces under one metre long directly into the landfill skip to keep the bench clean.","Plan cutting layouts using setting-out rods to maximize timber yield and utilize suitable offcuts for smaller frame parts before cutting fresh stock.","Always cut short components from new full-length timber boards for convenience.","Burn treated timber offcuts in the workshop stove to provide space heating."],
+   correct:1,
+   explanation:"Environmental consideration involves planning cuts efficiently to optimize timber yield and re-using offcuts to minimize raw material waste.",
+   keyTakeaway:"Optimize material yield and re-use offcuts to reduce timber waste.",
+   id:"arch-epa-v1319-b2-55"
+  },
+  {
+   code:"B3",
+   question:"A new trainee joiner from an underrepresented group joins your workshop team. How do you contribute to an inclusive culture?",
+   options:["Assign them all shop cleaning tasks so they prove their dedication before learning machining skills.","Leave them to work things out entirely on their own so they adapt faster.","Welcome them, share trade knowledge willingly, treat them with equal respect, and challenge non-inclusive behavior in the workshop.","Avoid talking to them to prevent any misunderstandings."],
+   correct:2,
+   explanation:"Contributing to an inclusive culture means actively welcoming new colleagues, offering equitable support, and upholding a respectful workplace.",
+   keyTakeaway:"Support all team members equally and foster a fair, welcoming environment.",
+   id:"arch-epa-v1319-b3-56"
+  },
+  {
+   code:"B4",
+   question:"A new computer-controlled 5-axis CNC timber router is installed in your workshop. How do you show initiative in seeking learning and development opportunities?",
+   options:["Ignore the machine because traditional hand-crafting techniques are superior.","Attempt to operate the machine immediately without reading safety manuals or receiving instruction.","Complain that automated machinery will reduce traditional joinery hours.","Ask the lead machinist if you can observe setups, request user manual access, and express interest in attending official operator training."],
+   correct:3,
+   explanation:"Demonstrating a growth mindset involves actively seeking opportunities to learn new technologies, machinery, and modern methods of construction.",
+   keyTakeaway:"Proactively seek opportunities to learn modern technologies and machinery techniques.",
+   id:"arch-epa-v1319-b4-57"
+  },
+  {
+   code:"B5",
+   question:"Your joinery workshop team is facing a tight deadline to complete a commercial door package. How do you demonstrate a strong team focus?",
+   options:["Coordinate your machining schedule with the assembly bench team, assist colleagues once your tasks are finished, and keep workflow moving smoothly.","Finish your assigned doors and leave immediately without checking if team members need support.","Work at a slow pace regardless of team targets as long as your personal work quality is fine.","Refuse to assist with sanding or packing duties because you specialize in cutting only."],
+   correct:0,
+   explanation:"A team focus means working collaboratively across manufacturing stages to achieve shared production targets and support team members.",
+   keyTakeaway:"Collaborate across production stages to support team goals and meet deadlines.",
+   id:"arch-epa-v1319-b5-58"
+  }
+ ],
+ "property-maintenance-operative-st0171-v1-1":[
+  {
+   code:"K1",
+   question:"You are managing maintenance schedules for a commercial facility. How do you distinguish between Planned Preventative Maintenance (PPM) and reactive maintenance when allocating resources?",
+   options:["PPM involves scheduled servicing and inspections to prevent asset failure, whereas reactive maintenance repairs equipment after an unexpected breakdown occurs.","PPM is only carried out after a complete system shutdown, while reactive maintenance occurs on a fixed monthly calendar.","PPM applies exclusively to minor cosmetic paint repairs, whereas reactive maintenance applies strictly to fire alarms.","PPM is performed by external contractors, while reactive maintenance is managed exclusively by apprentices."],
+   correct:0,
+   explanation:"PPM consists of pre-scheduled tasks designed to keep equipment running efficiently and avoid failures, whereas reactive maintenance responds to unforeseen breakdowns or defects.",
+   keyTakeaway:"PPM prevents failures through scheduled servicing; reactive maintenance repairs active breakdowns.",
+   id:"pmo-epa-v1320-k1-1"
+  },
+  {
+   code:"K2",
+   question:"While inspecting a traditional solid-wall Victorian property compared to a modern timber-frame residential block, what typical structural defect are you most likely to encounter in the solid-wall structure?",
+   options:["Rotten engineered I-joists inside sealed external wall cavity trays.","Complete failure of lightweight structural insulated panels (SIPs) from internal condensation.","Penetrating damp and mortar degradation due to the lack of a continuous cavity wall and modern damp-proof course.","Corrosion of galvanized wall ties within the 50mm clear air cavity."],
+   correct:2,
+   explanation:"Solid-wall Victorian properties lack cavity wall insulation gaps and modern DPCs, making them far more vulnerable to penetrating damp and mortar deterioration over time.",
+   keyTakeaway:"Solid masonry walls lack cavities, making them prone to damp penetration and mortar decay.",
+   id:"pmo-epa-v1320-k2-2"
+  },
+  {
+   code:"K3",
+   question:"When preparing to remove loose asbestos-containing textured ceiling coating (Artex) during a lighting refit, what is your primary legal obligation under COSHH and asbestos regulations?",
+   options:["Scrape the coating off wet using a standard hand trowel while wearing a paper nuisance dust mask.","Dry sand the surface using an orbital sander attached to a standard workshop vacuum cleaner.","Cover the area with emulsion paint to seal the loose fibres without reporting the finding.","Stop work immediately, verify whether a licensed or non-licensed specialist procedure/survey is required, and use appropriate RPE/PPE."],
+   correct:3,
+   explanation:"Disturbing asbestos requires strict adherence to regulations: stop, check the asbestos register or survey, follow controlled non-licensed work procedures or hire licensed contractors, and wear correct respiratory protection.",
+   keyTakeaway:"Never disturb suspected asbestos without checking surveys and using appropriate controls or specialists.",
+   id:"pmo-epa-v1320-k3-3"
+  },
+  {
+   code:"K4",
+   question:"You are tasked with replacing an external floodlight located 5 metres high on a building wall. How does a formal Risk Assessment mitigate the hazards associated with this task?",
+   options:["It transfers all legal liability to the manufacturer of the LED light fitting.","It identifies fall hazards and specifies control measures such as using an inspected MEWP or tower scaffold, harness checks, and ground exclusion zones.","It allows you to bypass electrical isolation steps if the work takes less than 15 minutes.","It eliminates the need to wear safety helmets or eye protection at ground level."],
+   correct:1,
+   explanation:"Risk assessments evaluate specific hazards such as working at height and specify suitable control equipment to reduce risk to an acceptable level.",
+   keyTakeaway:"Risk assessments identify specific hazards and define control measures to keep workers safe.",
+   id:"pmo-epa-v1320-k4-4"
+  },
+  {
+   code:"K5",
+   question:"Under the Building Safety Act and BSI Flex 8670, what key responsibility rests on a Property Maintenance Operative working in a Higher-Risk Residential Building (HRRB)?",
+   options:["Re-certifying main structural foundation calculations every 12 months.","Ignoring minor alterations to fire doors if requested directly by a tenant.","Maintaining the 'golden thread' of building information by accurately recording all structural or fire-safety maintenance alterations.","Issuing statutory Building Control completion certificates for external wall cladding."],
+   correct:2,
+   explanation:"The Building Safety Act and BSI Flex 8670 emphasize competence and maintaining the 'golden thread' of accurate safety information, particularly concerning fire and structural safety in HRRBs.",
+   keyTakeaway:"Operatives must maintain fire and structural safety integrity and record changes for the golden thread.",
+   id:"pmo-epa-v1320-k5-5"
+  },
+  {
+   code:"K6",
+   question:"When setting up to repair a floor joist in a busy communal corridor of a care home, what is the correct approach to establishing your work area?",
+   options:["Erect physical safety barriers, place warning signage, protect surrounding floor coverings with dust sheets, and ensure a clear escape route remains open.","Leave tools across the corridor floor provided you plan to finish the job before lunchtime.","Prop emergency exit doors open to allow dust to escape out into main stairwells.","Perform the repair without barriers, relying on verbal warnings to passing residents."],
+   correct:0,
+   explanation:"Creating a safe, tidy work environment requires physical segregation, floor protection, clear access and egress routes, and protecting vulnerable site users.",
+   keyTakeaway:"Secure work zones with barriers, protect surroundings, and maintain clear escape routes.",
+   id:"pmo-epa-v1320-k6-6"
+  },
+  {
+   code:"K7",
+   question:"Which pre-use safety check must be performed before using a 110V portable angle grinder to cut steel fence posts?",
+   options:["Remove the side handle and wheel guard to cut closer into narrow wall corners.","Run the grinder at maximum speed against a concrete floor to check disc balance.","Replace the grinding disc with a wood-cutting saw blade to complete two jobs at once.","Inspect the guard position, check the disc rating matches the tool RPM, inspect the trailing lead, and confirm the PAT test date is valid."],
+   correct:3,
+   explanation:"Safe power tool usage requires checking guard placement, disc speed ratings, cable condition, and up-to-date electrical safety testing.",
+   keyTakeaway:"Verify guards, disc ratings, lead condition, and PAT inspection status before operating power tools.",
+   id:"pmo-epa-v1320-k7-7"
+  },
+  {
+   code:"K8",
+   question:"What is the mandatory procedure for safe isolation of an electrical circuit before replacing a fused spur in an office bay?",
+   options:["Switch off the wall switch and place a piece of masking tape over the switch rocker.","Isolate the supply at the distribution board, lock off the MCB with a padlock, retain the key, and verify dead with a proved voltage indicator.","Unscrew the faceplate carefully with insulated screwdrivers while the circuit remains live.","Turn off the main isolator, perform the repair immediately, and turn it back on without testing."],
+   correct:1,
+   explanation:"Safe isolation requires identifying the supply, isolating, locking off with a unique lock and key, posting warning notices, and proving dead with an approved voltage indicator tested against a proving unit.",
+   keyTakeaway:"Always isolate, lock off, retain the key, and test dead using a proved voltage indicator.",
+   id:"pmo-epa-v1320-k8-8"
+  },
+  {
+   code:"K9",
+   question:"During a routine monthly inspection of emergency lighting and fire exit signage, what preventative maintenance check is required?",
+   options:["Disconnect all backup batteries permanently to lower electrical consumption.","Replace emergency light bulbs annually regardless of whether they are functional or LED units.","Paint over discolored escape route signs to match adjacent wall finishes.","Simulate a mains failure using a test key to ensure luminaires remain illuminated for their rated duration and check sign visibility."],
+   correct:3,
+   explanation:"Preventative maintenance of emergency systems requires functional testing to ensure batteries activate luminaires and escape signs remain unobstructed and readable.",
+   keyTakeaway:"Test emergency light functionality via test switches and ensure escape signs remain clearly visible.",
+   id:"pmo-epa-v1320-k9-9"
+  },
+  {
+   code:"K10",
+   question:"You need to drain down a localized section of a domestic direct hot water pipework system to replace a leaking gate valve. What is the correct sequence?",
+   options:["Cut the copper pipe directly with an angle grinder while the system is under full pressure.","Open all low-level taps while keeping the main incoming stopcock fully open.","Isolate the cold feed supply, turn off the water heater, open the lowest drain cock, and open high-level taps to vent air.","Close all internal drainage taps and heat the pipework with a blowtorch to evaporate residual water."],
+   correct:2,
+   explanation:"Safe draining requires isolating the incoming water supply, switching off heat sources, opening low drain valves, and opening high taps to break the vacuum.",
+   keyTakeaway:"Isolate supply and heat sources, then open drain cocks and high-level taps to drain water safely.",
+   id:"pmo-epa-v1320-k10-10"
+  },
+  {
+   code:"K11",
+   question:"A ground-floor commercial toilet is backing up due to a blockage in the external underground drainage system. How do you locate and clear the fault safely?",
+   options:["Inspect downstream inspection chambers (manholes) to locate the blocked section, then clear using drain rods or high-pressure water jetting directed upstream.","Pour concentrated sulfuric acid directly into the indoor toilet bowl and flush repeatedly.","Strike the underground PVC drain pipes with a sledgehammer through the lawn to break up solids.","Cap off the external vent pipe to force water pressure to clear the obstruction."],
+   correct:0,
+   explanation:"Fault diagnosis involves checking manholes to locate standing water, then inserting rods or jetting equipment from the clean downstream side working back toward the blockage.",
+   keyTakeaway:"Locate blockages via manholes and clear from downstream using rods or water jetting.",
+   id:"pmo-epa-v1320-k11-11"
+  },
+  {
+   code:"K12",
+   question:"To comply with L8 Legionella control guidelines in a commercial building water system, what temperature parameter must be maintained at hot water storage calorifiers?",
+   options:["Stored at 30°C to save heating energy and reduce scalding risks.","Stored at a minimum of 60°C and distributed so hot water reaches at least 50°C at outlets within one minute.","Stored at 40°C continuously without monitoring distribution temperatures.","Boiled to 100°C every hour continuously using secondary immersion heaters."],
+   correct:1,
+   explanation:"Legionella bacteria proliferate between 20°C and 45°C. Storing hot water at 60°C or above and delivering it at 50°C or above helps control the bacteria and supports L8 compliance.",
+   keyTakeaway:"Store hot water at 60°C or above and ensure outlets reach 50°C within 60 seconds.",
+   id:"pmo-epa-v1320-k12-12"
+  },
+  {
+   code:"K13",
+   question:"How does a solar photovoltaic (PV) array integration interact with a building's energy management system (EMS)?",
+   options:["The PV system converts solar radiation into DC power, inverted to AC power, which the EMS prioritizes over grid electricity to lower building operational emissions.","The PV array stores hot water directly inside central heating radiators during winter months.","The PV panel generates natural gas to feed backup boiler systems during peak demand periods.","The EMS converts PV electricity into compressed air to operate pneumatic ventilation dampers."],
+   correct:0,
+   explanation:"Solar PV generates DC power converted to AC via an inverter. An EMS monitors and prioritizes this green energy for immediate building loads over grid import.",
+   keyTakeaway:"PV systems supply renewable AC electricity that EMS networks prioritize over grid power.",
+   id:"pmo-epa-v1320-k13-13"
+  },
+  {
+   code:"K14",
+   question:"A double-glazed UPVC window unit exhibits internal condensation (misting) between the two glass panes. What is the root defect and correct repair method?",
+   options:["The UPVC frame has expanded; drill drainage holes through the front glass face to release moisture.","The friction stay hinges are loose; tighten the hinge screws to clear the internal glass misting.","The peripheral edge seal of the sealed double-glazed unit (IGU) has failed; the complete glass unit must be replaced.","The window handle seal is missing; inject silicone sealant into the trickle vent slot."],
+   correct:2,
+   explanation:"Misting between panes indicates a broken hermetic seal around the Insulated Glass Unit, letting moist air inside. The entire IGU panel must be replaced.",
+   keyTakeaway:"Internal window misting signifies IGU seal failure, requiring complete glass unit replacement.",
+   id:"pmo-epa-v1320-k14-14"
+  },
+  {
+   code:"K15",
+   question:"When repairing a deep hole (50mm depth) in an internal masonry plaster wall, why should you use a backing plaster such as bonding coat before applying finishing plaster?",
+   options:["Finish coat plaster expands when applied thick, causing wall structural collapse.","Backing plaster builds up depth quickly, provides good adhesion, and minimizes shrinkage cracks before applying a thin 2mm smooth finish coat.","Backing plaster is completely waterproof and acts as a primary damp-proof membrane.","Finish coat plaster cannot be sanded or painted under any circumstances."],
+   correct:1,
+   explanation:"Deep repairs require a coarse backing plaster to fill depth stably without excessive shrinkage, followed by a thin skim coat for a smooth finish.",
+   keyTakeaway:"Fill deep wall damage with backing plaster first to prevent shrinkage, then skim finish.",
+   id:"pmo-epa-v1320-k15-15"
+  },
+  {
+   code:"K16",
+   question:"Flaking and peeling paintwork is observed on an exterior wooden window sill. What is the primary cause and proper safe disposal method for scraped paint waste?",
+   options:["Excessive paint thickness; wash scrapings down storm water drains using cold water.","Using oil-based primer under gloss paint; burn scraped paint waste in an open yard incinerator.","Natural wood expansion; mix paint scrapings into garden soil to act as organic compost.","Poor surface preparation or moisture ingress behind the paint film; collect lead or chemical paint scrapings and dispose as hazardous waste via licensed routes."],
+   correct:3,
+   explanation:"Peeling results from trapped moisture or inadequate keying or priming. Scrapings, especially older paints potentially containing lead or VOCs, must be collected and disposed of safely.",
+   keyTakeaway:"Paint peels due to moisture or poor preparation; waste scrapings must be safely disposed of without polluting drains.",
+   id:"pmo-epa-v1320-k16-16"
+  },
+  {
+   code:"K17",
+   question:"Several wall tiles in a public shower room have debonded from the substrate. What is the most likely cause of this failure?",
+   options:["Using flexible grout instead of solid sand and cement mortar between tile joints.","Inappropriate adhesive selection for wet environments or tiling directly onto an unprimed, dusty, or water-damaged substrate.","Applying tiles in a staggered brick-bond pattern rather than a straight grid layout.","Soaking porcelain tiles in cold water for 24 hours prior to installation."],
+   correct:1,
+   explanation:"Tile debonding in wet areas is usually caused by using non-water-resistant adhesive, failing to tank or waterproof the substrate, or poor surface priming.",
+   keyTakeaway:"Ensure water-resistant adhesive is used and substrates are properly primed and waterproofed in wet areas.",
+   id:"pmo-epa-v1320-k17-17"
+  },
+  {
+   code:"K18",
+   question:"Commercial vinyl safety flooring in a kitchen is lifting along a seam line. What repair process prevents liquid from penetrating underneath?",
+   options:["Clean and re-adhere the vinyl edge using contact adhesive, then hot-weld the joint seam using matching vinyl weld rod.","Secure the lifted vinyl edge with open steel staples every 50mm along the seam.","Fill the open joint gap with standard decorating caulk and press flat with a hand roller.","Cut away a 300mm strip of flooring and leave the bare concrete subfloor exposed."],
+   correct:0,
+   explanation:"Repairing commercial vinyl requires full adhesive re-bonding to the subfloor followed by hot-grooving and hot-rod welding to create an airtight, waterproof seal.",
+   keyTakeaway:"Re-bond lifted vinyl with suitable adhesive and hot-weld seams to restore water-tight integrity.",
+   id:"pmo-epa-v1320-k18-18"
+  },
+  {
+   code:"K19",
+   question:"You are repointing a damaged section of external brickwork on a 1930s property showing signs of spalling brick faces. What mortar mix should be used?",
+   options:["A dense, high-strength 1:1 OPC and sharp sand mix.","Pure plaster of Paris mixed with PVA bonding agent.","Expandable polyurethane foam coated with clear silicone sealant.","A soft, vapor-permeable sand and lime mortar mix that allows the masonry to breathe and prevents further frost damage to bricks."],
+   correct:3,
+   explanation:"Mortar must be softer and more permeable than the surrounding bricks. Modern hard cement traps moisture in historic bricks, causing spalling during freeze-thaw cycles.",
+   keyTakeaway:"Repoint with breathable mortar softer than the brickwork to prevent frost spalling.",
+   id:"pmo-epa-v1320-k19-19"
+  },
+  {
+   code:"K20",
+   question:"After a storm, water is leaking through a flat roof covered with bituminous felt. What temporary emergency repair method should be applied while waiting for full renewal?",
+   options:["Cover the entire roof area with loose dry sand to absorb water.","Flame-torch a new three-layer felt system directly over wet, standing water puddles.","Clean away debris, dry the surface around the tear, and apply a fiber-reinforced bitumen emergency repair compound or patch coat.","Puncture additional holes in lower ceiling plaster to let water drain faster into buckets."],
+   correct:2,
+   explanation:"Emergency flat roof repairs require clearing loose gravel and dirt and applying an all-weather, fiber-reinforced bituminous roof mastic or emergency acrylic compound.",
+   keyTakeaway:"Clean the area and apply fiber-reinforced bituminous compound for temporary flat roof seal repairs.",
+   id:"pmo-epa-v1320-k20-20"
+  },
+  {
+   code:"K21",
+   question:"A timber closeboard fence post has rotted at ground level, causing the fence line to lean. What is the most cost-effective, durable repair method?",
+   options:["Wrap gaffer tape around the rotted ground-level timber joint.","Mound garden soil 300mm higher around the timber base to hold it upright.","Install a concrete repair spur set in Postcrete alongside the post and bolt it securely to the sound upper timber section.","Screw a wooden panel directly to adjacent tree branches for support."],
+   correct:2,
+   explanation:"Concrete repair spurs set in concrete extend the life of fence posts rotted at ground level without requiring full fence dismantle and post replacement.",
+   keyTakeaway:"Use concrete repair spurs set in Postcrete to repair timber posts rotted at ground level.",
+   id:"pmo-epa-v1320-k21-21"
+  },
+  {
+   code:"K22",
+   question:"A sunken concrete block paving area near a building entrance presents a trip hazard. What remediation process restores a safe, level walkway?",
+   options:["Pour liquid asphalt directly over the sunken pavers without lifting them.","Lift the sunken pavers, excavate degraded sub-base, compact fresh sharp sand or aggregate, re-lay pavers level, and sweep in jointing sand.","Grind down surrounding high pavers using a diamond wheel until level with the dip.","Place a rubber doormat over the sunken area to hide the drop."],
+   correct:1,
+   explanation:"Repairing block paving requires lifting blocks, correcting and compacting the underlying bedding sand or sub-base, re-laying blocks flush, and re-sanding joints.",
+   keyTakeaway:"Lift pavers, level and compact the sub-base and sand bed, re-lay blocks flush, and sand joints.",
+   id:"pmo-epa-v1320-k22-22"
+  },
+  {
+   code:"K23",
+   question:"Where can a Property Maintenance Operative find authoritative technical specifications regarding maximum allowable clear distances between stair balusters?",
+   options:["COSHH essential safety data sheet section 4.","The delivery docket supplied with raw timber lengths.","The manufacturer's instruction leaflet for hand-held circular saws.","UK Building Regulations Approved Document K (Protection from falling, collision and impact)."],
+   correct:3,
+   explanation:"Approved Document K of the UK Building Regulations defines structural geometry rules, including the requirement that a 100mm sphere cannot pass through stair guarding gaps.",
+   keyTakeaway:"Building Regulations Approved Documents provide technical compliance criteria for building works.",
+   id:"pmo-epa-v1320-k23-23"
+  },
+  {
+   code:"K24",
+   question:"When logging completed job details and tenant information into a mobile maintenance management app, what GDPR and Data Protection requirement must you follow?",
+   options:["Ensure device passwords or biometrics are active, lock screens when unattended, and record only necessary job information without sharing personal data inappropriately.","Store tenant contact telephone numbers in a publicly readable notebook left on your van dashboard.","Share tenant door access codes on public social media channels to coordinate sub-contractor entry.","Email full tenant medical and financial history to material supply merchants."],
+   correct:0,
+   explanation:"Data protection legislation requires keeping personal data secure, using encrypted or password-protected devices, and limiting recorded data strictly to job operational needs.",
+   keyTakeaway:"Protect digital maintenance devices with passwords and handle personal data confidentially.",
+   id:"pmo-epa-v1320-k24-24"
+  },
+  {
+   code:"K25",
+   question:"A maintenance department notes recurring hot-water circulation pump failures across multiple sites. How does continuous quality improvement resolve this issue?",
+   options:["Order cheaper replacement pumps in bulk to replace failed units faster.","Ignore the pattern as long as replacement pumps arrive within 48 hours.","Instruct tenants to run hot water taps continuously to prevent pump overload.","Analyze root causes, identify improper system balancing or strainer debris, update the PPM checklist procedure, and re-train staff."],
+   correct:3,
+   explanation:"Quality assurance and continuous improvement use root-cause analysis on repeated faults to modify procedures, preventing future occurrences and improving efficiency.",
+   keyTakeaway:"Investigate recurring defects to address root causes and improve standard PPM procedures.",
+   id:"pmo-epa-v1320-k25-25"
+  },
+  {
+   code:"K26",
+   question:"Under the Environmental Protection Act Duty of Care, what document must you obtain when transferring mixed construction waste from a job site to an external disposal company?",
+   options:["A verbal confirmation from the truck driver that the waste will be buried.","A standard store purchase receipt for new timber materials.","A controlled Waste Transfer Note (WTN) signed by both parties, detailing waste types and verifying the carrier's license number.","An internal site risk assessment form covering working at height."],
+   correct:2,
+   explanation:"Duty of Care laws mandate that taking waste off-site requires a signed Waste Transfer Note and checking that the waste carrier holds a valid Environment Agency permit.",
+   keyTakeaway:"Always issue and retain Waste Transfer Notes when transferring waste to licensed carriers.",
+   id:"pmo-epa-v1320-k26-26"
+  },
+  {
+   code:"K27",
+   question:"You are reporting a severe roof truss failure to a non-technical building owner versus a structural engineer. How should your communication style adapt?",
+   options:["Use complex engineering formulas when speaking to the owner to demonstrate technical authority.","Explain the safety risk and required access restrictions simply to the owner, while providing exact technical terminology and structural span dimensions to the engineer.","Avoid informing the building owner about the collapse risk to prevent alarming them.","Use informal slang terminology when sending formal reports to the structural engineer."],
+   correct:1,
+   explanation:"Effective communication requires tailoring technical language: plain, clear, non-jargon explanations for clients and occupants, and precise technical terms for engineering professionals.",
+   keyTakeaway:"Adapt technical language to match the understanding of non-technical stakeholders versus trade peers.",
+   id:"pmo-epa-v1320-k27-27"
+  },
+  {
+   code:"K28",
+   question:"A tenant is frustrated because a replacement radiator part is delayed by two days. How do you maintain professional customer service?",
+   options:["Contact the tenant proactively, explain the reason for the delay calmly, provide an updated arrival time, and ensure temporary heating is offered if needed.","Avoid answering the tenant's phone calls until the radiator part arrives at the depot.","Blame the supplier using aggressive language and tell the tenant to call the manufacturer directly.","Arrive at the property unannounced late at night to explain the situation in person."],
+   correct:0,
+   explanation:"Good customer service relies on proactive communication, setting realistic expectations, demonstrating empathy, and offering practical interim solutions when delays occur.",
+   keyTakeaway:"Communicate delays proactively, remain polite, and provide practical interim solutions.",
+   id:"pmo-epa-v1320-k28-28"
+  },
+  {
+   code:"K29",
+   question:"You are coordinating a washroom refurbishment involving plumbing, tiling, and electrical works. How do trade inter-dependencies dictate task sequencing?",
+   options:["Complete final wall painting and floor tiling before installing internal concealed pipework.","Mount light switches and washbasins onto bare studs before carpenters erect wall frames.","First-fix plumbing and electrical, complete plastering and wall tiling, then second-fix electrical and plumbing fittings after decoration.","Fit second-fix electrical sockets while plumbers are pressure testing open water pipes directly overhead."],
+   correct:2,
+   explanation:"Property maintenance depends on logical sequencing: first-fix services first, followed by wet trades and board linings, then decorative finishes, and finally second-fix fit-outs.",
+   keyTakeaway:"Sequence works logically: first-fix services, substrates and finishes, then second-fix fit-out.",
+   id:"pmo-epa-v1320-k29-29"
+  },
+  {
+   code:"K30",
+   question:"While working in a public sector facility, you notice a vulnerable resident displaying signs of unexplained physical injury and distress. What is your responsibility under Safeguarding policy?",
+   options:["Report your observations immediately to the designated Safeguarding Lead following the organization's reporting procedure.","Confront other residents aggressively to investigate who caused the injury.","Promise the resident you will keep their situation completely secret from management.","Ignore the situation as safeguarding concerns lie outside a maintenance operative's role."],
+   correct:0,
+   explanation:"All operatives working in public and residential environments have a duty of care under Safeguarding and Prevent policies to promptly report concerns to designated safeguarding leads.",
+   keyTakeaway:"Report all safeguarding or welfare concerns immediately to designated organizational leads.",
+   id:"pmo-epa-v1320-k30-30"
+  },
+  {
+   code:"K31",
+   question:"A client asks you to perform a complex gas boiler combustion test. You are qualified in property maintenance but do not hold Gas Safe registration. What should you do?",
+   options:["Attempt the test using online videos while working carefully.","Decline the task, explaining that it exceeds your legal authority and competence, and escalate it to a registered Gas Safe engineer.","Perform the combustion check as long as a supervisor is present on site.","Isolate the gas valve permanently without informing the customer or recording the action."],
+   correct:1,
+   explanation:"Recognizing personal limits of competence is critical for safety and legal compliance. Unregistered personnel must never carry out gas work.",
+   keyTakeaway:"Never exceed your legal authority; refer specialized tasks like gas fitting to certified specialists.",
+   id:"pmo-epa-v1320-k31-31"
+  },
+  {
+   code:"S1",
+   question:"You have a daily work list containing four tasks: an emergency water leak, a scheduled emergency light test, replacing a blown lamp, and repairing a door latch. How do you plan your sequence?",
+   options:["Replace the blown lamp first, leave the water leak until the end of the shift, and ignore the light test.","Complete tasks in strict alphabetical order based on location room names.","Carry out the easiest job first regardless of emergency risk to finish early.","Isolate and repair the emergency water leak first, then perform scheduled emergency light tests, and finally complete minor repairs."],
+   correct:3,
+   explanation:"Sequencing routine work requires prioritizing active hazards and emergencies before PPM tasks and low-priority cosmetic repairs.",
+   keyTakeaway:"Prioritize active leaks and critical safety risks before scheduled PPM and minor repairs.",
+   id:"pmo-epa-v1320-s1-32"
+  },
+  {
+   code:"S2",
+   question:"You need to replace damaged fire-door intumescent seals during maintenance. How do you ensure the replacement components comply with regulations?",
+   options:["Fit generic rubber draft excluder strips from a local DIY shop.","Check the fire door manufacturer's specification matrix and select identical, certified intumescent seal dimensions and fire rating such as FD30 or FD60.","Fill the rebate gap with standard silicone sealant.","Use undersized intumescent strips and fill gaps with wooden wedges."],
+   correct:1,
+   explanation:"Fire safety components must strictly match the fire door test evidence and manufacturer specifications to maintain compliance and fire resistance.",
+   keyTakeaway:"Match fire door seals strictly to tested manufacturer specifications and ratings.",
+   id:"pmo-epa-v1320-s2-33"
+  },
+  {
+   code:"S3",
+   question:"When preparing to work inside a shallow ceiling void where overhead electrical cables are present, how do you comply with statutory health and safety rules?",
+   options:["Carry out a risk assessment, safely isolate nearby electrical circuits, use low-voltage lighting, and wear a bump cap and safety glasses.","Reach into the void using uninsulated metal tools without isolating power.","Pull trailing cables out of the way using wet leather gloves.","Work in the dark to avoid touching electrical components."],
+   correct:0,
+   explanation:"Compliance requires risk assessment, isolating hazards such as live cables, utilizing suitable head and eye PPE, and ensuring safe working conditions.",
+   keyTakeaway:"Assess risks, isolate electrical hazards, and wear appropriate protective gear in ceiling voids.",
+   id:"pmo-epa-v1320-s3-34"
+  },
+  {
+   code:"S4",
+   question:"You are clearing a blocked outdoor drain gulley on a public footpath. How do you organize the workplace to satisfy your risk assessment?",
+   options:["Leave the manhole cover wide open while walking away to fetch tools from the van.","Bucket drain sludge directly across the active public footway without warning signs.","Set up safety cones and pedestrian barrier tape around the gulley, wear hi-vis clothing and heavy nitrile gloves, and keep tools within the barrier zone.","Perform the work at night in unlit conditions without high-visibility clothing."],
+   correct:2,
+   explanation:"Organizing a workplace safely involves setting up physical barriers, warning signs, wearing appropriate PPE, and preventing hazards to the public.",
+   keyTakeaway:"Erect barrier zones around open excavations and manholes and wear high-visibility PPE.",
+   id:"pmo-epa-v1320-s4-35"
+  },
+  {
+   code:"S5",
+   question:"When installing a replacement extract fan in a domestic bathroom, how do you comply with Building Regulations Approved Documents F and P?",
+   options:["Vent the moist exhaust air directly into an unventilated attic space.","Connect the fan to a lighting circuit using uninsulated bell wire.","Reduce ducting diameter down to 25mm to avoid drilling standard core holes.","Ensure minimum extraction airflow rates are achieved, ducting exhausts directly outside, and electrical connections meet Part P zone requirements."],
+   correct:3,
+   explanation:"Approved Document F mandates correct extraction rates routed to outside air; Approved Document P mandates safe electrical installation in wet zones.",
+   keyTakeaway:"Route ventilation ductwork directly outside and observe electrical zone rules.",
+   id:"pmo-epa-v1320-s5-36"
+  },
+  {
+   code:"S6",
+   question:"You are replacing broken roof slates from a lean-to roof structure. How do you implement safe working practices for access?",
+   options:["Climb directly onto fragile roof slates wearing smooth-soled trainers.","Stand on top of a wheelbarrow positioned on uneven garden soil.","Use a correctly tied-off ladder to access a properly erected roof ladder, setting up ground warning barriers below the eaves line.","Throw broken slate pieces down onto the access path without checking below."],
+   correct:2,
+   explanation:"Safe access to pitched roofs requires secured access ladders combined with specialized roof ladders to distribute weight, plus ground drop-zone protection.",
+   keyTakeaway:"Use secured access equipment, specialized roof ladders, and establish drop zones below.",
+   id:"pmo-epa-v1320-s6-37"
+  },
+  {
+   code:"S7",
+   question:"You need to cut a sheet of 18mm plywood using a portable circular saw. How do you verify correct tool functioning before starting?",
+   options:["Lock the retractable lower guard open using a wooden wedge.","Use a grinding disc fitted onto the circular saw arbor.","Bypass the safety dead-man trigger switch with electrical tape.","Check that the lower blade guard snaps back automatically, inspect the blade for missing teeth, check cable integrity, and test the off-switch trigger."],
+   correct:3,
+   explanation:"Safe tool operation requires verifying safety guards move freely and return automatically, blades are intact, and switch controls function correctly.",
+   keyTakeaway:"Confirm automatic guard operation, blade integrity, and switch controls before cutting.",
+   id:"pmo-epa-v1320-s7-38"
+  },
+  {
+   code:"S8",
+   question:"Before replacing a faulty 230V immersion heater element, how do you execute safe electrical isolation?",
+   options:["Isolate at the DP switch or MCB, lock off with a padlock, tag out, test your voltage indicator on a proving unit, verify dead at the element terminals, and re-prove the indicator.","Turn off the wall switch and proceed directly without testing voltage.","Switch off the main stopcock and start unscrewing wires immediately.","Cut electrical cables with insulated pliers while keeping the breaker energized."],
+   correct:0,
+   explanation:"The standard safe isolation procedure requires isolate, lock off, tag, prove the voltage tester, test circuits for dead, and re-test the voltage tester.",
+   keyTakeaway:"Follow the full Safe Isolation Procedure: isolate, lock, prove tester, test dead, and re-prove.",
+   id:"pmo-epa-v1320-s8-39"
+  },
+  {
+   code:"S9",
+   question:"During routine testing of a commercial fire alarm system via a manual call point, the alarm fails to activate the sounders or signal the panel. What action must you take?",
+   options:["Ignore the failure and re-test the system in six months.","Log the failure immediately in the fire logbook, notify the responsible person or building manager, and escalate for urgent specialist repair.","Silence the main panel power supply permanently to clear fault lights.","Melt the call point glass reset key inside the housing to hold the contact down."],
+   correct:1,
+   explanation:"Emergency system failures require immediate documentation in statutory logbooks and prompt escalation to ensure safety life-systems are restored without delay.",
+   keyTakeaway:"Document emergency system failures immediately in safety logs and escalate for repair.",
+   id:"pmo-epa-v1320-s9-40"
+  },
+  {
+   code:"S10",
+   question:"A kitchen mixer tap is leaking profusely from the spindle head. How do you perform the repair cleanly?",
+   options:["Wrap string tightly around the exterior of the tap spout while the supply remains under pressure.","Isolate local service valves under the sink, open tap handles to relieve residual water pressure, disassemble the tap valve, and replace internal O-rings or cartridge.","Hit the brass body with a steel hammer to tighten internal threads.","Solder the tap spout closed completely using lead-free solder."],
+   correct:1,
+   explanation:"Plumbing repairs require isolating water, venting system pressure, dismantling components safely, and renewing worn internal seals or cartridges.",
+   keyTakeaway:"Isolate supply, depressurize, dismantle tap assembly, and renew worn cartridges or seals.",
+   id:"pmo-epa-v1320-s10-41"
+  },
+  {
+   code:"S11",
+   question:"An external rainwater downpipe has snapped at a socket joint, causing rainwater to saturate the masonry wall. How do you repair it?",
+   options:["Wrap the cracked joint with cloth duct tape.","Divert the gutter outlet into an open top-floor window.","Fill the interior of the downpipe with expanding foam to block water entry.","Cut out the damaged pipe section, clean pipe ends, and install a replacement plastic downpipe section using a pipe connector and pipe clip assembly."],
+   correct:3,
+   explanation:"External drainage repairs involve removing damaged sections and fitting correct matching replacement components secured with purpose-made socket couplers.",
+   keyTakeaway:"Cut out broken sections cleanly and fit purpose-made replacement pipe fittings.",
+   id:"pmo-epa-v1320-s11-42"
+  },
+  {
+   code:"S12",
+   question:"A mechanical ventilation heat recovery (MVHR) unit filter indicator shows a clogged warning light. What maintenance step is required?",
+   options:["Remove dirty filters permanently and operate the system without filtration.","Spray liquid oil directly onto dirty filter media while the fan operates.","Isolate electrical power to the unit, remove dirty filters, clean or install new manufacturer-specified filter inserts, reset the indicator, and restore power.","Bypass the MVHR control board using jump wires to eliminate warning lights."],
+   correct:2,
+   explanation:"MVHR maintenance requires safe power isolation, clearing or replacing filter media with correct parts, and clearing system maintenance alerts.",
+   keyTakeaway:"Isolate power, replace dirty MVHR filters with specified parts, and reset system monitors.",
+   id:"pmo-epa-v1320-s12-43"
+  },
+  {
+   code:"S13",
+   question:"A wooden sash window frame is binding and refusing to slide smoothly. How do you restore functional operation using joinery skills?",
+   options:["Remove staff beads, ease sticking sash edges using a hand plane, lubricate pulley tracks with paraffin wax, and re-hang with correct balance weights.","Force the window open using a heavy crowbar and nail it shut permanently.","Cut away lower window sills completely with an electric chainsaw.","Apply thick gloss paint over dirty pulley wheels and sash cords."],
+   correct:0,
+   explanation:"Repairing sash windows involves dismantling perimeter beads, easing high spots on meeting rails or stiles with joinery hand tools, and maintaining pulley mechanisms.",
+   keyTakeaway:"Remove retaining beads, plane down sticking timber edges, and service balance mechanisms.",
+   id:"pmo-epa-v1320-s13-44"
+  },
+  {
+   code:"S14",
+   question:"You are repairing a damaged plasterboard section where a door handle has punched a 100mm hole. How do you prepare and fill the repair?",
+   options:["Stuff loose newspaper into the cavity and paint over it immediately.","Square off the damaged area, fix a timber backing batten or plasterboard patch, apply jointing tape over seams, and apply filler flushed smooth.","Fill the entire wall cavity solid with mixed masonry sand and cement mortar.","Glue a sheet of cardboard over the hole using PVA adhesive."],
+   correct:1,
+   explanation:"Plasterboard repairs require cutting out damaged material square, installing solid backing supports, scrim taping joints to prevent cracking, and feathering joint compound.",
+   keyTakeaway:"Square off damage, install backing or patches, tape joints, and apply smooth joint compound.",
+   id:"pmo-epa-v1320-s14-45"
+  },
+  {
+   code:"S15",
+   question:"You are decorating a newly plastered office room. How do you prepare the fresh plaster surface before applying contract emulsion?",
+   options:["Apply two coats of full-strength solvent gloss paint directly onto damp plaster.","Coat the wall with engine oil before applying emulsion paint.","Apply un-diluted heavy vinyl wallpaper paste directly onto powdery dry plaster.","Ensure plaster is fully dry, lightly sand imperfections, apply a mist coat of diluted emulsion to seal suction, then apply full coats."],
+   correct:3,
+   explanation:"Fresh plaster requires drying time, light sanding, and a breathable mist coat to penetrate and seal surface suction before finishing coats.",
+   keyTakeaway:"Apply a diluted mist coat to fresh dry plaster to seal high suction before full paint coats.",
+   id:"pmo-epa-v1320-s15-46"
+  },
+  {
+   code:"S16",
+   question:"You are replacing three cracked ceramic tiles on a splashback. How do you prepare the substrate before placing new tiles?",
+   options:["Stick new tiles directly on top of loose cracked tiles using mastic tape.","Fill cracks with oil paint and skip tile replacement.","Rake out surrounding grout, carefully rake or chisel away old tiles and hard adhesive down to a clean flat substrate, and prime before re-tiling.","Hammer new tiles into place over high ridges of old adhesive."],
+   correct:2,
+   explanation:"Successful tile replacement requires isolating broken tiles by scoring grout lines, removing tiles safely, chipping old adhesive flat, and priming the substrate.",
+   keyTakeaway:"Isolate damaged tiles, clear old adhesive back to a flat clean substrate, and prime before re-laying.",
+   id:"pmo-epa-v1320-s16-47"
+  },
+  {
+   code:"S17",
+   question:"You need to replace a damaged 300mm carpet tile in an office corridor floor layout. How do you execute the repair?",
+   options:["Peel up the damaged tile, scrape clean old adhesive bed, apply tackifier adhesive, cut matching new tile to size using a utility knife, and press flush.","Cut out a circle in the damaged carpet tile and fill the gap with silicone.","Staple a piece of loose household rug over the damaged carpet tile.","Glue the new carpet tile upside down using polyurethane wood glue."],
+   correct:0,
+   explanation:"Carpet tile repairs involve lifting damaged units, preparing subfloors, applying non-permanent tackifier adhesive, and accurately cutting and fitting replacement tiles.",
+   keyTakeaway:"Remove damaged tiles, re-apply carpet tackifier adhesive, and cut replacement tiles to a tight fit.",
+   id:"pmo-epa-v1320-s17-48"
+  },
+  {
+   code:"S18",
+   question:"A wooden post on a timber boundary garden railing is loose due to decayed timber ground fixings. How do you carry out a responsive repair?",
+   options:["Tie the railing to a nearby drainage downpipe using plastic cable ties.","Lean timber offcuts against the railing without setting fixings in ground.","Mound loose topsoil around the base without compacting.","Excavate around the loose post base, cut away rotten timber, support rails, set a new pressure-treated timber post in rapid-setting concrete, and re-fix rails."],
+   correct:3,
+   explanation:"Responsive repairs to ground structures require excavating degraded foundations, renewing structural posts with treated timber and concrete, and re-attaching rails securely.",
+   keyTakeaway:"Dig out failed post foundations, install treated posts set in concrete, and re-secure rails.",
+   id:"pmo-epa-v1320-s18-49"
+  },
+  {
+   code:"S19",
+   question:"You are servicing an unfamiliar commercial thermostatic mixing valve (TMV). How do you use technical literature to guide your maintenance procedure?",
+   options:["Consult the manufacturer's technical manual for exploded parts diagrams, strainer cleaning sequences, and specific calibration temperature settings.","Guess internal component arrangements by forcing internal springs out with pliers.","Discard technical datasheets and adjust temperature settings to maximum.","Replace internal seals with non-standard rubber O-rings cut from hosepipe."],
+   correct:0,
+   explanation:"Technical literature provides precise instructions for servicing complex components like TMVs, detailing maintenance steps, filter cleaning, and safe temperature calibration.",
+   keyTakeaway:"Use manufacturer datasheets for step-by-step disassembly, strainer maintenance, and thermal setting.",
+   id:"pmo-epa-v1320-s19-50"
+  },
+  {
+   code:"S20",
+   question:"Upon completing a water hygiene temperature inspection across twenty outlet points, how should test data be formally recorded?",
+   options:["Jot down pass or fail notes on a scrap cardboard box and dispose of it after your shift.","Enter exact temperature readings, outlet locations, date, and technician name into the digital facilities compliance logbook or paper log sheets.","Record temperature readings only if they fail to meet compliance criteria.","Memorize the numbers without writing them down."],
+   correct:1,
+   explanation:"Compliance tracking requires structured, accurate recording of statutory data including location, date, values, and inspector details.",
+   keyTakeaway:"Log compliance inspection readings accurately on approved digital or written maintenance records.",
+   id:"pmo-epa-v1320-s20-51"
+  },
+  {
+   code:"S21",
+   question:"How do you perform a quality self-inspection after fitting a replacement timber fire door leaf?",
+   options:["Verify that the door opens halfway and leave without testing latching function.","Ensure the gap under the door exceeds 25mm to avoid trimming bottom timber edges.","Check door gaps stay between 2mm and 4mm using a feeler gauge, verify latch operation, test intumescent seal contact, and confirm the door closer shuts the leaf fully.","Paint over non-compliant 10mm frame gaps using thick intumescent paint."],
+   correct:2,
+   explanation:"Inspecting fire door installations against specification requires checking perimeter gaps, drop seals or threshold gaps, self-closing hardware, and latching engagement.",
+   keyTakeaway:"Inspect completed work using feeler gauges to confirm compliance with regulatory gap limits.",
+   id:"pmo-epa-v1320-s21-52"
+  },
+  {
+   code:"S22",
+   question:"You are clearing waste following a plumbing and radiator replacement job. How do you comply with environmental waste segregation rules?",
+   options:["Separate scrap copper and brass metal for recycling, drain residual chemical inhibitor into sealable containers, and segregate general packaging.","Throw old copper pipes, packaging, and liquid chemical waste together into an open skip.","Pour system chemical sludge down an external storm water drain.","Burn cardboard packaging and old plastic radiator valves on site."],
+   correct:0,
+   explanation:"Proper waste segregation requires separating recyclable metals, collecting hazardous chemical fluids separately, and managing packaging waste responsibly.",
+   keyTakeaway:"Segregate scrap metals, chemicals, and packaging into distinct recycling and waste streams.",
+   id:"pmo-epa-v1320-s22-53"
+  },
+  {
+   code:"S23",
+   question:"You are explaining a complex boiler system fault to a building manager and a heating engineer simultaneously. How do you adapt your communication?",
+   options:["Use heavy technical jargon exclusively so the manager feels excluded.","Refuse to talk to the heating engineer directly.","Blame the building manager in front of sub-contractors for system failures.","Provide the manager with a high-level operational impact summary and timeline, while discussing specific pressure differential values and fault codes with the engineer."],
+   correct:3,
+   explanation:"Adapting communication requires providing high-level operational summaries to management while using detailed technical terms when briefing trade specialists.",
+   keyTakeaway:"Tailor details: clear operational impact for managers, technical codes and metrics for specialists.",
+   id:"pmo-epa-v1320-s23-54"
+  },
+  {
+   code:"S24",
+   question:"While repairing a light fitting inside an occupied office, an employee complains about noise levels. How do you handle customer service effectively?",
+   options:["Tell the employee to leave the office immediately if they dislike noise.","Increase power tool usage speed to intentionally create more noise.","Acknowledge their concern politely, explain the quick timeframe required to complete noisy steps, and offer to reschedule loud tasks during lunch breaks.","Ignore the employee and refuse to answer their questions."],
+   correct:2,
+   explanation:"Effective customer service involves active listening, courteous explanation, and offering practical adjustments to minimize disturbance to building occupants.",
+   keyTakeaway:"Acknowledge occupant concerns courteously and adjust noisy schedules where practical.",
+   id:"pmo-epa-v1320-s24-55"
+  },
+  {
+   code:"S25",
+   question:"While carrying out routine maintenance, you discover severely degraded electrical main busbars exhibiting signs of arcing inside a primary distribution panel. What is the correct action?",
+   options:["Attempt to file away burn marks on live busbars using a metal hand file.","Recognize the hazard exceeds your authority, immediately isolate and secure the area, report the emergency fault, and escalate to a qualified industrial electrician.","Wrap plastic insulation tape around live primary busbars.","Close the panel door and leave site without informing anyone."],
+   correct:1,
+   explanation:"When encountering severe hazards beyond your competence level, you must secure the immediate danger zone, report the emergency, and escalate to authorized specialists.",
+   keyTakeaway:"Isolate high-risk hazards beyond your competence and escalate immediately to qualified specialists.",
+   id:"pmo-epa-v1320-s25-56"
+  },
+  {
+   code:"B1",
+   question:"You are replacing old fluorescent light fittings across a 3-story office building. How do you demonstrate a commitment to promoting sustainable working practices?",
+   options:["Replace old fluorescent tubes with higher-wattage incandescent lamps.","Dispose of all old fluorescent tubes inside standard general refuse bins.","Upgrade fittings to high-efficiency LED units, install presence sensors, and send old mercury tubes to dedicated hazardous recycling facilities.","Leave lights running 24/7 during installation without installing energy controls."],
+   correct:2,
+   explanation:"Promoting sustainability involves installing energy-efficient systems and ensuring hazardous waste such as mercury tubes is recycled responsibly.",
+   keyTakeaway:"Prioritize energy-efficient components and route hazardous waste to specialized recycling facilities.",
+   id:"pmo-epa-v1320-b1-57"
+  },
+  {
+   code:"B2",
+   question:"You notice a contractor working on a mobile scaffold tower with unlocked caster wheels and missing guardrails. How do you demonstrate prioritizing health and safety?",
+   options:["Walk past quickly to avoid getting involved in a disagreement.","Borrow tools from the contractor while they balance on the unsafe tower.","Take photographs from a distance and post them online without taking corrective action.","Stop the unsafe work activity immediately, explain the hazard to the contractor, and report the safety breach to the site manager."],
+   correct:3,
+   explanation:"Prioritizing health and safety requires intervention when observing unsafe acts, stopping dangerous work, and escalating safety breaches immediately.",
+   keyTakeaway:"Intervene and stop unsafe work practices immediately to protect site safety.",
+   id:"pmo-epa-v1320-b2-58"
+  },
+  {
+   code:"B3",
+   question:"You are assigned a list of ten responsive maintenance work orders for the day. How do you demonstrate taking responsibility for completing your work?",
+   options:["Manage your time effectively, complete repairs to required standards, re-stock your van at the end of the shift, and ensure all job tickets are closed out accurately.","Complete three quick jobs and mark the remaining complex jobs as access denied without visiting them.","Leave incomplete job sites dirty for night cleaning staff to resolve.","Pass your assigned work tickets to another operative without checking their availability."],
+   correct:0,
+   explanation:"Taking personal responsibility means taking ownership of tasks from start to finish, maintaining quality standards, managing time, and completing documentation.",
+   keyTakeaway:"Take full ownership of task completion, work quality, time management, and job reporting.",
+   id:"pmo-epa-v1320-b3-59"
+  },
+  {
+   code:"B4",
+   question:"Your maintenance team must prepare a facility for a major compliance audit in two days. How do you demonstrate a strong team focus?",
+   options:["Refuse to help team members once your individual daily job tasks are finished.","Coordinate with colleagues, offer assistance on lagging tasks outside your usual remit, and share tools to ensure the team meets the audit deadline.","Criticize colleagues publicly for taking longer on complex repair tasks.","Hide shared specialist testing equipment inside your personal locker."],
+   correct:1,
+   explanation:"Team focus means collaborating proactively, supporting colleagues under pressure, sharing resources, and prioritizing overall team targets over individual preferences.",
+   keyTakeaway:"Collaborate, assist colleagues, and align personal efforts with overall team goals.",
+   id:"pmo-epa-v1320-b4-60"
+  },
+  {
+   code:"B5",
+   question:"How can you actively contribute to an inclusive workplace culture within your property maintenance team?",
+   options:["Treat all colleagues, contractors, and building occupants with dignity and respect, value diverse perspectives, and challenge discriminatory language.","Use exclusionary trade slang designed to confuse new trainees.","Avoid communicating with building users who speak English as a second language.","Assign unpleasant tasks exclusively to junior or apprentice workers."],
+   correct:0,
+   explanation:"Contributing to an inclusive culture requires demonstrating respect, treating everyone fairly, encouraging diverse contributions, and challenging bias or discrimination.",
+   keyTakeaway:"Promote equity, show respect to all stakeholders, and challenge non-inclusive behavior.",
+   id:"pmo-epa-v1320-b5-61"
+  },
+  {
+   code:"B6",
+   question:"A new smart-building management system (BMS) is being installed across your site portfolio. How do you demonstrate seeking learning and development opportunities?",
+   options:["Complain that smart technology makes maintenance work unnecessarily complicated.","Ignore training sessions and continue attempting repairs using obsolete methods.","Refuse to use digital BMS control interfaces.","Request to shadow commissioning engineers, ask for system user guides, and sign up for technical BMS operator training modules."],
+   correct:3,
+   explanation:"Seeking development opportunities involves taking initiative to learn new skills, embracing modern technology, and seeking formal training to enhance capability.",
+   keyTakeaway:"Proactively engage with new systems, request technical training, and expand professional skills.",
+   id:"pmo-epa-v1320-b6-62"
+  }
+ ]
+};
+function epaQuestionWritingIssues(q){
+ const issues=[];
+ const question=String(q?.question||'').trim(),options=Array.isArray(q?.options)?q.options.map(x=>String(x||'').trim()):[];
+ if(!question)issues.push('question text is missing');
+ // Scenario wording is reviewed as a coaching warning only. Do not rely on a small keyword list,
+ // because valid site scenarios can begin with a person, material, detail, drawing or item of plant.
+ const scenarioSignals=/(you|your|while|when|after|before|notice|find|asked|arrives|starts|finished|fitting|building|repairing|working|site|wall|brick|block|mortar|drawing|detail|joint|labourer|driver|client|foreman|supervisor|delivery|opening|course|scaffold|telehandler|work area)/i;
+ if(question&&!scenarioSignals.test(question))issues.push('review whether the question gives enough workplace context');
+ if(options.length!==4||options.some(x=>!x))issues.push('exactly four complete answers are required');
+ if(!Number.isInteger(q?.correct)||q.correct<0||q.correct>3)issues.push('one EPA best-practice answer must be selected');
+ if(!String(q?.explanation||'').trim())issues.push('coaching explanation is missing');
+ if(!String(q?.keyTakeaway||'').trim())issues.push('key takeaway is missing');
+ if(options.length===4){
+  const official=/(in accordance with|comply with|compliance with|appropriate control measures|following site procedures|industry standards|relevant regulations)/i;
+  if(official.test(options[q.correct]||'')&&!options.some((x,i)=>i!==q.correct&&official.test(x)))issues.push('correct answer contains official-sounding giveaway wording');
+  const careless=/(leave it|ignore it|not my job|someone else|carry on anyway|nobody will notice|doesn.?t matter|do it later|hope for the best)/i;
+  options.forEach((x,i)=>{if(i!==q.correct&&careless.test(x))issues.push(`answer ${String.fromCharCode(65+i)} sounds careless rather than plausible`)});
+  const lengths=options.map(x=>x.split(/\s+/).filter(Boolean).length),correctLength=lengths[q.correct]||0,otherAvg=lengths.filter((_,i)=>i!==q.correct).reduce((a,b)=>a+b,0)/3;
+  if(otherAvg&&correctLength>otherAvg*1.65)issues.push('correct answer is noticeably longer than the alternatives');
+  const unique=new Set(options.map(x=>x.toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim()));
+  if(unique.size<4)issues.push('answers must be meaningfully different');
+ }
+ return issues;
+}
+function epaResultKey(){return `${COURSE.id}:epaKnowledgePracticeResults:v2`}
+function epaType(code){const c=String(code||'').toUpperCase();return c.startsWith('K')?'Knowledge':c.startsWith('S')?'Skill':'Behaviour'}
+function allCourseKsbs(){
+ const byCode=new Map();
+ courseAssignments().forEach(a=>(a.ksbs||[]).forEach(([code,text])=>{
+  const cleanCode=String(code||'').trim().toUpperCase();
+  if(!cleanCode||byCode.has(cleanCode))return;
+  byCode.set(cleanCode,{code:cleanCode,text:cleanCriterion(text),type:epaType(cleanCode),assignment:a.n,assignmentTitle:a.title});
+ }));
+ return [...byCode.values()].sort((a,b)=>{
+  const order={Knowledge:0,Skill:1,Behaviour:2},typeDiff=order[a.type]-order[b.type];
+  if(typeDiff)return typeDiff;
+  return Number(a.code.replace(/\D/g,''))-Number(b.code.replace(/\D/g,''));
+ });
+}
+function shuffle(items){const a=[...items];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function approvedEpaKnowledgeBank(){return Array.isArray(EPA_KNOWLEDGE_PRACTICE_BANKS[COURSE.id])?EPA_KNOWLEDGE_PRACTICE_BANKS[COURSE.id]:[]}
+function epaKnowledgeBankStatus(){
+ const required=allCourseKsbs(),requiredCodes=new Set(required.map(x=>x.code)),questions=approvedEpaKnowledgeBank();
+ const valid=[],seen=new Set(),issues=[],warnings=[];
+ questions.forEach((q,index)=>{
+  const code=String(q?.code||'').trim().toUpperCase();
+  if(!requiredCodes.has(code)){issues.push(`Question ${index+1} uses unknown KSB ${code||'(missing)'}`);return}
+  if(seen.has(code)){issues.push(`More than one question is assigned to ${code}`);return}
+  const writingIssues=epaQuestionWritingIssues(q);
+  if(writingIssues.length)writingIssues.forEach(issue=>warnings.push(`${code}: ${issue}`));
+  seen.add(code);valid.push({...q,code,type:epaType(code),id:q.id||`${COURSE.id}-${code}-epa-practice`,writingStandard:EPA_MCQ_WRITING_STANDARD.id});
+ });
+ const missing=required.filter(x=>!seen.has(x.code));
+ // Practice unlocks as soon as a complete 10-question attempt can be generated.
+ // Missing future KSBs and writing-review notes do not block testing of the installed bank.
+ return {required,questions:valid,missing,issues,warnings,ready:valid.length>=10&&issues.length===0};
+}
+function chooseEpaQuestions(){
+ return shuffle(epaKnowledgeBankStatus().questions).slice(0,10).map(q=>{
+  const mixed=shuffle(q.options.map((text,index)=>({text,index})));
+  return {...q,options:mixed.map(x=>x.text),correct:mixed.findIndex(x=>x.index===q.correct)};
+ });
+}
+function epaPracticeGrade(score){return score>=90?'Distinction':score>=80?'Merit':score>=70?'Pass':'Needs More Practice'}
+
+function assignmentTheoryKsbs(a){
+ return (a?.ksbs||[]).filter(([code])=>/^[KB]/i.test(String(code||'')));
+}
+function approvedAssignmentQuestionBank(a){
+ if(!a||!window.MCQQuestionBank||!window.MCQEngine)return[];
+ const allowed=new Set(assignmentTheoryKsbs(a).map(([code])=>code));
+ return MCQQuestionBank.get(COURSE.id,a.n).filter(q=>allowed.has(q.ksb));
+}
+function buildAssignmentKnowledgeQuestions(a){
+ const ksbs=assignmentTheoryKsbs(a);
+ if(!ksbs.length)return[];
+ const bank=approvedAssignmentQuestionBank(a);
+ const recent=knowledgeAttempts(a.n).slice(-2).flatMap(attempt=>attempt.questionIds||attempt.questions?.map(q=>q.id)||[]);
+ return MCQEngine.assembleAssessment({questions:bank,count:bank.length,allowedKsbs:ksbs.map(([code])=>code),recentIds:recent});
+}
+function startAssignmentKnowledge(a){
+ let questions=[];
+ try{questions=buildAssignmentKnowledgeQuestions(a)}catch(error){
+  console.error('MCQ Engine:',error);
+  return toast(error.message||'The question bank is not ready for this assignment.');
+ }
+ if(!questions.length)return toast('The question bank is not ready for this assignment.');
+ state.knowledgeTest={assignment:a.n,questions,answers:{},index:0};state.view='knowledge-test';render();window.scrollTo(0,0);
+}
+function renderAssignmentKnowledgeTest(){
+ const test=state.knowledgeTest,a=currentAssignment();if(!test?.questions?.length||!a){state.view='assignment';render();return}
+ const i=test.index,q=test.questions[i],committed=test.answers[i],picked=test.pendingAnswer?.index===i?test.pendingAnswer.value:committed,total=test.questions.length;
+ const options=q.options.map((o,n)=>`<label class="epa-option ${picked===n?'selected':''}"><input type="radio" name="knowledgeAnswer" value="${n}" ${picked===n?'checked':''}><span><b>${String.fromCharCode(65+n)}</b>${esc(o)}</span></label>`).join('');
+ app.innerHTML=shell(`<button class="back no-print" id="quitKnowledge">← Assignment ${a.n}</button><section class="epa-test-head"><div><div class="number">Question ${i+1} of ${total}</div><h2>${esc(q.ksb||q.code)} · Knowledge & Behaviour assessment</h2></div><span class="status-pill">${Object.keys(test.answers).length}/${total} answered</span></section><div class="epa-progress"><span style="width:${((i+1)/total)*100}%"></span></div><section class="card panel epa-question"><small>${esc(q.ksb||q.code)} · ${esc(q.sourceText||q.wording||q.concept)}</small><h3>${esc(q.question)}</h3><div class="epa-options">${options}</div></section><div class="mcq-question-actions"><button class="btn secondary" id="knowledgePrev" ${i===0?'disabled':''}>Previous</button><button class="btn" id="knowledgeSubmit" ${picked===undefined?'disabled':''}>${i===total-1?'Submit assessment':'Submit answer'}</button></div>`);
+ document.getElementById('quitKnowledge').onclick=()=>{if(Object.keys(test.answers).length&&!confirm('Leave this assessment? Your current answers will not be saved.'))return;state.knowledgeTest=null;state.view='assignment';render()};
+ document.querySelectorAll('input[name="knowledgeAnswer"]').forEach(r=>r.onchange=()=>{test.pendingAnswer={index:i,value:Number(r.value)};renderAssignmentKnowledgeTest()});
+ document.getElementById('knowledgePrev').onclick=()=>{test.pendingAnswer=null;test.index=Math.max(0,i-1);renderAssignmentKnowledgeTest();window.scrollTo(0,0)};
+ document.getElementById('knowledgeSubmit').onclick=async()=>{if(picked===undefined)return;test.answers[i]=Number(picked);test.pendingAnswer=null;if(i<total-1){test.index=i+1;renderAssignmentKnowledgeTest();window.scrollTo(0,0);return}if(Object.keys(test.answers).length<total)return toast(`Answer all ${total} questions before submitting`);const correct=test.questions.reduce((n,x,j)=>n+(test.answers[j]===x.correct?1:0),0),percentage=Math.round(correct/total*100),grade=gradeForPercentage(percentage),attempt={id:uid(),date:today(),score:correct,total,percentage,grade,ksbCodes:[...new Set(test.questions.map(x=>x.ksb||x.code))],questionIds:test.questions.map(x=>x.id),questions:structuredClone(test.questions),answers:structuredClone(test.answers)};const attempts=knowledgeAttempts(a.n);attempts.push(attempt);state.data[knowledgeResultKey(a.n)]=attempts;saveAcademyCertificate('knowledge',a.n,attempt);await saveData();state.knowledgeTest={...test,result:attempt};state.view='knowledge-result';render();window.scrollTo(0,0)};
+}
+function renderAssignmentKnowledgeResult(){
+ const test=state.knowledgeTest,a=assignment(test?.assignment),r=test?.result;if(!test||!a||!r){state.view='assignment';render();return}
+ const wrong=test.questions.map((q,i)=>({q,i,picked:test.answers[i]})).filter(x=>x.picked!==x.q.correct);
+ app.innerHTML=shell(`<button class="back no-print" id="knowledgeResultBack">← Assignment ${a.n}</button><section class="card panel"><div class="panel-body"><div class="number">Knowledge assessment result</div><h2>${r.score}/${r.total} · ${r.percentage}%</h2><span class="status-pill ${r.percentage>=70?'done':''}">${esc(r.grade)}</span><p class="muted" style="margin-top:12px">${r.percentage>=70?'This passed attempt has been recorded as Knowledge evidence against the KSBs covered.':'This attempt has been saved. A pass of 70% or above is required for it to count as KSB evidence.'}</p></div></section>${wrong.length?`<section class="card panel"><div class="panel-body"><h3>Review incorrect answers</h3>${wrong.map(({q,i,picked})=>`<div class="lesson-question" style="margin-top:12px"><strong>${i+1}. ${esc(q.question)}</strong><p>Your answer: ${esc(q.options[picked]||'Not answered')}</p><p><strong>Correct answer:</strong> ${esc(q.options[q.correct])}</p><p class="muted">${esc(q.explanation)}</p></div>`).join('')}</div></section>`:'<section class="card panel"><div class="panel-body"><h3>All answers correct</h3></div></section>'}<div class="btn-row"><button class="btn" id="knowledgeResit">Take another attempt</button><button class="btn secondary" id="knowledgeDone">Return to assignment</button></div>`);
+ document.getElementById('knowledgeResit').onclick=()=>startAssignmentKnowledge(a);document.getElementById('knowledgeDone').onclick=document.getElementById('knowledgeResultBack').onclick=()=>{state.knowledgeTest=null;state.view='assignment';render()};
+}
+
+function renderEpaMockHome(){
+ if(COURSE.nvqUnits){state.view='home';render();return}
+ const status=epaKnowledgeBankStatus(),knowledgeResults=state.data[epaResultKey()]||[],discussionResults=state.data[epaDiscussionResultKey()]||[],practicalHistory=epaPracticalHistory();
+ const latestDraft=state.data[epaPracticalDraftKey()];
+ const knowledgeButton=status.ready?'<button class="btn" id="startEpa">Start practice</button>':'<button class="btn" disabled>Questions being prepared</button>';
+ const practicalButton=latestDraft?`<button class="btn" id="resumeEpaPractical">${latestDraft.stage==='marked'?'View latest':['finished','timed-out'].includes(latestDraft.stage)?'Open scorecard':'Resume practical'}</button><button class="btn secondary" id="startEpaPractical" type="button">Start new attempt</button>`:'<button class="btn" id="startEpaPractical" type="button">Generate practical</button>';
+ const totalAttempts=knowledgeResults.length+discussionResults.length+practicalHistory.length;
+ app.innerHTML=shell(`<button class="back no-print" id="epaBack">← Academy</button><section class="epa-hero"><div class="number">${esc(COURSE.name)} · ${esc(COURSE.standard)}</div><h2>EPA Academy</h2><p>Practise each EPA method and review every recorded attempt.</p></section><section class="epa-dashboard-grid"><article class="epa-dashboard-tile"><div class="academy-icon">${appIcon('questions')}</div><div><div class="number">EPA practice</div><h3>Knowledge Practice</h3><p>10 random questions from the approved course bank.</p></div><div class="epa-tile-stat"><strong>${knowledgeResults.length}</strong><span>attempt${knowledgeResults.length===1?'':'s'} recorded</span></div>${knowledgeButton}</article><article class="epa-dashboard-tile"><div class="academy-icon">${appIcon('microphone')}</div><div><div class="number">EPA practice</div><h3>Professional Discussion</h3><p>Five random questions answered using voice to text.</p></div><div class="epa-tile-stat"><strong>${discussionResults.length}</strong><span>attempt${discussionResults.length===1?'':'s'} recorded</span></div><button class="btn" id="startDiscussion">Start discussion</button></article><article class="epa-dashboard-tile"><div class="academy-icon">${appIcon('practical')}</div><div><div class="number">EPA practice</div><h3>EPA Practical</h3><p>Timed practical tasks with preparation, marking and PDF reports.</p></div><div class="epa-tile-stat"><strong>${practicalHistory.length}</strong><span>completed attempt${practicalHistory.length===1?'':'s'}</span></div>${practicalButton}</article><article class="epa-dashboard-tile epa-results-tile"><div class="academy-icon">${appIcon('document')}</div><div><div class="number">Attempt history</div><h3>Scores and Results</h3><p>View every Knowledge, Discussion and Practical result.</p></div><div class="epa-tile-stat"><strong>${totalAttempts}</strong><span>total recorded test${totalAttempts===1?'':'s'}</span></div><button class="btn" id="openEpaResults">View all results</button></article></section>`);
+ document.getElementById('epaBack').onclick=()=>{state.view='academy';render()};
+ const start=document.getElementById('startEpa');if(start)start.onclick=()=>{state.epaMock={questions:chooseEpaQuestions(),answers:{},index:0};state.view='epa-test';render();window.scrollTo(0,0)};
+ document.getElementById('startDiscussion').onclick=()=>startEpaDiscussion();
+ document.getElementById('openEpaResults').onclick=()=>{state.view='epa-results';render();window.scrollTo(0,0)};
+ const practical=document.getElementById('startEpaPractical');if(practical)practical.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();const existing=state.data[epaPracticalDraftKey()];if(existing&&!['marked','finished','timed-out'].includes(existing.stage)&&!confirm('Start a new practical and replace the unfinished saved attempt?'))return;practical.disabled=true;const originalText=practical.textContent;practical.textContent='Generating new attempt…';const opened=startEpaPractical();if(!opened&&document.body.contains(practical)){practical.disabled=false;practical.textContent=originalText}});
+ const resume=document.getElementById('resumeEpaPractical');if(resume)resume.onclick=()=>{state.epaPractical=cloneData(state.data[epaPracticalDraftKey()]);state.view='epa-practical';render();window.scrollTo(0,0)};
+}
+function renderEpaResults(){
+ const knowledge=state.data[epaResultKey()]||[],discussion=state.data[epaDiscussionResultKey()]||[],practical=epaPracticalHistory(),bestPractical=epaPracticalBestId();
+ const rows=[];
+ knowledge.forEach((r,i)=>rows.push({type:'Knowledge Practice',date:r.date||'',score:r.score,grade:r.grade||epaPracticeGrade(Number(r.score)||0),sort:new Date(r.date||0).getTime(),action:`<button class="btn secondary" data-open-knowledge-result="${i}">Review</button>`}));
+ discussion.forEach((r,i)=>rows.push({type:'Professional Discussion',date:r.date||new Date(r.completedAt||0).toLocaleString('en-GB'),score:r.coverage,grade:Number(r.coverage)>=70?'Pass':'Needs More Practice',sort:Number(r.completedAt)||new Date(r.date||0).getTime(),action:`<button class="btn secondary" data-open-discussion-result="${i}">Review</button>`}));
+ practical.forEach((r,i)=>rows.push({type:'EPA Practical',date:new Date(r.assessor?.submittedAt||r.finishedAt||r.createdAt).toLocaleString('en-GB'),score:r.assessor?.percentage??'—',grade:r.assessor?.grade||'Unmarked',sort:new Date(r.assessor?.submittedAt||r.finishedAt||r.createdAt||0).getTime(),best:r.id===bestPractical,action:`<button class="btn secondary" data-open-practical-result="${esc(r.id)}">View</button>${r.assessor?`<button class="btn secondary" data-pdf-practical-result="${esc(r.id)}">PDF</button>`:''}`}));
+ rows.sort((a,b)=>(b.sort||0)-(a.sort||0));
+ app.innerHTML=shell(`<button class="back no-print" id="epaResultsBack">← EPA Academy</button><section class="epa-hero"><div class="number">EPA attempt history</div><h2>Scores and Results</h2><p>Every completed EPA test is retained. Search or filter the complete history below.</p></section><section class="card panel"><div class="panel-body"><div class="epa-history-tools"><input class="input" id="epaAllResultsSearch" placeholder="Search result, grade or date" autocomplete="off"><select class="select" id="epaAllResultsType"><option value="all">All tests</option><option value="Knowledge Practice">Knowledge Practice</option><option value="Professional Discussion">Professional Discussion</option><option value="EPA Practical">EPA Practical</option></select></div><div class="epa-all-results" id="epaAllResultsList">${rows.length?rows.map((r,i)=>`<article class="epa-all-result-card ${r.best?'best':''}" data-epa-result-row data-type="${esc(r.type)}" data-search="${esc(`${r.type} ${r.date} ${r.score} ${r.grade}`.toLowerCase())}"><div><div class="number">Attempt ${rows.length-i}</div><h3>${esc(r.type)}</h3><p>${esc(r.date)}</p></div><div class="epa-attempt-result"><strong>${r.score==='—'?'—':r.score+'%'}</strong><span>${esc(r.grade)}</span>${r.best?'<b>Best result</b>':''}</div><div class="epa-attempt-actions">${r.action}</div></article>`).join(''):'<p class="muted">No completed EPA tests have been recorded yet.</p>'}</div><p class="muted hide" id="epaAllResultsEmpty">No results match your search.</p></div></section>`);
+ document.getElementById('epaResultsBack').onclick=()=>{state.view='epa';render()};
+ document.querySelectorAll('[data-open-knowledge-result]').forEach(b=>b.onclick=()=>{state.epaMock={result:knowledge[Number(b.dataset.openKnowledgeResult)]};state.view='epa-result';render();window.scrollTo(0,0)});
+ document.querySelectorAll('[data-open-discussion-result]').forEach(b=>b.onclick=()=>{state.epaDiscussion={result:discussion[Number(b.dataset.openDiscussionResult)]};state.view='epa-discussion-result';render();window.scrollTo(0,0)});
+ document.querySelectorAll('[data-open-practical-result]').forEach(b=>b.onclick=()=>openEpaPracticalHistoryAttempt(b.dataset.openPracticalResult));
+ document.querySelectorAll('[data-pdf-practical-result]').forEach(b=>b.onclick=()=>{const a=practical.find(x=>x.id===b.dataset.pdfPracticalResult);if(a)downloadEpaPracticalReport(a)});
+ const search=document.getElementById('epaAllResultsSearch'),type=document.getElementById('epaAllResultsType');const apply=()=>{const q=search.value.trim().toLowerCase(),t=type.value;let shown=0;document.querySelectorAll('[data-epa-result-row]').forEach(row=>{const ok=(!q||row.dataset.search.includes(q))&&(t==='all'||row.dataset.type===t);row.classList.toggle('hide',!ok);if(ok)shown++});document.getElementById('epaAllResultsEmpty').classList.toggle('hide',shown>0)};search.oninput=apply;type.onchange=apply;
+}
+function renderEpaMockTest(){
+ const mock=state.epaMock;if(!mock?.questions?.length){state.view='epa';render();return}
+ const i=mock.index||0,q=mock.questions[i],committed=mock.answers[i],pending=mock.pendingAnswer?.index===i?mock.pendingAnswer.value:undefined,picked=pending!==undefined?pending:committed,answered=Object.keys(mock.answers).length,answeredCurrent=committed!==undefined,isWrong=answeredCurrent&&committed!==q.correct;
+ const feedback=isWrong?`<section class="epa-feedback-panel" role="alert"><div class="epa-feedback-title"><span>Not quite</span><strong>Best answer: ${String.fromCharCode(65+q.correct)}</strong></div><p>${esc(q.explanation)}</p><div class="epa-takeaway"><strong>Remember</strong><span>${esc(q.keyTakeaway)}</span></div></section>`:answeredCurrent?`<section class="epa-feedback-panel correct" role="status"><div class="epa-feedback-title"><span>Correct</span><strong>Answer ${String.fromCharCode(65+q.correct)}</strong></div><p>${esc(q.explanation||q.keyTakeaway||'Well done.')}</p></section>`:'';
+ const options=q.options.map((o,n)=>`<label class="epa-option ${picked===n?'selected':''} ${answeredCurrent&&n===q.correct?'best-answer':''} ${answeredCurrent&&committed===n&&isWrong?'wrong-answer':''}"><input type="radio" name="epaAnswer" value="${n}" ${picked===n?'checked':''} ${answeredCurrent?'disabled':''}><span><b>${String.fromCharCode(65+n)}</b>${esc(o)}</span></label>`).join('');
+ app.innerHTML=shell(`<button class="back no-print" id="quitEpa">← Exit practice</button><section class="epa-test-head"><div><div class="number">Question ${i+1} of ${mock.questions.length}</div><h2>EPA Knowledge Practice</h2></div><span class="status-pill">${answered}/${mock.questions.length} answered</span></section><div class="epa-progress"><span style="width:${((i+1)/mock.questions.length)*100}%"></span></div><section class="card panel epa-question"><small>${esc(q.code)} · ${esc(q.type)}</small><h3>${esc(q.question)}</h3><div class="epa-options">${options}</div></section>${feedback}<div class="mcq-question-actions"><button class="btn secondary" id="epaPrev" ${i===0?'disabled':''}>Previous</button><button class="btn" id="epaSubmit" ${(!answeredCurrent&&picked===undefined)?'disabled':''}>${answeredCurrent?(i===mock.questions.length-1?'Finish practice':'Next question'):'Submit answer'}</button></div>`);
+ document.getElementById('quitEpa').onclick=()=>{if(confirm('Exit this practice? Your current answers will be discarded.')){state.epaMock=null;state.view='epa';render()}};
+ document.querySelectorAll('input[name="epaAnswer"]').forEach(r=>r.onchange=()=>{mock.pendingAnswer={index:i,value:Number(r.value)};renderEpaMockTest()});
+ document.getElementById('epaPrev').onclick=()=>{mock.pendingAnswer=null;mock.index=Math.max(0,i-1);renderEpaMockTest();window.scrollTo(0,0)};
+ document.getElementById('epaSubmit').onclick=async()=>{if(!answeredCurrent){if(picked===undefined)return;mock.answers[i]=Number(picked);mock.pendingAnswer=null;renderEpaMockTest();return}if(i<mock.questions.length-1){mock.index=i+1;mock.pendingAnswer=null;renderEpaMockTest();window.scrollTo(0,0);return}if(Object.keys(mock.answers).length<mock.questions.length)return toast(`Answer all ${mock.questions.length} questions before finishing`);const correct=mock.questions.reduce((n,x,idx)=>n+(mock.answers[idx]===x.correct?1:0),0),score=Math.round(correct/mock.questions.length*100),grade=epaPracticeGrade(score);const result={date:new Date().toLocaleString('en-GB'),score,grade,correct,total:mock.questions.length,questionIds:mock.questions.map(q=>q.id),questions:structuredClone(mock.questions),answers:structuredClone(mock.answers)};state.data[epaResultKey()]=[result,...(state.data[epaResultKey()]||[])];await saveData();state.epaMock={result};state.view='epa-result';render();window.scrollTo(0,0)};
+}
+function renderEpaMockResult(){
+ const result=state.epaMock?.result;if(!result){state.view='epa';render();return}const grade=result.grade||epaPracticeGrade(result.score),passed=result.score>=70;
+ app.innerHTML=shell(`<button class="back no-print" id="resultBack">← EPA Academy</button><section class="epa-result-head ${passed?'pass':'fail'}"><div class="number">EPA Knowledge Practice</div><h2>${result.score}% — ${esc(grade)}</h2><p>${result.correct} of ${result.total} correct</p></section><section class="epa-review-list">${result.questions.map((q,i)=>{const chosen=result.answers[i],ok=chosen===q.correct;return `<details class="epa-review ${ok?'correct':'incorrect'}"><summary><span>Question ${i+1} · ${esc(q.code)}</span>${ok?'Correct':'Review'}</summary><div><p><strong>${esc(q.question)}</strong></p><p>Your answer: ${chosen===undefined?'Not answered':`${String.fromCharCode(65+chosen)}. ${esc(q.options[chosen])}`}</p>${ok?'':`<p>Best answer: ${String.fromCharCode(65+q.correct)}. ${esc(q.options[q.correct])}</p>`}<p class="muted">${esc(q.explanation)}</p></div></details>`}).join('')}</section><div class="btn-row epa-result-actions"><button class="btn" id="newEpa">Practise again</button></div>`);
+ document.getElementById('resultBack').onclick=()=>{state.epaMock=null;state.view='epa';render()};document.getElementById('newEpa').onclick=()=>{state.epaMock={questions:chooseEpaQuestions(),answers:{},index:0};state.view='epa-test';render();window.scrollTo(0,0)};
+}
+
+
+const EPA_PRACTICAL_BANKS={
+ 'bricklayer-st0095-v1-2':[
+  {id:'brick-cavity-opening',title:'Cavity wall with opening',duration:240,difficulty:'Hard',estimatedBricks:88,productivityRate:25,brief:'Set out and construct a compact cavity wall incorporating an opening, DPC, wall ties, insulation and a suitable lintel. Complete the work to line, level, gauge and the issued dimensions.',dimensions:'Overall length 1350 mm; height 675 mm; 450 mm opening centred in the wall; 100 mm cavity; DPC and lintel positioned to the specification. Maximum facing-brick workload: approximately 88 bricks.',requirements:'Maintain the specified bond, cavity cleanliness, wall-tie spacing, opening dimensions, line, level, gauge and joint finish.',tools:['brick trowel','spirit level','tape measure','line and pins','profiles','boat level','club hammer','bolster chisel','jointing tool','mortar board'],materials:['facing bricks','concrete blocks','building sand','cement','plasticiser','dpc','wall ties','cavity insulation','lintel'],ppe:['safety boots','gloves','eye protection','hi-vis clothing','hard hat','rpe']},
+  {id:'brick-pier',title:'Decorative brick pier',duration:180,difficulty:'Medium',estimatedBricks:68,productivityRate:25,brief:'Set out and construct a compact decorative brick pier with a projecting feature course and a consistent joint finish.',dimensions:'Nominal 450 mm square pier; 600 mm high; one projecting feature course at the position shown. Maximum workload: approximately 68 bricks.',requirements:'Build plumb, level and square, maintain gauge, form accurate projections and complete a consistent joint finish.',tools:['brick trowel','spirit level','tape measure','square','boat level','club hammer','bolster chisel','jointing tool','mortar board'],materials:['facing bricks','building sand','cement','plasticiser'],ppe:['safety boots','gloves','eye protection','hi-vis clothing','hard hat','rpe']},
+  {id:'brick-solid-return',title:'Solid wall with return',duration:180,difficulty:'Medium',estimatedBricks:72,productivityRate:25,brief:'Set out and build a compact solid brick wall with a bonded return, maintaining the specified bond and finish.',dimensions:'900 mm main wall; 450 mm return; 600 mm high; dimensions measured to finished faces. Maximum workload: approximately 72 bricks.',requirements:'Maintain bond, line, level, plumb, gauge, square return and uniform joint finish.',tools:['brick trowel','spirit level','tape measure','line and pins','square','club hammer','bolster chisel','jointing tool'],materials:['facing bricks','building sand','cement','plasticiser'],ppe:['safety boots','gloves','eye protection','hi-vis clothing','hard hat','rpe']}
+ ],
+ 'site-carpentry-v1-4':[
+  {id:'site-first-fix',title:'First-fix framed opening',duration:240,difficulty:'Hard',workloadType:'framing components',estimatedWork:9,productivityRate:3,brief:'Set out, cut and assemble a compact timber framed opening to the issued drawing, including sole plate, head, two full studs, two trimmer studs and the required short support members.',dimensions:'Overall frame 1800 mm wide × 2100 mm high; clear opening 900 mm × 1981 mm; 47 × 100 mm structural timber; maximum 9 cut and fitted framing components.',requirements:'Components must be correctly selected, cut, fixed, square, plumb and within ±3 mm of the stated dimensions.',tools:['tape measure','pencil','square','spirit level','handsaw','circular saw','hammer','drill driver','clamps'],materials:['47 × 100 mm structural timber','nails','wood screws','packers','metal straps'],ppe:['safety boots','eye protection','hearing protection','rpe','gloves']},
+  {id:'site-door-lining',title:'Door lining and door set',duration:240,difficulty:'Hard',workloadType:'installation operations',estimatedWork:10,productivityRate:3,brief:'Prepare and install one door lining, hang one prepared timber door and fit a pair of hinges, latch and handles.',dimensions:'Structural opening 926 mm × 2060 mm; lining to suit a 762 mm × 1981 mm door; 3 mm side and head margins; 8 mm maximum floor clearance unless the specification states otherwise.',requirements:'Lining plumb and square; door operates freely; margins are consistent; hinges, latch and handles are accurately fitted.',tools:['tape measure','pencil','square','spirit level','chisel','mallet','plane','drill driver','screwdrivers'],materials:['door lining','762 × 1981 mm prepared timber door','3 hinges','latch','handles','wood screws','packers','fixings'],ppe:['safety boots','eye protection','hearing protection','rpe','gloves']},
+  {id:'site-skirting',title:'Internal skirting installation',duration:150,difficulty:'Medium',workloadType:'metres of finished skirting',estimatedWork:5,productivityRate:3,brief:'Measure, cut, scribe and fix skirting to a compact three-wall room section containing one internal corner and one external return.',dimensions:'Wall runs 1800 mm, 1600 mm and 1200 mm; 120 mm skirting; one internal scribe and one external mitre; maximum finished length 5 metres.',requirements:'Joints must be tight, scribes accurate, fixings secure and the finished work free from avoidable damage.',tools:['tape measure','pencil','mitre saw','coping saw','square','spirit level','hammer','nail gun','adhesive gun'],materials:['120 mm skirting board','grab adhesive','lost head nails','filler','packers'],ppe:['safety boots','eye protection','hearing protection','rpe']}
+ ],
+ 'architectural-joiner-st0264-v1-4':[
+  {id:'joiner-frame',title:'Timber window frame',duration:300,difficulty:'Hard',workloadType:'machined and jointed components',estimatedWork:8,productivityRate:2,brief:'Set out, machine and assemble one compact timber window frame to the issued rod and specification.',dimensions:'Overall frame 900 mm wide × 750 mm high; 57 × 95 mm head, jambs and sill; two jambs, head, sill and four glazing-bar components; 12 × 18 mm rebate; maximum 8 principal components.',requirements:'Joints fit accurately; frame is square within 3 mm diagonal difference and flat; profiles are clean; finished dimensions remain within ±2 mm.',tools:['tape measure','pencil','marking gauge','mortice gauge','square','hand saw','chisels','mallet','router','morticer','tenoner','clamps'],materials:['prepared softwood','wood adhesive','wedges','abrasive paper'],ppe:['safety footwear','eye protection','hearing protection','rpe','dust extraction']},
+  {id:'joiner-door',title:'Panelled timber door',duration:360,difficulty:'Hard',workloadType:'machined and jointed components',estimatedWork:10,productivityRate:2,brief:'Set out, manufacture and assemble one compact four-panel timber door to the issued drawing using prepared stock.',dimensions:'Door 762 mm × 1981 mm × 44 mm; stiles 115 mm; top rail 115 mm; middle and bottom rails 190 mm; two muntins and four pre-sized panels; maximum 10 principal frame components.',requirements:'Accurate joints and shoulders; door square within 3 mm diagonal difference and flat; panels correctly fitted; surfaces prepared for finishing.',tools:['tape measure','pencil','marking gauge','mortice gauge','square','chisels','mallet','router','morticer','tenoner','clamps','orbital sander'],materials:['prepared timber','pre-sized door panels','wood adhesive','wedges','abrasive paper'],ppe:['safety footwear','eye protection','hearing protection','rpe','dust extraction']},
+  {id:'joiner-moulding',title:'Matched timber mouldings',duration:180,difficulty:'Medium',workloadType:'metres of finished moulding',estimatedWork:8,productivityRate:4,brief:'Set up machinery and produce a matched batch of timber mouldings to the issued profile and dimensions.',dimensions:'Finished section 45 × 20 mm; 6 mm bead with matching quirk; produce four 2-metre lengths, maximum total output 8 metres.',requirements:'Machinery set safely; dimensions consistent within ±1 mm; profile clean; defects and tear-out minimised.',tools:['tape measure','vernier caliper','square','spindle moulder','planer thicknesser','push sticks','setting blocks'],materials:['four prepared 2-metre timber lengths','sample profile','abrasive paper'],ppe:['safety footwear','eye protection','hearing protection','rpe','local exhaust ventilation']}
+ ],
+ 'property-maintenance-operative-st0171-v1-1':[
+  {id:'pmo-room-repair',title:'Occupied-room repair task',duration:240,difficulty:'Hard',workloadType:'repair and finishing stages',estimatedWork:8,productivityRate:2.5,brief:'Complete a compact coordinated repair in an occupied-room simulation: patch one damaged plaster area, replace one short skirting section and complete a local decorative finish.',dimensions:'Plaster repair 400 × 300 mm; skirting replacement 900 mm long × 120 mm high; decorative area maximum 1.5 m²; one primer coat and one finishing coat using quick-drying assessment materials.',requirements:'Protect the area, complete sound repairs, match existing finishes, control dust and leave the room clean and serviceable.',tools:['tape measure','pencil','utility knife','filling knives','hawk','plastering trowel','mitre saw','hammer','drill driver','paint brushes','roller'],materials:['quick-setting plaster repair compound','900 mm skirting section','fixings','grab adhesive','filler','quick-drying primer','quick-drying paint','abrasive paper','dust sheets'],ppe:['safety boots','gloves','eye protection','rpe','hearing protection','barriers and signs']},
+  {id:'pmo-door-repair',title:'Internal door repair and ironmongery',duration:180,difficulty:'Medium',workloadType:'diagnostic and repair operations',estimatedWork:6,productivityRate:2.5,brief:'Diagnose and repair one poorly operating internal door, replace one defective ironmongery item and leave the door functioning correctly.',dimensions:'Door 762 × 1981 mm; target margins 3 mm at head and sides; adjust a maximum of two contact points; replace either one latch set or one pair of hinges as issued.',requirements:'Identify the cause, protect surrounding finishes, achieve consistent clearances and demonstrate safe operation.',tools:['tape measure','pencil','square','spirit level','chisels','mallet','plane','drill driver','screwdrivers'],materials:['replacement latch set or hinge pair','wood screws','timber packers','wood filler','abrasive paper'],ppe:['safety boots','eye protection','gloves','hearing protection','rpe']},
+  {id:'pmo-leak-repair',title:'Minor plumbing leak repair',duration:120,difficulty:'Medium',workloadType:'isolation, repair and test stages',estimatedWork:5,productivityRate:3,brief:'Isolate, diagnose and repair one minor leak on a domestic water-service training rig, then test and reinstate the area.',dimensions:'15 mm pipework; replace one compression or push-fit coupling on an accessible horizontal section; maximum pipe removal 150 mm; complete a 10-minute leak test.',requirements:'Use safe isolation, protect the area, make a sound joint, test for leaks and complete an accurate handover record.',tools:['adjustable spanner','water pump pliers','pipe cutter','deburring tool','tape measure','bucket','cloths','torch'],materials:['one replacement fitting','pipe insert where required','ptfe tape','jointing compound where appropriate','cleaning materials'],ppe:['safety boots','gloves','eye protection','barriers and signs']}
+ ]
+};
+function epaPracticalBank(){return EPA_PRACTICAL_BANKS[COURSE.id]||EPA_PRACTICAL_BANKS['bricklayer-st0095-v1-2']}
+function prepareEpaPracticalTask(source){const task=cloneData(source),hours=Number(task.duration)/60;if(COURSE.id==='bricklayer-st0095-v1-2'){const rate=Math.max(25,Number(task.productivityRate)||25),maxBricks=Math.floor(hours*rate);task.productivityRate=rate;task.maxBricks=maxBricks;if(Number(task.estimatedBricks)>maxBricks)task.estimatedBricks=maxBricks;task.workloadNote=`Planned workload: approximately ${task.estimatedBricks||maxBricks} bricks. Allowance: ${maxBricks} bricks maximum at ${rate} bricks per hour over ${hours} hours.`;return task}if(task.workloadType&&Number(task.productivityRate)>0){const rate=Number(task.productivityRate),maxWork=Math.floor(hours*rate*10)/10;task.maxWork=maxWork;if(Number(task.estimatedWork)>maxWork)task.estimatedWork=maxWork;task.workloadNote=`Planned workload: approximately ${task.estimatedWork} ${task.workloadType}. Allowance: no more than ${maxWork} ${task.workloadType} at a planning rate of ${rate} per hour over ${hours} hours.`}return task}
+function epaPracticalHistoryKey(){return `epaPracticalHistory:${COURSE.id}:v1`}
+function epaPracticalHistory(){return Array.isArray(state.data[epaPracticalHistoryKey()])?state.data[epaPracticalHistoryKey()]:[]}
+function epaPracticalBestId(){const marked=epaPracticalHistory().filter(x=>x?.assessor&&Number.isFinite(Number(x.assessor.percentage)));if(!marked.length)return null;return marked.sort((a,b)=>Number(b.assessor.percentage)-Number(a.assessor.percentage)||new Date(b.assessor.submittedAt)-new Date(a.assessor.submittedAt))[0].id}
+function startEpaPractical(){
+ try{
+  const bank=epaPracticalBank();
+  if(!Array.isArray(bank)||!bank.length){toast('No EPA practical tasks are available for this course');return false}
+  const history=epaPracticalHistory();
+  const draft=state.data[epaPracticalDraftKey()];
+  const lastTask=(history[0]&&history[0].task&&history[0].task.id)||(draft&&draft.task&&draft.task.id)||'';
+  const available=bank.filter(function(item){return item&&item.id!==lastTask});
+  const choices=available.length?available:bank.filter(function(item){return !!item});
+  const source=choices[Math.floor(Math.random()*choices.length)]||bank[0];
+  const plainSource=JSON.parse(JSON.stringify(source));
+  const task=prepareEpaPracticalTask(plainSource);
+  if(!task){toast('EPA practical task could not be prepared');return false}
+  const now=new Date().toISOString();
+  const attempt={
+   id:'epa-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10),
+   task:task,
+   stage:'planning',
+   entries:{tools:[],materials:[],ppe:[]},
+   understood:false,
+   createdAt:now,
+   attemptNumber:history.length+1
+  };
+  state.epaPractical=attempt;
+  state.data[epaPracticalDraftKey()]={
+   id:attempt.id,
+   task:JSON.parse(JSON.stringify(task)),
+   stage:'planning',
+   entries:{tools:[],materials:[],ppe:[]},
+   understood:false,
+   createdAt:now,
+   attemptNumber:attempt.attemptNumber
+  };
+  state.view='epa-practical';
+  render();
+  try{window.scrollTo(0,0)}catch(scrollError){}
+  Promise.resolve(saveData()).catch(function(error){console.error('New EPA attempt opened but could not be saved immediately',error);toast('New attempt opened. It will save when you add your first item.')});
+  return true;
+ }catch(error){
+  console.error('Unable to create EPA practical attempt',error);
+  toast('Could not create the new attempt: '+(error&&error.message?error.message:'unknown error'));
+  return false;
+ }
+}
+function openEpaPracticalHistoryAttempt(id){const found=epaPracticalHistory().find(x=>x.id===id);if(!found)return toast('Attempt not found');state.epaPractical=cloneData(found);state.view='epa-practical';render();window.scrollTo(0,0)}
+async function downloadEpaPracticalReport(attempt){
+ if(!attempt?.assessor)return toast('This attempt has not been marked');
+ const W=1240,H=1754,a=attempt.assessor,t=attempt.task,profile=state.profile||{},entries=attempt.entries||{};
+ const makePage=(title)=>{const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.fillStyle='#ffffff';x.fillRect(0,0,W,H);x.fillStyle='#074332';x.fillRect(0,0,W,190);x.fillStyle='#ffffff';x.font='900 24px Arial';x.fillText('APPRENTICE+ EPA PRACTICAL REPORT',72,62);x.font='900 42px Arial';x.fillText(title,72,125);x.font='700 18px Arial';x.fillText(`${COURSE.name} · ${COURSE.standard}`,72,162);return {c,x}};
+ const wrap=(text,max=92)=>{const words=String(text||'').split(/\s+/).filter(Boolean),out=[];let line='';for(const w of words){const next=(line+' '+w).trim();if(next.length>max&&line){out.push(line);line=w}else line=next}if(line)out.push(line);return out};
+ const footer=x=>{x.fillStyle='#657273';x.font='600 14px Arial';x.fillText(`Generated by Apprentice+ ${APP_VERSION}`,72,H-50)};
+ const p1=makePage(t.title),x=p1.x;let y=245;
+ const line=(label,value)=>{x.fillStyle='#657273';x.font='700 16px Arial';x.fillText(label,72,y);x.fillStyle='#172426';x.font='700 23px Arial';x.fillText(String(value||'—'),330,y);y+=46};
+ line('Learner',profile.fullName||'Learner');line('Attempt',attempt.attemptNumber||epaPracticalHistory().findIndex(v=>v.id===attempt.id)+1);line('Preparation saved',new Date(attempt.readyAt||attempt.createdAt||Date.now()).toLocaleString('en-GB'));line('Completed',new Date(a.submittedAt||attempt.finishedAt||Date.now()).toLocaleString('en-GB'));line('Grade',`${a.grade} · ${a.percentage}%`);line('Active time',formatPracticalTime(practicalElapsed(attempt)));line('Break time',formatPracticalTime(practicalBreakDuration(attempt)));
+ y+=18;x.fillStyle='#eff9e7';x.fillRect(72,y,W-144,112);x.fillStyle='#074332';x.font='900 34px Arial';x.fillText(`${a.grade} · ${a.percentage}%`,98,y+48);x.font='600 18px Arial';x.fillText(practicalReadiness(attempt).label,98,y+82);y+=160;
+ x.fillStyle='#172426';x.font='900 24px Arial';x.fillText('Task brief',72,y);y+=34;x.font='400 18px Arial';for(const l of wrap(t.brief)){x.fillText(l,72,y);y+=25}
+ y+=22;x.font='900 24px Arial';x.fillText('Learner preparation',72,y);y+=34;x.font='600 16px Arial';x.fillStyle='#657273';x.fillText('Items selected by the learner before commencing the timed practical.',72,y);y+=36;
+ const prepSections=[['Tools and Equipment','tools'],['Materials and Fixings','materials'],['PPE and Safety Equipment','ppe']];
+ for(const [label,key] of prepSections){const items=Array.isArray(entries[key])?entries[key]:[];x.fillStyle='#eff9e7';x.fillRect(72,y-24,W-144,46);x.fillStyle='#074332';x.font='900 20px Arial';x.fillText(`${label} (${items.length})`,92,y+6);y+=44;x.fillStyle='#172426';x.font='400 18px Arial';if(!items.length){x.fillStyle='#657273';x.fillText('No items recorded.',92,y);y+=30}else{for(const item of items){for(const l of wrap(`• ${item}`,105)){x.fillText(l,92,y);y+=25}}}y+=16}
+ footer(x);
+ const p2=makePage('Assessment and Feedback'),x2=p2.x;y=245;
+ x2.fillStyle='#172426';x2.font='900 24px Arial';x2.fillText('Assessment marks',72,y);y+=36;for(const c of EPA_PRACTICAL_MARKING){x2.fillStyle='#f5f8f7';x2.fillRect(72,y-24,W-144,48);x2.fillStyle='#172426';x2.font='700 18px Arial';x2.fillText(c.title,92,y+6);x2.textAlign='right';x2.fillText(`${a.marks[c.id]}/5`,W-92,y+6);x2.textAlign='left';y+=58}
+ y+=10;x2.font='900 24px Arial';x2.fillText('Strengths',72,y);y+=34;x2.font='400 18px Arial';for(const item of a.feedback.strengths){for(const l of wrap('• '+item)){x2.fillText(l,82,y);y+=25}}
+ y+=12;x2.font='900 24px Arial';x2.fillText('Areas for improvement',72,y);y+=34;x2.font='400 18px Arial';for(const item of a.feedback.improvements){for(const l of wrap('• '+item)){x2.fillText(l,82,y);y+=25}}
+ if(a.comments){y+=12;x2.font='900 24px Arial';x2.fillText('Assessor comments',72,y);y+=34;x2.font='400 18px Arial';for(const l of wrap(a.comments)){x2.fillText(l,72,y);y+=25}}
+ footer(x2);
+ const bytes=makeImagePDF([dataUrlBytes(p1.c.toDataURL('image/jpeg',.92)),dataUrlBytes(p2.c.toDataURL('image/jpeg',.92))],W,H),safe=(profile.fullName||'Learner').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'');await downloadBlob(bytes,'application/pdf',`${safe}-EPA-Practical-Attempt-${attempt.attemptNumber||1}.pdf`)
+}
+function showEpaPracticalSpecification(task){const modal=document.createElement('div');modal.className='modal practical-spec-modal';modal.innerHTML=`<div class="practical-spec-sheet"><div class="practical-spec-toolbar no-print"><button class="btn secondary" id="closeEpaSpec">Close</button><button class="btn" id="printEpaSpec">Print / save PDF</button></div><article class="practical-spec-document"><header><div><div class="practical-spec-kicker">APPRENTICE+ · EPA PRACTICAL</div><strong>${esc(COURSE.name)}</strong></div><div class="practical-spec-id"><span>Task ID</span><strong>${esc(task.id)}</strong></div></header><div class="practical-spec-title"><span>${esc(task.difficulty)} · ${Math.round(task.duration/60*10)/10} hours</span><h1>${esc(task.title)}</h1><p>Mock EPA practical task specification</p></div><div class="practical-spec-grid"><section><h2>Task brief</h2><p>${esc(task.brief)}</p></section><section><h2>Dimensions and specification</h2><p>${esc(task.dimensions)}</p></section></div>${task.workloadNote?`<section><h2>Workload allowance</h2><p>${esc(task.workloadNote)}</p></section>`:''}<section><h2>Completion requirements</h2><p>${esc(task.requirements)}</p></section><section><h2>Important</h2><p>Plan the tools, materials, fixings, PPE and safety equipment you require before confirming you are ready. The correct preparation list remains hidden until final assessor marking.</p></section><footer><span>Issued ${new Date().toLocaleDateString('en-GB')}</span><strong>${esc(COURSE.standard)}</strong></footer></article></div>`;document.body.appendChild(modal);document.getElementById('closeEpaSpec').onclick=()=>modal.remove();document.getElementById('printEpaSpec').onclick=()=>window.print();modal.onclick=e=>{if(e.target===modal)modal.remove()}}
+function epaPracticalDraftKey(){return `epaPracticalDraft:${COURSE.id}`}
+function practicalBreakDuration(attempt,now=Date.now()){return (attempt.breaks||[]).reduce((sum,b)=>sum+Math.max(0,new Date(b.endedAt||now)-new Date(b.startedAt)),0)}
+function practicalElapsed(attempt,now=Date.now()){if(!attempt.startedAt)return 0;const end=attempt.finishedAt?new Date(attempt.finishedAt).getTime():now;return Math.max(0,end-new Date(attempt.startedAt).getTime()-practicalBreakDuration(attempt,end))}
+function practicalRemaining(attempt,now=Date.now()){return Math.max(0,attempt.task.duration*60000-practicalElapsed(attempt,now))}
+function formatPracticalTime(ms){const total=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(total/3600),m=Math.floor((total%3600)/60),sec=total%60;return h?`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`:`${m}:${String(sec).padStart(2,'0')}`}
+function practicalTagSection(key,title,placeholder){
+ const attempt=state.epaPractical||{};
+ const entries=attempt.entries&&Array.isArray(attempt.entries[key])?attempt.entries[key]:[];
+ return `<section class="card panel epa-preparation-list"><div class="panel-body"><div class="number">Learner preparation</div><h3>${esc(title)}</h3><div class="epa-tag-entry-row"><input class="input" type="text" data-practical-tag-input="${esc(key)}" placeholder="${esc(placeholder)}" autocomplete="off" enterkeyhint="done"><button class="btn epa-add-item" type="button" data-add-practical-tag="${esc(key)}">Add Item</button></div><div class="epa-practical-tags">${entries.length?entries.map((item,index)=>`<span class="epa-practical-tag"><span>${esc(item)}</span><button type="button" aria-label="Remove ${esc(item)}" data-remove-practical-tag="${esc(key)}:${index}">×</button></span>`).join(''):`<p class="muted">No ${esc(title.toLowerCase())} added yet.</p>`}</div></div></section>`;
+}
+async function persistEpaPractical(){state.data[epaPracticalDraftKey()]=cloneData(state.epaPractical);await saveData()}
+function startPracticalTimerLoop(){clearInterval(window.__epaPracticalTimer);window.__epaPracticalTimer=setInterval(async()=>{const a=state.epaPractical;if(state.view!=='epa-practical'||!a||!['running','break'].includes(a.stage)){clearInterval(window.__epaPracticalTimer);return}const el=document.getElementById('epaCountdown');if(el)el.textContent=formatPracticalTime(practicalRemaining(a));if(a.stage==='running'&&practicalRemaining(a)<=0){a.stage='timed-out';a.finishedAt=new Date().toISOString();a.finishReason='Time limit reached';await persistEpaPractical();clearInterval(window.__epaPracticalTimer);renderEpaPractical();toast('The practical time has ended')}},1000)}
+function showPracticalStartConfirmation(attempt){const modal=document.createElement('div');modal.className='modal';modal.innerHTML=`<div class="modal-card epa-start-confirm"><div class="number">Final confirmation</div><h2>Ready to begin?</h2><p>Starting will immediately begin the ${Math.round(attempt.task.duration/60*10)/10}-hour countdown.</p><p>The timer can only be paused for an authorised break or stopped when you finish. Do not use breaks for planning, correcting work or gaining additional working time.</p><div class="btn-row"><button class="btn secondary" id="cancelPracticalStart">Not yet</button><button class="btn" id="confirmPracticalStart">Yes, start practical</button></div></div>`;document.body.appendChild(modal);document.getElementById('cancelPracticalStart').onclick=()=>modal.remove();document.getElementById('confirmPracticalStart').onclick=async()=>{attempt.stage='running';attempt.startedAt=new Date().toISOString();attempt.breaks=[];attempt.finishedAt=null;attempt.finishReason='';await persistEpaPractical();modal.remove();renderEpaPractical()}}
+function showBreakDialog(attempt){const modal=document.createElement('div');modal.className='modal';modal.innerHTML=`<div class="modal-card"><div class="number">Authorised break</div><h2>Pause practical</h2><label>Reason<select class="select" id="breakReason"><option>Scheduled break</option><option>Lunch</option><option>Assessor instruction</option><option>Safety issue</option><option>Equipment issue</option><option>Other authorised reason</option></select></label><p class="muted">Break time will not count as active working time.</p><div class="btn-row"><button class="btn secondary" id="cancelBreak">Cancel</button><button class="btn" id="confirmBreak">Pause timer</button></div></div>`;document.body.appendChild(modal);document.getElementById('cancelBreak').onclick=()=>modal.remove();document.getElementById('confirmBreak').onclick=async()=>{attempt.breaks=attempt.breaks||[];attempt.breaks.push({startedAt:new Date().toISOString(),endedAt:null,reason:document.getElementById('breakReason').value});attempt.stage='break';await persistEpaPractical();modal.remove();renderEpaPractical()}}
+function showFinishPracticalDialog(attempt){const modal=document.createElement('div');modal.className='modal';modal.innerHTML=`<div class="modal-card"><div class="number">Finish practical</div><h2>Confirm completion</h2><p>Once finished, the timer cannot be restarted and the assessor scorecard will be presented in the next stage.</p><div class="btn-row"><button class="btn secondary" id="cancelFinishPractical">Continue practical</button><button class="btn" id="confirmFinishPractical">Finish now</button></div></div>`;document.body.appendChild(modal);document.getElementById('cancelFinishPractical').onclick=()=>modal.remove();document.getElementById('confirmFinishPractical').onclick=async()=>{attempt.stage='finished';attempt.finishedAt=new Date().toISOString();attempt.finishReason='Learner finished';await persistEpaPractical();modal.remove();renderEpaPractical()}}
+
+const EPA_PRACTICAL_MARKING=[
+ {id:'safety',title:'Health, safety and working practices',weight:20,strength:'Maintained safe and controlled working practices throughout the task.',improve:'Apply safer and more consistent working practices throughout the task.'},
+ {id:'planning',title:'Setting out, planning and preparation',weight:15,strength:'Prepared and set out the task methodically before progressing.',improve:'Improve preparation and setting out before beginning each stage of the work.'},
+ {id:'accuracy',title:'Technical accuracy and tolerances',weight:25,strength:'Completed the work accurately and within the required tolerances.',improve:'Check dimensions, alignment and tolerances more frequently during the task.'},
+ {id:'quality',title:'Quality of completed work',weight:20,strength:'Produced a consistent finished standard with good attention to detail.',improve:'Improve the consistency and finish of the completed work.'},
+ {id:'use',title:'Correct use of tools and materials',weight:10,strength:'Selected and used tools and materials effectively.',improve:'Improve tool selection, material control and use of equipment.'},
+ {id:'time',title:'Time management and organisation',weight:10,strength:'Organised the work effectively and managed the available time well.',improve:'Plan the sequence more carefully to use the available time more effectively.'}
+];
+function practicalMarkingGrade(percent,marks,critical){if(critical||Number(marks.safety||0)<3||Number(marks.accuracy||0)<3)return'Fail';return percent>=85?'Distinction':percent>=75?'Merit':percent>=60?'Pass':'Fail'}
+function practicalMarkingPercent(marks){return Math.round(EPA_PRACTICAL_MARKING.reduce((sum,c)=>sum+((Number(marks[c.id]||0)/5)*c.weight),0))}
+function practicalGeneratedFeedback(marks){const strengths=EPA_PRACTICAL_MARKING.filter(c=>Number(marks[c.id])>=4).map(c=>c.strength),improvements=EPA_PRACTICAL_MARKING.filter(c=>Number(marks[c.id])<=3).map(c=>c.improve);return{strengths:strengths.length?strengths:['The learner completed the practical and provided sufficient work for assessment.'],improvements:improvements.length?improvements:['Continue practising to maintain this standard consistently under EPA conditions.']}}
+function practicalScorecard(attempt){const marks=attempt.assessor?.marks||{};return `<section class="card panel epa-scorecard"><div class="panel-body"><div class="number">Assessor only</div><h3>EPA Practical scorecard</h3><p class="muted">Score every area from 1 to 5. A score below 3 for safety or technical accuracy results in a fail.</p>${EPA_PRACTICAL_MARKING.map(c=>`<div class="epa-mark-row"><div><strong>${esc(c.title)}</strong><span>${c.weight}% of overall score</span></div><select class="select" data-practical-mark="${c.id}"><option value="">Select mark</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${Number(marks[c.id])===n?'selected':''}>${n} — ${['','Unsatisfactory','Significant improvement required','Meets expected standard','Above expected standard','Excellent EPA-ready performance'][n]}</option>`).join('')}</select></div>`).join('')}<label class="epa-critical-fail"><input type="checkbox" id="epaCriticalFail" ${attempt.assessor?.criticalFail?'checked':''}><span><strong>Critical fail</strong><small>Use where there was a serious safety breach, unsafe work, assessor intervention or a critical failure to follow the specification.</small></span></label><label>Additional assessor comments<textarea class="textarea" id="epaAssessorComments" rows="5" placeholder="Optional additional comments">${esc(attempt.assessor?.comments||'')}</textarea></label><button class="btn" id="submitPracticalMarks">Submit final marks</button></div></section>`}
+async function submitPracticalMarks(attempt){const marks={};document.querySelectorAll('[data-practical-mark]').forEach(x=>marks[x.dataset.practicalMark]=Number(x.value||0));if(EPA_PRACTICAL_MARKING.some(c=>!marks[c.id]))return toast('Score every marking area before submitting');const criticalFail=document.getElementById('epaCriticalFail').checked,comments=document.getElementById('epaAssessorComments').value.trim(),percentage=practicalMarkingPercent(marks),grade=practicalMarkingGrade(percentage,marks,criticalFail),feedback=practicalGeneratedFeedback(marks);if(!confirm(`Submit this assessment as ${grade} (${percentage}%)? Marks cannot be changed after submission.`))return;attempt.assessor={marks,criticalFail,comments,percentage,grade,feedback,submittedAt:new Date().toISOString()};attempt.stage='marked';const history=epaPracticalHistory(),existing=history.findIndex(x=>x.id===attempt.id);attempt.attemptNumber=attempt.attemptNumber||Math.max(1,existing+1||history.length+1);if(existing>=0)history[existing]=cloneData(attempt);else history.unshift(cloneData(attempt));state.data[epaPracticalHistoryKey()]=history;await persistEpaPractical();renderEpaPractical();toast('Assessor marks submitted and attempt saved')}
+function practicalNormaliseItem(value){return String(value||'').toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ')}
+const PRACTICAL_ITEM_EQUIVALENTS=[
+ ['eye protection','safety glasses','safety goggles','goggles','protective glasses','eye goggles'],
+ ['rpe','respiratory protective equipment','dust mask','dust masks','respirator','respirators'],
+ ['hi vis clothing','hi vis','high visibility clothing','high vis','high visibility vest','hi vis vest','visibility vest'],
+ ['safety boots','safety footwear','steel toe boots','steel toe cap boots','work boots'],
+ ['hard hat','safety helmet','site helmet'],
+ ['hearing protection','ear defenders','ear plugs','earplugs'],
+ ['gloves','safety gloves','work gloves','protective gloves'],
+ ['dust extraction','local exhaust ventilation','lev','extraction','extractor'],
+ ['barriers and signs','barriers','warning barriers','safety barriers','warning signs','signage'],
+ ['tape measure','measuring tape','tape'],
+ ['pencil','carpenters pencil','carpenter pencil','marking pencil'],
+ ['square','combination square','try square','roofing square'],
+ ['spirit level','level','boat level'],
+ ['handsaw','hand saw','panel saw'],
+ ['circular saw','skill saw','skilsaw'],
+ ['mitre saw','miter saw','chop saw'],
+ ['coping saw','coping handsaw'],
+ ['hammer','claw hammer'],
+ ['mallet','wooden mallet'],
+ ['chisels','chisel','wood chisels','wood chisel'],
+ ['plane','hand plane','block plane'],
+ ['drill driver','combi drill','cordless drill','drill','impact driver'],
+ ['screwdrivers','screwdriver','driver bits'],
+ ['clamps','sash clamps','g clamps','g clamps','quick clamps'],
+ ['nail gun','second fix nailer','brad nailer'],
+ ['utility knife','stanley knife','trimming knife'],
+ ['filling knives','filling knife','scraper'],
+ ['paint brushes','paint brush','brushes'],
+ ['roller','paint roller'],
+ ['water pump pliers','pump pliers','grips','waterpump pliers'],
+ ['adjustable spanner','adjustable wrench','shifting spanner'],
+ ['pipe cutter','pipe slice','tube cutter'],
+ ['deburring tool','reamer','pipe reamer'],
+ ['cloths','rags','cleaning cloths'],
+ ['torch','flashlight','work light'],
+ ['wood screws','screws','timber screws'],
+ ['nails','framing nails','round wire nails'],
+ ['lost head nails','panel pins','pins','brads'],
+ ['packers','shims','timber packers'],
+ ['metal straps','restraint straps','galvanised straps'],
+ ['47 x 100 mm structural timber','47 100 structural timber','c16 timber','stud timber','structural timber'],
+ ['door lining','door frame','lining set'],
+ ['prepared timber door','timber door','door leaf'],
+ ['hinges','door hinges','hinge pair'],
+ ['latch','latch set','tubular latch'],
+ ['handles','door handles','lever handles'],
+ ['skirting board','skirting','baseboard'],
+ ['grab adhesive','construction adhesive','panel adhesive'],
+ ['wood filler','filler','decorators filler'],
+ ['prepared softwood','prepared timber','softwood','timber stock'],
+ ['wood adhesive','wood glue','pva','pva glue'],
+ ['wedges','timber wedges'],
+ ['abrasive paper','sandpaper','sanding paper'],
+ ['marking gauge','gauge'],
+ ['mortice gauge','mortise gauge'],
+ ['vernier caliper','caliper','digital caliper'],
+ ['spindle moulder','spindle molders','spindle'],
+ ['planer thicknesser','thicknesser','surface planer'],
+ ['push sticks','push stick'],
+ ['setting blocks','setup blocks','set up blocks'],
+ ['quick setting plaster repair compound','plaster repair compound','patching plaster','repair plaster'],
+ ['quick drying primer','primer','undercoat'],
+ ['quick drying paint','paint','finishing paint'],
+ ['dust sheets','dust sheet','floor protection'],
+ ['replacement latch set or hinge pair','door ironmongery','replacement ironmongery','latch or hinges'],
+ ['replacement fitting','pipe fitting','coupling','compression fitting','push fit fitting'],
+ ['pipe insert where required','pipe insert','support sleeve'],
+ ['ptfe tape','thread tape','plumbers tape'],
+ ['jointing compound where appropriate','jointing compound','joint compound','plumbers compound'],
+ ['cleaning materials','cleaner','cleaning supplies'],
+ ['building sand','soft sand','mortar sand'],
+ ['cement','portland cement'],
+ ['plasticiser','mortar plasticiser','plasticizer'],
+ ['mortar','ready mixed mortar','ready mix mortar','pre mixed mortar','premixed mortar']
+];
+const PRACTICAL_ITEM_BUNDLES={
+ mortar:['building sand','cement','plasticiser'],
+ 'ready mixed mortar':['building sand','cement','plasticiser'],
+ 'ready mix mortar':['building sand','cement','plasticiser'],
+ 'pre mixed mortar':['building sand','cement','plasticiser'],
+ 'premixed mortar':['building sand','cement','plasticiser'],
+ 'door ironmongery':['replacement latch set or hinge pair'],
+ 'replacement ironmongery':['replacement latch set or hinge pair'],
+ 'painting materials':['quick drying primer','quick drying paint'],
+ 'decorating materials':['quick drying primer','quick drying paint','abrasive paper'],
+ 'plumbing fitting':['replacement fitting'],
+ 'pipe fitting':['replacement fitting']
+};
+function practicalEquivalentGroup(value){const normal=practicalNormaliseItem(value);return PRACTICAL_ITEM_EQUIVALENTS.find(group=>group.some(item=>practicalNormaliseItem(item)===normal))||[normal]}
+function practicalItemMatches(a,b){const x=practicalNormaliseItem(a),y=practicalNormaliseItem(b);if(!x||!y)return false;if(x===y)return true;const singular=v=>v.replace(/ies$/,'y').replace(/es$/,'').replace(/s$/,'');if(singular(x)===singular(y)||x.includes(y)||y.includes(x))return true;const gx=practicalEquivalentGroup(x).map(practicalNormaliseItem),gy=practicalEquivalentGroup(y).map(practicalNormaliseItem);return gx.some(v=>gy.includes(v))}
+function practicalBundleTargets(value){const normal=practicalNormaliseItem(value);const direct=PRACTICAL_ITEM_BUNDLES[normal];if(direct)return direct;const group=practicalEquivalentGroup(normal).map(practicalNormaliseItem);for(const alias of group){if(PRACTICAL_ITEM_BUNDLES[alias])return PRACTICAL_ITEM_BUNDLES[alias]}return[]}
+function practicalPlanningComparison(attempt,key){const learner=attempt.entries?.[key]||[],correct=attempt.task?.[key]||[],matchedCorrect=new Set(),matchedLearner=new Set();learner.forEach((item,li)=>{let matched=false;correct.forEach((expected,index)=>{if(!matchedCorrect.has(index)&&practicalItemMatches(item,expected)){matchedCorrect.add(index);matched=true}});const bundle=practicalBundleTargets(item);if(bundle.length)correct.forEach((expected,index)=>{if(!matchedCorrect.has(index)&&bundle.some(target=>practicalItemMatches(target,expected))){matchedCorrect.add(index);matched=true}});if(matched)matchedLearner.add(li)});return{correct:learner.filter((_,i)=>matchedLearner.has(i)),missed:correct.filter((_,i)=>!matchedCorrect.has(i)),unnecessary:learner.filter((_,i)=>!matchedLearner.has(i))}}
+function practicalReadiness(attempt){const a=attempt.assessor||{};if(a.criticalFail||a.grade==='Fail')return{label:'Not yet EPA ready',tone:'fail',detail:'Further development is required before attempting the practical assessment.'};if(a.grade==='Pass')return{label:'EPA ready — pass standard',tone:'pass',detail:'The learner has demonstrated the required pass standard under mock EPA conditions.'};if(a.grade==='Merit')return{label:'EPA ready — strong standard',tone:'merit',detail:'The learner is performing confidently above the pass standard.'};return{label:'EPA ready — distinction standard',tone:'distinction',detail:'The learner is demonstrating consistently high performance under mock EPA conditions.'}}
+function practicalComparisonSection(title,key,attempt){const result=practicalPlanningComparison(attempt,key),group=(label,items,type)=>`<div class="epa-compare-group ${type}"><strong>${label}</strong>${items.length?`<ul>${items.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p>None</p>'}</div>`;return `<section class="card panel epa-comparison-card"><div class="panel-body"><h3>${title}</h3><div class="epa-comparison-grid">${group('Correct items',result.correct,'correct')}${group('Missed items',result.missed,'missed')}${group('Unnecessary items',result.unnecessary,'unnecessary')}</div></div></section>`}
+function practicalMarkedSummary(attempt){const a=attempt.assessor,remaining=practicalRemaining(attempt),elapsed=practicalElapsed(attempt),breakMs=practicalBreakDuration(attempt),readiness=practicalReadiness(attempt);return `<section class="epa-result-banner ${readiness.tone}"><div class="number">EPA Practical result</div><h2>${esc(a.grade)} · ${a.percentage}%</h2><p>${esc(readiness.label)}</p></section><section class="card panel"><div class="panel-body"><h3>Practical summary</h3><div class="epa-result-metrics"><div><strong>${formatPracticalTime(elapsed)}</strong><span>time taken</span></div><div><strong>${formatPracticalTime(remaining)}</strong><span>time remaining</span></div><div><strong>${formatPracticalTime(breakMs)}</strong><span>break duration</span></div><div><strong>${a.percentage}%</strong><span>overall mark</span></div><div><strong>${esc(a.grade)}</strong><span>grade</span></div></div><div class="epa-readiness ${readiness.tone}"><strong>${esc(readiness.label)}</strong><span>${esc(readiness.detail)}</span></div></div></section>${practicalComparisonSection('Tools and Equipment','tools',attempt)}${practicalComparisonSection('Materials and Fixings','materials',attempt)}${practicalComparisonSection('PPE and Safety Equipment','ppe',attempt)}<section class="card panel"><div class="panel-body"><h3>Assessor feedback</h3><div class="epa-feedback-grid"><div><strong>Strengths</strong><ul>${a.feedback.strengths.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div><div><strong>Areas for improvement</strong><ul>${a.feedback.improvements.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div></div>${a.comments?`<h3>Additional assessor comments</h3><p>${esc(a.comments)}</p>`:''}<div class="btn-row no-print"><button class="btn" id="downloadPracticalReport">Download PDF report</button><button class="btn secondary" id="retakeEpaPractical">Start another attempt</button></div></div></section>`}
+
+function renderEpaPractical(){const attempt=state.epaPractical;if(!attempt?.task){state.view='epa';render();return}const task=attempt.task;if(['running','break','finished','timed-out','marked'].includes(attempt.stage)){const ended=['finished','timed-out','marked'].includes(attempt.stage),remaining=practicalRemaining(attempt),elapsed=practicalElapsed(attempt),breakMs=practicalBreakDuration(attempt);app.innerHTML=shell(`<button class="back no-print" id="exitEpaPractical">← EPA Academy</button><section class="epa-hero"><div class="number">EPA Practical · ${ended?'Practical ended':attempt.stage==='break'?'Authorised break':'In progress'}</div><h2>${esc(task.title)}</h2><p>${ended?'The timed stage is locked and ready for assessor marking.':attempt.stage==='break'?'The countdown is paused for an authorised break.':'The timer continues while you move around the app or close it.'}</p></section><section class="card panel epa-timer-card ${attempt.stage}"><div class="panel-body"><div class="number">${attempt.stage==='break'?'Timer paused':'Time remaining'}</div><div class="epa-countdown" id="epaCountdown">${formatPracticalTime(remaining)}</div><div class="epa-timing-grid"><div><strong>${formatPracticalTime(elapsed)}</strong><span>active time used</span></div><div><strong>${formatPracticalTime(breakMs)}</strong><span>break time</span></div><div><strong>${Math.round(task.duration/60*10)/10}h</strong><span>time allowed</span></div></div><button class="btn secondary" id="viewEpaPracticalSpec">View task specification</button></div></section>${ended?`${attempt.stage==='marked'?practicalMarkedSummary(attempt):`<section class="card panel"><div class="panel-body"><h3>${attempt.stage==='timed-out'?'Time limit reached':'Practical completed'}</h3><p><strong>Active working time:</strong> ${formatPracticalTime(elapsed)}</p><p><strong>Time remaining:</strong> ${formatPracticalTime(remaining)}</p><p><strong>Total authorised breaks:</strong> ${formatPracticalTime(breakMs)}</p></div></section>${practicalScorecard(attempt)}`}`:`<section class="card panel"><div class="panel-body"><h3>Timer controls</h3><p class="muted">The timer can only be paused for an authorised break or stopped when the task is finished.</p><div class="btn-row">${attempt.stage==='break'?`<button class="btn" id="resumePracticalTimer">Resume practical</button>`:`<button class="btn secondary" id="pausePracticalTimer">Pause for authorised break</button><button class="btn danger" id="finishPracticalTimer">Finish practical</button>`}</div></div></section>`}`);document.getElementById('exitEpaPractical').onclick=()=>{state.epaPractical=null;state.view='epa';render()};document.getElementById('viewEpaPracticalSpec').onclick=()=>showEpaPracticalSpecification(task);const pause=document.getElementById('pausePracticalTimer');if(pause)pause.onclick=()=>showBreakDialog(attempt);const resume=document.getElementById('resumePracticalTimer');if(resume)resume.onclick=async()=>{const active=[...(attempt.breaks||[])].reverse().find(b=>!b.endedAt);if(active)active.endedAt=new Date().toISOString();attempt.stage='running';await persistEpaPractical();renderEpaPractical()};const finish=document.getElementById('finishPracticalTimer');if(finish)finish.onclick=()=>showFinishPracticalDialog(attempt);const submitMarks=document.getElementById('submitPracticalMarks');if(submitMarks)submitMarks.onclick=()=>submitPracticalMarks(attempt);const report=document.getElementById('downloadPracticalReport');if(report)report.onclick=()=>downloadEpaPracticalReport(attempt);const retake=document.getElementById('retakeEpaPractical');if(retake)retake.onclick=()=>startEpaPractical();if(!ended)startPracticalTimerLoop();return}app.innerHTML=shell(`<button class="back no-print" id="exitEpaPractical">← EPA Academy</button><section class="epa-hero"><div class="number">EPA Practical · Preparation</div><h2>${esc(task.title)}</h2><p>Review the issued task, then build your preparation lists. The correct answers are hidden until the practical is marked.</p></section><section class="card panel epa-practical-brief"><div class="panel-body"><div class="number">${esc(task.difficulty)} · ${Math.round(task.duration/60*10)/10} hours</div><h3>${esc(task.title)}</h3><p>${esc(task.brief)}</p><div class="epa-task-actions"><button class="btn secondary" id="viewEpaPracticalSpec">View task specification</button><button class="btn secondary epa-regenerate-task" id="regenerateEpaPractical"><span aria-hidden="true">♻️</span> Generate new EPA task</button></div>${task.workloadNote?`<p class="epa-workload-note">${esc(task.workloadNote)}</p>`:''}</div></section>${practicalTagSection('tools','Tools and Equipment','e.g. brick trowel')}${practicalTagSection('materials','Materials and Fixings','e.g. facing bricks')}${practicalTagSection('ppe','PPE and Safety Equipment','e.g. safety boots')}<section class="card panel epa-ready-card"><div class="panel-body"><label class="epa-understood"><input type="checkbox" id="epaPracticalUnderstood" ${attempt.understood?'checked':''}><span>I confirm that I have read and understood the task specification.</span></label><button class="btn" id="epaPracticalReady" ${attempt.understood&&attempt.entries.tools.length&&attempt.entries.materials.length&&attempt.entries.ppe.length?'':'disabled'}>I Am Ready to Begin</button><p class="muted">Your preparation entries will lock when the timed practical begins.</p></div></section>`);document.getElementById('exitEpaPractical').onclick=()=>{persistEpaPractical();state.epaPractical=null;state.view='epa';render()};document.getElementById('viewEpaPracticalSpec').onclick=()=>showEpaPracticalSpecification(task);document.getElementById('regenerateEpaPractical').onclick=()=>{const hasEntries=Object.values(attempt.entries||{}).some(list=>list?.length);if(hasEntries&&!confirm('Generate a new EPA task? Your current preparation entries will be cleared.'))return;startEpaPractical()};const addPracticalEntry=key=>{const input=document.querySelector(`[data-practical-tag-input="${key}"]`),value=input?.value.trim();if(!value)return toast('Type an item first');if(attempt.entries[key].some(x=>x.toLowerCase()===value.toLowerCase()))return toast('That item is already listed');attempt.entries[key].push(value);persistEpaPractical();renderEpaPractical();setTimeout(()=>document.querySelector(`[data-practical-tag-input="${key}"]`)?.focus(),0)};document.querySelectorAll('[data-practical-tag-input]').forEach(input=>input.onkeydown=e=>{if(e.key!=='Enter')return;e.preventDefault();addPracticalEntry(input.dataset.practicalTagInput)});document.querySelectorAll('[data-add-practical-tag]').forEach(button=>button.onclick=()=>addPracticalEntry(button.dataset.addPracticalTag));document.querySelectorAll('[data-remove-practical-tag]').forEach(button=>button.onclick=()=>{const [key,index]=button.dataset.removePracticalTag.split(':');attempt.entries[key].splice(Number(index),1);persistEpaPractical();renderEpaPractical()});document.getElementById('epaPracticalUnderstood').onchange=e=>{attempt.understood=e.target.checked;persistEpaPractical();renderEpaPractical()};document.getElementById('epaPracticalReady').onclick=()=>{attempt.stage='ready';attempt.readyAt=new Date().toISOString();showPracticalStartConfirmation(attempt)}}
+
+
+const EPA_DISCUSSION_COUNT=5;
+function epaDiscussionResultKey(){return `epaDiscussionResults:${COURSE.id}:v1`}
+function discussionQuestionPool(){
+ const bank=approvedEpaKnowledgeBank();
+ return bank.filter(q=>q&&q.question&&Array.isArray(q.options)&&Number.isInteger(q.correct)&&q.options[q.correct]).map(q=>({...q}));
+}
+function chooseDiscussionQuestions(){
+ const pool=discussionQuestionPool();
+ for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
+ return pool.slice(0,Math.min(EPA_DISCUSSION_COUNT,pool.length));
+}
+const DISCUSSION_STOP_WORDS=new Set('about above after again against all also and any are because been before being below between both but can could did does doing down during each few for from further had has have having how into its itself just more most other our out over own same should some such than that the their theirs them themselves then there these they this those through too under until very was were what when where which while who why will with would your yourself'.split(' '));
+function cleanDiscussionText(value){return String(value||'').toLowerCase().replace(/[^a-z0-9\s-]/g,' ').replace(/\s+/g,' ').trim()}
+function discussionWords(value){return cleanDiscussionText(value).split(' ').filter(w=>w.length>3&&!DISCUSSION_STOP_WORDS.has(w))}
+function discussionPromptGroups(q){
+ const best=String(q.options?.[q.correct]||'').trim();
+ const explanation=String(q.keyTakeaway||q.explanation||'').trim();
+ const raw=[best,...explanation.split(/[.;:]/)].map(x=>x.trim()).filter(x=>x.length>12);
+ const groups=[];
+ for(const part of raw){
+  const words=[...new Set(discussionWords(part))];
+  if(words.length<1)continue;
+  const title=part.replace(/^(the|a|an)\s+/i,'').split(/\s+/).slice(0,9).join(' ').replace(/[,.]$/,'');
+  const phrases=[];
+  const lower=cleanDiscussionText(part);
+  if(lower)phrases.push(lower);
+  for(let i=0;i<words.length-1;i++)phrases.push(`${words[i]} ${words[i+1]}`);
+  groups.push({title:title.charAt(0).toUpperCase()+title.slice(1),keywords:[...new Set([...phrases,...words])].slice(0,14)});
+  if(groups.length===4)break;
+ }
+ if(!groups.length)groups.push({title:q.code||q.ksb||'Key point',keywords:discussionWords(best+' '+explanation)});
+ return groups;
+}
+function matchDiscussionAnswer(q,answer){
+ const text=cleanDiscussionText(answer),words=new Set(discussionWords(answer));
+ const prompts=discussionPromptGroups(q).map(prompt=>{
+  const matched=prompt.keywords.some(k=>{const clean=cleanDiscussionText(k);return clean.includes(' ')?text.includes(clean):words.has(clean)});
+  return {...prompt,matched};
+ });
+ return {prompts,met:prompts.filter(x=>x.matched),missed:prompts.filter(x=>!x.matched)};
+}
+function startEpaDiscussion(){
+ const questions=chooseDiscussionQuestions();
+ if(!questions.length)return toast('No EPA questions are installed for this course');
+ state.epaDiscussion={questions,index:0,answers:{},feedback:{},submitted:{},startedAt:Date.now()};
+ state.view='epa-discussion';render();window.scrollTo(0,0);
+}
+function speakDiscussionQuestion(text,onEnd){
+ if(!('speechSynthesis' in window)){onEnd?.();return toast('Read aloud is not supported on this device')}
+ speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(text);utterance.lang='en-GB';utterance.rate=.92;utterance.onend=()=>onEnd?.();utterance.onerror=()=>onEnd?.();speechSynthesis.speak(utterance);
+}
+function renderEpaDiscussion(){
+ const d=state.epaDiscussion;if(!d?.questions?.length){state.view='epa';render();return}
+ const i=d.index||0,q=d.questions[i],submitted=!!d.submitted[i],answer=d.answers[i]||'',feedback=d.feedback[i];
+ const review=feedback?`<section class="discussion-feedback"><h3>Answer feedback</h3><div class="discussion-score">You covered <strong>${feedback.met.length} of ${feedback.prompts.length}</strong> important areas.</div><div class="discussion-feedback-grid"><div><h4>You spoke about</h4>${feedback.met.length?`<ul>${feedback.met.map(x=>`<li>${esc(x.title)}</li>`).join('')}</ul>`:'<p class="muted">No key areas were clearly matched.</p>'}</div><div><h4>You missed</h4>${feedback.missed.length?`<ul>${feedback.missed.map(x=>`<li>${esc(x.title)}</li>`).join('')}</ul>`:'<p class="muted">You covered every key area.</p>'}</div></div></section>`:'';
+ app.innerHTML=shell(`<button class="back no-print" id="discussionExit">← EPA Academy</button><section class="epa-test-head"><div><div class="number">Question ${i+1} of ${d.questions.length}</div><h2>EPA Professional Discussion</h2></div><span class="status-pill">${Object.keys(d.submitted).length}/${d.questions.length} submitted</span></section><div class="epa-progress"><span style="width:${((i+1)/d.questions.length)*100}%"></span></div><section class="card panel discussion-question"><small>${esc(q.code||q.ksb||'EPA question')}</small><h3>${esc(q.question)}</h3>${!submitted?`<button class="btn discussion-start" id="readQuestion">▶ Start question</button><p class="discussion-instruction">The question will be read aloud. Voice to text will then start automatically. You can also open your phone keyboard and tap its microphone. Check and edit the text before submitting.</p><label class="field"><span>Your answer</span><textarea id="discussionAnswer" rows="9" placeholder="Your spoken answer will appear here…">${esc(answer)}</textarea></label><button class="btn" id="submitDiscussionAnswer">Submit answer</button>`:`<div class="discussion-submitted"><strong>Answer submitted</strong><p>${esc(answer)}</p></div>${review}<button class="btn" id="nextDiscussionQuestion">${i===d.questions.length-1?'Finish discussion':'Next question'}</button>`}</section>`);
+ document.getElementById('discussionExit').onclick=()=>{if(confirm('Exit this discussion? Submitted answers will not be saved as a completed attempt.')){window.speechSynthesis?.cancel?.();stopVoiceToText();state.epaDiscussion=null;state.view='epa';render()}};
+ if(!submitted){
+  const box=document.getElementById('discussionAnswer');box.oninput=()=>{d.answers[i]=box.value};
+  document.getElementById('readQuestion').onclick=()=>{const button=document.getElementById('readQuestion');button.disabled=true;button.textContent='Reading question…';speakDiscussionQuestion(q.question,()=>{button.disabled=false;button.textContent='▶ Read question again';box.focus();requestAnimationFrame(()=>{const mic=box.closest('.voice-text-field')?.querySelector('.voice-text-button');if(mic)mic.click()})})};
+  document.getElementById('submitDiscussionAnswer').onclick=async()=>{const finalAnswer=box.value.trim();if(finalAnswer.split(/\s+/).filter(Boolean).length<3)return toast('Add your answer before submitting');d.answers[i]=finalAnswer;d.feedback[i]=matchDiscussionAnswer(q,finalAnswer);d.submitted[i]=true;await saveData();renderEpaDiscussion();window.scrollTo(0,0)};
+ }else document.getElementById('nextDiscussionQuestion').onclick=async()=>{if(i<d.questions.length-1){d.index=i+1;renderEpaDiscussion();window.scrollTo(0,0);return}const totalPrompts=Object.values(d.feedback).reduce((n,x)=>n+x.prompts.length,0),met=Object.values(d.feedback).reduce((n,x)=>n+x.met.length,0),result={id:uid(),date:new Date().toLocaleString('en-GB'),startedAt:d.startedAt,completedAt:Date.now(),totalQuestions:d.questions.length,totalPrompts,met,coverage:totalPrompts?Math.round(met/totalPrompts*100):0,questions:structuredClone(d.questions),answers:structuredClone(d.answers),feedback:structuredClone(d.feedback)};state.data[epaDiscussionResultKey()]=[result,...(state.data[epaDiscussionResultKey()]||[])];await saveData();state.epaDiscussion={result};state.view='epa-discussion-result';render();window.scrollTo(0,0)};
+}
+function renderEpaDiscussionResult(){
+ const result=state.epaDiscussion?.result;if(!result){state.view='epa';render();return}
+ app.innerHTML=shell(`<button class="back no-print" id="discussionResultBack">← EPA Academy</button><section class="epa-result-head ${result.coverage>=70?'pass':'fail'}"><div class="number">EPA Professional Discussion</div><h2>${result.coverage}% prompt coverage</h2><p>${result.met} of ${result.totalPrompts} important areas covered across ${result.totalQuestions} questions</p></section><section class="epa-review-list">${result.questions.map((q,i)=>{const f=result.feedback[i];return `<details class="epa-review ${f.missed.length?'incorrect':'correct'}"><summary><span>Question ${i+1} · ${esc(q.code||q.ksb||'EPA')}</span>${f.met.length}/${f.prompts.length} covered</summary><div><p><strong>${esc(q.question)}</strong></p><p>${esc(result.answers[i])}</p><p><strong>You spoke about:</strong> ${f.met.length?f.met.map(x=>esc(x.title)).join('; '):'No key areas matched'}</p><p><strong>You missed:</strong> ${f.missed.length?f.missed.map(x=>esc(x.title)).join('; '):'Nothing'}</p></div></details>`}).join('')}</section><div class="btn-row epa-result-actions"><button class="btn" id="newDiscussion">Start another discussion</button></div>`);
+ document.getElementById('discussionResultBack').onclick=()=>{state.epaDiscussion=null;state.view='epa';render()};document.getElementById('newDiscussion').onclick=()=>startEpaDiscussion();
+}
+
+
+const NOTEPAD_KEY='resources:learner-notes:v1';
+function learnerNotes(){return Array.isArray(state.data[NOTEPAD_KEY])?state.data[NOTEPAD_KEY]:[]}
+function noteDate(value){try{return new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(value))}catch{return ''}}
+
+const ACCESSIBILITY_KEY='apprenticeplus.accessibility.v1';
+const ACCESSIBILITY_CHECK_KEY='apprenticeplus.accessibilityCheck.v1';
+let activeSpeechUtterance=null;
+let readAloudSentences=[];
+let readAloudSentenceIndex=0;
+let readAloudRunId=0;
+function stopReadAloud({hide=false,reset=true}={}){
+ readAloudRunId++;
+ try{window.speechSynthesis?.cancel?.()}catch{}
+ activeSpeechUtterance=null;
+ document.querySelectorAll('.tts-readable-tile.tts-speaking').forEach(tile=>tile.classList.remove('tts-speaking'));
+ document.querySelectorAll('.tts-tile-button[aria-pressed="true"]').forEach(button=>{button.setAttribute('aria-pressed','false');button.setAttribute('aria-label','Read this tile aloud');button.title='Read this tile aloud'});
+ if(reset){readAloudSentences=[];readAloudSentenceIndex=0}
+ if(hide)document.querySelectorAll('.tts-tile-button').forEach(button=>button.remove());
+}
+function tileTextForReadAloud(tile){
+ if(!tile)return '';
+ const clone=tile.cloneNode(true);
+ clone.querySelectorAll('button,input,textarea,select,option,svg,script,style,video,audio,.no-print,.tts-tile-button,[contenteditable="true"],.voice-text-button,.app-version-bottom').forEach(node=>node.remove());
+ return (clone.innerText||clone.textContent||'').replace(/\s+/g,' ').trim().slice(0,12000);
+}
+function readableTileCandidates(){
+ const scope=document.getElementById('app');if(!scope)return [];
+ const selector=['.card','.panel','.settings-card','.lesson-card','.epa-dashboard-tile','.academy-square-tile','.tool-app-card','.outcome-card','.score-card','.accuracy-card','.calc-panel','.knowledge-slide-block','.epa-question','.support-setting','.support-option','.assignment-card','.resource-card','.tile','.info-card','details.epa-review'].join(',');
+ const excluded='.bottom-nav,.topbar,.modal,.recording-modal,.voice-text-field,.field,.input,.file-drop,.photo-slot,.signature-pad,.learner-note,.note-card,.statement-ksb-card,.epa-option,.score-buttons';
+ return [...scope.querySelectorAll(selector)].filter(tile=>{
+  if(tile.matches(excluded)||tile.closest('.bottom-nav,.topbar'))return false;
+  if(tile.closest('[hidden],.hide'))return false;
+  const text=tileTextForReadAloud(tile);
+  return text.length>=3;
+ });
+}
+function speakReadableTile(tile,button){
+ if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined')return toast('Read aloud is not supported on this device');
+ if(tile.classList.contains('tts-speaking')){stopReadAloud();return}
+ const text=tileTextForReadAloud(tile);if(!text)return toast('There is no readable text in this tile');
+ stopReadAloud({reset:false});
+ const runId=++readAloudRunId;
+ tile.classList.add('tts-speaking');button.setAttribute('aria-pressed','true');button.setAttribute('aria-label','Stop reading this tile');button.title='Stop reading';
+ const utterance=new SpeechSynthesisUtterance(text);activeSpeechUtterance=utterance;utterance.lang='en-GB';utterance.rate=.92;
+ const finish=()=>{if(runId!==readAloudRunId)return;activeSpeechUtterance=null;tile.classList.remove('tts-speaking');button.setAttribute('aria-pressed','false');button.setAttribute('aria-label','Read this tile aloud');button.title='Read this tile aloud'};
+ utterance.onend=finish;utterance.onerror=e=>{if(e?.error!=='canceled'&&e?.error!=='interrupted')toast('Read aloud stopped');finish()};
+ try{window.speechSynthesis.speak(utterance)}catch{finish();toast('Read aloud could not start')}
+}
+function addTileReadAloudButtons(){
+ const enabled=!!accessibilitySettings().readAloud;
+ document.getElementById('readAloudController')?.remove();
+ if(!enabled){stopReadAloud({hide:true});document.body.classList.remove('a11y-tile-tts');return}
+ document.body.classList.add('a11y-tile-tts');
+ readableTileCandidates().forEach(tile=>{
+  tile.classList.add('tts-readable-tile');
+  if(tile.querySelector(':scope > .tts-tile-button'))return;
+  const button=document.createElement('button');button.type='button';button.className='tts-tile-button no-print';button.setAttribute('aria-label','Read this tile aloud');button.setAttribute('aria-pressed','false');button.title='Read this tile aloud';button.innerHTML=appIcon('volume');
+  button.addEventListener('pointerdown',e=>e.stopPropagation());
+  button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();speakReadableTile(tile,button)});
+  tile.appendChild(button);
+ });
+}
+function syncReadAloudControl(){addTileReadAloudButtons()}
+function cleanupTransientUi(){
+ stopVoiceToText();stopReadAloud({hide:false});closeLearningSupportInfo();
+ document.body.classList.remove('learning-support-modal-open','page-help-open');
+ document.querySelectorAll('#learningSupportInfoModal,.page-help-modal.closing,.help-tour-overlay[aria-hidden="true"],.modal[aria-hidden="true"],.modal.hidden').forEach(node=>node.remove());
+ document.documentElement.style.pointerEvents='';document.body.style.pointerEvents='';app.style.pointerEvents='';
+}
+function defaultAccessibilitySettings(){return {dyslexicFont:false,largeText:false,highContrast:false,reduceMotion:false,fontSize:100,lineSpacing:1.5,background:'default',readingRuler:false,readingRulerY:45,readingRulerBlur:false,tintOverlay:false,tintColour:'yellow',tintOpacity:28,focusMode:false,captions:false,largeCaptions:false,visualAlerts:true,vibration:false,readAloud:true,voiceInput:true,simplify:false}}
+function accessibilitySettings(){try{return {...defaultAccessibilitySettings(),...JSON.parse(localStorage.getItem(ACCESSIBILITY_KEY)||'{}')}}catch{return defaultAccessibilitySettings()}}
+function saveAccessibilitySettings(next){localStorage.setItem(ACCESSIBILITY_KEY,JSON.stringify(next));applyAccessibilitySettings();}
+
+function syncReadingGuide(){
+ const a=accessibilitySettings();
+ let guide=document.getElementById('readingGuideOverlay');
+ if(!a.readingRuler){guide?.remove();document.body.classList.remove('reading-guide-active');return}
+ if(!guide){
+  guide=document.createElement('div');guide.id='readingGuideOverlay';guide.className='reading-guide-overlay no-print';
+  guide.innerHTML=`<div class="reading-guide-mask reading-guide-mask-top"></div><div class="reading-guide-label">Reading guide</div><div class="reading-guide-box"></div><div class="reading-guide-controls"><button type="button" class="reading-guide-blur" aria-label="Toggle blur outside reading box" title="Toggle blur"><span class="reading-guide-eye-open">${appIcon('eye')}</span><span class="reading-guide-eye-squint">${appIcon('eyeSquint')}</span></button><button type="button" class="reading-guide-drag" aria-label="Hold and move reading guide up or down" title="Hold and drag">${appIcon('moveVertical')}</button></div><div class="reading-guide-mask reading-guide-mask-bottom"></div>`;
+  document.body.appendChild(guide);
+  const drag=guide.querySelector('.reading-guide-drag');
+  let dragOffsetY=0;
+  const move=e=>{const guideY=(e.clientY-dragOffsetY)/window.innerHeight*100;const y=Math.max(4,Math.min(92,guideY));const next=accessibilitySettings();next.readingRulerY=Math.round(y*10)/10;localStorage.setItem(ACCESSIBILITY_KEY,JSON.stringify(next));positionReadingGuide(guide,next)};
+  drag.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const currentY=Math.max(4,Math.min(92,Number(accessibilitySettings().readingRulerY)||45))/100*window.innerHeight;dragOffsetY=e.clientY-currentY;drag.setPointerCapture?.(e.pointerId);guide.classList.add('dragging')});
+  drag.addEventListener('pointermove',e=>{if(!guide.classList.contains('dragging'))return;e.preventDefault();e.stopPropagation();move(e)});
+  const end=e=>{e.preventDefault();e.stopPropagation();guide.classList.remove('dragging');try{drag.releasePointerCapture?.(e.pointerId)}catch{}};
+  drag.addEventListener('pointerup',end);drag.addEventListener('pointercancel',end);
+  guide.querySelector('.reading-guide-blur').addEventListener('click',()=>{const next=accessibilitySettings();next.readingRulerBlur=!next.readingRulerBlur;saveAccessibilitySettings(next)});
+ }
+ positionReadingGuide(guide,a);document.body.classList.add('reading-guide-active');
+}
+function positionReadingGuide(guide,a){
+ const y=Math.max(4,Math.min(92,Number(a.readingRulerY)||45));
+ guide.style.setProperty('--reading-guide-y',`${y}vh`);
+ guide.classList.toggle('blur-on',!!a.readingRulerBlur);
+ guide.querySelector('.reading-guide-blur')?.setAttribute('aria-pressed',a.readingRulerBlur?'true':'false');
+}
+function syncTintOverlay(){
+ const a=accessibilitySettings();
+ let overlay=document.getElementById('dyslexiaTintOverlay');
+ if(!a.tintOverlay){overlay?.remove();document.body.classList.remove('a11y-tint-overlay');return}
+ if(!overlay){overlay=document.createElement('div');overlay.id='dyslexiaTintOverlay';overlay.className='dyslexia-tint-overlay no-print';overlay.setAttribute('aria-hidden','true');document.body.appendChild(overlay)}
+ const colours={yellow:'255,224,92',blue:'112,190,255',mint:'126,226,178',peach:'255,177,128',rose:'255,150,177',grey:'170,180,184'};
+ const rgb=colours[a.tintColour]||colours.yellow;
+ const opacity=Math.max(10,Math.min(55,Number(a.tintOpacity)||28))/100;
+ overlay.style.setProperty('--tint-rgb',rgb);
+ overlay.style.setProperty('--tint-opacity',String(opacity));
+ overlay.dataset.tintColour=a.tintColour||'yellow';
+ document.body.classList.add('a11y-tint-overlay');
+}
+function applyAccessibilitySettings(){const a=accessibilitySettings(),root=document.documentElement,body=document.body;if(!body)return;body.classList.toggle('a11y-dyslexic',!!a.dyslexicFont);body.classList.toggle('a11y-large-text',!!a.largeText);body.classList.toggle('a11y-high-contrast',!!a.highContrast);body.classList.toggle('a11y-reduce-motion',!!a.reduceMotion);body.classList.toggle('a11y-reading-ruler',!!a.readingRuler);body.classList.toggle('a11y-focus',!!a.focusMode);body.classList.toggle('a11y-simplified',!!a.simplify);body.classList.toggle('a11y-visual-alerts',!!a.visualAlerts);body.classList.toggle('a11y-large-captions',!!a.largeCaptions);body.classList.toggle('a11y-captions',!!a.captions);body.dataset.a11yBackground=a.background||'default';const effectiveFontSize=a.largeText?Math.max(115,Number(a.fontSize)||100):(Number(a.fontSize)||100);root.style.setProperty('--a11y-font-scale',String(effectiveFontSize/100));root.style.setProperty('--a11y-line-height',String(Number(a.lineSpacing)||1.5));applyAccessibilityToCurrentView();syncReadAloudControl();syncReadingGuide();syncTintOverlay();}
+function applyAccessibilityToCurrentView(){const a=accessibilitySettings(),scale=(a.largeText?Math.max(115,Number(a.fontSize)||100):(Number(a.fontSize)||100))/100,scope=document.getElementById('app');if(!scope)return;const selector='h1,h2,h3,h4,h5,h6,p,li,label,button,input,textarea,select,summary,small,.number,.pill,.muted,.meta,.status,.subtitle,.app-version-bottom';const nodes=[...scope.querySelectorAll(selector)].filter(el=>!el.closest('svg')&&!el.classList.contains('nav-icon'));const sizes=nodes.map(el=>{if(!el.dataset.a11yBaseFont){const px=parseFloat(getComputedStyle(el).fontSize);if(Number.isFinite(px))el.dataset.a11yBaseFont=String(px)}return [el,Number(el.dataset.a11yBaseFont)]});sizes.forEach(([el,base])=>{if(Number.isFinite(base))el.style.fontSize=`${Math.max(11,base*scale)}px`;el.style.lineHeight=String(Number(a.lineSpacing)||1.5)});scope.querySelectorAll('video').forEach(video=>{for(const track of video.textTracks){try{track.mode=a.captions?'showing':'disabled'}catch{}}});}
+function accessibilityCheckAnswers(){try{return JSON.parse(localStorage.getItem(ACCESSIBILITY_CHECK_KEY)||'{}')}catch{return {}}}
+function supportTabButton(id,label){return `<button class="support-tab ${state.learningSupportTab===id?'active':''}" data-support-tab="${id}">${label}</button>`}
+function learningSupportHome(){return `<section class="support-intro card panel"><h3>Work in the way that suits you</h3><p class="muted">These tools are available to every learner. They do not diagnose a condition or record medical information.</p></section><section class="support-home-grid">${[
+ ['check','Accessibility Check','A short self-check that recommends useful tools.'],['reading','Reading Tools','Change font, text size, spacing and page colour.'],['writing','Writing Tools','Dictate, read text aloud and check word count.'],['planner','Assignment Planner','Break an evidence pack into manageable steps.'],['focus','Focus Mode','Reduce clutter and show the current task clearly.'],['hearing','Hearing Support','Captions, visual alerts and vibration options.'],['memory','Memory Tools','Create reminders and quick cue cards.'],['simple','Explain Simply','View assignment instructions in plain English.'],['settings','Accessibility Settings','Control all support options in one place.']
+ ].map(x=>`<button class="support-feature-card" data-support-tab="${x[0]}"><strong>${x[1]}</strong><span>${x[2]}</span></button>`).join('')}</section>`}
+function accessibilityCheckView(){const q=[['listen','I prefer listening rather than reading.'],['place','I sometimes lose my place when reading.'],['writing','I find writing long answers difficult.'],['blocks','Large blocks of text are difficult to follow.'],['pictures','Pictures or examples help me remember.'],['steps','I prefer instructions broken into small steps.'],['captions','I benefit from captions or written transcripts.'],['large','I prefer larger text.']];const a=accessibilityCheckAnswers();return `<section class="card panel"><h3>Accessibility Check</h3><p class="muted">Tick anything that would make learning easier. This is a preference check, not a diagnosis.</p><div class="support-check-list">${q.map(([id,t])=>`<label><input type="checkbox" data-a11y-check="${id}" ${a[id]?'checked':''}><span>${t}</span></label>`).join('')}</div><button class="btn" id="saveAccessibilityCheck">Show recommendations</button><div id="supportRecommendations"></div></section>`}
+function recommendationsFor(a){const r=[];if(a.listen)r.push('Read Aloud');if(a.place||a.blocks)r.push('Reading Ruler','Coloured Reading Background');if(a.writing)r.push('Voice-to-Text','Assignment Planner');if(a.pictures)r.push('Cue Cards');if(a.steps)r.push('Focus Mode','Assignment Planner');if(a.captions)r.push('Captions and Transcripts');if(a.large)r.push('Larger Text');return [...new Set(r)]}
+function readingToolsView(){const a=accessibilitySettings();return `<section class="card panel"><h3>Reading Tools</h3><div class="support-setting-list"><label><span>OpenDyslexic-style readable font</span><input type="checkbox" data-a11y-setting="dyslexicFont" ${a.dyslexicFont?'checked':''}></label><label><span>Text size <b id="fontSizeValue">${a.fontSize}%</b></span><input type="range" min="90" max="140" step="5" value="${a.fontSize}" data-a11y-setting="fontSize"></label><label><span>Line spacing <b id="lineSpacingValue">${a.lineSpacing}</b></span><input type="range" min="1.3" max="2.2" step="0.1" value="${a.lineSpacing}" data-a11y-setting="lineSpacing"></label><label><span>Reading ruler</span><input type="checkbox" data-a11y-setting="readingRuler" ${a.readingRuler?'checked':''}></label><label><span>Reading background</span><select class="input" data-a11y-setting="background"><option value="default" ${a.background==='default'?'selected':''}>Default</option><option value="cream" ${a.background==='cream'?'selected':''}>Cream</option><option value="blue" ${a.background==='blue'?'selected':''}>Pale blue</option><option value="green" ${a.background==='green'?'selected':''}>Pale green</option><option value="dark" ${a.background==='dark'?'selected':''}>Dark</option></select></label></div><div class="support-preview"><strong>Live reading preview</strong><p>Clear instructions, comfortable spacing and a background that works for you can make evidence tasks easier to follow.</p></div></section>`}
+function writingToolsView(){return `<section class="card panel"><h3>Writing Tools</h3><p class="muted">Type or use the microphone. The buttons below work with this practice area.</p><textarea class="input support-writing-box" id="supportWritingText" rows="8" placeholder="Write or dictate here..."></textarea><div class="support-writing-stats"><span><b id="supportWordCount">0</b> words</span><span><b id="supportSentenceCount">0</b> sentences</span><span><b id="supportReadingTime">0</b> min read</span></div><div class="btn-row"><button class="btn secondary" id="readSupportText">Read aloud</button><button class="btn secondary" id="clearSupportText">Clear</button></div><p class="muted support-tip">Spelling support remains available through the device keyboard and browser.</p></section>`}
+function plannerStatus(n){const steps=[['Read assignment',true],['Complete practical assessment',sectionData(n,'practical').versions.length>0],['Collect workplace photos',sectionData(n,'photos').versions.length>0],['Complete learner statement',sectionData(n,'statement').versions.length>0],['Record walkthrough',walkthroughCount(n).done>0],['Complete supporting evidence',sectionData(n,'witness').versions.length>0||sectionData(n,'discussion').versions.length>0],['Download evidence pack',!!state.data[packStatusKey(n)]?.downloaded],['Upload evidence pack',!!state.data[packStatusKey(n)]?.uploaded]];return steps}
+function plannerView(){const n=Number(state.assignment)||courseAssignments()[0]?.n||1,a=assignment(n),steps=plannerStatus(n);return `<section class="card panel"><h3>Assignment Planner</h3><label class="field"><span>Assignment</span><select class="input" id="supportPlannerAssignment">${courseAssignments().filter(x=>!x.selectOptional).map(x=>`<option value="${x.n}" ${x.n===n?'selected':''}>${x.n}. ${esc(x.title)}</option>`).join('')}</select></label><h4>${esc(a?.title||'Assignment')}</h4><div class="support-planner-list">${steps.map(([t,d])=>`<div class="${d?'complete':''}"><span>${d?'✓':'○'}</span><strong>${t}</strong></div>`).join('')}</div><p class="muted">The checklist updates automatically from saved evidence.</p></section>`}
+function focusView(){const a=accessibilitySettings();return `<section class="card panel"><h3>Focus Mode</h3><p class="muted">Focus Mode reduces visual clutter, enlarges important controls and keeps attention on the current task.</p><button class="focus-toggle ${a.focusMode?'active':''}" id="toggleFocusMode"><span>${a.focusMode?'✓':'○'}</span><strong>${a.focusMode?'Focus Mode is on':'Turn on Focus Mode'}</strong></button><p class="muted">Use the same button to return to the full interface.</p></section>`}
+function hearingView(){const a=accessibilitySettings();return `<section class="card panel"><h3>Hearing Support</h3><div class="support-setting-list"><label><span>Show captions when available</span><input type="checkbox" data-a11y-setting="captions" ${a.captions?'checked':''}></label><label><span>Use large captions</span><input type="checkbox" data-a11y-setting="largeCaptions" ${a.largeCaptions?'checked':''}></label><label><span>Visual confirmations and alerts</span><input type="checkbox" data-a11y-setting="visualAlerts" ${a.visualAlerts?'checked':''}></label><label><span>Vibration confirmation on supported devices</span><input type="checkbox" data-a11y-setting="vibration" ${a.vibration?'checked':''}></label></div><p class="muted">Uploaded videos can only show a transcript when one has been provided or generated on the device.</p></section>`}
+function memoryView(){let cards=[];try{cards=JSON.parse(localStorage.getItem('apprenticeplus.memoryCards.v1')||'[]')}catch{}return `<section class="card panel"><h3>Memory Tools</h3><div class="field"><span>New reminder or cue card</span><textarea class="input" id="memoryCardText" rows="3" placeholder="Example: Photograph the DPC before covering it."></textarea></div><button class="btn" id="addMemoryCard">Add reminder</button><div class="memory-card-list">${cards.length?cards.map((x,i)=>`<article><span>${esc(x)}</span><button data-remove-memory="${i}" aria-label="Remove reminder">×</button></article>`).join(''):'<p class="muted">No reminders saved yet.</p>'}</div></section>`}
+function simpleAssignmentText(a){if(!a)return '';const title=a.title||'this task',codes=(a.ksbs||[]).map(x=>x[0]).join(', ');return `Complete the ${title.toLowerCase()} task safely and follow the drawings or instructions provided. Show the important stages of your work, explain the choices you made, and check the finished result. Collect clear evidence that demonstrates ${codes||'the required knowledge, skills and behaviours'}. Ask your tutor when anything is unclear.`}
+function explainSimplyView(){const n=Number(state.assignment)||courseAssignments()[0]?.n||1,a=assignment(n);return `<section class="card panel"><h3>Explain Simply</h3><label class="field"><span>Assignment</span><select class="input" id="simpleAssignmentSelect">${courseAssignments().filter(x=>!x.selectOptional).map(x=>`<option value="${x.n}" ${x.n===n?'selected':''}>${x.n}. ${esc(x.title)}</option>`).join('')}</select></label><div class="simple-explanation"><strong>${esc(a?.title||'Assignment')}</strong><p>${esc(simpleAssignmentText(a))}</p></div><p class="muted">This supports understanding but does not replace the official assignment wording or KSB criteria.</p></section>`}
+function accessibilitySettingsView(){const a=accessibilitySettings();return `<section class="card panel"><h3>Accessibility Settings</h3><p class="muted">Your choices are stored on this device and apply across Apprentice+.</p>${readingToolsView().replace('<section class="card panel"><h3>Reading Tools</h3>','<div><h4>Reading</h4>').replace('</section>','</div>')}<div class="support-setting-list"><label><span>Focus Mode</span><input type="checkbox" data-a11y-setting="focusMode" ${a.focusMode?'checked':''}></label><label><span>Captions when available</span><input type="checkbox" data-a11y-setting="captions" ${a.captions?'checked':''}></label><label><span>Visual alerts</span><input type="checkbox" data-a11y-setting="visualAlerts" ${a.visualAlerts?'checked':''}></label><label><span>Vibration confirmation</span><input type="checkbox" data-a11y-setting="vibration" ${a.vibration?'checked':''}></label></div><button class="btn secondary" id="resetAccessibility">Reset accessibility settings</button></section>`}
+
+const OTJ_KEY='apprenticeplus.otj.entries.v1',OTJ_EXPORT_KEY='apprenticeplus.otj.exports.v1',REMINDER_KEY='apprenticeplus.reminders.v1';
+function safeLocalArray(key){try{const v=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(v)?v:[]}catch{return []}}
+function saveLocalArray(key,v){localStorage.setItem(key,JSON.stringify(v))}
+function isoToday(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function formatShortDate(v){if(!v)return '—';return new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(`${v}T12:00:00`))}
+function otjEntries(){return safeLocalArray(OTJ_KEY).sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.created).localeCompare(String(a.created)))}
+function saveOtjEntries(v){saveLocalArray(OTJ_KEY,v)}
+function otjProgressStats(){const entries=otjEntries(),total=entries.reduce((n,e)=>n+(Number(e.hours)||0),0),start=state.profile?.courseStartDate?new Date(`${state.profile.courseStartDate}T00:00:00`):new Date(),now=new Date(),weeks=Math.max(0,(now-start)/604800000),expected=weeks*8;return {total,weeks,expected,percent:expected?Math.round(total/expected*100):0}}
+function otjWordCount(v){const t=String(v||'').trim();return t?t.split(/\s+/).length:0}
+function otjDefaults(place='college'){return {id:uid(),date:isoToday(),place,hours:place==='college'?6:2,did:'',learned:'',created:new Date().toISOString(),exportedAt:null,exportId:null}}
+function otjCopyText(e){return `Date: ${formatShortDate(e.date)}\nPlace completed: ${String(e.place||'').replace(/^./,c=>c.toUpperCase())}\nHours: ${Number(e.hours||0).toFixed(1)}\n\nWhat did you do?\n${e.did||''}\n\nWhat did you learn?\n${e.learned||''}`}
+async function copyOtjEntry(e){const text=otjCopyText(e);try{await navigator.clipboard.writeText(text);toast('OTJ entry copied to clipboard')}catch{const area=document.createElement('textarea');area.value=text;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();document.execCommand('copy');area.remove();toast('OTJ entry copied to clipboard')}}
+function renderOTJMate(){const tab=state.otjMateTab||'home',entries=otjEntries(),stats=otjProgressStats(),pending=entries.filter(e=>!e.exportedAt),exports=safeLocalArray(OTJ_EXPORT_KEY);let body='';if(tab==='entry'){const edit={...(entries.find(e=>e.id===state.editingOtjId)||otjDefaults())};const wc=otjWordCount(edit.learned);body=`<section class="card panel otj-entry-form"><h3>${state.editingOtjId?'Edit OTJ entry':'New OTJ entry'}</h3><div class="form-grid"><div class="field"><label>Date</label><input class="input" id="otjDate" type="date" value="${esc(edit.date)}"></div><div class="field"><label>Place completed</label><div class="segmented otj-place-options">${['college','workplace','other'].map(x=>`<button type="button" data-otj-place="${x}" class="${edit.place===x?'active':''}">${x[0].toUpperCase()+x.slice(1)}</button>`).join('')}</div></div><div class="field"><label>Hours</label><input class="input" id="otjHours" type="number" min="0.25" max="24" step="0.25" value="${edit.hours}"></div><div class="field full"><label>What did you do?</label><textarea class="input" id="otjDid" rows="4">${esc(edit.did)}</textarea></div><div class="field full"><label>What did you learn? <span class="word-requirement" id="otjWordCount">${wc}/30 words</span></label><textarea class="input" id="otjLearned" rows="6">${esc(edit.learned)}</textarea><small>Minimum 30 words. Explain the new knowledge, skill or understanding gained.</small></div></div><div class="btn-row"><button class="btn secondary" id="cancelOtj">Cancel</button><button class="btn" id="saveOtj">Save entry</button></div></section>`}else if(tab==='exports'){body=`<section class="card panel"><h3>PDF archive</h3><p class="muted">Each export contains the complete details of only the new entries included at that time.</p><div class="otj-list">${exports.length?exports.map(x=>`<article class="otj-list-item"><div><strong>${esc(x.name)}</strong><span>${formatShortDate(x.date)} · ${x.count} entries · ${Number(x.hours).toFixed(1)} hours</span></div><div class="otj-export-actions"><button class="btn secondary compact" data-download-otj-export="${x.id}">Download PDF</button><button class="icon-button danger" data-delete-otj-export="${x.id}" aria-label="Delete OTJ PDF">×</button></div></article>`).join(''):'<div class="empty-state">No PDFs exported yet.</div>'}</div></section>`}else{body=`<section class="otj-dashboard"><div class="otj-stat-grid"><div class="card otj-stat"><span>Total recorded</span><strong>${stats.total.toFixed(1)} hrs</strong></div><div class="card otj-stat"><span>Expected by now</span><strong>${stats.expected.toFixed(1)} hrs</strong></div><div class="card otj-stat"><span>Ready to export</span><strong>${pending.length}</strong></div></div><section class="card panel"><div class="otj-action-head"><div><h3>OTJ entries</h3><p class="muted">Only entries marked New will be included in the next PDF.</p></div><button class="btn" id="exportNewOtj" ${pending.length?'':'disabled'}>Export ${pending.length||''} to PDF</button></div><div class="otj-entry-cards">${entries.length?entries.map(e=>`<article class="otj-entry-card ${e.exportedAt?'exported':''}"><div class="otj-entry-card-head"><div><strong>${formatShortDate(e.date)}</strong><span>${esc((e.place||'other').replace(/^./,c=>c.toUpperCase()))} · ${Number(e.hours).toFixed(1)} hours</span></div><small>${e.exportedAt?'Exported':'New'}</small></div><dl class="otj-entry-details"><div><dt>What did you do?</dt><dd>${esc(e.did||'—')}</dd></div><div><dt>What did you learn?</dt><dd>${esc(e.learned||'—')}</dd></div></dl><div class="otj-entry-actions"><button class="btn secondary compact" data-copy-otj="${e.id}">Copy entry</button><button class="icon-button" data-edit-otj="${e.id}" aria-label="Edit OTJ entry">✎</button><button class="icon-button danger" data-delete-otj="${e.id}" aria-label="Delete OTJ entry">×</button></div></article>`).join(''):'<div class="empty-state">No OTJ entries yet.</div>'}</div></section></section>`}app.innerHTML=shell(`<button class="back no-print" id="backOTJ">← Toolbox</button><div class="section-heading"><div><div class="number">Toolbox</div><h2>OTJMate</h2><p class="muted">Record off-the-job learning and create upload-ready PDF logs without duplicates.</p></div><button class="btn" id="newOtj">+ New entry</button></div><div class="support-tabs"><button class="${tab==='home'?'active':''}" data-otj-tab="home">Entries</button><button class="${tab==='exports'?'active':''}" data-otj-tab="exports">PDF archive</button></div>${body}`);bindOTJMate(tab)}
+function bindOTJMate(tab){document.getElementById('backOTJ').onclick=()=>{state.view='resources';render()};document.getElementById('newOtj').onclick=()=>{state.editingOtjId=null;state.otjMateTab='entry';render()};document.querySelectorAll('[data-otj-tab]').forEach(b=>b.onclick=()=>{state.otjMateTab=b.dataset.otjTab;render()});document.querySelectorAll('[data-edit-otj]').forEach(b=>b.onclick=()=>{state.editingOtjId=b.dataset.editOtj;state.otjMateTab='entry';render()});document.querySelectorAll('[data-copy-otj]').forEach(b=>b.onclick=()=>{const e=otjEntries().find(x=>x.id===b.dataset.copyOtj);if(e)copyOtjEntry(e)});document.querySelectorAll('[data-delete-otj]').forEach(b=>b.onclick=()=>{if(!confirm('Delete this OTJ entry?'))return;saveOtjEntries(otjEntries().filter(x=>x.id!==b.dataset.deleteOtj));render();toast('OTJ entry deleted')});document.getElementById('exportNewOtj')?.addEventListener('click',exportNewOtjPdf);document.querySelectorAll('[data-download-otj-export]').forEach(b=>b.onclick=async()=>{const record=await getStore(`otjPdf:${b.dataset.downloadOtjExport}`);if(!record?.bytes)return toast('This archived PDF is unavailable on this device');downloadBlob(new Uint8Array(record.bytes),'application/pdf',record.name)});document.querySelectorAll('[data-delete-otj-export]').forEach(b=>b.onclick=async()=>{const id=b.dataset.deleteOtjExport,record=safeLocalArray(OTJ_EXPORT_KEY).find(x=>x.id===id);if(!confirm(`Delete ${record?.name||'this OTJ PDF'}? The OTJ entries will be kept.`))return;try{await deleteStore(`otjPdf:${id}`)}catch(error){console.warn('Unable to remove archived OTJ PDF bytes',error)}saveLocalArray(OTJ_EXPORT_KEY,safeLocalArray(OTJ_EXPORT_KEY).filter(x=>x.id!==id));saveOtjEntries(otjEntries().map(e=>e.exportId===id?{...e,exportedAt:null,exportId:null}:e));render();toast('OTJ PDF deleted; its entries are ready to export again')});if(tab!=='entry')return;let place=document.querySelector('[data-otj-place].active')?.dataset.otjPlace||'college';const count=()=>document.getElementById('otjWordCount').textContent=`${otjWordCount(document.getElementById('otjLearned').value)}/30 words`;document.getElementById('otjLearned').oninput=count;document.querySelectorAll('[data-otj-place]').forEach(b=>b.onclick=()=>{place=b.dataset.otjPlace;document.querySelectorAll('[data-otj-place]').forEach(x=>x.classList.toggle('active',x===b));document.getElementById('otjHours').value=place==='college'?6:2});document.getElementById('cancelOtj').onclick=()=>{state.otjMateTab='home';state.editingOtjId=null;render()};document.getElementById('saveOtj').onclick=()=>{const date=document.getElementById('otjDate').value,hours=Number(document.getElementById('otjHours').value),did=document.getElementById('otjDid').value.trim(),learned=document.getElementById('otjLearned').value.trim();if(!date||!hours||hours<=0||!did)return toast('Complete the date, hours and activity');if(otjWordCount(learned)<30)return toast('What did you learn must contain at least 30 words');let arr=otjEntries(),existing=arr.find(x=>x.id===state.editingOtjId),entry={...(existing||otjDefaults(place)),date,place,hours,did,learned,updated:new Date().toISOString()};delete entry.photos;arr=existing?arr.map(x=>x.id===existing.id?entry:x):[entry,...arr];saveOtjEntries(arr);state.editingOtjId=null;state.otjMateTab='home';render();toast('OTJ entry saved')}}
+async function exportNewOtjPdf(){const entries=otjEntries().filter(e=>!e.exportedAt);if(!entries.length)return toast('There are no new OTJ entries to export');const W=1240,H=1754,M=72,top=175,bottom=82,lineH=27,pages=[];const makePage=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle='#0f766e';x.fillRect(0,0,W,20);x.fillStyle='#0b2b23';x.font='700 42px Arial';x.fillText('OTJMate Off-the-Job Training Log',M,86);x.font='600 19px Arial';x.fillText(`${state.profile?.fullName||'Learner'} · ${COURSE.name}`,M,124);x.fillStyle='#657273';x.font='15px Arial';x.fillText(`Generated by Apprentice+ ${APP_VERSION} · ${new Date().toLocaleDateString('en-GB')}`,M,H-38);pages.push(c);return {c,x,y:top}};const wrapLines=(x,text,maxW,font='19px Arial')=>{x.font=font;const words=String(text||'—').split(/\s+/),lines=[];let line='';for(const word of words){const test=line?`${line} ${word}`:word;if(x.measureText(test).width>maxW&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);return lines};let page=makePage();for(const e of entries){const meta=`${formatShortDate(e.date)} · ${String(e.place||'other').replace(/^./,c=>c.toUpperCase())} · ${Number(e.hours).toFixed(1)} hours`;const did=wrapLines(page.x,e.did,W-2*M,'19px Arial'),learned=wrapLines(page.x,e.learned,W-2*M,'19px Arial');const required=48+31+did.length*lineH+36+learned.length*lineH+34;if(page.y+required>H-bottom&&page.y>top)page=makePage();const x=page.x;let y=page.y;x.fillStyle='#eefbdc';x.fillRect(M,y,W-2*M,46);x.fillStyle='#0b2b23';x.font='700 21px Arial';x.fillText(meta,M+18,y+30);y+=69;x.font='700 21px Arial';x.fillText('What did you do?',M,y);y+=31;x.fillStyle='#263b3b';x.font='19px Arial';for(const line of did){x.fillText(line,M,y);y+=lineH}y+=13;x.fillStyle='#0b2b23';x.font='700 21px Arial';x.fillText('What did you learn?',M,y);y+=31;x.fillStyle='#263b3b';x.font='19px Arial';for(const line of learned){x.fillText(line,M,y);y+=lineH}y+=20;x.strokeStyle='#58b51f';x.lineWidth=2;x.beginPath();x.moveTo(M,y);x.lineTo(W-M,y);x.stroke();page.y=y+24}const bytes=makeImagePDF(pages.map(c=>dataUrlBytes(c.toDataURL('image/jpeg',.92))),W,H),id=uid(),name=`${String(state.profile?.fullName||'Learner').replace(/[^a-z0-9]+/gi,'-')}-OTJ-${isoToday()}-${entries.length}-entries.pdf`,now=new Date().toISOString();await putStore(`otjPdf:${id}`,{name,bytes:Array.from(bytes)});saveLocalArray(OTJ_EXPORT_KEY,[{id,name,date:isoToday(),count:entries.length,hours:entries.reduce((n,e)=>n+Number(e.hours||0),0),created:now},...safeLocalArray(OTJ_EXPORT_KEY)]);saveOtjEntries(otjEntries().map(e=>entries.some(x=>x.id===e.id)?{...e,exportedAt:now,exportId:id}:e));await downloadBlob(bytes,'application/pdf',name);render();toast('OTJ PDF exported and archived')}
+function reminders(){return safeLocalArray(REMINDER_KEY).sort((a,b)=>String(a.completed).localeCompare(String(b.completed))||String(a.due||'').localeCompare(String(b.due||''))||String(b.created||'').localeCompare(String(a.created||'')))}
+function saveReminders(v){saveLocalArray(REMINDER_KEY,Array.isArray(v)?v:[])}
+function reminderDefaults(){return {id:uid(),title:'',details:'',due:isoToday(),category:'Review target',priority:'Normal',completed:false,created:new Date().toISOString()}}
+function reminderStatus(r){if(r.completed)return 'completed';const today=isoToday();return r.due<today?'overdue':r.due===today?'today':'upcoming'}
+function renderRemindMate(){const tab=state.remindMateTab||'home',items=reminders(),edit=items.find(x=>x.id===state.editingReminderId)||reminderDefaults();let body;if(tab==='entry')body=`<section class="card panel"><h3>${state.editingReminderId?'Edit reminder':'New reminder'}</h3><div class="form-grid"><div class="field full"><label>Reminder title</label><input class="input" id="reminderTitle" value="${esc(edit.title)}" placeholder="Complete review target"></div><div class="field full"><label>Reminder details</label><textarea class="input" id="reminderDetails" rows="5" placeholder="Add exactly what needs to be completed…">${esc(edit.details)}</textarea></div><div class="field"><label>Due date</label><input class="input" id="reminderDue" type="date" value="${esc(edit.due)}"></div><div class="field"><label>Category</label><select class="input" id="reminderCategory">${['Review target','Assignment','OTJ','EPA','College','Employer','Personal','Other'].map(x=>`<option ${edit.category===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Priority</label><select class="input" id="reminderPriority">${['Low','Normal','High'].map(x=>`<option ${edit.priority===x?'selected':''}>${x}</option>`).join('')}</select></div></div><div class="btn-row"><button class="btn secondary" id="cancelReminder">Cancel</button><button class="btn" id="saveReminder">Save reminder</button></div></section>`;else body=`<section class="reminder-groups">${[['overdue','Overdue'],['today','Due today'],['upcoming','Upcoming'],['completed','Completed']].map(([key,label])=>{const group=items.filter(r=>reminderStatus(r)===key);return `<section class="card panel reminder-group ${key}"><h3>${label} <span>${group.length}</span></h3><div class="reminder-list">${group.length?group.map(r=>`<article class="reminder-item"><button class="reminder-check ${r.completed?'checked':''}" data-toggle-reminder="${r.id}" aria-label="${r.completed?'Mark incomplete':'Mark complete'}">${r.completed?'✓':''}</button><div><strong>${esc(r.title)}</strong><p>${esc(r.details)}</p><small>${formatShortDate(r.due)} · ${esc(r.category)} · ${esc(r.priority)}</small></div><button class="icon-button" data-edit-reminder="${r.id}">✎</button><button class="icon-button danger" data-delete-reminder="${r.id}">×</button></article>`).join(''):'<div class="empty-state compact">None</div>'}</div></section>`}).join('')}</section>`;app.innerHTML=shell(`<button class="back no-print" id="backReminder">← Toolbox</button><div class="section-heading"><div><div class="number">Toolbox</div><h2>RemindMate</h2><p class="muted">Turn review targets and important tasks into dated Apprentice+ reminders.</p></div><button class="btn" id="newReminder">+ New reminder</button></div>${body}`);bindRemindMate(tab)}
+function bindRemindMate(tab){document.getElementById('backReminder').onclick=()=>{state.view='resources';render()};document.getElementById('newReminder').onclick=()=>{state.editingReminderId=null;state.remindMateTab='entry';render()};document.querySelectorAll('[data-edit-reminder]').forEach(b=>b.onclick=()=>{state.editingReminderId=b.dataset.editReminder;state.remindMateTab='entry';render()});document.querySelectorAll('[data-delete-reminder]').forEach(b=>b.onclick=()=>{if(!confirm('Delete this reminder?'))return;saveReminders(reminders().filter(x=>x.id!==b.dataset.deleteReminder));render()});document.querySelectorAll('[data-toggle-reminder]').forEach(b=>b.onclick=()=>{saveReminders(reminders().map(x=>x.id===b.dataset.toggleReminder?{...x,completed:!x.completed,completedAt:!x.completed?new Date().toISOString():null}:x));render()});if(tab!=='entry')return;document.getElementById('cancelReminder').onclick=()=>{state.remindMateTab='home';render()};document.getElementById('saveReminder').onclick=()=>{const title=document.getElementById('reminderTitle').value.trim(),details=document.getElementById('reminderDetails').value.trim(),due=document.getElementById('reminderDue').value;if(!title||!details||!due)return toast('Add a title, details and due date');let arr=reminders(),existing=arr.find(x=>x.id===state.editingReminderId),item={...(existing||reminderDefaults()),title,details,due,category:document.getElementById('reminderCategory').value,priority:document.getElementById('reminderPriority').value,updated:new Date().toISOString()};arr=existing?arr.map(x=>x.id===existing.id?item:x):[...arr,item];saveReminders(arr);state.editingReminderId=null;state.remindMateTab='home';render();toast('Reminder saved')}}
+function syncReminderNotifications(){const list=document.getElementById('notificationBellList');if(!list)return;list.querySelectorAll('[data-remindmate-notification]').forEach(x=>x.remove());const notificationSettings=appSettings().notifications;if(!notificationSettings.enabled||!notificationSettings.reminders)return;const due=reminders().filter(r=>!r.completed&&r.due<=isoToday());for(const r of due){const item=document.createElement('article');item.className='notification-bell-item unread remindmate-notification';item.dataset.notificationId=`reminder-${r.id}`;item.dataset.remindmateNotification='1';item.innerHTML=`<div class="notification-bell-item-content"><span class="notification-bell-item-icon" aria-hidden="true">✓</span><div><strong>${esc(r.due<isoToday()?'Overdue reminder':'Reminder due today')}</strong><p>${esc(r.title)}</p><small>${esc(r.details)}</small><button type="button" class="notification-update-button" data-open-reminder="${r.id}">Open reminder</button></div></div>`;list.prepend(item)}list.querySelectorAll('[data-open-reminder]').forEach(b=>b.onclick=()=>{document.getElementById('notificationBellClose')?.click();state.view='remindmate';state.remindMateTab='home';render()});const count=document.querySelector('.notification-bell-count');if(count){const n=list.querySelectorAll('.notification-bell-item:not([hidden])').length;count.textContent=n;count.hidden=!n}}
+
+function renderLearningSupport(){const tab=state.learningSupportTab||'home';const views={home:learningSupportHome,check:accessibilityCheckView,reading:readingToolsView,writing:writingToolsView,planner:plannerView,focus:focusView,hearing:hearingView,memory:memoryView,simple:explainSimplyView,settings:accessibilitySettingsView};const body=(views[tab]||learningSupportHome)();app.innerHTML=shell(`<button class="back no-print" id="backLearningSupport">← ${tab==='home'?'Toolbox':'Learning Support'}</button><div class="section-heading"><div><div class="number">Toolbox</div><h2>Learning Support</h2><p class="muted">Practical accessibility tools for reading, writing, focus, hearing and memory.</p></div></div>${tab==='home'?'':`<div class="support-tabs">${supportTabButton('home','Home')}${supportTabButton('reading','Reading')}${supportTabButton('writing','Writing')}${supportTabButton('planner','Planner')}${supportTabButton('settings','Settings')}</div>`}${body}`);document.getElementById('backLearningSupport').onclick=()=>{if(tab==='home'){state.view='resources'}else state.learningSupportTab='home';render();window.scrollTo(0,0)};document.querySelectorAll('[data-support-tab]').forEach(b=>b.onclick=()=>{state.learningSupportTab=b.dataset.supportTab;render();window.scrollTo(0,0)});bindLearningSupport(tab);}
+function bindLearningSupport(tab){document.querySelectorAll('[data-a11y-setting]').forEach(el=>{el.oninput=()=>{const a=accessibilitySettings(),key=el.dataset.a11ySetting;a[key]=el.type==='checkbox'?el.checked:(el.type==='range'?Number(el.value):el.value);saveAccessibilitySettings(a);if(key==='fontSize')document.getElementById('fontSizeValue')?.replaceChildren(`${a.fontSize}%`);if(key==='lineSpacing')document.getElementById('lineSpacingValue')?.replaceChildren(String(a.lineSpacing));if(a.vibration&&navigator.vibrate)navigator.vibrate(20)}});const check=document.getElementById('saveAccessibilityCheck');if(check)check.onclick=()=>{const ans={};document.querySelectorAll('[data-a11y-check]').forEach(x=>ans[x.dataset.a11yCheck]=x.checked);localStorage.setItem(ACCESSIBILITY_CHECK_KEY,JSON.stringify(ans));const rec=recommendationsFor(ans),box=document.getElementById('supportRecommendations');box.innerHTML=`<div class="support-recommendations"><h4>Recommended tools</h4>${rec.length?rec.map(x=>`<span>✓ ${x}</span>`).join(''):'<p>No extra tools selected. You can still use any support feature.</p>'}</div>`};const txt=document.getElementById('supportWritingText');if(txt){const update=()=>{const value=txt.value.trim(),words=value?value.split(/\s+/).length:0,sentences=value?(value.match(/[.!?]+(?=\s|$)/g)||[]).length:0;document.getElementById('supportWordCount').textContent=words;document.getElementById('supportSentenceCount').textContent=sentences;document.getElementById('supportReadingTime').textContent=words?Math.max(1,Math.ceil(words/200)):0};txt.oninput=update;document.getElementById('clearSupportText').onclick=()=>{txt.value='';txt.dispatchEvent(new Event('input',{bubbles:true}))};document.getElementById('readSupportText').onclick=()=>{if(!txt.value.trim())return toast('Add some text first');if(!('speechSynthesis'in window))return toast('Read aloud is not supported on this device');speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt.value);u.lang='en-GB';speechSynthesis.speak(u)}}const planner=document.getElementById('supportPlannerAssignment');if(planner)planner.onchange=()=>{state.assignment=Number(planner.value);renderLearningSupport()};const simple=document.getElementById('simpleAssignmentSelect');if(simple)simple.onchange=()=>{state.assignment=Number(simple.value);renderLearningSupport()};const focus=document.getElementById('toggleFocusMode');if(focus)focus.onclick=()=>{const a=accessibilitySettings();a.focusMode=!a.focusMode;saveAccessibilitySettings(a);renderLearningSupport()};const add=document.getElementById('addMemoryCard');if(add)add.onclick=()=>{const value=document.getElementById('memoryCardText').value.trim();if(!value)return toast('Write a reminder first');let cards=[];try{cards=JSON.parse(localStorage.getItem('apprenticeplus.memoryCards.v1')||'[]')}catch{}cards.unshift(value);localStorage.setItem('apprenticeplus.memoryCards.v1',JSON.stringify(cards.slice(0,30)));renderLearningSupport();toast('Reminder saved')};document.querySelectorAll('[data-remove-memory]').forEach(b=>b.onclick=()=>{let cards=[];try{cards=JSON.parse(localStorage.getItem('apprenticeplus.memoryCards.v1')||'[]')}catch{}cards.splice(Number(b.dataset.removeMemory),1);localStorage.setItem('apprenticeplus.memoryCards.v1',JSON.stringify(cards));renderLearningSupport()});const reset=document.getElementById('resetAccessibility');if(reset)reset.onclick=()=>{if(!confirm('Reset all accessibility settings on this device?'))return;localStorage.removeItem(ACCESSIBILITY_KEY);applyAccessibilitySettings();renderLearningSupport();toast('Accessibility settings reset')};enhanceVoiceToText(app)}
+
+window.__apprenticePlusOpenNotificationSettings=()=>{state.view='settings';state.settingsTab='notifications';render();window.scrollTo(0,0)};
+
+const FEEDBACK_EMAIL='apprentice-plus@outlook.com';
+const FEEDBACK_DRAFT_KEY='apprenticeplus.feedbackmate.draft.v1';
+function feedbackDraft(){try{return JSON.parse(localStorage.getItem(FEEDBACK_DRAFT_KEY)||'{}')}catch{return {}}}
+function saveFeedbackDraft(){const form=document.getElementById('feedbackMateForm');if(!form)return;const draft={type:form.elements.type?.value||'Idea',name:form.elements.name?.value||'',email:form.elements.email?.value||'',subject:form.elements.subject?.value||'',message:form.elements.message?.value||''};try{localStorage.setItem(FEEDBACK_DRAFT_KEY,JSON.stringify(draft))}catch{}}
+function feedbackDeviceInfo(){return `${navigator.userAgent||'Unknown device'} | Screen ${screen.width}×${screen.height} | Online: ${navigator.onLine?'Yes':'No'}`}
+function renderFeedbackMate(){
+ const d=feedbackDraft(),profileName=state.profile?.fullName||'';
+ app.innerHTML=shell(`<button class="back no-print" id="backFeedbackMate">← Toolbox</button><div class="section-heading"><div><div class="number">Workplace app</div><h2>FeedbackMate</h2><p class="muted">Suggest an idea or report an issue directly to Apprentice+.</p></div></div><section class="card panel feedbackmate-card"><form id="feedbackMateForm"><div class="feedback-type-choice" role="group" aria-label="Submission type"><label><input type="radio" name="type" value="Idea" ${(d.type||'Idea')==='Idea'?'checked':''}><span>💡 Suggest an idea</span></label><label><input type="radio" name="type" value="Issue" ${d.type==='Issue'?'checked':''}><span>⚠️ Report an issue</span></label></div><div class="form-grid"><label class="field"><span>Name</span><input class="input" name="name" autocomplete="name" required value="${esc(d.name||profileName)}"></label><label class="field"><span>Email address</span><input class="input" name="email" type="email" autocomplete="email" required value="${esc(d.email||'')}"></label><label class="field full"><span>Short title</span><input class="input" name="subject" maxlength="100" required placeholder="What is your idea or issue?" value="${esc(d.subject||'')}"></label><label class="field full"><span>Details</span><textarea class="input" name="message" rows="7" maxlength="4000" required placeholder="Explain what you would like added, or what went wrong.">${esc(d.message||'')}</textarea><small>Do not include passwords or private evidence.</small></label><label class="field full feedback-screenshot-field"><span>Screenshot <em>optional</em></span><input class="input" id="feedbackScreenshot" name="attachment" type="file" accept="image/*"><small>A screenshot can help identify an issue. Maximum 8 MB.</small></label></div><div id="feedbackPreview" class="feedback-preview" hidden></div><div class="feedbackmate-meta"><strong>Automatically included for issue reports</strong><span>App version, current page, selected course, date and device details.</span></div><div class="btn-row feedbackmate-actions"><button class="btn secondary" type="button" id="clearFeedbackForm">Clear</button><button class="btn" type="submit" id="sendFeedback">Send</button></div><div id="feedbackStatus" class="feedback-status" role="status" aria-live="polite"></div></form></section><section class="accuracy-card"><strong>Replies</strong><p>Your email address is included as the reply-to address, so Apprentice+ can reply directly to you.</p></section>`);
+ document.getElementById('backFeedbackMate').onclick=()=>{saveFeedbackDraft();state.view='resources';render()};
+ const form=document.getElementById('feedbackMateForm'),file=document.getElementById('feedbackScreenshot'),preview=document.getElementById('feedbackPreview');
+ form.querySelectorAll('input:not([type=file]),textarea').forEach(el=>el.addEventListener('input',saveFeedbackDraft));
+ file.onchange=()=>{const f=file.files?.[0];preview.hidden=true;preview.innerHTML='';if(!f)return;if(f.size>8*1024*1024){file.value='';return toast('Screenshot must be smaller than 8 MB')}const url=URL.createObjectURL(f);preview.innerHTML=`<img src="${url}" alt="Selected screenshot"><span>${esc(f.name)}</span>`;preview.hidden=false};
+ document.getElementById('clearFeedbackForm').onclick=()=>{if(!confirm('Clear this feedback form?'))return;localStorage.removeItem(FEEDBACK_DRAFT_KEY);renderFeedbackMate()};
+ form.onsubmit=sendFeedbackMate;
+}
+async function sendFeedbackMate(event){
+ event.preventDefault();const form=event.currentTarget,button=document.getElementById('sendFeedback'),status=document.getElementById('feedbackStatus');if(!form.reportValidity())return;
+ const type=form.elements.type.value,name=form.elements.name.value.trim(),email=form.elements.email.value.trim(),subject=form.elements.subject.value.trim(),message=form.elements.message.value.trim(),attachment=form.elements.attachment.files?.[0];
+ if(attachment&&attachment.size>8*1024*1024)return toast('Screenshot must be smaller than 8 MB');
+ if(!navigator.onLine){status.className='feedback-status error';status.textContent='You are offline. Your form has been saved; reconnect and press Send again.';saveFeedbackDraft();return}
+ button.disabled=true;button.textContent='Sending…';status.className='feedback-status sending';status.textContent='Sending your feedback securely…';
+ const data=new FormData();data.append('_subject',`Apprentice+ ${type}: ${subject}`);data.append('_template','table');data.append('_captcha','false');data.append('Submission type',type);data.append('Name',name);data.append('email',email);data.append('Message',message);data.append('App version',APP_VERSION);data.append('Selected course',COURSE?.name||'Not available');data.append('Current page','FeedbackMate');data.append('Date and time',new Date().toLocaleString('en-GB'));data.append('Device details',feedbackDeviceInfo());if(attachment)data.append('attachment',attachment,attachment.name);
+ try{const response=await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(FEEDBACK_EMAIL)}`,{method:'POST',headers:{Accept:'application/json'},body:data});let result={};try{result=await response.json()}catch{}if(!response.ok||result.success===false)throw new Error(result.message||'Unable to send');localStorage.removeItem(FEEDBACK_DRAFT_KEY);status.className='feedback-status success';status.innerHTML='<strong>Feedback sent</strong><span>Your message has been submitted. A reply will be sent to your email address.</span>';form.reset();document.getElementById('feedbackPreview').hidden=true;toast('Feedback sent')}catch(error){saveFeedbackDraft();status.className='feedback-status error';status.innerHTML='<strong>Could not send automatically</strong><span>Your form is saved. Use the email fallback below or try again when connected.</span>';const fallback=document.createElement('a');fallback.className='btn secondary feedback-email-fallback';fallback.textContent='Open email app';fallback.href=`mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(`Apprentice+ ${type}: ${subject}`)}&body=${encodeURIComponent(`Name: ${name}\nReply email: ${email}\nType: ${type}\nApp version: ${APP_VERSION}\nCourse: ${COURSE?.name||'Not available'}\n\n${message}`)}`;status.appendChild(fallback)}finally{button.disabled=false;button.textContent='Send'}
+}
+
+
+function skillsCardGradeRank(grade){return ({Distinction:3,Merit:2,Pass:1}[grade]||0)}
+const SKILLS_CARD_RULES={
+ 'bricklayer-st0095-v1-2':[
+  ['Cavity Walling',/cavity|cavities|wall tie|wall ties|insulation|cavity tray|weep hole|lintel/i],
+  ['Solid Walling',/solid wall|half[- ]brick wall|one[- ]brick wall|garden wall|boundary wall|stretcher bond|english bond|flemish bond/i],
+  ['Jointing',/jointing|joint finish|bucket[- ]handle|half round|weather struck|recessed joint|flush joint|pointing/i],
+  ['Mortar Mixing',/mix mortar|mortar mix|mixing mortar|gauge mortar|mortar production/i],
+  ['Brick Piers',/\bpier\b|piers/i],
+  ['Setting Out',/setting out|set out|profiles|gauge rod|datum|square the wall/i],
+  ['Blockwork',/blockwork|block wall|concrete block|aerated block/i],
+  ['Decorative Brickwork',/decorative|feature panel|contrasting brick|banding|soldier course|brick on edge|brick-on-edge/i],
+  ['Raked Walling',/raked|raking cut|gable|sloping wall/i],
+  ['Curved Brickwork',/curved|radius wall|circular wall/i],
+  ['Openings',/opening|window opening|door opening|sill|closure/i],
+  ['Brick Repairs',/repair|replace damaged brick|toothing|make good/i],
+  ['Brick Cutting',/cut brick|cutting brick|cut blocks|cutting blocks/i]
+ ],
+ 'site-carpentry-v1-4':[
+  ['Structural Walls',/structural wall|timber frame wall|loadbearing wall/i],
+  ['Partition Walls',/partition|stud wall|non[- ]loadbearing wall/i],
+  ['Floor Joists',/floor joist|joists|floor covering/i],
+  ['Roofing',/roof|rafter|truss|hip|valley|flat roof/i],
+  ['Doors',/door|door lining|door frame|hinge|lock|latch/i],
+  ['Windows',/window|casement/i],
+  ['Staircases',/stair|staircase|string|stringer|tread|riser/i],
+  ['Handrails & Spindles',/handrail|spindle|balustrade/i],
+  ['Skirting & Architrave',/skirting|architrave/i],
+  ['Wall & Floor Units',/wall unit|floor unit|kitchen unit|cabinet/i],
+  ['Cladding',/cladding|service encasement|boxing in/i],
+  ['Setting Out',/setting out|set out|marking out|laser level/i],
+  ['Timber Joints',/joint|mortise|tenon|halving|dovetail|bridle|splice|scribe/i],
+  ['Jigs',/\bjig\b|jigs/i]
+ ],
+ 'architectural-joiner-st0264-v1-4':[
+  ['Windows',/window|casement/i],
+  ['Door Frames & Linings',/door frame|door lining/i],
+  ['Timber Doors',/timber door|door leaf|panel door/i],
+  ['Staircases',/stair|staircase|string|stringer|tread|riser/i],
+  ['Spindles & Balustrades',/spindle|balustrade|handrail/i],
+  ['Wall & Floor Units',/wall unit|floor unit|cabinet|cupboard/i],
+  ['Timber Joints',/dovetail|mortise|tenon|bridle|halving joint|timber joint/i],
+  ['Connections',/dowel|biscuit|staple|adhesive|connection/i],
+  ['Setting Out',/setting out|set out|marking out|rod/i],
+  ['Machining',/machine|crosscut|band saw|planer|thicknesser|mortiser/i],
+  ['Jigs',/\bjig\b|jigs/i],
+  ['Finishing',/sand|paint|wax|polish|oil|preservative|finish/i]
+ ],
+ 'property-maintenance-operative-st0171-v1-1':[
+  ['Plumbing Repairs',/plumb|tap|toilet|cistern|pipe|leak|water supply/i],
+  ['Drainage Repairs',/drain|blockage|gully|waste pipe/i],
+  ['Doors & Windows',/door|window|glazing|hinge|lock|latch/i],
+  ['Plaster Repairs',/plaster|patch repair|render/i],
+  ['Painting & Decorating',/paint|decorate|wallpaper|finish coat/i],
+  ['Tiling',/tile|tiling|grout/i],
+  ['Flooring',/flooring|floor covering|vinyl|laminate/i],
+  ['Electrical Isolation',/electrical|isolate|socket|switch|light fitting/i],
+  ['Emergency Systems',/fire alarm|emergency light|extinguisher|emergency system/i],
+  ['Environmental Systems',/heating|ventilation|energy management|environmental system/i],
+  ['Building Fabric Repairs',/brick|masonry|roof|gutter|fabric repair|sealant/i],
+  ['Carpentry Repairs',/carpentry|joinery|timber repair/i]
+ ]
+};
+function skillsCardTaskName(value,fallback='Practical task'){
+ let text=String(value||fallback||'Practical task').trim().replace(/\s+/g,' ');
+ text=text.split(/\s+(?:Difficulty|Estimated duration|Assignment focus|Task description|Required dimensions|Suggested materials|Completion requirements)\s*[:·-]?/i)[0].trim();
+ text=text.replace(/^(build|construct|complete|make|install|fit|repair|replace|set out and build|manufacture)\s+/i,'').replace(/[.]+$/,'').trim();
+ return text||fallback;
+}
+function skillsCardSourceTitle(value,skills=[],fallback='Practical task'){
+ const raw=skillsCardTaskName(value,fallback);
+ const lower=raw.toLowerCase();
+ if(/mix mortar/.test(lower)&&/panel/.test(lower)&&/(joint|bucket[- ]handle|point)/.test(lower))return 'Mortar Mixing & Jointing Panel';
+ if(/cavity/.test(lower)&&/opening/.test(lower))return 'Cavity Wall with Opening';
+ if(/cavity/.test(lower)&&/return/.test(lower))return 'Cavity Wall with Return';
+ if(/cavity/.test(lower))return 'Cavity Wall';
+ if(/\bpier\b/.test(lower)&&/(joint|point)/.test(lower))return 'Brick Pier & Jointing';
+ if(/\bpier\b/.test(lower))return 'Brick Pier';
+ if(/solid wall|half[- ]brick wall|one[- ]brick wall|garden wall|boundary wall/.test(lower)&&/return/.test(lower))return 'Solid Wall with Return';
+ if(/solid wall|half[- ]brick wall|one[- ]brick wall|garden wall|boundary wall/.test(lower))return 'Solid Wall';
+ if(/decorative|feature panel|banding|soldier course|brick[- ]on[- ]edge/.test(lower))return 'Decorative Brickwork';
+ if(/curved|radius|circular/.test(lower))return 'Curved Brickwork';
+ if(/blockwork|block wall/.test(lower))return 'Blockwork';
+ if(raw.length<=64)return raw;
+ const useful=skills.filter(Boolean).slice(0,2).join(' & ');
+ return useful||`${raw.slice(0,61).trim()}…`;
+}
+function skillsCardMappedSkills(text,fallback){
+ const source=String(text||'').replace(/\s+/g,' ').trim();
+ const rules=SKILLS_CARD_RULES[COURSE.id]||[];
+ const found=[];
+ for(const [name,pattern] of rules)if(pattern.test(source))found.push(name);
+ if(found.length)return [...new Set(found)];
+ return [skillsCardTaskName(fallback||source,'Practical task')];
+}
+function skillsCardEntries(){
+ const demonstrations=[];
+ if(!COURSE.nvqUnits){
+  for(const a of courseAssignments()){
+   const versions=sectionData(a.n,'practical').versions||[];
+   versions.forEach((v,index)=>{
+    const score=practicalScoringSummary(a,v),grade=score.percentage===null?'':gradeForPercentage(score.percentage);
+    if(!skillsCardGradeRank(grade))return;
+    const taskText=[v.taskTitle,v.activity,a.title].filter(Boolean).join('\n');
+    const awardedSkills=skillsCardMappedSkills(taskText,v.activity||a.title);
+    const taskTitle=skillsCardSourceTitle(v.taskTitle||v.activity||a.title,awardedSkills,a.title);
+    for(const skill of awardedSkills)demonstrations.push({
+     id:`assessment:${a.n}:${index}:${skill}`,
+     skill,grade,percentage:score.percentage||0,
+     sourceType:'Practical Assessment',sourceId:`${a.n}:${index}`,assignmentNumber:a.n,versionIndex:index,
+     taskTitle,awardedSkills,completedDate:v.date||v.completedAt||v.submittedAt||'',sourceLabel:`Practical Assessment ${a.n}`
+    });
+   });
+  }
+ }
+ for(const p of projectList()){
+  const grade=String(p.skillGrade||'');
+  if(p.status!=='complete'||!p.completionSaved||!skillsCardGradeRank(grade))continue;
+  const taskText=skillsCardTaskName(p.title||'ProjectMate task','ProjectMate task');
+  const awardedSkills=skillsCardMappedSkills(taskText,p.title||'ProjectMate task');
+  const taskTitle=skillsCardSourceTitle(p.title||'ProjectMate task',awardedSkills,'ProjectMate task');
+  for(const skill of awardedSkills)demonstrations.push({
+   id:`project:${p.id}:${skill}`,
+   skill,grade,percentage:grade==='Distinction'?90:grade==='Merit'?80:70,
+   sourceType:'ProjectMate',sourceId:p.id,projectId:p.id,
+   taskTitle,awardedSkills,completedDate:p.completedAt||p.updated||p.createdAt||'',sourceLabel:'ProjectMate'
+  });
+ }
+ const summary=new Map();
+ for(const item of demonstrations){
+  const key=item.skill.toLowerCase();
+  const current=summary.get(key)||{title:item.skill,count:0,grade:'',percentage:0,sources:[]};
+  current.count+=1;
+  current.sources.push(item);
+  if(skillsCardGradeRank(item.grade)>skillsCardGradeRank(current.grade)||
+    (skillsCardGradeRank(item.grade)===skillsCardGradeRank(current.grade)&&item.percentage>current.percentage)){
+   current.grade=item.grade;current.percentage=item.percentage;
+  }
+  summary.set(key,current);
+ }
+ return [...summary.values()].sort((a,b)=>
+  skillsCardGradeRank(b.grade)-skillsCardGradeRank(a.grade)||
+  b.count-a.count||
+  (b.percentage||0)-(a.percentage||0)||
+  a.title.localeCompare(b.title)
+ );
+}
+function skillsCardDisplayDate(value){
+ if(!value)return '';
+ const d=typeof value==='number'?new Date(value):new Date(value);
+ return Number.isNaN(d.getTime())?String(value):d.toLocaleDateString('en-GB');
+}
+function showSkillsCardSources(item){
+ const sources=[...(item?.sources||[])].sort((a,b)=>skillsCardGradeRank(b.grade)-skillsCardGradeRank(a.grade)||(b.percentage||0)-(a.percentage||0));
+ const modal=document.createElement('div');modal.className='modal skills-source-modal';
+ modal.innerHTML=`<div class="modal-card skills-source-card"><div class="skills-source-head"><div><div class="number">Skills Card evidence</div><h2>${esc(item.title)}</h2><p>${item.count} completed practical${item.count===1?'':'s'} · Highest grade: <strong>${esc(item.grade)}</strong></p></div><button class="modal-close" id="closeSkillSources" aria-label="Close">×</button></div><div class="skills-source-list">${sources.map((source,index)=>{const skills=[...(source.awardedSkills||[item.title])];const date=skillsCardDisplayDate(source.completedDate);return `<article class="skills-source-row"><div class="skills-source-main"><span class="skills-source-type">${esc(source.sourceLabel||source.sourceType||'Practical')}</span><strong>${esc(source.taskTitle||'Practical task')}</strong><div class="skills-source-meta"><span>Grade: <b>${esc(source.grade)}</b></span>${date?`<span>Completed: ${esc(date)}</span>`:''}</div><div class="skills-awarded"><small>Awarded skills</small><div>${skills.map(skill=>`<span>✓ ${esc(skill)}</span>`).join('')}</div></div></div><button class="btn secondary skills-source-open" data-open-skill-source="${index}">Open</button></article>`}).join('')}</div></div>`;
+ document.body.appendChild(modal);
+ const close=()=>modal.remove();document.getElementById('closeSkillSources').onclick=close;modal.onclick=e=>{if(e.target===modal)close()};
+ modal.querySelectorAll('[data-open-skill-source]').forEach(button=>button.onclick=()=>{
+  const source=sources[Number(button.dataset.openSkillSource)];if(!source)return;
+  close();
+  if(source.sourceType==='ProjectMate'){
+   state.view='projectmate';state.projectMateTab='mine';state.activeProjectId=source.projectId;render();window.scrollTo(0,0);
+  }else{
+   const a=assignment(source.assignmentNumber);if(!a)return toast('Source assessment could not be opened');
+   const sd=sectionData(a.n,'practical'),version=sd.versions?.[source.versionIndex];
+   if(version)sd.draft=structuredClone(version);
+   state.assignment=a.n;state.section='practical';state.view='section';render();window.scrollTo(0,0);
+  }
+  window.ApprenticeAnalytics?.trackEvent('skills_card_source_opened',{course_id:COURSE.id,source_type:source.sourceType==='ProjectMate'?'projectmate':'practical_assessment'});
+ });
+}
+
+function renderSkillsCard(){
+ const items=skillsCardEntries(),name=state.profile?.fullName||'Learner';
+ const rows=items.map((item,index)=>`<button type="button" class="skills-card-row skills-card-${item.grade.toLowerCase()}" data-skill-row="${index}"><strong>${esc(item.title)} <small>(x${item.count})</small></strong><span>${item.grade}</span></button>`).join('');
+ app.innerHTML=shell(`<button class="back no-print" id="backSkillsCard">← Toolbox</button><div class="section-heading"><div><div class="number">Workplace app</div><h2>Skills Card</h2><p class="muted">A quick reference to practical skills demonstrated, how often they were completed and the highest grade achieved.</p></div></div><section class="skills-card-phone"><div class="skills-card-head"><div><small>APPRENTICE+</small><h3>${esc(name)}</h3><p>${esc(COURSE.name)} apprentice</p></div><span>${items.length} skill${items.length===1?'':'s'}</span></div><div class="skills-card-list">${rows||`<div class="skills-card-empty"><strong>No graded practical skills yet</strong><p>Completed Practical Assessments and graded ProjectMate tasks will build this card automatically.</p></div>`}</div></section><section class="accuracy-card skills-card-note"><strong>Tap a skill to view its source</strong><p>Each entry shows the completed practical tasks and grades that contributed to the skill count.</p></section>`);
+ document.getElementById('backSkillsCard').onclick=()=>{state.view='resources';render()};
+ document.querySelectorAll('[data-skill-row]').forEach(button=>button.onclick=()=>showSkillsCardSources(items[Number(button.dataset.skillRow)]));
+ window.ApprenticeAnalytics?.trackEvent('skills_card_opened',{course_id:COURSE.id,skill_count:items.length});
+}
+
+function renderResources(){
+ const pendingOtj=otjEntries().filter(entry=>!entry.exportedAt).length;
+ const dueReminders=reminders().filter(reminder=>!reminder.completed&&reminder.due<=isoToday()).length;
+ const groups=[
+  {title:'Work tools',copy:'Measure, calculate, draw and record.',tools:[
+   ['openMeasureMate','tools','MeasureMate','Conversions, geometry and construction calculations.',0,'blue'],
+   ['openMaterialMate','supporting','MaterialMate','Estimate materials with adjustable wastage.',0,'orange'],
+   ['openDrawingMate','drawing','DrawingMate','Symbols, hatching, scales and drawing tools.',0,'indigo'],
+   ['openCADMate','drawing','CADMate','Create metric brick, blockwork and English bond construction drawings.',0,'teal'],
+   ['openSkillsCard','course','Skills Card','Show completed practical tasks and grades.',skillsCardEntries().length,'emerald'],
+   ['openNotepad','note','NoteMate','Save notes, photos, videos and voice recordings.',learnerNotes().length,'purple']
+  ]},
+  {title:'Productivity',copy:'Plan work, record progress and stay organised.',tools:[
+   ['openOTJMate','note','OTJMate','Record off-the-job learning and export new entries.',pendingOtj,'teal'],
+   ['openProjectMate','project','ProjectMate','Generate, quote and complete customer-style jobs.',0,'amber'],
+   ['openRemindMate','revision','RemindMate','Save review targets and receive due-date reminders.',dueReminders,'rose']
+  ]},
+  {title:'Support',copy:'Get help and manage Apprentice+.',tools:[
+   ['openFeedbackMate','note','FeedbackMate','Suggest an idea or report an issue.',0,'cyan'],
+   ['openSettings','settings','Settings','App preferences and controls.',0,'slate']
+  ]}
+ ];
+ const card=([id,icon,title,copy,badge,tone])=>`<button class="phone-app phone-app-${tone}" id="${id}" data-phone-app="${title.toLowerCase()}" aria-label="Open ${title}: ${copy}"><span class="phone-app-icon">${appIcon(icon)}${badge?`<b class="phone-app-badge" aria-label="${badge} pending">${badge>99?'99+':badge}</b>`:''}</span><strong class="phone-app-label">${title}</strong></button>`;
+ const sections=groups.map(group=>`<section class="toolbox-app-section" aria-label="${group.title}"><div class="toolbox-group-heading"><h3>${group.title}</h3><p>${group.copy}</p></div><div class="phone-app-grid">${group.tools.map(card).join('')}</div></section>`).join('');
+ app.innerHTML=shell(`<div class="section-heading toolbox-phone-heading"><div><div class="number">Toolbox</div><h2>Workplace apps</h2><p class="muted">Tap an app to open it.</p></div></div><div class="toolbox-app-groups">${sections}</div>`);
+ document.getElementById('openFeedbackMate').onclick=()=>{state.view='feedbackmate';render();window.scrollTo(0,0)};
+ document.getElementById('openMeasureMate').onclick=()=>{state.view='measuremate';render();window.scrollTo(0,0)};
+ document.getElementById('openMaterialMate').onclick=()=>{state.view='materialmate';render();window.scrollTo(0,0)};
+ document.getElementById('openDrawingMate').onclick=()=>{state.view='drawingmate';state.drawingTab='symbols';render();window.scrollTo(0,0)};
+ document.getElementById('openCADMate').onclick=()=>{state.view='cadmate';render();window.scrollTo(0,0)};
+ document.getElementById('openSkillsCard').onclick=()=>{state.view='skillscard';render();window.scrollTo(0,0)};
+ document.getElementById('openProjectMate').onclick=()=>{state.view='projectmate';state.projectMateTab='home';render();window.scrollTo(0,0)};
+ document.getElementById('openOTJMate').onclick=()=>{state.view='otjmate';state.otjMateTab='home';state.editingOtjId=null;render();window.scrollTo(0,0)};
+ document.getElementById('openRemindMate').onclick=()=>{state.view='remindmate';state.remindMateTab='home';state.editingReminderId=null;render();window.scrollTo(0,0)};
+ document.getElementById('openNotepad').onclick=()=>{state.view='notepad';state.editingNoteId=null;render();window.scrollTo(0,0)};
+ document.getElementById('openSettings').onclick=()=>{state.view='settings';render();window.scrollTo(0,0)};
+}
+
+function renderCADMate(){
+ app.innerHTML=shell(`<button class="back no-print" id="backCADMate">← Toolbox</button><div class="section-heading cadmate-heading"><div><div class="number">Work tools</div><h2>CADMate</h2><p class="muted">Create technical drawings using the locked metric brickwork, concrete blockwork and English bond renderers.</p></div><span class="status-pill cadmate-coming-soon">Cavity walling · Coming soon</span></div><section class="card cadmate-host"><iframe id="cadmateFrame" class="cadmate-frame" src="cadmate.html?v=1.5.81" title="CADMate construction drawing designer" loading="eager" scrolling="no"></iframe></section>`);
+ const frame=document.getElementById('cadmateFrame');
+ const resizeCADMate=()=>{
+  try{
+   const doc=frame.contentDocument||frame.contentWindow.document;
+   const body=doc.body;
+   const html=doc.documentElement;
+   const height=Math.max(
+    body?body.scrollHeight:0,
+    body?body.offsetHeight:0,
+    html?html.clientHeight:0,
+    html?html.scrollHeight:0,
+    html?html.offsetHeight:0
+   );
+   if(height>0)frame.style.height=`${height}px`;
+  }catch(error){}
+ };
+ frame.addEventListener('load',()=>{
+  resizeCADMate();
+  try{
+   const doc=frame.contentDocument||frame.contentWindow.document;
+   if(window.ResizeObserver){
+    const observer=new ResizeObserver(resizeCADMate);
+    observer.observe(doc.documentElement);
+    if(doc.body)observer.observe(doc.body);
+    frame._cadmateResizeObserver=observer;
+   }
+   doc.addEventListener('input',()=>requestAnimationFrame(resizeCADMate));
+   doc.addEventListener('change',()=>requestAnimationFrame(resizeCADMate));
+   doc.addEventListener('click',()=>setTimeout(resizeCADMate,30));
+  }catch(error){}
+  setTimeout(resizeCADMate,100);
+  setTimeout(resizeCADMate,500);
+ });
+ document.getElementById('backCADMate').onclick=()=>{
+  if(frame._cadmateResizeObserver)frame._cadmateResizeObserver.disconnect();
+  state.view='resources';
+  render();
+  window.scrollTo(0,0);
+ };
+}
+
+
+window.addEventListener('message',event=>{
+ if(!event.data||event.data.type!=='cadmate-height')return;
+ const frame=document.getElementById('cadmateFrame');
+ const height=Number(event.data.height);
+ if(frame&&Number.isFinite(height)&&height>0){
+  frame.style.height=`${height}px`;
+ }
+});
+
+const APP_SETTINGS_KEY='apprenticeplus.appSettings.v1';
+function defaultAppSettings(){return {appearance:'light',accent:'green',notifications:{enabled:true,updates:true,epa:true,assignments:true,certificates:true,otj:true,reminders:true,projects:true,reviews:true,learning:true}}}
+function appSettings(){try{const saved=JSON.parse(localStorage.getItem(APP_SETTINGS_KEY)||'{}');return {...defaultAppSettings(),...saved,notifications:{...defaultAppSettings().notifications,...(saved.notifications||{})}}}catch{return defaultAppSettings()}}
+function saveAppSettings(next){try{localStorage.setItem(APP_SETTINGS_KEY,JSON.stringify(next))}catch{}applyAppSettings(next);window.dispatchEvent(new CustomEvent('apprenticeplus:settings-changed',{detail:next}))}
+function applyAppSettings(settings=appSettings()){
+ const palettes={green:{green:'#58b51f',green2:'#eefbdc',greenDark:'#2f8f1c',greenDeep:'#075f2f',greenBorder:'#b7e875',greenGlow:'rgba(88,181,31,.24)',ink:'#0b2b23'},teal:{green:'#0f766e',green2:'#dff7f3',greenDark:'#0b5f59',greenDeep:'#084b46',greenBorder:'#7ed7cc',greenGlow:'rgba(15,118,110,.24)',ink:'#103b37'},blue:{green:'#2563eb',green2:'#e7efff',greenDark:'#1d4ed8',greenDeep:'#173b8f',greenBorder:'#9cbcff',greenGlow:'rgba(37,99,235,.24)',ink:'#172b4d'},purple:{green:'#7c3aed',green2:'#f0e9ff',greenDark:'#6d28d9',greenDeep:'#4c1d95',greenBorder:'#c5a7ff',greenGlow:'rgba(124,58,237,.24)',ink:'#33205a'},orange:{green:'#ea6a16',green2:'#fff0e3',greenDark:'#c8540e',greenDeep:'#8f3708',greenBorder:'#ffc08f',greenGlow:'rgba(234,106,22,.24)',ink:'#4b2b16'}};
+ const palette=palettes[settings.accent]||palettes.green,root=document.documentElement;
+ Object.entries(palette).forEach(([key,value])=>root.style.setProperty(`--${key}`,value));
+ document.body.classList.toggle('app-dark-mode',settings.appearance==='dark');
+ document.querySelector('meta[name="theme-color"]')?.setAttribute('content',palette.green);
+}
+function samsungToggle(id,label,copy,checked){return `<label class="settings-switch-row" data-help-setting="${id}" for="${id}"><span><strong>${label}</strong>${copy?`<small>${copy}</small>`:''}</span><input class="samsung-switch-input" type="checkbox" id="${id}" ${checked?'checked':''}><span class="samsung-switch" aria-hidden="true"><i></i></span></label>`}
+function learningSupportToggle(id,key,label,copy,checked){return `<div class="settings-switch-row learning-support-row" data-help-setting="${id}"><button type="button" class="learning-support-info" data-learning-support-info="${key}" aria-label="About ${label}">i</button><label class="learning-support-toggle-label" for="${id}"><span><strong>${label}</strong>${copy?`<small>${copy}</small>`:''}</span><input class="samsung-switch-input" type="checkbox" id="${id}" ${checked?'checked':''}><span class="samsung-switch" aria-hidden="true"><i></i></span></label></div>`}
+const LEARNING_SUPPORT_INFO={
+ dyslexicFont:{title:'Dyslexia-friendly text',before:'Standard text',after:'Clearer letter shapes and wider spacing',className:'preview-dyslexia',explanation:'Changes the app typography to make letters easier to distinguish and increases comfortable spacing. It may help learners who find dense or similar-looking letters difficult to read.'},
+ largeText:{title:'Larger text',before:'Standard text size',after:'Larger, easier-to-read text',className:'preview-large-text',explanation:'Increases text size across Apprentice+ while keeping the same content and controls. It may help anyone who prefers larger text or finds smaller labels difficult to read.'},
+ highContrast:{title:'High contrast',before:'Standard colours',after:'Stronger contrast and clearer borders',className:'preview-high-contrast',explanation:'Strengthens the difference between text, controls and backgrounds. It may help learners who need clearer visual separation between elements.'},
+ reduceMotion:{title:'Reduce motion',before:'Animated transitions',after:'Calmer, static transitions',className:'preview-reduce-motion',explanation:'Reduces or removes most movement and animation in the app. It may help learners who find motion distracting or uncomfortable.'},
+ readingRuler:{title:'Reading guide',before:'Normal page',after:'Highlighted reading line',className:'preview-reading-guide',explanation:'Adds a horizontal guide that follows the pointer or touch position to make it easier to keep your place while reading.'},
+ readAloud:{title:'Text-to-speech',before:'Text only',after:'Speaker buttons on information tiles',className:'preview-read-aloud',explanation:'Adds a speaker button to built-in information tiles. Tap a speaker to read only that tile using the voice available on the learner’s device.'},
+ voiceInput:{title:'Voice-to-text',before:'Keyboard entry',after:'Microphone entry available',className:'preview-voice-input',explanation:'Shows microphone controls beside supported text fields so learners can use their device’s built-in speech input.'},
+ tintOverlay:{title:'Dyslexia tint overlay',before:'Standard app colours',after:'A gentle glass-like colour tint',className:'preview-tint-overlay',explanation:'Places a translucent coloured layer over the entire Apprentice+ app, including every page, menu and tool. Choose the colour and strength that feels most comfortable. The overlay never blocks buttons or touch controls.'},
+ simplify:{title:'Simplified layout',before:'Full page detail',after:'Reduced visual clutter',className:'preview-simplified',explanation:'Hides non-essential decorative information and places greater emphasis on the main task. No work, evidence or features are deleted.'}
+};
+function learningSupportPreview(label,mode,info){return `<div class="learning-preview-block"><span class="learning-preview-label">${label}</span><div class="learning-phone ${mode==='after'?info.className:''}"><div class="learning-phone-status"><b>9:41</b><span>● ● ●</span></div><div class="learning-phone-head"><span class="learning-mini-logo">A+</span><div><b>Apprentice+</b><small>Your Course, Your Way.</small></div></div><div class="learning-phone-card"><small>ASSIGNMENT 4</small><strong>Health and Safety</strong><p>Read the task instructions carefully and complete the required evidence.</p><button type="button">Open assignment</button></div><div class="learning-phone-lines"><i></i><i></i><i></i></div></div></div>`}
+function closeLearningSupportInfo(){document.querySelectorAll('#learningSupportInfoModal').forEach(node=>node.remove());document.body.classList.remove('learning-support-modal-open')}
+function openLearningSupportInfo(key){const info=LEARNING_SUPPORT_INFO[key];if(!info)return;closeLearningSupportInfo();document.body.insertAdjacentHTML('beforeend',`<div class="learning-support-modal" id="learningSupportInfoModal" role="dialog" aria-modal="true" aria-labelledby="learningSupportInfoTitle"><div class="learning-support-modal-card"><div class="learning-support-modal-handle"></div><button type="button" class="learning-support-modal-close" aria-label="Close">×</button><h2 id="learningSupportInfoTitle">${info.title}</h2><div class="learning-support-demo">${learningSupportPreview('Before','before',info)}${learningSupportPreview('After','after',info)}</div><div class="learning-support-explanation"><h3>What this changes</h3><p>${info.explanation}</p><button type="button" class="btn learning-support-got-it">Got it</button></div></div></div>`);document.body.classList.add('learning-support-modal-open');const modal=document.getElementById('learningSupportInfoModal'),card=modal.querySelector('.learning-support-modal-card');modal.querySelector('.learning-support-modal-close').onclick=closeLearningSupportInfo;modal.querySelector('.learning-support-got-it').onclick=closeLearningSupportInfo;modal.onclick=e=>{if(e.target===modal)closeLearningSupportInfo()};let startY=0,lastY=0;card.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;startY=lastY=e.clientY;try{card.setPointerCapture?.(e.pointerId)}catch{}});card.addEventListener('pointermove',e=>{if(!startY)return;lastY=e.clientY;const dy=Math.max(0,lastY-startY);card.style.transform=`translateY(${Math.min(dy,180)}px)`});const finishSwipe=e=>{if(!startY)return;try{card.releasePointerCapture?.(e.pointerId)}catch{}const dy=lastY-startY;if(dy>90)closeLearningSupportInfo();else card.style.transform='';startY=lastY=0};card.addEventListener('pointerup',finishSwipe);card.addEventListener('pointercancel',finishSwipe);card.addEventListener('lostpointercapture',()=>{if(startY){card.style.transform='';startY=lastY=0}});modal.querySelector('.learning-support-modal-close').focus()}
+function renderSettings(){
+ const active=state.settingsTab||'general',settings=appSettings();
+ const tabs=[['general','General'],['notifications','Notifications'],['learning-support','Learning Support'],['admin','Admin Mode']];
+ let panel='';
+ if(active==='general')panel=`<section class="settings-card learner-profile-settings"><h3>Learner profile</h3><p class="settings-card-copy">Update the learner name and course dates used for progress targets.</p><div class="settings-profile-summary"><strong>${esc(state.profile?.fullName||'Learner')}</strong><span>${formatDateInput(state.profile?.courseStartDate)} – ${formatDateInput(state.profile?.plannedEndDate)}</span></div><button type="button" class="btn secondary" id="editLearnerProfile">Edit profile</button></section><section class="settings-card"><h3>Appearance</h3><p class="settings-card-copy">Choose how Apprentice+ looks on this device.</p><div class="settings-segmented" role="group" aria-label="App appearance"><button class="${settings.appearance==='light'?'active':''}" data-appearance="light">Light</button><button class="${settings.appearance==='dark'?'active':''}" data-appearance="dark">Dark</button></div></section><section class="settings-card"><h3>App colour</h3><p class="settings-card-copy">Select the main colour used for buttons, tabs and progress highlights.</p><div class="app-colour-grid">${[['green','Apprentice+ Green'],['teal','Teal'],['blue','Blue'],['purple','Purple'],['orange','Orange']].map(([id,label])=>`<button class="app-colour-choice ${settings.accent===id?'active':''}" data-accent="${id}"><span class="app-colour-dot colour-${id}"></span><strong>${label}</strong>${settings.accent===id?'<b>✓</b>':''}</button>`).join('')}</div></section>`;
+ if(active==='notifications')panel=`<section class="settings-card notification-settings-card"><h3>Notifications</h3><p class="settings-card-copy">Choose which messages appear in the notification bell.</p>${samsungToggle('settingNotificationsEnabled','Allow notifications','Show the notification bell and messages.',settings.notifications.enabled)}<div class="notification-subsettings ${settings.notifications.enabled?'':'disabled'}">${samsungToggle('settingUpdates','App updates','What’s new and new version messages.',settings.notifications.updates)}${samsungToggle('settingAssignments','Assignments and evidence','Completion, evidence and submission reminders.',settings.notifications.assignments)}${samsungToggle('settingReviews','Progress reviews','Course progress and review-date reminders.',settings.notifications.reviews)}${samsungToggle('settingOtj','OTJMate','Off-the-job targets, entries and export reminders.',settings.notifications.otj)}${samsungToggle('settingReminders','RemindMate','Due and overdue reminders created in RemindMate.',settings.notifications.reminders)}${samsungToggle('settingProjects','ProjectMate','Saved project dates and deadline reminders.',settings.notifications.projects)}${samsungToggle('settingEpa','EPA Academy','EPA practice, readiness and result reminders.',settings.notifications.epa)}${samsungToggle('settingLearning','Academy learning','Trade course, Functional Skills and learning reminders.',settings.notifications.learning)}${samsungToggle('settingCertificates','Certificates','New certificate and achievement messages.',settings.notifications.certificates)}</div></section>`;
+ if(active==='learning-support'){const a=accessibilitySettings();panel=`<section class="settings-card learning-support-settings-card"><h3>Learning Support</h3><p class="settings-card-copy">Choose the support features that make Apprentice+ easier and more comfortable to use. Tap the i beside an option to see before and after examples.</p>${learningSupportToggle('supportDyslexicFont','dyslexicFont','Dyslexia-friendly text','Uses a clearer typeface and more distinct letter shapes.',a.dyslexicFont)}${learningSupportToggle('supportLargeText','largeText','Larger text','Increases text size throughout the app.',a.largeText)}${learningSupportToggle('supportHighContrast','highContrast','High contrast','Strengthens contrast between text, controls and backgrounds.',a.highContrast)}${learningSupportToggle('supportReduceMotion','reduceMotion','Reduce motion','Removes most animations and moving transitions.',a.reduceMotion)}${learningSupportToggle('supportReadingGuide','readingRuler','Reading guide','Adds a horizontal guide to help follow lines of text.',a.readingRuler)}${learningSupportToggle('supportTintOverlay','tintOverlay','Dyslexia tint overlay','Places a glass-like colour tint over the entire app.',a.tintOverlay)}<div class="tint-overlay-options ${a.tintOverlay?'enabled':'disabled'}" id="tintOverlayOptions" ${a.tintOverlay?'':'hidden'} aria-hidden="${a.tintOverlay?'false':'true'}"><button type="button" class="tint-colour-row" id="openTintColourPicker" aria-expanded="false" aria-controls="tintColourPicker"><span><strong>Overlay colour</strong><small>Choose the glass tint used across every page</small></span><span class="tint-current-value"><i class="tint-current-dot tint-${a.tintColour}"></i><b id="tintCurrentLabel">${({yellow:'Yellow',blue:'Blue',mint:'Mint',peach:'Peach',rose:'Rose',grey:'Grey'})[a.tintColour]||'Yellow'}</b><em>›</em></span></button><div class="tint-colour-picker" id="tintColourPicker" hidden><div class="tint-overlay-colours" role="group" aria-label="Overlay colour">${[['yellow','Yellow'],['blue','Blue'],['mint','Mint'],['peach','Peach'],['rose','Rose'],['grey','Grey']].map(([id,label])=>`<button type="button" class="tint-colour-choice tint-${id} ${a.tintColour===id?'active':''}" data-tint-colour="${id}" aria-label="${label} tint" aria-pressed="${a.tintColour===id}"><span></span><small>${label}</small></button>`).join('')}</div></div><label class="tint-opacity-control"><span><strong>Tint strength</strong><b id="tintOpacityValue">${a.tintOpacity}%</b></span><input type="range" min="10" max="55" step="1" value="${a.tintOpacity}" id="tintOpacityRange" aria-label="Dyslexia tint strength"></label></div>${learningSupportToggle('supportReadAloud','readAloud','Text-to-speech','Adds a speaker button to built-in information tiles.',a.readAloud)}${learningSupportToggle('supportVoiceInput','voiceInput','Voice-to-text','Shows microphone controls beside supported text fields.',a.voiceInput)}${learningSupportToggle('supportSimplifiedLayout','simplify','Simplified layout','Reduces visual clutter and emphasises the main task.',a.simplify)}<button type="button" class="btn secondary learning-support-reset" id="resetLearningSupport">Reset Learning Support</button></section>`;}
+ if(active==='admin')panel=`<section class="settings-card admin-settings-entry"><div class="admin-settings-lock">${appIcon('lock')}</div><h3>Admin Mode</h3><p class="settings-card-copy">Password-protected controls for course management, college branding, RPL and evidence settings.</p><button type="button" class="btn admin-primary" id="openAdminMode">Unlock Admin Mode</button><small class="admin-auto-lock-note">Admin Mode locks automatically whenever it is closed.</small></section>`;
+ app.innerHTML=shell(`<button class="back no-print" id="backResources">← Toolbox</button><div class="section-heading settings-heading"><div><div class="number">Settings</div><h2>App settings</h2></div></div><div class="settings-tabs no-print" role="tablist" aria-label="Settings sections">${tabs.map(([id,label])=>`<button type="button" role="tab" aria-selected="${active===id}" class="${active===id?'active':''}" data-settings-tab="${id}">${label}</button>`).join('')}</div><div class="settings-tab-panel" data-active-settings-panel="${active}">${panel}</div>`);
+ document.getElementById('backResources').onclick=()=>{state.view='resources';render();window.scrollTo(0,0)};
+ document.querySelectorAll('[data-settings-tab]').forEach(button=>button.onclick=()=>{state.settingsTab=button.dataset.settingsTab;renderSettings();window.scrollTo(0,0)});
+ const editLearnerProfile=document.getElementById('editLearnerProfile');if(editLearnerProfile)editLearnerProfile.onclick=()=>showOnboarding(true);const openAdminMode=document.getElementById('openAdminMode');if(openAdminMode)openAdminMode.onclick=showDeveloper;
+ document.querySelectorAll('[data-appearance]').forEach(button=>button.onclick=()=>{const next=appSettings();next.appearance=button.dataset.appearance;saveAppSettings(next);renderSettings()});
+ document.querySelectorAll('[data-accent]').forEach(button=>button.onclick=()=>{const next=appSettings();next.accent=button.dataset.accent;saveAppSettings(next);renderSettings()});
+ const bindNotification=(id,key)=>{const input=document.getElementById(id);if(input)input.onchange=()=>{const next=appSettings();next.notifications[key]=input.checked;saveAppSettings(next);renderSettings()}};
+ bindNotification('settingNotificationsEnabled','enabled');bindNotification('settingUpdates','updates');bindNotification('settingAssignments','assignments');bindNotification('settingReviews','reviews');bindNotification('settingOtj','otj');bindNotification('settingReminders','reminders');bindNotification('settingProjects','projects');bindNotification('settingEpa','epa');bindNotification('settingLearning','learning');bindNotification('settingCertificates','certificates');
+ const bindSupport=(id,key)=>{const el=document.getElementById(id);if(!el)return;el.onchange=()=>{const a=accessibilitySettings();a[key]=el.checked;saveAccessibilitySettings(a);if(key==='tintOverlay'){const options=document.getElementById('tintOverlayOptions');if(options){options.classList.toggle('enabled',el.checked);options.classList.toggle('disabled',!el.checked);options.hidden=!el.checked;options.setAttribute('aria-hidden',el.checked?'false':'true')}syncTintOverlay()}if(key==='voiceInput')renderSettings();if(key==='readAloud')syncReadAloudControl();toast(`${el.checked?'Enabled':'Disabled'} ${el.closest('label')?.querySelector('strong')?.textContent||'support setting'}`)}};bindSupport('supportDyslexicFont','dyslexicFont');bindSupport('supportLargeText','largeText');bindSupport('supportHighContrast','highContrast');bindSupport('supportReduceMotion','reduceMotion');bindSupport('supportReadingGuide','readingRuler');bindSupport('supportTintOverlay','tintOverlay');bindSupport('supportReadAloud','readAloud');bindSupport('supportVoiceInput','voiceInput');bindSupport('supportSimplifiedLayout','simplify');const colourPickerButton=document.getElementById('openTintColourPicker'),colourPicker=document.getElementById('tintColourPicker');if(colourPickerButton&&colourPicker)colourPickerButton.onclick=()=>{const opening=colourPicker.hidden;colourPicker.hidden=!opening;colourPickerButton.setAttribute('aria-expanded',opening?'true':'false');colourPickerButton.classList.toggle('open',opening)};document.querySelectorAll('[data-tint-colour]').forEach(button=>button.onclick=()=>{const a=accessibilitySettings();a.tintColour=button.dataset.tintColour;saveAccessibilitySettings(a);document.querySelectorAll('[data-tint-colour]').forEach(choice=>{const active=choice===button;choice.classList.toggle('active',active);choice.setAttribute('aria-pressed',active?'true':'false')});const labels={yellow:'Yellow',blue:'Blue',mint:'Mint',peach:'Peach',rose:'Rose',grey:'Grey'},currentLabel=document.getElementById('tintCurrentLabel'),currentDot=document.querySelector('.tint-current-dot');if(currentLabel)currentLabel.textContent=labels[a.tintColour]||'Yellow';if(currentDot)currentDot.className=`tint-current-dot tint-${a.tintColour}`;if(colourPicker){colourPicker.hidden=true;colourPickerButton?.setAttribute('aria-expanded','false');colourPickerButton?.classList.remove('open')}toast(`${labels[a.tintColour]||'Yellow'} tint selected`)});const tintOpacity=document.getElementById('tintOpacityRange');if(tintOpacity)tintOpacity.oninput=()=>{const a=accessibilitySettings();a.tintOpacity=Number(tintOpacity.value);saveAccessibilitySettings(a);const value=document.getElementById('tintOpacityValue');if(value)value.textContent=`${a.tintOpacity}%`};document.querySelectorAll('[data-learning-support-info]').forEach(button=>button.onclick=e=>{e.preventDefault();e.stopPropagation();openLearningSupportInfo(button.dataset.learningSupportInfo)});const resetSupport=document.getElementById('resetLearningSupport');if(resetSupport)resetSupport.onclick=()=>{if(!confirm('Reset all Learning Support settings on this device?'))return;const current=accessibilitySettings(),defaults=defaultAccessibilitySettings();Object.assign(current,{dyslexicFont:defaults.dyslexicFont,largeText:defaults.largeText,highContrast:defaults.highContrast,reduceMotion:defaults.reduceMotion,readingRuler:defaults.readingRuler,tintOverlay:defaults.tintOverlay,tintColour:defaults.tintColour,tintOpacity:defaults.tintOpacity,readAloud:defaults.readAloud,voiceInput:defaults.voiceInput,simplify:defaults.simplify});saveAccessibilitySettings(current);renderSettings();toast('Learning Support reset')};
+}
+function renderTools(){state.view='resources';render()}
+function num(id){const el=document.getElementById(id);return el?Number(el.value)||0:0}
+function fmt(v,d=3){return Number.isFinite(v)?Number(v.toFixed(d)).toLocaleString('en-GB',{maximumFractionDigits:d}):'—'}
+function toolResult(title,lines){return `<div class="calc-result"><small>RESULT</small><h3>${title}</h3>${lines.map(x=>`<p>${x}</p>`).join('')}</div>`}
+function calcField(id,label,value='',step='any',suffix=''){return `<label class="calc-field"><span>${label}</span><div><input id="${id}" type="number" inputmode="decimal" step="${step}" value="${value}">${suffix?`<b>${suffix}</b>`:''}</div></label>`}
+function toolTabs(active,items){return `<div class="tool-tabs">${items.map(([id,label])=>`<button class="${active===id?'active':''}" data-tool-tab="${id}">${label}</button>`).join('')}</div>`}
+function renderMeasureMate(){
+ const active=state.measureTool||'convert';
+ const tabs=[['convert','Convert'],['geometry','Area & volume'],['pythagoras','Pythagoras'],['stairs','Stairs'],['roof','Roof & falls']];
+ let body='';
+ if(active==='convert')body=`<section class="card panel calc-panel"><h3>Unit converter</h3><div class="calc-grid">${calcField('cv','Value','1')}<label class="calc-field"><span>From</span><select id="cfrom"><option value="mm">Millimetres</option><option value="cm">Centimetres</option><option value="m">Metres</option><option value="in">Inches</option><option value="ft">Feet</option><option value="yd">Yards</option></select></label><label class="calc-field"><span>To</span><select id="cto"><option value="m">Metres</option><option value="mm">Millimetres</option><option value="cm">Centimetres</option><option value="in">Inches</option><option value="ft">Feet</option><option value="yd">Yards</option></select></label></div><button class="btn calc-action" id="doConvert">Convert</button><div id="calcOut"></div></section><section class="card panel calc-panel"><h3>Fraction, decimal and millimetres</h3><div class="calc-grid">${calcField('fracNum','Numerator','3','1')}${calcField('fracDen','Denominator','8','1')}</div><button class="btn calc-action" id="doFraction">Calculate</button><div id="fracOut"></div></section>`;
+ if(active==='geometry')body=`<section class="card panel calc-panel"><h3>Rectangle / room</h3><div class="calc-grid">${calcField('gl','Length','5','any','m')}${calcField('gw','Width','3','any','m')}${calcField('gh','Height','2.4','any','m')}</div><button class="btn calc-action" id="doGeometry">Calculate</button><div id="calcOut"></div></section><section class="card panel calc-panel"><h3>Circle</h3><div class="calc-grid">${calcField('diameter','Diameter','1','any','m')}${calcField('depth','Depth','0.1','any','m')}</div><button class="btn calc-action" id="doCircle">Calculate</button><div id="circleOut"></div></section>`;
+ if(active==='pythagoras')body=`<section class="card panel calc-panel"><h3>Right-angle calculator</h3><p class="muted">Enter any two sides. Leave the unknown side blank.</p><div class="calc-grid">${calcField('pa','Side A','','any','mm')}${calcField('pb','Side B','','any','mm')}${calcField('pc','Hypotenuse C','','any','mm')}</div><button class="btn calc-action" id="doPyth">Calculate missing side</button><div id="calcOut"></div></section>`;
+ if(active==='stairs')body=`<section class="card panel calc-panel"><h3>Stair rise and going</h3><div class="calc-grid">${calcField('totalRise','Total rise','2600','any','mm')}${calcField('maxRise','Target maximum riser','220','any','mm')}${calcField('going','Going per tread','250','any','mm')}</div><button class="btn calc-action" id="doStairs">Calculate</button><div id="calcOut"></div><p class="calc-note">Use the result as a setting-out aid. Final stair design must match the applicable drawings and requirements.</p></section>`;
+ if(active==='roof')body=`<section class="card panel calc-panel"><h3>Roof pitch</h3><div class="calc-grid">${calcField('roofRise','Rise','1200','any','mm')}${calcField('roofRun','Horizontal run','2400','any','mm')}</div><button class="btn calc-action" id="doRoof">Calculate pitch</button><div id="calcOut"></div></section><section class="card panel calc-panel"><h3>Fall / gradient</h3><div class="calc-grid">${calcField('fall','Fall','50','any','mm')}${calcField('distance','Distance','2000','any','mm')}</div><button class="btn calc-action" id="doFall">Calculate gradient</button><div id="fallOut"></div></section>`;
+ app.innerHTML=shell(`<button class="back no-print" id="backResources">← Toolbox</button><div class="section-heading"><div><div class="number">Workplace app</div><h2>MeasureMate</h2><p class="muted">Conversions and construction calculations in one place.</p></div></div>${toolTabs(active,tabs)}${body}`);
+ document.getElementById('backResources').onclick=()=>{state.view='resources';render()};
+ document.querySelectorAll('[data-tool-tab]').forEach(b=>b.onclick=()=>{state.measureTool=b.dataset.toolTab;render();window.scrollTo(0,0)});
+ const on=(id,fn)=>{const e=document.getElementById(id);if(e)e.onclick=fn};
+ on('doConvert',()=>{const factors={mm:.001,cm:.01,m:1,in:.0254,ft:.3048,yd:.9144},v=num('cv'),a=document.getElementById('cfrom').value,b=document.getElementById('cto').value,r=v*factors[a]/factors[b];document.getElementById('calcOut').innerHTML=toolResult(`${fmt(r,6)} ${b}`,[`${fmt(v,6)} ${a} = ${fmt(r,6)} ${b}`])});
+ on('doFraction',()=>{const n=num('fracNum'),d=num('fracDen');if(!d)return toast('Denominator cannot be zero');const dec=n/d;document.getElementById('fracOut').innerHTML=toolResult(fmt(dec,6),[`${n}/${d} inch = ${fmt(dec*25.4,3)} mm`])});
+ on('doGeometry',()=>{const l=num('gl'),w=num('gw'),h=num('gh');document.getElementById('calcOut').innerHTML=toolResult(`${fmt(l*w,3)} m²`,[`Perimeter: ${fmt(2*(l+w),3)} m`,`Volume: ${fmt(l*w*h,3)} m³`,`Wall area (four walls): ${fmt(2*(l+w)*h,3)} m²`])});
+ on('doCircle',()=>{const d=num('diameter'),dep=num('depth'),r=d/2;document.getElementById('circleOut').innerHTML=toolResult(`${fmt(Math.PI*r*r,3)} m²`,[`Circumference: ${fmt(Math.PI*d,3)} m`,`Volume at ${fmt(dep,3)} m depth: ${fmt(Math.PI*r*r*dep,3)} m³`])});
+ on('doPyth',()=>{let a=num('pa'),b=num('pb'),c=num('pc'),title='',line='';if(!c&&a&&b){c=Math.sqrt(a*a+b*b);title=`C = ${fmt(c,2)} mm`;line='Calculated hypotenuse'}else if(!a&&b&&c&&c>b){a=Math.sqrt(c*c-b*b);title=`A = ${fmt(a,2)} mm`;line='Calculated side A'}else if(!b&&a&&c&&c>a){b=Math.sqrt(c*c-a*a);title=`B = ${fmt(b,2)} mm`;line='Calculated side B'}else return toast('Enter two valid sides and leave one blank');document.getElementById('calcOut').innerHTML=toolResult(title,[line])});
+ on('doStairs',()=>{const total=num('totalRise'),max=num('maxRise'),g=num('going');if(!total||!max)return toast('Enter the total rise and target riser');const risers=Math.ceil(total/max),actual=total/risers,treads=Math.max(1,risers-1),run=treads*g;document.getElementById('calcOut').innerHTML=toolResult(`${risers} risers`,[`Actual rise: ${fmt(actual,2)} mm`,`Treads/goings: ${treads}`,`Approximate total going: ${fmt(run,1)} mm`,`2R + G: ${fmt((2*actual)+g,1)} mm`])});
+ on('doRoof',()=>{const rise=num('roofRise'),run=num('roofRun');if(!run)return toast('Horizontal run cannot be zero');const angle=Math.atan(rise/run)*180/Math.PI,rafter=Math.sqrt(rise*rise+run*run);document.getElementById('calcOut').innerHTML=toolResult(`${fmt(angle,2)}°`,[`Pitch ratio: 1:${fmt(run/rise,2)}`,`Slope: ${fmt((rise/run)*100,2)}%`,`Rafter line length: ${fmt(rafter,1)} mm`])});
+ on('doFall',()=>{const f=num('fall'),d=num('distance');if(!f||!d)return toast('Enter fall and distance');document.getElementById('fallOut').innerHTML=toolResult(`1:${fmt(d/f,2)}`,[`Gradient: ${fmt((f/d)*100,2)}%`,`Angle: ${fmt(Math.atan(f/d)*180/Math.PI,2)}°`])});
+}
+function materialCard(id,title,desc){return `<button class="material-choice" data-material="${id}"><strong>${title}</strong><span>${desc}</span></button>`}
+function renderMaterialMate(){
+ const active=state.materialTool||'';
+ const defs={bricks:['Bricks & mortar','Walls, openings and mortar'],blocks:['Blocks & mortar','Blockwork quantities'],concrete:['Concrete','Volume and dry-material allowance'],timber:['Timber lengths','Linear metres and stock lengths'],paint:['Paint','Wall area and coats'],plaster:['Plaster','Coverage by bag'],tiles:['Floor tiles','Area, packs and wastage'],boards:['Sheet materials','Boards and sheet count']};
+ if(!active){app.innerHTML=shell(`<button class="back no-print" id="backResources">← Toolbox</button><div class="section-heading"><div><div class="number">Workplace app</div><h2>MaterialMate</h2><p class="muted">Choose a material to estimate what you need.</p></div></div><section class="material-grid">${Object.entries(defs).map(([id,x])=>materialCard(id,x[0],x[1])).join('')}</section><section class="accuracy-card"><strong>Accurate, adjustable estimates</strong><p>All assumptions are shown and editable. Always confirm pack sizes, product coverage and specification before ordering.</p></section>`);document.getElementById('backResources').onclick=()=>{state.view='resources';render()};document.querySelectorAll('[data-material]').forEach(b=>b.onclick=()=>{state.materialTool=b.dataset.material;render();window.scrollTo(0,0)});return}
+ let fields='',note='';
+ if(active==='bricks'||active==='blocks')fields=`${calcField('ml','Wall length','5','any','m')}${calcField('mh','Wall height','2.4','any','m')}${calcField('openings','Openings area','0','any','m²')}${calcField('unitsPerM2',active==='bricks'?'Bricks per m²':'Blocks per m²',active==='bricks'?'60':'10','any')}${calcField('waste','Wastage','5','any','%')}${calcField('mortarPerM2','Mortar per m²',active==='bricks'?'0.02':'0.012','any','m³')}`;
+ if(active==='concrete')fields=`${calcField('ml','Length','5','any','m')}${calcField('mw','Width','3','any','m')}${calcField('md','Depth','0.1','any','m')}${calcField('waste','Wastage','10','any','%')}`;
+ if(active==='timber')fields=`${calcField('pieces','Number of pieces','12','1')}${calcField('pieceLength','Length of each piece','2.4','any','m')}${calcField('stockLength','Available stock length','4.8','any','m')}${calcField('waste','Wastage','10','any','%')}`;
+ if(active==='paint')fields=`${calcField('ml','Room length','5','any','m')}${calcField('mw','Room width','3','any','m')}${calcField('mh','Wall height','2.4','any','m')}${calcField('openings','Doors/windows area','4','any','m²')}${calcField('coats','Number of coats','2','1')}${calcField('coverage','Coverage per litre','10','any','m²/L')}${calcField('waste','Wastage','5','any','%')}`;
+ if(active==='plaster')fields=`${calcField('area','Area to plaster','40','any','m²')}${calcField('coverage','Coverage per bag','10','any','m²')}${calcField('waste','Wastage','10','any','%')}`;
+ if(active==='tiles')fields=`${calcField('ml','Floor length','5','any','m')}${calcField('mw','Floor width','3','any','m')}${calcField('tileL','Tile length','600','any','mm')}${calcField('tileW','Tile width','600','any','mm')}${calcField('packQty','Tiles per pack','4','1')}${calcField('waste','Wastage','10','any','%')}`;
+ if(active==='boards')fields=`${calcField('ml','Area length','5','any','m')}${calcField('mw','Area width','3','any','m')}${calcField('boardL','Board length','2.4','any','m')}${calcField('boardW','Board width','1.2','any','m')}${calcField('waste','Wastage','10','any','%')}`;
+ app.innerHTML=shell(`<button class="back no-print" id="backMaterials">← MaterialMate</button><div class="section-heading"><div><div class="number">Material estimate</div><h2>${defs[active][0]}</h2><p class="muted">${defs[active][1]}</p></div></div><section class="card panel calc-panel"><div class="calc-grid">${fields}</div><button class="btn calc-action" id="doMaterial">Calculate materials</button><div id="calcOut"></div><p class="calc-note">Estimate only. Check drawings, manufacturer coverage, bond, joint size, pack quantity and supplier information before ordering.</p></section>`);
+ document.getElementById('backMaterials').onclick=()=>{state.materialTool='';render();window.scrollTo(0,0)};
+ document.getElementById('doMaterial').onclick=()=>{const waste=1+num('waste')/100;let title='',lines=[];
+  if(active==='bricks'||active==='blocks'){const area=Math.max(0,num('ml')*num('mh')-num('openings')),units=Math.ceil(area*num('unitsPerM2')*waste),mortar=area*num('mortarPerM2')*waste;title=`${units.toLocaleString('en-GB')} ${active}`;lines=[`Net wall area: ${fmt(area,2)} m²`,`Mortar: ${fmt(mortar,3)} m³`,`Includes ${fmt((waste-1)*100,1)}% wastage`];}
+  if(active==='concrete'){const net=num('ml')*num('mw')*num('md'),total=net*waste;title=`${fmt(total,3)} m³ concrete`;lines=[`Net volume: ${fmt(net,3)} m³`,`Approximate wet concrete mass: ${fmt(total*2400,0)} kg`,`Includes ${fmt((waste-1)*100,1)}% allowance`];}
+  if(active==='timber'){const required=num('pieces')*num('pieceLength')*waste,stock=num('stockLength'),lengths=stock?Math.ceil(required/stock):0;title=`${lengths} stock lengths`;lines=[`Required linear metres: ${fmt(required,2)} m`,`Stock size: ${fmt(stock,2)} m`,`Total purchased: ${fmt(lengths*stock,2)} m`];}
+  if(active==='paint'){const area=Math.max(0,(2*(num('ml')+num('mw'))*num('mh'))-num('openings')),litres=area*num('coats')/num('coverage')*waste;title=`${fmt(litres,2)} litres`;lines=[`Paintable wall area: ${fmt(area,2)} m²`,`Coated area: ${fmt(area*num('coats'),2)} m²`,`Includes ${fmt((waste-1)*100,1)}% allowance`];}
+  if(active==='plaster'){const adjusted=num('area')*waste,bags=Math.ceil(adjusted/num('coverage'));title=`${bags} bags`;lines=[`Adjusted coverage area: ${fmt(adjusted,2)} m²`,`Coverage entered: ${fmt(num('coverage'),2)} m² per bag`];}
+  if(active==='tiles'){const area=num('ml')*num('mw'),tileArea=(num('tileL')/1000)*(num('tileW')/1000),tiles=Math.ceil(area/tileArea*waste),packs=Math.ceil(tiles/num('packQty'));title=`${packs} packs`;lines=[`${tiles} tiles required`,`Floor area: ${fmt(area,2)} m²`,`Tiles per pack: ${fmt(num('packQty'),0)}`];}
+  if(active==='boards'){const area=num('ml')*num('mw')*waste,boardArea=num('boardL')*num('boardW'),boards=Math.ceil(area/boardArea);title=`${boards} boards`;lines=[`Adjusted area: ${fmt(area,2)} m²`,`Area per board: ${fmt(boardArea,2)} m²`,`Purchased coverage: ${fmt(boards*boardArea,2)} m²`];}
+  document.getElementById('calcOut').innerHTML=toolResult(title,lines);
+ };
+}
+
+const DRAWING_FAV_KEY='drawingmate:favourites:v1';
+const DRAWING_PDF_KEY='drawingmate:pdf:v1';
+const DRAWING_SCAN_KEY='drawingmate:scan:v1';
+const DRAWING_CAL_KEY='drawingmate:calibration:v1';
+const DRAWING_ITEMS=[
+ {id:'brick',type:'hatch',category:'Masonry',name:'Brickwork',keywords:'brick wall masonry',pattern:'brick'},
+ {id:'block',type:'hatch',category:'Masonry',name:'Blockwork',keywords:'block concrete masonry',pattern:'block'},
+ {id:'concrete',type:'hatch',category:'Structure',name:'Concrete',keywords:'concrete aggregate slab',pattern:'concrete'},
+ {id:'rc',type:'hatch',category:'Structure',name:'Reinforced concrete',keywords:'reinforced concrete rebar',pattern:'rc'},
+ {id:'timber',type:'hatch',category:'Timber',name:'Timber',keywords:'wood timber joist stud',pattern:'timber'},
+ {id:'steel',type:'hatch',category:'Structure',name:'Steel / metal',keywords:'steel metal section',pattern:'steel'},
+ {id:'insulation',type:'hatch',category:'Insulation',name:'Insulation',keywords:'insulation quilt cavity thermal',pattern:'insulation'},
+ {id:'earth',type:'hatch',category:'Ground',name:'Earth / soil',keywords:'earth soil ground',pattern:'earth'},
+ {id:'hardcore',type:'hatch',category:'Ground',name:'Hardcore',keywords:'hardcore stone subbase',pattern:'hardcore'},
+ {id:'glass',type:'hatch',category:'Finishes',name:'Glass',keywords:'glass glazing window',pattern:'glass'},
+ {id:'plasterboard',type:'hatch',category:'Finishes',name:'Plasterboard',keywords:'plasterboard gypsum board',pattern:'board'},
+ {id:'dpc',type:'symbol',category:'Architectural',name:'Damp-proof course (DPC)',keywords:'dpc damp proof course',symbol:'dpc'},
+ {id:'door',type:'symbol',category:'Architectural',name:'Door and opening arc',keywords:'door opening swing',symbol:'door'},
+ {id:'window',type:'symbol',category:'Architectural',name:'Window',keywords:'window glazing opening',symbol:'window'},
+ {id:'section',type:'symbol',category:'General',name:'Section marker',keywords:'section cut marker',symbol:'section'},
+ {id:'north',type:'symbol',category:'General',name:'North point',keywords:'north orientation compass',symbol:'north'},
+ {id:'level',type:'symbol',category:'General',name:'Level datum',keywords:'level datum elevation',symbol:'level'},
+ {id:'centre',type:'symbol',category:'General',name:'Centre line',keywords:'centre center line',symbol:'centre'},
+ {id:'grid',type:'symbol',category:'General',name:'Grid line and bubble',keywords:'grid bubble reference',symbol:'grid'},
+ {id:'demolition',type:'symbol',category:'Architectural',name:'Demolition / remove',keywords:'demolition remove existing',symbol:'demolition'},
+ {id:'drain',type:'symbol',category:'Drainage',name:'Drainage run and flow',keywords:'drainage pipe flow sewer',symbol:'drain'},
+ {id:'svp',type:'symbol',category:'Drainage',name:'Soil vent pipe (SVP)',keywords:'soil vent pipe svp drainage',symbol:'svp'},
+ {id:'socket',type:'symbol',category:'Electrical',name:'Socket outlet',keywords:'socket electrical outlet',symbol:'socket'},
+ {id:'light',type:'symbol',category:'Electrical',name:'Light point',keywords:'light electrical ceiling',symbol:'light'},
+ {id:'smoke',type:'symbol',category:'Fire',name:'Smoke detector',keywords:'smoke detector fire alarm',symbol:'smoke'}
+];
+function drawingVisual(item){
+ const defs=`<defs><pattern id="p-brick" width="32" height="16" patternUnits="userSpaceOnUse"><path d="M0 0H32M0 8H32M0 16H32M0 0v8m16 0v8m16-16v8"/></pattern><pattern id="p-block" width="44" height="24" patternUnits="userSpaceOnUse"><path d="M0 0H44M0 12H44M0 24H44M0 0v12m22 12V12m44-12v12"/></pattern><pattern id="p-steel" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V10"/></pattern></defs>`;
+ let body='';
+ if(item.type==='hatch'){
+  const h={brick:'<rect width="100%" height="100%" fill="url(#p-brick)"/>',block:'<rect width="100%" height="100%" fill="url(#p-block)"/>',steel:'<rect width="100%" height="100%" fill="url(#p-steel)"/>',concrete:'<circle cx="20" cy="22" r="4"/><path d="m10 48 8-5 7 7 10-6 9 8M48 18l8 7-6 8M65 45l9-5 8 9M70 16l4 3-5 4"/>',rc:'<circle cx="20" cy="22" r="4"/><path d="m10 48 8-5 7 7 10-6 9 8M48 18l8 7-6 8M65 45l9-5 8 9M16 10v52M42 10v52M68 10v52"/>',timber:'<path d="M9 15c15-8 40-8 62 0M9 30c18-8 42-8 62 0M9 45c16-7 38-7 62 0M9 60c18-8 42-8 62 0"/><ellipse cx="38" cy="36" rx="10" ry="7"/>',insulation:'<path d="M7 18q10-14 20 0t20 0t20 0M7 40q10-14 20 0t20 0t20 0M7 62q10-14 20 0t20 0t20 0"/>',earth:'<path d="M8 15h12m9 0h7m12 0h18M13 30h20m12 0h9m8 0h10M8 45h8m12 0h24m10 0h12M15 60h17m10 0h28"/><path d="m18 10 4 8m30-8 4 8M35 38l4 8M64 36l4 8"/>',hardcore:'<path d="m8 18 10-8 9 9-8 9Zm26 2 11-9 10 10-9 9Zm28-3 8-7 9 9-8 8ZM12 49l12-9 9 11-11 9Zm30 2 9-10 11 9-8 11Zm24-4 8-6 7 8-8 7Z"/>',glass:'<path d="M10 65 70 5M24 70 75 19M5 52 52 5"/><path d="M15 8h50v58H15z"/>',board:'<path d="M8 15h64v50H8zM8 30h64M8 45h64M8 60h64"/>',}[item.pattern]||'';
+  body=h;
+ }else{
+  body={dpc:'<path d="M8 38h64"/><path d="m12 28 8 20 8-20 8 20 8-20 8 20 8-20"/>',door:'<path d="M16 65V15h45M16 65a45 45 0 0 0 45-45"/>',window:'<path d="M10 25h60v30H10zM18 25v30M62 25v30M18 40h44"/>',section:'<circle cx="40" cy="40" r="25"/><path d="M15 40h50M40 15v50"/><path d="m40 15-7 10h14Z"/>',north:'<circle cx="40" cy="42" r="25"/><path d="M40 12 28 58l12-9 12 9Z"/><text x="40" y="76" text-anchor="middle" font-size="12">N</text>',level:'<path d="M8 46h64M40 18v28"/><path d="m40 18-7 10h14Z"/><text x="42" y="62" font-size="11">+0.000</text>',centre:'<path d="M8 40h16m8 0h16m8 0h16" stroke-dasharray="10 6 2 6"/><circle cx="40" cy="40" r="6"/>',grid:'<path d="M40 12v56" stroke-dasharray="8 5"/><circle cx="40" cy="12" r="10"/><text x="40" y="16" text-anchor="middle" font-size="11">A</text>',demolition:'<path d="M10 18h60v44H10z" stroke-dasharray="6 5"/><path d="m12 20 56 40M68 20 12 60"/>',drain:'<path d="M8 40h56"/><path d="m52 32 12 8-12 8"/><circle cx="18" cy="40" r="8"/>',svp:'<circle cx="40" cy="40" r="22"/><text x="40" y="45" text-anchor="middle" font-size="14">SVP</text>',socket:'<circle cx="40" cy="40" r="23"/><path d="M26 40h28M32 33v14M48 33v14"/>',light:'<circle cx="40" cy="40" r="24"/><path d="m23 23 34 34M57 23 23 57"/>',smoke:'<circle cx="40" cy="40" r="24"/><text x="40" y="45" text-anchor="middle" font-size="16">SD</text>'}[item.symbol]||'';
+ }
+ return `<svg viewBox="0 0 80 80" class="drawing-preview" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${defs}${body}</svg>`;
+}
+function drawingFavourites(){return Array.isArray(state.data[DRAWING_FAV_KEY])?state.data[DRAWING_FAV_KEY]:[]}
+async function toggleDrawingFavourite(id){const f=drawingFavourites(),next=f.includes(id)?f.filter(x=>x!==id):[...f,id];state.data[DRAWING_FAV_KEY]=next;await saveData();renderDrawingMate()}
+function drawingTabs(active){return `<div class="tool-tabs drawing-tabs">${[['symbols','Symbols'],['hatches','Hatching'],['scale','Scale'],['ruler','Ruler'],['pdf','PDF'],['camera','Camera']].map(([id,label])=>`<button data-drawing-tab="${id}" class="${active===id?'active':''}">${label}</button>`).join('')}</div>`}
+function drawingLibrary(type){const q=(state.drawingSearch||'').trim().toLowerCase(),favs=drawingFavourites();let items=DRAWING_ITEMS.filter(x=>x.type===type&&(!q||`${x.name} ${x.category} ${x.keywords}`.toLowerCase().includes(q)));return `<div class="drawing-search"><span>${appIcon('search')}</span><input class="input" id="drawingSearch" type="search" placeholder="Search ${type==='symbol'?'symbols':'hatching'}" value="${esc(state.drawingSearch||'')}"></div>${favs.length?`<div class="drawing-subhead"><h3>Favourites</h3></div><section class="drawing-library">${items.filter(x=>favs.includes(x.id)).map(x=>drawingCard(x,true)).join('')||'<p class="muted">No matching favourites.</p>'}</section>`:''}<div class="drawing-subhead"><h3>All ${type==='symbol'?'symbols':'hatching'}</h3></div><section class="drawing-library">${items.map(x=>drawingCard(x,favs.includes(x.id))).join('')||'<div class="card panel"><p>No matches found.</p></div>'}</section><p class="calc-note">Drawing conventions vary by organisation and project. Always check the drawing legend and specification.</p>`}
+function drawingCard(x,fav){return `<article class="drawing-card"><button class="drawing-visual-button" data-drawing-open="${x.id}" aria-label="Open ${esc(x.name)}">${drawingVisual(x)}</button><div class="drawing-card-copy"><strong>${esc(x.name)}</strong><small>${esc(x.category)}</small></div><button class="drawing-fav ${fav?'active':''}" data-drawing-fav="${x.id}" aria-label="${fav?'Remove from':'Add to'} favourites">★</button></article>`}
+function scaleCalculator(){return `<section class="card panel calc-panel"><h3>Drawing scale calculator</h3><div class="calc-grid">${calcField('drawingScale','Scale','50','any','1 :')}${calcField('drawingMm','Drawing measurement','20','any','mm')}${calcField('realMm','Real measurement','','any','mm')}</div><div class="btn-row"><button class="btn" id="scaleFromDrawing">Drawing → real</button><button class="btn secondary" id="scaleFromReal">Real → drawing</button></div><div id="scaleOut"></div></section>`}
+function rulerScaleOptions(selected){return [10,20,25,50,100,200].map(scale=>`<option value="${scale}" ${Number(selected)===scale?'selected':''}>1:${scale}</option>`).join('')}
+function scaleRuler(){const px=Number(state.data[DRAWING_CAL_KEY]||3.78),leftScale=Number(state.rulerLeftScale||state.rulerScale||20),rightScale=Number(state.rulerRightScale||50);return `<section class="card panel"><h3>Calibrate screen</h3><p class="muted">Adjust the line until it matches the width of a standard bank card (85.60 mm), then save calibration.</p><input id="calSlider" type="range" min="2" max="8" step="0.01" value="${px}"><div class="calibration-card" id="calibrationCard" style="width:${85.6*px}px">85.60 mm</div><button class="btn" id="saveCalibration">Save calibration</button></section><section class="card panel"><h3>Two-sided scale ruler</h3><p class="muted">Choose a scale for each edge. The full-screen ruler places both measuring edges directly against the sides of your phone.</p><div class="dual-ruler-selectors"><label class="calc-field"><span>Left edge</span><select id="rulerLeftScale">${rulerScaleOptions(leftScale)}</select></label><label class="calc-field"><span>Right edge</span><select id="rulerRightScale">${rulerScaleOptions(rightScale)}</select></label></div><button type="button" class="scale-ruler-launch" id="scaleRulerPreview" aria-label="Open two-sided scale ruler"><span><b>1:${leftScale}</b><small>Left</small></span><i>Tap to use ruler</i><span><b>1:${rightScale}</b><small>Right</small></span></button><button class="btn drawing-use-ruler" id="useScaleRuler">Use ruler</button><p class="calc-note">Accuracy depends on the saved screen calibration and browser zoom. Recheck calibration after changing device or display size.</p></section>`}
+function rulerTicks(scale,side,pxPerMm,height){const totalMm=Math.ceil(height/pxPerMm)+1;let html='';for(let mm=0;mm<=totalMm;mm++){const pos=mm*pxPerMm;if(pos>height+1)break;const major=mm%10===0,mid=!major&&mm%5===0,tickClass=major?'major':mid?'mid':'minor',label=major?`<b>${mm*scale}<small>mm</small></b>`:'';html+=`<span class="dual-ruler-tick ${tickClass}" style="top:${pos}px"><i></i>${label}</span>`}return `<div class="dual-ruler-edge ${side}" aria-label="1:${scale} scale ruler"><div class="dual-ruler-scale-label">1:${scale}</div>${html}</div>`}
+async function unlockRulerOrientation(){try{await screen.orientation?.unlock?.()}catch{}}
+async function closeDualScaleRuler(){const overlay=document.getElementById('dualScaleRulerOverlay');if(overlay)overlay.remove();document.body.classList.remove('dual-ruler-open');await unlockRulerOrientation();try{if(document.fullscreenElement)await document.exitFullscreen()}catch{}}
+async function lockRulerOrientation(){try{await screen.orientation?.lock?.('portrait-primary');return}catch{}try{await screen.orientation?.lock?.('portrait')}catch{}}
+function renderDualScaleRuler(){closeDualScaleRuler();const pxPerMm=Number(state.data[DRAWING_CAL_KEY]||3.78),leftScale=Number(state.rulerLeftScale||20),rightScale=Number(state.rulerRightScale||50),overlay=document.createElement('div');overlay.id='dualScaleRulerOverlay';overlay.className='dual-scale-ruler-overlay';overlay.innerHTML=`<div class="dual-ruler-centre"><button type="button" id="closeDualScaleRuler" class="dual-ruler-close">Close ruler</button><strong>Place either screen edge against the drawing</strong><small>Portrait locked · Calibrated at ${pxPerMm.toFixed(2)} px/mm</small></div><div id="dualRulerEdges"></div>`;document.body.appendChild(overlay);document.body.classList.add('dual-ruler-open');const draw=()=>{const holder=overlay.querySelector('#dualRulerEdges');if(holder)holder.innerHTML=rulerTicks(leftScale,'left',pxPerMm,window.innerHeight)+rulerTicks(rightScale,'right',pxPerMm,window.innerHeight)};draw();overlay.querySelector('#closeDualScaleRuler').onclick=closeDualScaleRuler;const enter=async()=>{try{if(!document.fullscreenElement)await overlay.requestFullscreen?.()}catch{}await lockRulerOrientation();draw()};enter()}
+function drawingPdf(){const rec=state.data[DRAWING_PDF_KEY]||{};return `<section class="card panel"><h3>PDF drawing viewer</h3><label class="file-drop"><input id="drawingPdfInput" type="file" accept="application/pdf"><span>${appIcon('file')}</span><strong>${rec.name?esc(rec.name):'Open a drawing PDF'}</strong><small>Stored on this device</small></label>${rec.blobKey?`<div class="drawing-pdf-frame"><iframe id="drawingPdfFrame" title="Drawing PDF"></iframe></div><label class="field"><span>Drawing notes</span><textarea class="input" id="drawingPdfNotes" rows="5" placeholder="Add pins, references or notes here">${esc(rec.notes||'')}</textarea></label><button class="btn" id="savePdfNotes">Save notes</button>`:''}</section>`}
+function drawingCamera(){const rec=state.data[DRAWING_SCAN_KEY]||{};return `<section class="card panel"><h3>Camera compare</h3><p class="muted">Photograph a drawing detail, then compare it beside the symbol and hatching library.</p><label class="file-drop"><input id="drawingScanInput" type="file" accept="image/*" capture="environment"><span>${appIcon('camera')}</span><strong>${rec.name?esc(rec.name):'Photograph or choose drawing'}</strong></label>${rec.blobKey?`<img id="drawingScanImage" class="drawing-scan-image" alt="Drawing detail">`:''}</section>${rec.blobKey?`<section class="card panel"><h3>Find a match</h3>${drawingLibrary(state.cameraLibraryType||'symbol')}<div class="btn-row"><button class="btn secondary" id="cameraSymbols">Symbols</button><button class="btn secondary" id="cameraHatches">Hatching</button></div></section>`:''}<section class="card panel project-delete-panel"><button class="btn danger-button" id="deleteActiveProject">Delete project</button></section>`}
+async function hydrateDrawingAssets(){for(const [id,key] of [['drawingPdfFrame',state.data[DRAWING_PDF_KEY]?.blobKey],['drawingScanImage',state.data[DRAWING_SCAN_KEY]?.blobKey]]){if(!key)continue;try{const blob=await getStore(key);if(blob){const el=document.getElementById(id);if(el)el.src=URL.createObjectURL(blob)}}catch{}}}
+function bindDrawingLibrary(){const search=document.getElementById('drawingSearch');if(search)search.oninput=e=>{state.drawingSearch=e.target.value;renderDrawingMate()};document.querySelectorAll('[data-drawing-fav]').forEach(b=>b.onclick=e=>{e.stopPropagation();toggleDrawingFavourite(b.dataset.drawingFav)});document.querySelectorAll('[data-drawing-open]').forEach(b=>b.onclick=()=>{const x=DRAWING_ITEMS.find(i=>i.id===b.dataset.drawingOpen);if(!x)return;const wrap=document.createElement('div');wrap.className='modal';wrap.innerHTML=`<section class="modal-card drawing-detail"><button class="icon-close-button" id="closeDrawingDetail">${appIcon('close')}</button>${drawingVisual(x)}<h2>${esc(x.name)}</h2><p>${esc(x.category)}</p><p class="muted">Use this as a quick visual reference and confirm it against the drawing legend.</p></section>`;document.body.appendChild(wrap);wrap.querySelector('#closeDrawingDetail').onclick=()=>wrap.remove();wrap.onclick=e=>{if(e.target===wrap)wrap.remove()}})}
+function renderDrawingMate(){
+ const tab=state.drawingTab||'symbols';let body=tab==='symbols'?drawingLibrary('symbol'):tab==='hatches'?drawingLibrary('hatch'):tab==='scale'?scaleCalculator():tab==='ruler'?scaleRuler():tab==='pdf'?drawingPdf():drawingCamera();
+ app.innerHTML=shell(`<button class="back no-print" id="backResources">← Toolbox</button><div class="section-heading"><div><div class="number">Workplace app</div><h2>DrawingMate</h2><p class="muted">Identify drawing information and work accurately with scales.</p></div></div>${drawingTabs(tab)}${body}`);
+ document.getElementById('backResources').onclick=()=>{state.view='resources';render()};document.querySelectorAll('[data-drawing-tab]').forEach(b=>b.onclick=()=>{state.drawingTab=b.dataset.drawingTab;state.drawingSearch='';renderDrawingMate();window.scrollTo(0,0)});
+ if(tab==='symbols'||tab==='hatches'||(tab==='camera'&&state.data[DRAWING_SCAN_KEY]?.blobKey))bindDrawingLibrary();
+ if(tab==='scale'){document.getElementById('scaleFromDrawing').onclick=()=>{const scale=num('drawingScale'),d=num('drawingMm');if(!scale||!d)return toast('Enter scale and drawing measurement');const real=d*scale;document.getElementById('realMm').value=real;document.getElementById('scaleOut').innerHTML=toolResult(`${fmt(real,2)} mm real`,[`${fmt(real/1000,3)} m`,`At 1:${fmt(scale,0)}, ${fmt(d,2)} mm on the drawing`])};document.getElementById('scaleFromReal').onclick=()=>{const scale=num('drawingScale'),real=num('realMm');if(!scale||!real)return toast('Enter scale and real measurement');const d=real/scale;document.getElementById('drawingMm').value=d;document.getElementById('scaleOut').innerHTML=toolResult(`${fmt(d,2)} mm on drawing`,[`${fmt(real,2)} mm real`,`Scale 1:${fmt(scale,0)}`])}}
+ if(tab==='ruler'){const slider=document.getElementById('calSlider'),card=document.getElementById('calibrationCard');slider.oninput=()=>card.style.width=`${85.6*Number(slider.value)}px`;document.getElementById('saveCalibration').onclick=async()=>{state.data[DRAWING_CAL_KEY]=Number(slider.value);await saveData();toast('Calibration saved');renderDrawingMate()};document.getElementById('rulerLeftScale').onchange=e=>{state.rulerLeftScale=Number(e.target.value);renderDrawingMate()};document.getElementById('rulerRightScale').onchange=e=>{state.rulerRightScale=Number(e.target.value);renderDrawingMate()};document.getElementById('useScaleRuler').onclick=renderDualScaleRuler;document.getElementById('scaleRulerPreview').onclick=renderDualScaleRuler}
+ if(tab==='pdf'){const inp=document.getElementById('drawingPdfInput');inp.onchange=async()=>{const file=inp.files?.[0];if(!file)return;const old=state.data[DRAWING_PDF_KEY]?.blobKey;if(old)try{await deleteStore(old)}catch{}const blobKey=`drawingmate:pdf:${uid()}`;await putStore(blobKey,file);state.data[DRAWING_PDF_KEY]={blobKey,name:file.name,notes:''};await saveData();renderDrawingMate()};const save=document.getElementById('savePdfNotes');if(save)save.onclick=async()=>{state.data[DRAWING_PDF_KEY].notes=document.getElementById('drawingPdfNotes').value;await saveData();toast('Drawing notes saved')}}
+ if(tab==='camera'){const inp=document.getElementById('drawingScanInput');inp.onchange=async()=>{const file=inp.files?.[0];if(!file)return;const old=state.data[DRAWING_SCAN_KEY]?.blobKey;if(old)try{await deleteStore(old)}catch{}const blobKey=`drawingmate:scan:${uid()}`;await putStore(blobKey,file);state.data[DRAWING_SCAN_KEY]={blobKey,name:file.name};await saveData();renderDrawingMate()};const sym=document.getElementById('cameraSymbols'),hat=document.getElementById('cameraHatches');if(sym)sym.onclick=()=>{state.cameraLibraryType='symbol';renderDrawingMate()};if(hat)hat.onclick=()=>{state.cameraLibraryType='hatch';renderDrawingMate()}}
+ hydrateDrawingAssets();
+}
+
+
+const PROJECTMATE_KEY='projectmate.projects.v1';
+const PROJECT_TASKS={
+ 'bricklayer-st0095-v1-2':{
+  easy:[
+   {title:'Straight wall panel',hours:1.5,brief:'Build a short half-brick wall panel in stretcher bond. Set out accurately, maintain gauge, level and plumb, finish the joints consistently and leave the area clean.',dims:'675 mm long × 450 mm high',materials:[['Facing bricks','each',0.82,36],['Building sand','25 kg bag',3.10,1],['Cement','25 kg bag',7.25,1],['Plasticiser','allowance',1.50,1]],budget:[55,85],ksbs:['K1','K2','K3','K7','K8','K9','S1','S2','S3','S4','B1','B2']},
+   {title:'Brick return practice panel',hours:2,brief:'Build a small stretcher-bond wall with one returned end. Form the corner correctly, maintain bond and gauge, and produce a consistent tooled joint finish.',dims:'675 mm main wall × 225 mm return × 450 mm high',materials:[['Facing bricks','each',0.82,45],['Building sand','25 kg bag',3.10,1],['Cement','25 kg bag',7.25,1]],budget:[65,95],ksbs:['K1','K3','K7','K8','K9','K12','S1','S2','S4','S5','B1','B3']},
+   {title:'Brick-on-edge coping sample',hours:2,brief:'Build a low wall panel and finish it with a brick-on-edge coping course. Keep the coping straight, evenly spaced and securely bedded.',dims:'675 mm long × approximately 375 mm high',materials:[['Facing bricks','each',0.82,38],['Building sand','25 kg bag',3.10,1],['Cement','25 kg bag',7.25,1]],budget:[60,90],ksbs:['K1','K7','K8','K9','K13','S1','S2','S4','S6','B1','B3']}
+  ],
+  medium:[
+   {title:'Returned wall with decorative feature',hours:3,brief:'Build a freestanding half-brick wall with two returns and a projecting decorative course. Maintain bond, gauge, level and plumb while keeping the feature course consistent.',dims:'900 mm long × 600 mm high with 225 mm returns',materials:[['Facing bricks','each',0.82,78],['Building sand','25 kg bag',3.10,2],['Cement','25 kg bag',7.25,1],['Plasticiser','allowance',1.50,1]],budget:[95,135],ksbs:['K1','K2','K3','K7','K8','K9','K12','K13','S1','S2','S3','S4','S5','S6','B1','B2','B3']},
+   {title:'Cavity wall corner sample',hours:3.5,brief:'Build a short cavity wall with a formed corner, brick outer leaf, block inner leaf, DPC, insulation and correctly spaced wall ties. Keep the cavity clean throughout.',dims:'900 mm × 675 mm return × 600 mm high × 300 mm overall width',materials:[['Facing bricks','each',0.82,58],['Concrete blocks','each',2.15,16],['Wall ties','each',0.35,10],['Insulation board','sheet allowance',9.50,1],['DPC','metre',1.20,3],['Mortar materials','allowance',18,1]],budget:[130,180],ksbs:['K1','K2','K3','K7','K8','K9','K10','K11','K14','S1','S2','S3','S4','S7','S8','B1','B2','B3']},
+   {title:'Square brick pier with cap',hours:3,brief:'Build a square brick pier with a projecting course and brick-on-edge cap. Maintain accurate dimensions, gauge, level and plumb on every face.',dims:'450 mm × 450 mm × approximately 675 mm high',materials:[['Facing bricks','each',0.82,88],['Building sand','25 kg bag',3.10,2],['Cement','25 kg bag',7.25,1]],budget:[105,150],ksbs:['K1','K3','K7','K8','K9','K12','K13','S1','S2','S4','S5','S6','B1','B3']}
+  ],
+  hard:[
+   {title:'Cavity wall with opening and lintel',hours:5,brief:'Set out and build a cavity wall containing a window opening. Include DPC, insulation, wall ties, a correctly installed lintel and a soldier course above the opening. Keep reveals plumb and the cavity clean.',dims:'1500 mm long × 900 mm high × 300 mm overall width; 450 mm opening',materials:[['Facing bricks','each',0.82,105],['Concrete blocks','each',2.15,28],['Wall ties','each',0.35,18],['Insulation board','sheet allowance',9.50,2],['DPC','metre',1.20,5],['Cavity lintel','each',34,1],['Mortar materials','allowance',28,1]],budget:[230,310],ksbs:['K1','K2','K3','K7','K8','K9','K10','K11','K14','K15','K16','S1','S2','S3','S4','S7','S8','S9','S10','B1','B2','B3','B4']},
+   {title:'Decorative wall with pier and raking detail',hours:5.5,brief:'Build a detailed freestanding wall incorporating an attached pier, a projecting feature course and a short raking section. Produce accurate cuts, maintain the intended bond and finish all visible joints consistently.',dims:'1350 mm long × up to 900 mm high with 450 mm pier',materials:[['Facing bricks','each',0.82,135],['Building sand','25 kg bag',3.10,3],['Cement','25 kg bag',7.25,2],['Plasticiser','allowance',2,1]],budget:[190,270],ksbs:['K1','K2','K3','K7','K8','K9','K12','K13','K16','K17','S1','S2','S3','S4','S5','S6','S9','S11','B1','B2','B3','B4']},
+   {title:'Garden wall with movement joint and coping',hours:4.5,brief:'Build a long freestanding garden-wall section with a returned end, formed movement joint and brick-on-edge coping. Maintain alignment and gauge while keeping the movement joint straight and unobstructed.',dims:'1500 mm long × 750 mm high with 225 mm return',materials:[['Facing bricks','each',0.82,125],['Building sand','25 kg bag',3.10,3],['Cement','25 kg bag',7.25,2],['Movement joint filler','metre',3.50,1],['Sealant','tube',6.50,1]],budget:[175,250],ksbs:['K1','K2','K3','K7','K8','K9','K12','K13','K18','S1','S2','S3','S4','S5','S6','S12','B1','B2','B3']}
+  ]
+ },
+ 'site-carpentry-v1-4':{
+  easy:[{title:'Small stud wall training frame',hours:2,brief:'Set out and construct a compact freestanding stud frame with head plate, sole plate, studs and one row of noggins.',dims:'900 mm long × 900 mm high',materials:[['CLS timber','metre',2.60,8],['Construction screws','box allowance',5.50,1]],budget:[50,80],ksbs:['K1','K2','K7','S1','S2','S3','B1']}],
+  medium:[{title:'Freestanding timber planter',hours:3,brief:'Construct a freestanding timber planter with a level base, square corners and evenly spaced external boards. Sand all exposed edges ready for treatment.',dims:'800 mm long × 350 mm wide × 400 mm high',materials:[['Treated timber','metre',3.40,10],['Exterior screws','box allowance',4.50,1],['Wood treatment','allowance',5,1]],budget:[75,115],ksbs:['K1','K2','K7','K8','S1','S2','S3','S4','B1','B3']}],
+  hard:[{title:'Framed storage bench',hours:5,brief:'Construct a framed timber storage bench with a hinged top, internal support rails and a boarded exterior. Keep the frame square and fit the lid safely.',dims:'900 mm long × 450 mm wide × 500 mm high',materials:[['CLS timber','metre',2.60,14],['Sheet material','sheet allowance',28,1],['Hinges','pair',7.50,1],['Construction screws','box allowance',5.50,1]],budget:[130,190],ksbs:['K1','K2','K7','K8','K9','S1','S2','S3','S4','S5','B1','B3']}]},
+ 'architectural-joiner-st0264-v1-4':{
+  easy:[{title:'Mortise and tenon practice frame',hours:2,brief:'Make a small rectangular frame using two mortise and tenon joints. Keep faces flush and joints tight before sanding.',dims:'450 mm × 300 mm using 45 mm × 45 mm timber',materials:[['Prepared softwood','metre',4.20,2],['PVA adhesive','allowance',2.50,1],['Abrasive sheets','each',0.80,2]],budget:[45,75],ksbs:['K1','K2','K7','S1','S2','S3','B1']}],
+  medium:[{title:'Small framed cabinet door',hours:3,brief:'Manufacture a framed cabinet door with two stiles, two rails and a fitted central panel. Assemble square and prepare for finishing.',dims:'600 mm high × 450 mm wide',materials:[['Prepared softwood','metre',4.20,3],['Plywood panel','allowance',8.50,1],['PVA adhesive','allowance',2.50,1]],budget:[70,110],ksbs:['K1','K2','K7','K8','S1','S2','S3','S4','B1','B3']}],
+  hard:[{title:'Glazed display frame',hours:5,brief:'Manufacture a rebated hardwood display frame with mortise and tenon joints, glazing bead and accurately fitted panel. Prepare all surfaces for finishing.',dims:'750 mm high × 550 mm wide',materials:[['Prepared hardwood','metre',8.50,4],['Glazing panel','allowance',22,1],['PVA adhesive','allowance',3,1],['Glazing bead','metre',2.20,3]],budget:[140,210],ksbs:['K1','K2','K7','K8','K9','S1','S2','S3','S4','S5','B1','B3']}]},
+ 'property-maintenance-operative-st0171-v1-1':{
+  easy:[{title:'Small plasterboard repair panel',hours:1.5,brief:'Repair a prepared damaged section in a portable plasterboard panel. Install backing, fit a patch, tape the joints and apply a smooth finishing coat.',dims:'Repair opening approximately 300 mm × 300 mm',materials:[['Plasterboard offcut','allowance',4,1],['Joint tape','allowance',1.50,1],['Jointing compound','allowance',5,1],['Drywall screws','allowance',1.50,1]],budget:[40,70],ksbs:['K3','K4','K6','K15','S3','S4','S6','S14','B2','B3']}],
+  medium:[{title:'Tiled splashback practice panel',hours:3,brief:'Prepare and tile a portable practice panel with straight, evenly spaced joints. Include a neat cut around a simulated socket and finish with grout.',dims:'900 mm wide × 600 mm high',materials:[['Ceramic tiles','m²',18,0.65],['Tile adhesive','allowance',7,1],['Grout','allowance',4,1],['Tile spacers','pack allowance',2,1]],budget:[55,90],ksbs:['K3','K4','K6','K17','S3','S4','S6','S16','B2','B3']}],
+  hard:[{title:'Multi-trade bathroom repair board',hours:5,brief:'Complete a portable bathroom repair board incorporating a small pipe alteration, plasterboard patch and tiled finish. Sequence the work correctly and protect completed elements.',dims:'1200 mm × 900 mm practice board',materials:[['15 mm pipe','metre',6.20,2],['Pipe fittings','each',1.25,4],['Plasterboard','allowance',6,1],['Ceramic tiles','m²',18,0.6],['Adhesive and grout','allowance',12,1]],budget:[120,180],ksbs:['K3','K4','K6','K10','K15','K17','S3','S4','S6','S10','S14','S16','B2','B3','B4']}]}
+};
+function courseKsbMap(){const map=new Map();for(const a of courseAssignments())for(const [code,text] of a.ksbs||[])if(!map.has(code))map.set(code,text);return map}
+function projectKsbs(codes=[]){const map=courseKsbMap();return codes.filter(code=>map.has(code)).map(code=>({code,text:map.get(code)}))}
+function difficultyLabel(value){return value==='easy'?'Easy · 1–2 hours':value==='hard'?'Hard · 4–6 hours':'Medium · 2–4 hours'}
+function projectList(){return state.data[PROJECTMATE_KEY]||[]}
+function saveProjects(list){state.data[PROJECTMATE_KEY]=list;return saveData()}
+function projectById(id){return projectList().find(p=>p.id===id)}
+function money(n){return new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(Number(n)||0)}
+function randomBetween(a,b){return Math.round((a+Math.random()*(b-a))*100)/100}
+function generatedProject(difficulty='medium'){const groups=PROJECT_TASKS[COURSE.id]||PROJECT_TASKS['property-maintenance-operative-st0171-v1-1'],pool=groups[difficulty]||groups.medium||Object.values(groups).flat(),t=pool[Math.floor(Math.random()*pool.length)],urgencies=['Flexible','Normal','Urgent'],urgency=urgencies[Math.floor(Math.random()*urgencies.length)],budget=Math.round(randomBetween(t.budget[0],t.budget[1]));return {id:uid(),createdAt:Date.now(),status:'draft',source:'generated',difficulty,title:t.title,brief:t.brief,dimensions:t.dims,targetHours:t.hours,urgency,budget,wastePercent:10,materials:t.materials.map(x=>({name:x[0],unit:x[1],price:x[2],target:x[3],suggested:x[3],qty:''})),labour:0,overheads:0,quoteResult:'',assignment:null,ksbs:projectKsbs(t.ksbs),elapsed:0,timerStarted:0,photos:[],completionNote:''}}
+const PRACTICAL_ASSIGNMENT_TASKS={
+ 'bricklayer-st0095-v1-2':{
+  1:{e:'Build a short half-brick wall',m:'Build a half-brick wall with one return',h:'Build a cavity wall corner with a bonded pier',spec:'brick and block masonry',materials:'Facing bricks; concrete blocks where required; mortar; DPC; wall ties; profiles and line'},
+  2:{e:'Build a small wall using an efficient material layout',m:'Build a return wall using reclaimed and new bricks',h:'Build a cavity panel incorporating insulation and controlled waste segregation',spec:'sustainable masonry construction',materials:'New and reclaimed bricks; blocks; mortar; insulation; DPC; wall ties; labelled waste containers'},
+  3:{e:'Set out and build a wall from a simple drawing',m:'Set out and build a wall with a return from a dimensioned drawing',h:'Set out a cavity wall with an opening from plans and specifications',spec:'drawing-led masonry work',materials:'Bricks; blocks; mortar; profiles; line; tape; gauge rod; square; drawing pack'},
+  4:{e:'Estimate and build a one-metre wall panel',m:'Estimate and build a wall with a pier',h:'Estimate and build a cavity wall with an opening and lintel',spec:'resource estimation and masonry construction',materials:'Bricks; blocks; mortar; DPC; wall ties; lintel where specified; calculation sheet'},
+  5:{e:'Cut and build a simple brick panel using hand tools',m:'Build a return wall using hand and powered cutting equipment',h:'Build a detailed panel requiring accurate cuts, drilling and mechanical mixing',spec:'bricklaying tools and equipment',materials:'Bricks; blocks; mortar; cutting bricks; suitable hand tools; disc cutter or drill where authorised'},
+  6:{e:'Build a short cavity wall with a closed end',m:'Build a cavity wall with a return and insulation',h:'Build a cavity wall with a window opening, lintel, tray and weep holes',spec:'cavity walling',materials:'Facing bricks; blocks; mortar; wall ties; insulation; DPC; cavity tray; lintel; weep vents'},
+  7:{e:'Mix mortar and build a panel with bucket-handle joints',m:'Build a wall displaying flush and weather-struck joint finishes',h:'Build a feature panel using three specified joint finishes and controlled mortar batches',spec:'mortar production and joint finishing',materials:'Bricks; sand and cement or prescribed mortar; plasticiser where specified; pointing tools; jointing samples'},
+  8:{e:'Build a one-brick solid wall panel',m:'Build a solid wall with a return and brick-on-edge capping',h:'Build a solid bonded wall with a pier, banding and decorative capping',spec:'solid walling',materials:'Facing bricks; contrasting bricks where specified; mortar; capping bricks; profiles and line'},
+  9:{e:'Replace three damaged bricks in an existing panel',m:'Repair a cracked section and renew defective pointing',h:'Dismantle and rebuild a damaged pier section, then protect the completed work',spec:'masonry repair and protection',materials:'Matching bricks; repair mortar; protection sheeting; temporary supports where required; pointing tools'},
+  10:{e:'Build a short wall as part of a two-person team',m:'Coordinate a return wall build with shared setting-out duties',h:'Complete a cavity wall section through planned team roles and handovers',spec:'team-based bricklaying',materials:'Bricks; blocks; mortar; profiles; line; wall ties; shared task and communication sheet'},
+  11:{e:'Build a small wall using an inclusive shared-work plan',m:'Complete a pier-and-panel task with rotated team responsibilities',h:'Complete a detailed walling task while applying an agreed wellbeing and inclusion plan',spec:'inclusive collaborative masonry work',materials:'Bricks; mortar; profiles; task allocation sheet; welfare and support information'},
+  12:{e:'Build a garden wall panel with one simple raking cut',m:'Build a raking wall with accurately cut closures',h:'Build a gable-shaped panel with multiple raking cuts, a pier and detailed finish',spec:'raked walling and brick cutting',materials:'Bricks; mortar; templates; cutting bricks; bolster and hammer; profiles; line'}
+ },
+ 'site-carpentry-v1-4':{
+  1:{e:'Build a small timber frame safely',m:'Build and erect a stud frame with a doorway',h:'Construct and brace a full partition section using controlled cutting and access equipment',spec:'site carpentry under safe working controls',materials:'CLS timber; fixings; sheet material; PPE/RPE; extraction equipment'},
+  2:{e:'Build a small frame using an efficient cutting list',m:'Construct a partition section using responsibly sourced timber',h:'Construct and clad a frame while controlling waste, fixings and regulatory requirements',spec:'sustainable regulated carpentry',materials:'Certified timber; sheet material; fixings; insulation where specified; waste segregation containers'},
+  3:{e:'Set out and make a frame from a simple drawing',m:'Set out a partition with a door opening from a dimensioned drawing',h:'Set out and construct a multi-section frame from plans, sections and details',spec:'drawing-led site carpentry',materials:'CLS timber; sheet material; fixings; drawing pack; tape; square; level'},
+  4:{e:'Prepare a cutting list and make a small frame',m:'Estimate and construct a partition with an opening',h:'Estimate timber, sheet materials and fixings for a floor or roof section and construct it',spec:'carpentry estimating and material selection',materials:'Structural timber; sheet material; fixings; calculation and cutting-list sheet'},
+  5:{e:'Produce a marked timber component using hand tools',m:'Construct a framed assembly using hand and power tools',h:'Complete a detailed first-fix assembly requiring accurate machining, drilling and trimming',spec:'carpentry tools and equipment',materials:'Timber; sheet material; screws and nails; approved hand and power tools'},
+  6:{e:'Make a simple drilling or spacing jig',m:'Make and use a jig to repeat-cut frame components',h:'Produce a multi-purpose jig and use laser levels to install repeated components accurately',spec:'jigs and levelling',materials:'Plywood or MDF; timber battens; fixings; laser level; measuring tools'},
+  7:{e:'Assemble a timber frame with a partner',m:'Install a partition through coordinated team roles',h:'Complete a framed installation involving planned communication, handovers and checks',spec:'team-based site carpentry',materials:'CLS timber; fixings; sheet material; task and communication plan'},
+  8:{e:'Build a straight non-loadbearing stud wall',m:'Build a partition wall with a door opening and structural fixings',h:'Construct a structural timber wall section with openings, bracing and specified connections',spec:'structural and partition walls',materials:'Structural timber; sole and head plates; studs; noggins; sheathing; straps and fixings'},
+  9:{e:'Set out and install a short run of floor joists',m:'Install floor joists with trimming around one opening',h:'Construct a floor section with trimmed opening, strutting and deck covering',spec:'floor joists and coverings',materials:'Graded joists; trimmer timber; hangers; straps; strutting; flooring sheets; fixings'},
+  10:{e:'Build a simple boxed service encasement',m:'Construct and clad a removable pipe encasement',h:'Install a multi-level service encasement with access panels and finished cladding',spec:'service encasement and cladding',materials:'Timber battens; plywood/MDF; decorative cladding; access-panel hardware; fixings'},
+  11:{e:'Install one wall unit accurately',m:'Install aligned wall and floor units with a scribed end panel',h:'Install a complete run of wall and floor units with worktop joints and service allowances',spec:'wall and floor unit installation',materials:'Cabinet units; worktop; end panels; brackets; connectors; suitable fixings'},
+  12:{e:'Fit a short handrail and three spindles',m:'Set out and install a handrail with a full spindle run',h:'Construct or install a straight stair section with strings, treads, handrails and spindles',spec:'stairs, handrails and spindles',materials:'Stair strings/components; handrail; baserail; spindles; newel posts; fixings'},
+  13:{e:'Hang and adjust one internal door',m:'Install a door lining and hang a door with ironmongery',h:'Install a complete external or internal doorset with frame, seals, hardware and final adjustments',spec:'doors and windows',materials:'Door or window set; lining/frame; hinges; locks; seals; packers; fixings'},
+  14:{e:'Fit skirting to one straight wall and internal corner',m:'Fit skirting and architrave including scribed joints',h:'Complete a room section with skirting, architrave, splices, scribes and difficult returns',spec:'skirting and architrave',materials:'Skirting; architrave; adhesive; pins; filler; timber for splices'},
+  15:{e:'Set out and cut a simple common-rafter pair',m:'Construct a small pitched roof section with ridge and rafters',h:'Construct a detailed roof section with hips, valleys, trimmers or a trussed-roof detail',spec:'roofing carpentry',materials:'Graded roof timber; ridge; rafters or trusses; connectors; bracing; roof decking where specified'}
+ },
+ 'architectural-joiner-st0264-v1-4':{
+  1:{e:'Make a small framed joinery assembly safely',m:'Produce a jointed frame using controlled machinery and extraction',h:'Manufacture a detailed joinery item through a complete safe workshop sequence',spec:'architectural joinery under safe workshop controls',materials:'Prepared timber; adhesives; fixings; guards; extraction and PPE/RPE'},
+  2:{e:'Make a small item from a low-waste cutting plan',m:'Manufacture a frame using certified timber and segregated waste',h:'Produce a detailed joinery item while controlling yield, waste and regulatory requirements',spec:'sustainable regulated joinery',materials:'Certified timber; sheet material; adhesive; fixings; waste segregation containers'},
+  3:{e:'Make a component from a simple workshop drawing',m:'Manufacture a frame from a dimensioned drawing and cutting list',h:'Produce a complex assembly from plans, sections and full-size details',spec:'drawing-led architectural joinery',materials:'Prepared timber; sheet material; drawing pack; rods/templates; fixings and adhesive'},
+  4:{e:'Prepare a cutting list and make a small frame',m:'Estimate and manufacture a window or door frame',h:'Estimate all materials and manufacture a multi-component joinery assembly',spec:'joinery estimating and material selection',materials:'Prepared timber; sheet material; adhesive; fixings; calculation and cutting-list sheet'},
+  5:{e:'Prepare and joint components using hand tools',m:'Manufacture a frame using hand and portable power tools',h:'Produce a detailed assembly requiring accurate machining, trimming and finishing',spec:'joinery tools and equipment',materials:'Prepared timber; approved hand tools; portable power tools; adhesive and fixings'},
+  6:{e:'Make a simple drilling jig',m:'Make and use a jig for repeated joints',h:'Produce an adjustable jig and use levels or setting aids to manufacture repeated components',spec:'jigs and levels',materials:'Plywood/MDF; hardwood guides; stops; fixings; measuring and levelling equipment'},
+  7:{e:'Assemble a joinery frame with a partner',m:'Manufacture a small item through coordinated team stages',h:'Complete a multi-stage joinery assembly using planned communication, checks and handovers',spec:'team-based architectural joinery',materials:'Prepared timber; adhesive; fixings; task and communication plan'},
+  8:{e:'Set out a simple rectangular frame on a rod',m:'Set out a door or window frame full size',h:'Set out a staircase or complex frame using rods, templates and geometric construction',spec:'setting out',materials:'Rod material; drawing instruments; templates; prepared timber for verification pieces'},
+  9:{e:'Make a mortise-and-tenon joint',m:'Produce a framed assembly using two joint types',h:'Manufacture a detailed frame using haunched, wedged or compound joints and connections',spec:'joints and connections',materials:'Prepared timber; adhesive; wedges/dowels; clamps; joint samples or drawing'},
+  10:{e:'Make a small fixed window frame',m:'Manufacture a casement window frame and sash',h:'Manufacture a detailed window assembly with glazing rebates, weathering details and hardware preparation',spec:'windows',materials:'Prepared timber; glazing beads; seals; hardware; adhesive; fixings'},
+  11:{e:'Make a simple door lining',m:'Manufacture a rebated door frame with threshold',h:'Manufacture a detailed external door frame with weather seals, threshold and prepared ironmongery positions',spec:'door frames and linings',materials:'Prepared frame timber; threshold; seals; adhesive; fixings; ironmongery templates'},
+  12:{e:'Make one stair tread-and-riser sample',m:'Set out and manufacture a short straight-flight stair section',h:'Manufacture a detailed staircase section with strings, treads, risers, newel and balustrade connections',spec:'staircases',materials:'String timber; treads; risers; newel components; wedges; adhesive; fixings'},
+  13:{e:'Make a small ledged timber door',m:'Manufacture a framed, ledged and braced door',h:'Manufacture a detailed panelled or glazed timber door prepared for ironmongery',spec:'timber doors',materials:'Prepared stiles and rails; panels or boards; adhesive; wedges; glazing beads where required'},
+  14:{e:'Make a small cabinet carcass',m:'Manufacture a wall or floor unit with door and shelf',h:'Manufacture a fitted unit with carcass, face frame, doors, drawers and scribed finishing pieces',spec:'wall and floor units',materials:'Timber or sheet material; edging; hinges; runners; handles; adhesive and fixings'},
+  15:{e:'Machine prepared timber to a stated section',m:'Machine components for a framed joinery item',h:'Set up and machine a complete component set using several workshop machines and controlled sequences',spec:'joinery machinery',materials:'Rough-sawn or prepared timber; machine setting samples; extraction; guards; measuring equipment'}
+ },
+ 'property-maintenance-operative-st0171-v1-1':{
+  1:{e:'Complete a minor door repair safely',m:'Repair a damaged internal finish using controlled tools and access',h:'Complete a multi-trade room repair using isolations, dust control and safe sequencing',spec:'safe property maintenance',materials:'Task-specific repair materials; PPE/RPE; barriers; protection and cleaning materials'},
+  2:{e:'Inspect and prepare a room for one maintenance repair',m:'Plan and complete two linked repair activities',h:'Survey, plan and complete a coordinated multi-trade maintenance task',spec:'planning and preparation',materials:'Inspection sheet; task-specific materials; protection; access equipment; waste containers'},
+  3:{e:'Select materials and complete a minor compliant repair',m:'Complete a repair using technical information and manufacturer instructions',h:'Complete a multi-material repair against drawings, product data and regulatory requirements',spec:'regulations, materials and technical information',materials:'Task-specific materials; technical data sheets; drawings; approved fixings and finishes'},
+  4:{e:'Replace a simple fitting using suitable hand tools',m:'Repair a component after carrying out the required safe isolation',h:'Complete a fault-led repair using hand and power tools with documented isolation and reinstatement',spec:'tools, equipment and safe isolation',materials:'Replacement fitting; approved tools; lock-off equipment; test/check equipment where authorised'},
+  5:{e:'Inspect and record one emergency fitting',m:'Test and maintain a set of emergency signs or devices',h:'Complete a planned emergency-system inspection, routine maintenance and fault-reporting exercise',spec:'emergency systems and routine testing',materials:'Check sheets; replacement batteries or fittings where permitted; labels; cleaning materials'},
+  6:{e:'Replace a tap washer or simple waste fitting',m:'Repair a leaking pipe or clear a local drainage blockage',h:'Diagnose and repair linked plumbing and drainage faults including isolation, component replacement and testing',spec:'plumbing and drainage repairs',materials:'Pipe/fittings; washers/seals; traps; drainage tools; approved jointing materials'},
+  7:{e:'Replace or service one environmental control component',m:'Diagnose and repair a simple heating or ventilation control fault',h:'Complete a fault-led repair and performance check on an environmental or energy-management system',spec:'environmental and energy systems',materials:'Approved replacement control/component; isolation equipment; technical literature; test records'},
+  8:{e:'Adjust a door and replace one item of ironmongery',m:'Repair a window or door including seals and glazing beads',h:'Complete a detailed doorset or window repair involving frame correction, glazing, seals and hardware',spec:'windows, doors and glazing repairs',materials:'Timber repair pieces; hardware; seals; glazing beads; approved glazing material; fixings'},
+  9:{e:'Patch a small plaster defect and redecorate it',m:'Repair a damaged plaster area and apply a complete paint finish',h:'Complete a room-area repair involving plaster preparation, sealing, cutting-in and multi-coat decoration',spec:'plastering, painting and decorating repairs',materials:'Plaster/filler; scrim; primer; paint; sealant; abrasives; masking and protection'},
+  10:{e:'Replace one damaged wall tile',m:'Repair a tiled area or small section of floor finish',h:'Set out and repair combined wall and floor finishes around obstacles and edges',spec:'wall and floor finishes',materials:'Tiles or flooring; adhesive; grout; trims; levelling compound where required; sealant'},
+  11:{e:'Replace two damaged bricks or renew a short pointing joint',m:'Repair a cracked masonry panel and coping section',h:'Complete a detailed masonry repair involving dismantling, bonding, pointing and damp-proofing details',spec:'masonry repairs',materials:'Matching masonry; mortar; coping/DPC materials; temporary protection; pointing tools'},
+  12:{e:'Replace one damaged roof tile from a safe training rig',m:'Repair a local roof defect including underlay or flashing detail',h:'Complete a detailed pitched or flat-roof repair with weathering, edge and drainage details',spec:'roofing repairs',materials:'Matching tiles/slates or membrane; battens; fixings; underlay; flashing or repair tape'},
+  13:{e:'Replace one damaged fence board or railing fixing',m:'Repair a fence panel, post or short railing section',h:'Reconstruct a damaged boundary section including posts, panels/rails, alignment and protective finish',spec:'fencing and railing repairs',materials:'Posts; boards/panels or rails; brackets; concrete/post mix; fixings; protective coating'},
+  14:{e:'Repair a small paving defect',m:'Relay a short path section or repair a landscape edge',h:'Complete a groundwork repair involving excavation, sub-base, falls, drainage and finished surfacing',spec:'groundwork and landscaping repairs',materials:'Sub-base; bedding material; paving/edging; drainage components where specified; topsoil or seed'},
+  15:{e:'Complete and document a minor repair to specification',m:'Inspect, repair and produce a full digital completion record',h:'Complete a multi-stage maintenance task with quality checks, customer handover, reporting and improvement recommendations',spec:'quality, reporting and professional practice',materials:'Task-specific repair materials; inspection sheets; digital reporting device; handover record'}
+ }
+};
+function practicalRandomInt(min,max,step=1){const count=Math.floor((max-min)/step)+1;return min+Math.floor(Math.random()*count)*step}
+function generatedPracticalDrawing(difficulty='medium',assignment,title='Practical task'){
+ const cid=COURSE.id||'',hard=difficulty==='hard',easy=difficulty==='easy',lower=String(title).toLowerCase();
+ let width=easy?900:hard?1800:1350,height=easy?600:hard?1500:1050,depth=100,unit='mm',member='';
+ if(cid.includes('brick')){width=practicalRandomInt(easy?900:hard?1800:1350,easy?1350:hard?2700:2025,225);height=practicalRandomInt(easy?600:hard?1200:825,easy?900:hard?1800:1350,75);depth=lower.includes('cavity')?300:lower.includes('solid')||lower.includes('one-brick')?215:102.5;member='Brick 215 × 102.5 × 65; nominal 10 mm joints';}
+ else if(cid.includes('carpentry')){width=practicalRandomInt(easy?900:hard?2400:1500,easy?1500:hard?3600:2400,100);height=practicalRandomInt(easy?900:hard?2100:1800,easy?1500:hard?2700:2400,100);depth=lower.includes('floor')?200:lower.includes('roof')?150:lower.includes('door')?100:89;member=lower.includes('floor')?'C24 joists 47 × 195':lower.includes('roof')?'C24 rafters 47 × 150':'CLS/C24 timber 38 × 89';}
+ else if(cid.includes('joiner')){width=practicalRandomInt(easy?500:hard?1200:800,easy?900:hard?2000:1400,50);height=practicalRandomInt(easy?500:hard?1200:800,easy?900:hard?2200:1600,50);depth=practicalRandomInt(32,50,2);member='Prepared joinery timber to drawing; finished section as scheduled';}
+ else {width=practicalRandomInt(easy?600:hard?1500:900,easy?1000:hard?2400:1600,50);height=practicalRandomInt(easy?400:hard?1200:700,easy?800:hard?2000:1300,50);depth=practicalRandomInt(50,150,10);member='Components and materials selected to manufacturer specification';}
+ const hasOpening=/opening|door|window|aperture|lintel|frame|unit|stair/.test(lower);const hasReturn=/return|corner|pier|gable|roof|hip|valley/.test(lower);
+ const openingW=hasOpening?Math.min(practicalRandomInt(450,Math.max(450,width-450),50),Math.max(450,width-300)):0;
+ const openingH=hasOpening?Math.min(practicalRandomInt(450,Math.max(450,height-225),75),Math.max(450,height-150)):0;
+ const leftPier=hasOpening?Math.max(150,Math.floor((width-openingW)/2)):0;
+ const rightPier=hasOpening?width-openingW-leftPier:0;
+ const returnDepth=hasReturn?practicalRandomInt(450,900,50):0;
+ const tolerance=cid.includes('brick')?'±3 mm over 1 m; ±6 mm overall; joints 10 mm ±2 mm':cid.includes('carpentry')||cid.includes('joiner')?'±2 mm component size; ±3 mm overall; square within 3 mm diagonals':'±3 mm unless manufacturer tolerance is tighter';
+ const details=[`Overall width: ${width} ${unit}`,`Overall height/length: ${height} ${unit}`,`Overall depth/thickness: ${depth} ${unit}`,member,`Datum: finished floor/base level = 0`,`Tolerance: ${tolerance}`];
+ if(hasOpening)details.push(`Opening: ${openingW} mm wide × ${openingH} mm high`,`Left side/pier: ${leftPier} mm`,`Right side/pier: ${rightPier} mm`,`Opening centred unless drawing dimensions state otherwise`);
+ if(hasReturn)details.push(`Return/projection: ${returnDepth} mm`,`Internal angle: 90° unless shown otherwise`);
+ if(cid.includes('brick'))details.push(`Course height: 75 mm nominal`,`Bond: ${lower.includes('solid')?'English or bond stated in task':'stretcher bond unless feature requires otherwise'}`,`DPC/cavity components positioned as shown and kept continuous`);
+ if(cid.includes('carpentry'))details.push(`Stud/joist/rafter centres: ${hard?400:600} mm maximum`,`Fixings: to component and substrate manufacturer guidance`,`All cut ends, junctions and openings fully supported`);
+ return {version:1,courseId:cid,title,width,height,depth,unit,member,hasOpening,openingW,openingH,leftPier,rightPier,hasReturn,returnDepth,tolerance,details,scale:'NTS – use written dimensions',generatedAt:new Date().toISOString()};
+}
+function practicalDrawingSVG(draw){if(!draw)return'';const W=920,H=650,m=90,fw=520,fh=270,x=120,y=85,sx=fw/draw.width,sy=fh/draw.height,ow=draw.hasOpening?draw.openingW*sx:0,oh=draw.hasOpening?draw.openingH*sy:0,ox=x+(draw.leftPier||0)*sx,oy=y+fh-oh,planY=445,planH=70,sectionX=720,sectionW=80;const dim=(x1,y1,x2,y2,label,vertical=false)=>vertical?`<path d="M${x1} ${y1}H${x1+18}M${x1+9} ${y1}V${y2}M${x1} ${y2}H${x1+18}"/><text x="${x1-8}" y="${(y1+y2)/2}" transform="rotate(-90 ${x1-8} ${(y1+y2)/2})">${label}</text>`:`<path d="M${x1} ${y1}V${y1+18}M${x1} ${y1+9}H${x2}M${x2} ${y1}V${y1+18}"/><text x="${(x1+x2)/2}" y="${y1-7}">${label}</text>`;return `<svg class="generated-practical-drawing" viewBox="0 0 ${W} ${H}" role="img" aria-label="Dimensioned practical task drawing"><style>.o{fill:#fff;stroke:#183438;stroke-width:3}.f{fill:#eaf5ef;stroke:#183438;stroke-width:3}.d{fill:none;stroke:#c62828;stroke-width:2}.d text,text{font-family:Arial,sans-serif;fill:#17282b;font-size:16px}.d text{fill:#c62828;font-weight:700;text-anchor:middle}.t{font-weight:800;font-size:19px}.n{font-size:13px;fill:#5e6f72}</style><text class="t" x="120" y="38">FRONT ELEVATION</text><rect class="f" x="${x}" y="${y}" width="${fw}" height="${fh}"/>${draw.hasOpening?`<rect class="o" x="${ox}" y="${oy}" width="${ow}" height="${oh}"/>`:''}<g class="d">${dim(x,y-34,x+fw,y-34,draw.width+' mm')}${dim(x-42,y,x-42,y+fh,draw.height+' mm',true)}${draw.hasOpening?dim(ox,oy-27,ox+ow,oy-27,draw.openingW+' mm')+dim(ox-30,oy,ox-30,y+fh,draw.openingH+' mm',true):''}</g><text class="t" x="120" y="420">PLAN VIEW</text><rect class="f" x="${x}" y="${planY}" width="${fw}" height="${planH}"/>${draw.hasReturn?`<rect class="f" x="${x+fw-planH}" y="${planY-planH*1.5}" width="${planH}" height="${planH*1.5}"/>`:''}<g class="d">${dim(x,planY+planH+38,x+fw,planY+planH+38,draw.width+' mm')}${dim(x-42,planY,x-42,planY+planH,draw.depth+' mm',true)}${draw.hasReturn?dim(x+fw+38,planY-planH*1.5,x+fw+38,planY+planH,(draw.returnDepth||0)+' mm',true):''}</g><text class="t" x="700" y="38">SECTION</text><rect class="f" x="${sectionX}" y="${y}" width="${sectionW}" height="${fh}"/><g class="d">${dim(sectionX,y-34,sectionX+sectionW,y-34,draw.depth+' mm')}${dim(sectionX+sectionW+30,y,sectionX+sectionW+30,y+fh,draw.height+' mm',true)}</g><text class="n" x="120" y="610">${draw.scale}</text><text class="n" x="520" y="610">All dimensions in millimetres. Do not scale drawing.</text></svg>`}
+function practicalTaskBrief(difficulty='medium',assignment,drawing){const a=assignment||COURSE.assignments?.find(x=>x.n===state.assignment)||COURSE.assignments?.[0],courseTasks=PRACTICAL_ASSIGNMENT_TASKS[COURSE.id]||{},profile=courseTasks[a?.n]||courseTasks[1],key=difficulty==='easy'?'e':difficulty==='hard'?'h':'m',title=profile?.[key]||`${difficultyLabel(difficulty)} ${COURSE.name} practical task`,hours=difficulty==='easy'?'1–2':difficulty==='hard'?'4–6':'2–4',spec=drawing||generatedPracticalDrawing(difficulty,a,title),extras=difficulty==='easy'?'Use a straightforward sequence with limited components and no unnecessary complexity.':difficulty==='hard'?'Include detailed setting out, several linked operations, challenging junctions or features, and final presentation to a high trade standard.':'Include additional setting out and at least one feature requiring accurate coordination, cutting, fixing, joining or finishing.';return `${title}\n\nDifficulty: ${difficultyLabel(difficulty)}\nEstimated duration: ${hours} hours\nAssignment focus: ${a?.title||'Practical assessment'}\n\nTask description\nComplete the following ${profile?.spec||COURSE.name.toLowerCase()+' work'} activity: ${title}. ${extras} Work strictly to the generated drawing and written dimensions supplied with this attempt.\n\nRequired dimensions\n• ${spec.details.join('\n• ')}\n\nSuggested materials\n• ${(profile?.materials||'Suitable trade materials and components').split(';').join('\n• ')}\n\nCompletion requirements\n• Check the drawing, datum, all dimensions and tolerances before starting.\n• Set out and prepare the work area correctly.\n• Select, inspect and use suitable tools, equipment and materials.\n• Complete the activity using the correct trade sequence and safe working methods.\n• Check every stated measurement, alignment, fit, function and finish.\n• Correct defects and leave the work area clean and safe.\n• Present the completed work for assessment against the existing official KSB marking criteria.`}
+function projectMaterialTarget(m){const n=Number(m.target??m.suggested);return Number.isFinite(n)?n:null}
+function projectMaterialFeedback(m){const target=projectMaterialTarget(m),raw=String(m.qty??'').trim();if(target===null||raw==='')return {state:'empty',symbol:'',label:'Enter quantity'};const qty=Number(raw);if(!Number.isFinite(qty))return {state:'empty',symbol:'',label:'Enter quantity'};const wholeUnits=/each|brick|block|tile|fitting|clip|screw|pack/i.test(`${m.unit||''} ${m.name||''}`),maximum=wholeUnits?Math.ceil(target*1.10):target*1.10,tolerance=Math.max(0.001,Math.abs(target)*0.0001);if(qty<target-tolerance)return {state:'low',symbol:'▲',label:'Increase quantity'};if(qty>maximum+tolerance)return {state:'high',symbol:'▼',label:'Reduce quantity'};return {state:'correct',symbol:'✓',label:'Suitable quantity'}}
+function projectMaterialsReady(p){return (p.materials||[]).length>0&&(p.materials||[]).every(m=>projectMaterialFeedback(m).state==='correct')}
+function projectMaterialTotal(p){return (p.materials||[]).reduce((s,m)=>s+(Number(m.qty)||0)*(Number(m.price)||0),0)}
+function projectQuoteTotal(p){return projectMaterialTotal(p)+(Number(p.labour)||0)+(Number(p.overheads)||0)}
+function quoteDecision(p){const total=projectQuoteTotal(p),ratio=total/Math.max(1,p.budget),urgencyBonus=p.urgency==='Urgent'?0.12:p.urgency==='Normal'?0.05:0;if(ratio<=1+urgencyBonus)return ['accepted','Quote accepted. The price is suitable for the customer’s budget and urgency.'];if(ratio<=1.12+urgencyBonus)return ['negotiate','The customer would like a revised quotation closer to the available budget.'];return ['rejected','The quotation is above the customer’s acceptable range. Review quantities, waste, overheads or labour.']}
+function projectTabs(active){return `<div class="tool-tabs projectmate-tabs"><button class="${active==='home'?'active':''}" data-pm-tab="home">Projects</button><button class="${active==='create'?'active':''}" data-pm-tab="create">Create</button><button class="${active==='mine'?'active':''}" data-pm-tab="mine">My projects</button></div>`}
+function renderProjectMate(){const tab=state.projectMateTab||'home',p=state.activeProjectId?projectById(state.activeProjectId):null;let body='';if(p)body=projectDetail(p);else if(tab==='home')body=`<section class="projectmate-actions projectmate-home-actions"><div class="tool-app-card project-generator-card"><span class="tool-app-icon">${appIcon('project')}</span><h3>Generate project</h3><p>Create a standalone customer-style project with task-specific KSBs.</p><label class="field"><span>Difficulty</span><select class="input" id="projectDifficulty"><option value="easy">Easy · 1–2 hours</option><option value="medium" selected>Medium · 2–4 hours</option><option value="hard">Hard · 4–6 hours</option></select></label><button class="btn" id="generateProject">Generate project</button></div><button class="tool-app-card project-create-card" data-pm-tab="create"><span class="tool-app-icon">${appIcon('note')}</span><h3>Create project</h3><p>Write a challenge for yourself or another learner.</p></button></section><section class="accuracy-card projectmate-info-card"><strong>Standalone project generator</strong><p>Projects are generated for ${esc(COURSE.name)}. KSBs are selected from the project content rather than copied from a linked assignment.</p></section>`;else if(tab==='create')body=createProjectForm();else body=projectList().length?`<section class="note-list">${projectList().map(projectCard).join('')}</section>`:`<section class="card panel"><h3>No projects saved</h3><p class="muted">Generate or create a project to begin.</p></section>`;app.innerHTML=shell(`<button class="back no-print" id="backResources">← Toolbox</button><div class="section-heading"><div><div class="number">Workplace app</div><h2>ProjectMate</h2><p class="muted">Quote, complete and review realistic workshop jobs.</p></div></div>${p?'':projectTabs(tab)}${body}`);document.getElementById('backResources').onclick=()=>{if(p){state.activeProjectId=null;renderProjectMate()}else{state.view='resources';render()}};document.querySelectorAll('[data-pm-tab]').forEach(b=>b.onclick=()=>{state.projectMateTab=b.dataset.pmTab;state.activeProjectId=null;renderProjectMate()});const gen=document.getElementById('generateProject');if(gen)gen.onclick=async()=>{const x=generatedProject(document.getElementById('projectDifficulty')?.value||'medium');await saveProjects([x,...projectList()]);state.activeProjectId=x.id;renderProjectMate()};bindProjectMate(p)}
+function projectCard(p){const saved=p.status==='complete'&&p.completionSaved;return `<article class="project-list-card ${saved?'project-completed-saved':''}"><button class="note-card project-open-card" data-open-project="${p.id}"><div class="note-card-head"><div><h3>${esc(p.title)}</h3><small>${esc(saved?'Completed and saved':p.status==='complete'?'Completion not saved':p.quoteResult==='accepted'?'Ready to build':'Quotation stage')} · ${new Date(p.createdAt).toLocaleDateString('en-GB')}</small></div><span class="resource-arrow">›</span></div></button><button class="project-delete-button" data-delete-project="${p.id}" aria-label="Delete ${esc(p.title)}" title="Delete project">${appIcon('delete')}</button></article>`}
+function createProjectForm(){return `<section class="card panel"><div class="field"><label>Project title</label><input class="input" id="cpTitle"></div><div class="field"><label>Customer brief</label><textarea class="input" id="cpBrief"></textarea></div><div class="calc-grid"><div class="field"><label>Dimensions</label><input class="input" id="cpDims"></div><div class="field"><label>Budget (£)</label><input class="input" id="cpBudget" type="number" min="1"></div><div class="field"><label>Expected hours</label><input class="input" id="cpHours" type="number" value="2.5" step="0.25"></div><div class="field"><label>Difficulty</label><select class="input" id="cpDifficulty"><option value="easy">Easy · 1–2 hours</option><option value="medium" selected>Medium · 2–4 hours</option><option value="hard">Hard · 4–6 hours</option></select></div></div><div class="accuracy-card"><strong>Standalone project</strong><p>This custom project is not linked to an assignment or official practical-assessment marking criteria.</p></div><button class="btn" id="saveCustomProject">Create project</button></section>`}
+function projectDetail(p){const mat=projectMaterialTotal(p),total=projectQuoteTotal(p),running=!!p.timerStarted,elapsed=p.elapsed+(running?Date.now()-p.timerStarted:0),hours=elapsed/3600000,earn=hours>0?(Number(p.labour)||0)/hours:0,materialsReady=projectMaterialsReady(p);return `<section class="project-brief card panel"><div class="project-status-row"><span class="viz-badge">${esc(p.urgency)} priority</span><span class="viz-badge">Budget ${money(p.budget)}</span></div><h2>${esc(p.title)}</h2><p>${esc(p.brief)}</p><p><strong>Required size:</strong> ${esc(p.dimensions)}</p><p><strong>Target duration:</strong> ${p.targetHours} hours</p><p><strong>Difficulty:</strong> ${esc(difficultyLabel(p.difficulty||'medium'))}</p><div class="ksb-map"><strong>Project KSBs</strong>${(p.ksbs||[]).map(k=>`<span title="${esc(k.text||'')}">${esc(k.code)}</span>`).join('')||'<span>No KSBs selected</span>'}</div></section><section class="card panel"><h3>Materials and quotation</h3><p class="muted">Enter the quantities you calculate. The correct quantity may include up to 10% extra for wastage. More than 10% extra is marked too high.</p><div class="material-feedback-key"><span class="material-status low">▲ Increase</span><span class="material-status correct">✓ Suitable</span><span class="material-status high">▼ Reduce</span></div><div class="project-materials">${p.materials.map((m,i)=>{const f=projectMaterialFeedback(m);return `<div class="project-material-row"><div><strong>${esc(m.name)}</strong><small>${money(m.price)} per ${esc(m.unit)}</small><span class="material-status ${f.state}" id="pmMaterialStatus${i}" aria-live="polite">${f.symbol} ${f.label}</span></div><input class="input material-qty-input ${f.state}" type="number" min="0" step="0.01" value="${esc(m.qty)}" data-pm-qty="${i}" aria-label="Quantity of ${esc(m.name)}"></div>`}).join('')}</div><div class="calc-grid"><div class="field"><label>Labour charge (£)</label><input class="input" id="pmLabour" type="number" min="0" step="0.01" value="${p.labour||''}"></div><div class="field"><label>Overheads (£)</label><input class="input" id="pmOverheads" type="number" min="0" step="0.01" value="${p.overheads||''}"></div></div><div class="project-totals"><span>Materials <strong id="pmMaterialsTotal">${money(mat)}</strong></span><span>Total quote <strong id="pmQuoteTotal">${money(total)}</strong></span></div><button class="btn" id="submitQuote" ${materialsReady?'':'disabled'}>Submit quotation</button>${materialsReady?'':'<p class="muted" id="materialsReadyMessage">All listed materials must show ✓ before submitting the quotation.</p>'}${p.quoteResult?`<div class="accuracy-card quote-outcome ${p.quoteResult}"><strong>${p.quoteResult==='accepted'?'Quote accepted':p.quoteResult==='negotiate'?'Negotiation requested':'Quote rejected'}</strong><p>${esc(p.quoteMessage||'')}</p></div>`:''}</section>${p.quoteResult==='accepted'?`<section class="card panel"><h3>Job timer</h3><div class="project-timer" id="projectTimer">${formatElapsed(elapsed)}</div><div class="btn-row"><button class="btn" id="toggleProjectTimer">${running?'Pause timer':elapsed?'Resume timer':'Start job'}</button>${elapsed&&!running?'<button class="btn secondary" id="finishProject">Finish job</button>':''}</div><div class="project-earnings"><span>Labour earned per hour</span><strong>${money(earn)}</strong></div></section>`:''}${p.status==='complete'?`<section class="card panel"><h3>Finished project</h3><label class="btn icon-btn">${appIcon('camera','button-icon')}Add finished photo<input class="hide" id="projectPhotos" type="file" accept="image/*" capture="environment" multiple></label><div class="project-photo-grid">${p.photos.map(x=>`<img data-project-photo="${x.blobKey}" alt="Finished project photo">`).join('')}</div><div class="field"><label>Completion note</label><textarea class="input" id="projectCompletion">${esc(p.completionNote||'')}</textarea></div><label class="field project-skill-grade"><span>Practical grade</span><select class="input" id="projectSkillGrade"><option value="">Select grade</option><option value="Pass" ${p.skillGrade==='Pass'?'selected':''}>Pass</option><option value="Merit" ${p.skillGrade==='Merit'?'selected':''}>Merit</option><option value="Distinction" ${p.skillGrade==='Distinction'?'selected':''}>Distinction</option></select><small>This grade is shown on the learner’s Skills Card.</small></label><button class="btn" id="saveProjectCompletion">${p.completionSaved?'Save changes':'Save completion'}</button>${p.completionSaved?'<div class="accuracy-card project-saved-confirmation"><strong>✓ Completed project saved</strong><p>This project will appear green in My projects.</p></div>':''}<div class="accuracy-card"><strong>Effective labour rate: ${money(earn)} per hour</strong><p>Working time: ${formatElapsed(elapsed)} · Labour charge: ${money(p.labour)}</p></div></section>`:''}<section class="card panel project-delete-panel"><button class="btn danger-button" id="deleteActiveProject">Delete project</button></section>`}
+
+function formatElapsed(ms){const total=Math.floor(ms/1000),h=Math.floor(total/3600),m=Math.floor((total%3600)/60),sec=total%60;return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`}
+function bindProjectMate(p){document.querySelectorAll('[data-open-project]').forEach(b=>b.onclick=()=>{state.activeProjectId=b.dataset.openProject;renderProjectMate()});document.querySelectorAll('[data-delete-project]').forEach(b=>b.onclick=async e=>{e.stopPropagation();const project=projectById(b.dataset.deleteProject);if(!project||!confirm(`Delete ${project.title}? This cannot be undone.`))return;for(const photo of project.photos||[]){if(photo.blobKey)try{await deleteStore(photo.blobKey)}catch{}}await saveProjects(projectList().filter(x=>x.id!==project.id));renderProjectMate();toast('Project deleted')});const saveCustom=document.getElementById('saveCustomProject');if(saveCustom)saveCustom.onclick=async()=>{const difficulty=document.getElementById('cpDifficulty')?.value||'medium',x={id:uid(),createdAt:Date.now(),status:'draft',source:'custom',difficulty,title:document.getElementById('cpTitle').value.trim(),brief:document.getElementById('cpBrief').value.trim(),dimensions:document.getElementById('cpDims').value.trim(),budget:Number(document.getElementById('cpBudget').value),targetHours:Number(document.getElementById('cpHours').value)||2.5,urgency:'Normal',materials:[],labour:0,overheads:0,quoteResult:'',assignment:null,ksbs:[],elapsed:0,timerStarted:0,photos:[],completionNote:''};if(!x.title||!x.brief||!x.budget)return toast('Complete the project title, brief and budget');await saveProjects([x,...projectList()]);state.activeProjectId=x.id;renderProjectMate()};if(!p)return;const deleteActive=document.getElementById('deleteActiveProject');if(deleteActive)deleteActive.onclick=async()=>{if(!confirm(`Delete ${p.title}? This cannot be undone.`))return;for(const photo of p.photos||[]){if(photo.blobKey)try{await deleteStore(photo.blobKey)}catch{}}await saveProjects(projectList().filter(x=>x.id!==p.id));state.activeProjectId=null;state.projectMateTab='mine';renderProjectMate();toast('Project deleted')};const update=async()=>{await saveProjects(projectList().map(x=>x.id===p.id?p:x))};const refreshQuoteTotals=()=>{const materials=document.getElementById('pmMaterialsTotal'),quoteTotal=document.getElementById('pmQuoteTotal');if(materials)materials.textContent=money(projectMaterialTotal(p));if(quoteTotal)quoteTotal.textContent=money(projectQuoteTotal(p))};const refreshMaterialFeedback=(i,input)=>{const f=projectMaterialFeedback(p.materials[i]),status=document.getElementById(`pmMaterialStatus${i}`);if(status){status.className=`material-status ${f.state}`;status.textContent=`${f.symbol} ${f.label}`.trim()}input.classList.remove('empty','low','high','correct');input.classList.add(f.state);const ready=projectMaterialsReady(p),submit=document.getElementById('submitQuote'),msg=document.getElementById('materialsReadyMessage');if(submit)submit.disabled=!ready;if(msg&&ready)msg.remove()};document.querySelectorAll('[data-pm-qty]').forEach(i=>i.oninput=async()=>{const index=Number(i.dataset.pmQty);p.materials[index].qty=i.value;refreshQuoteTotals();refreshMaterialFeedback(index,i);await update()});const lab=document.getElementById('pmLabour'),over=document.getElementById('pmOverheads');if(lab)lab.oninput=async()=>{p.labour=Number(lab.value)||0;refreshQuoteTotals();await update()};if(over)over.oninput=async()=>{p.overheads=Number(over.value)||0;refreshQuoteTotals();await update()};const quote=document.getElementById('submitQuote');if(quote)quote.onclick=async()=>{p.labour=Number(document.getElementById('pmLabour').value)||0;p.overheads=Number(document.getElementById('pmOverheads').value)||0;const [r,msg]=quoteDecision(p);p.quoteResult=r;p.quoteMessage=msg;await update();renderProjectMate()};const toggle=document.getElementById('toggleProjectTimer');if(toggle)toggle.onclick=async()=>{if(p.timerStarted){p.elapsed+=Date.now()-p.timerStarted;p.timerStarted=0}else p.timerStarted=Date.now();await update();renderProjectMate()};const finish=document.getElementById('finishProject');if(finish)finish.onclick=async()=>{p.status='complete';p.completionSaved=false;await update();renderProjectMate()};const photos=document.getElementById('projectPhotos');if(photos)photos.onchange=async()=>{for(const file of Array.from(photos.files||[])){const blobKey=`projectmate:${p.id}:${uid()}`;await putStore(blobKey,file);p.photos.push({id:uid(),blobKey,name:file.name})}await update();renderProjectMate()};const saveCompletion=document.getElementById('saveProjectCompletion');if(saveCompletion)saveCompletion.onclick=async()=>{p.completionNote=document.getElementById('projectCompletion').value;p.skillGrade=document.getElementById('projectSkillGrade')?.value||'';if(!p.skillGrade)return toast('Select Pass, Merit or Distinction');p.completionSaved=true;p.completedAt=p.completedAt||Date.now();await update();window.ApprenticeAnalytics?.trackEvent('projectmate_skill_graded',{course_id:COURSE.id,grade:p.skillGrade});renderProjectMate();toast('Completed project saved')};hydrateProjectPhotos();if(p.timerStarted)setTimeout(()=>{if(state.activeProjectId===p.id)renderProjectMate()},1000)}
+async function hydrateProjectPhotos(){document.querySelectorAll('[data-project-photo]').forEach(async img=>{try{const blob=await getStore(img.dataset.projectPhoto);if(blob)img.src=URL.createObjectURL(blob)}catch{}})}
+
+function noteMediaLabel(type){return type==='image'?'Photo':type==='audio'?'Voice recording':'Video'}
+async function storeNoteFiles(files,type,noteId){
+ const items=[];
+ for(const file of Array.from(files||[])){
+  const blobKey=`notepad:${noteId}:${type}:${uid()}`;
+  await putStore(blobKey,file);
+  items.push({id:uid(),type,blobKey,name:file.name||noteMediaLabel(type),mime:file.type||'',createdAt:Date.now()});
+ }
+ return items;
+}
+async function deleteNoteMedia(note){for(const item of note.media||[]){if(item.blobKey)try{await deleteStore(item.blobKey)}catch{}}}
+async function hydrateNoteMedia(){
+ document.querySelectorAll('[data-note-media]').forEach(async el=>{
+  try{const blob=await getStore(el.dataset.noteMedia);if(!blob)return;const url=URL.createObjectURL(blob);el.src=url;el.addEventListener('loadeddata',()=>{}, {once:true});el.addEventListener('load',()=>{}, {once:true})}catch(error){console.warn('Note media unavailable',error)}
+ });
+}
+function renderNotepad(){
+ const query=(state.resourceSearch||'').trim().toLowerCase();
+ const notes=learnerNotes().filter(n=>!query||`${n.title} ${n.text}`.toLowerCase().includes(query));
+ const editing=state.editingNoteId?learnerNotes().find(n=>n.id===state.editingNoteId):null;
+ app.innerHTML=shell(`<button class="back no-print" id="backResources">← Toolbox</button><div class="notepad-search-launch-row no-print"><button class="notepad-search-button ${query?'active':''}" id="openNoteSearch" aria-label="Search NoteMate" title="Search NoteMate">${appIcon('search')}</button></div><div class="section-heading notepad-heading"><div><div class="number">Toolbox</div><h2>NoteMate</h2><p class="muted">Save workplace notes, measurements and evidence reminders.</p></div><button class="btn" id="newNote">+ New note</button></div>${editing?noteEditor(editing):''}<section class="note-list">${notes.length?notes.map(noteCard).join(''):`<div class="card panel empty-notes"><h3>${query?'No matching notes':'No notes saved yet'}</h3><p class="muted">${query?'Try a different search.':'Press New note to create your first learner note.'}</p></div>`}</section>${state.notepadSearchOpen?`<div class="modal notepad-search-modal no-print" id="noteSearchModal"><section class="modal-card notepad-search-sheet" role="dialog" aria-modal="true" aria-labelledby="noteSearchTitle"><div class="notepad-search-modal-head"><h2 id="noteSearchTitle">Search notes</h2><button class="icon-close-button" id="closeNoteSearch" aria-label="Close search">${appIcon('close')}</button></div><div class="notepad-search-popup-field"><span>${appIcon('search')}</span><input class="input" id="noteSearch" type="search" placeholder="Search note names or text" value="${esc(state.resourceSearch||'')}" autocomplete="off"></div>${query?'<button class="link-button clear-note-search" id="clearNoteSearch">Clear search</button>':''}</section></div>`:''}`);
+ document.getElementById('backResources').onclick=()=>{state.view='resources';state.editingNoteId=null;state.notepadSearchOpen=false;render()};
+ document.getElementById('newNote').onclick=()=>{const note={id:uid(),title:'',text:'',media:[],createdAt:Date.now(),updatedAt:Date.now()};state.data[NOTEPAD_KEY]=[note,...learnerNotes()];state.editingNoteId=note.id;state.notepadSearchOpen=false;render();window.scrollTo(0,0)};
+ document.getElementById('openNoteSearch').onclick=()=>{state.notepadSearchOpen=true;render()};
+ if(state.notepadSearchOpen){const search=document.getElementById('noteSearch');const refocus=()=>{const next=document.getElementById('noteSearch');if(next){next.focus();next.setSelectionRange(next.value.length,next.value.length)}};setTimeout(refocus,0);search.oninput=()=>{state.resourceSearch=search.value;clearTimeout(search._timer);search._timer=setTimeout(()=>{render();setTimeout(refocus,0)},120)};document.getElementById('closeNoteSearch').onclick=()=>{state.notepadSearchOpen=false;render()};document.getElementById('noteSearchModal').onclick=e=>{if(e.target.id==='noteSearchModal'){state.notepadSearchOpen=false;render()}};const clear=document.getElementById('clearNoteSearch');if(clear)clear.onclick=()=>{state.resourceSearch='';render();setTimeout(refocus,0)}};
+ document.querySelectorAll('[data-edit-note]').forEach(b=>b.onclick=()=>{state.editingNoteId=b.dataset.editNote;render();window.scrollTo(0,0)});
+ document.querySelectorAll('[data-delete-note]').forEach(b=>b.onclick=async()=>{const note=learnerNotes().find(n=>n.id===b.dataset.deleteNote);if(!note||!confirm(`Delete “${note.title||'Untitled note'}”?`))return;await deleteNoteMedia(note);state.data[NOTEPAD_KEY]=learnerNotes().filter(n=>n.id!==note.id);await saveData();render();toast('Note deleted')});
+ if(editing)bindNoteEditor(editing);
+ hydrateNoteMedia();
+}
+function noteEditor(note){return `<section class="card panel note-editor"><div class="panel-body"><div class="field"><label>Note name</label><input class="input" id="noteTitle" maxlength="100" placeholder="Name this note" value="${esc(note.title)}"></div><div class="field"><label>Note</label><textarea class="input note-text" id="noteText" placeholder="Write your note here...">${esc(note.text)}</textarea></div><div class="note-capture-grid" aria-label="Add to note"><label class="capture-button" title="Take photo" aria-label="Take photo">${appIcon('camera')}<input class="hide" id="notePhotos" type="file" accept="image/*" capture="environment" multiple></label><label class="capture-button" title="Record video" aria-label="Record video">${appIcon('video')}<input class="hide" id="noteVideos" type="file" accept="video/*" capture="environment" multiple></label><button type="button" class="capture-button" id="noteVoiceRecord" title="Voice recording" aria-label="Voice recording">${appIcon('microphone')}</button><label class="capture-button" title="Choose from gallery" aria-label="Choose from gallery">${appIcon('gallery')}<input class="hide" id="noteGallery" type="file" accept="image/*,video/*" multiple></label></div>${(note.media||[]).length?`<div class="note-open-media">${(note.media||[]).map(m=>`<div class="note-open-media-item">${m.type==='image'?`<img data-note-media="${m.blobKey}" alt="${esc(m.name)}">`:m.type==='video'?`<video data-note-media="${m.blobKey}" controls playsinline></video>`:`<audio data-note-media="${m.blobKey}" controls></audio>`}<div class="note-media-row"><span>${noteMediaLabel(m.type)} · ${esc(m.name)}</span><button class="link-button danger" data-remove-note-media="${m.id}">Remove</button></div></div>`).join('')}</div>`:''}</div><div class="btn-row"><button class="btn" id="saveNote">Save note</button><button class="btn secondary" id="cancelNote">Cancel</button>${note.title?'<button class="btn secondary danger-note" id="deleteCurrentNote">Delete note</button>':''}</div></section>`}
+function noteSummaryIcons(note){const media=note.media||[],icons=[];if(media.some(m=>m.type==='image'))icons.push(appIcon('camera'));if(media.some(m=>m.type==='video'))icons.push(appIcon('video'));if(media.some(m=>m.type==='audio'))icons.push(appIcon('microphone'));if(String(note.text||'').trim())icons.push(appIcon('note'));return icons.join('')}
+function noteCard(note){return `<button class="note-card note-card-summary" data-edit-note="${note.id}"><div class="note-card-head"><div><h3>${esc(note.title||'Untitled note')}</h3><small>${noteDate(note.updatedAt||note.createdAt)}</small><div class="note-summary-icons" aria-label="Saved content">${noteSummaryIcons(note)}</div></div><span class="resource-arrow">›</span></div></button>`}
+async function startNoteVoiceRecorder(note,titleInput,textInput){
+ if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined')return toast('Voice recording is not supported in this browser');
+ let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}catch{return toast('Microphone permission was not granted')}
+ const chunks=[],started=Date.now();let recorder;try{recorder=new MediaRecorder(stream)}catch{stream.getTracks().forEach(t=>t.stop());return toast('Unable to start the microphone')}
+ app.insertAdjacentHTML('beforeend',`<div class="modal" id="recordingModal"><div class="modal-card recording-modal"><h2>Voice recording</h2><div class="recording-pulse"></div><p class="muted">Record your note, then press Stop recording.</p><button class="btn danger" id="stopRecording">Stop recording</button><button class="btn secondary" id="cancelRecording">Cancel</button></div></div>`);
+ const modal=document.getElementById('recordingModal');let cancelled=false;
+ document.getElementById('cancelRecording').onclick=()=>{cancelled=true;recorder.stop()};
+ document.getElementById('stopRecording').onclick=()=>recorder.stop();
+ recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+ recorder.onstop=async()=>{
+  stream.getTracks().forEach(t=>t.stop());modal?.remove();if(cancelled)return;
+  try{
+   const blob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});
+   if(!blob.size)throw new Error('Empty recording');
+   note.title=titleInput.value;note.text=textInput.value;
+   const blobKey=`notepad:${note.id}:audio:${uid()}`;
+   await putStore(blobKey,blob);
+   const seconds=Math.max(1,Math.round((Date.now()-started)/1000));
+   note.media=[...(note.media||[]),{id:uid(),type:'audio',blobKey,name:`Voice recording ${new Date().toLocaleString('en-GB')}`,mime:blob.type,duration:formatDuration(seconds),createdAt:Date.now()}];
+   note.updatedAt=Date.now();state.data[NOTEPAD_KEY]=learnerNotes().map(n=>n.id===note.id?note:n);await saveData();render();toast('Voice recording saved');
+  }catch(error){console.error('Voice save error',error);toast('Voice recording could not be saved')}
+ };
+ recorder.start();
+}
+function bindNoteEditor(note){
+ const title=document.getElementById('noteTitle'),text=document.getElementById('noteText');
+ const addFiles=async(input,type)=>{if(!input.files?.length)return;input.disabled=true;try{note.title=title.value;note.text=text.value;note.media=[...(note.media||[]),...await storeNoteFiles(input.files,type,note.id)];note.updatedAt=Date.now();state.data[NOTEPAD_KEY]=learnerNotes().map(n=>n.id===note.id?note:n);await saveData();render();toast(`${noteMediaLabel(type)} added`)}catch(error){console.error(error);toast('Media could not be saved')}finally{input.disabled=false}};
+ document.getElementById('notePhotos').onchange=e=>addFiles(e.target,'image');document.getElementById('noteVideos').onchange=e=>addFiles(e.target,'video');document.getElementById('noteVoiceRecord').onclick=()=>startNoteVoiceRecorder(note,title,text);document.getElementById('noteGallery').onchange=async e=>{const files=Array.from(e.target.files||[]);if(!files.length)return;e.target.disabled=true;try{note.title=title.value;note.text=text.value;const images=files.filter(f=>f.type.startsWith('image/')),videos=files.filter(f=>f.type.startsWith('video/'));const added=[];if(images.length)added.push(...await storeNoteFiles(images,'image',note.id));if(videos.length)added.push(...await storeNoteFiles(videos,'video',note.id));note.media=[...(note.media||[]),...added];note.updatedAt=Date.now();state.data[NOTEPAD_KEY]=learnerNotes().map(n=>n.id===note.id?note:n);await saveData();render();toast('Gallery media added')}catch(error){console.error(error);toast('Gallery media could not be saved')}finally{e.target.disabled=false}};
+ document.querySelectorAll('[data-remove-note-media]').forEach(b=>b.onclick=async()=>{const item=(note.media||[]).find(m=>m.id===b.dataset.removeNoteMedia);if(item?.blobKey)await deleteStore(item.blobKey);note.media=(note.media||[]).filter(m=>m.id!==b.dataset.removeNoteMedia);note.updatedAt=Date.now();state.data[NOTEPAD_KEY]=learnerNotes().map(n=>n.id===note.id?note:n);await saveData();render();toast('Attachment removed')});
+ document.getElementById('saveNote').onclick=async()=>{const t=title.value.trim(),body=text.value.trim();if(!t)return toast('Name the note before saving');if(!body&&!(note.media||[]).length)return toast('Add text or media to the note');note.title=t;note.text=body;note.updatedAt=Date.now();state.data[NOTEPAD_KEY]=learnerNotes().map(n=>n.id===note.id?note:n);await saveData();state.editingNoteId=null;render();toast('Note saved')};
+ const deleteCurrent=document.getElementById('deleteCurrentNote');if(deleteCurrent)deleteCurrent.onclick=async()=>{if(!confirm(`Delete “${note.title||'Untitled note'}”?`))return;await deleteNoteMedia(note);state.data[NOTEPAD_KEY]=learnerNotes().filter(n=>n.id!==note.id);await saveData();state.editingNoteId=null;render();toast('Note deleted')};
+ document.getElementById('cancelNote').onclick=async()=>{if(!note.title&&!note.text&&!(note.media||[]).length){state.data[NOTEPAD_KEY]=learnerNotes().filter(n=>n.id!==note.id);await saveData()}state.editingNoteId=null;render()};
+}
+
+function renderHome(){
+ const done=courseAssignments().filter(a=>assignmentComplete(a.n)).length;
+ app.innerHTML=shell(`${courseHeader()}<div class="section-heading"><div><h2>${COURSE.nvqUnits?'Evidence Packs':'Assignments'}</h2><p class="muted">${done} of ${courseAssignments().length} complete</p></div></div><section class="assignment-list">${courseAssignments().map(a=>{
+  const sts=COURSE.nvqUnits?[['camera','photos'],['statement','statement'],['video','discussion'],['witness','witness'],['observation','practical'],['microphone','professionalDiscussion']]:[['camera','photos'],['statement','statement'],['video','walkthrough'],['witness','witness'],['hammer','practical'],['microphone','professionalDiscussion']];
+  const needsOptional=!!a.selectOptional;const packNumber=COURSE.nvqUnits?(needsOptional?'Evidence Pack 9 · Optional Unit':`Evidence Pack ${a.n} · Unit ${a.unit}${a.optional?' · Optional':''}`):`Assignment ${a.n}`;const packTitle=needsOptional?'Select one of Units 238, 690, 828 or 837':a.title;const homeCoverage=!needsOptional?(COURSE.nvqUnits?nvqCoverageSummary(a.n):ksbCoverageSummary(a.n)):null;
+  return `<button class="assignment-card ${assignmentComplete(a.n)?'complete':''} ${assignmentSubmitted(a.n)?'submitted':''} ${assignmentRPL(a.n)?'rpl':''}" data-open="${a.n}">${assignmentRPL(a.n)?'<span class="submitted-ribbon rpl-ribbon">RPL</span>':packUploaded(a.n)?'<span class="submitted-ribbon">SUBMITTED</span>':''}<div class="assignment-head"><div><div class="number">${packNumber}</div><h3>${esc(packTitle)}</h3></div><span class="status-pill ${assignmentComplete(a.n)?'done':''}">${assignmentRPL(a.n)?'Completed by RPL':packUploaded(a.n)?'Submitted':assignmentComplete(a.n)?'Evidence ready':'In progress'}</span></div><div class="icons nvq-six-icons">${sts.map(([i,s])=>{const status=assignmentRPL(a.n)?'complete':s==='walkthrough'?walkthroughStatus(a.n):sectionStatus(a.n,s);return `<div class="icon-state ${status==='complete'?'done':status==='incomplete'?'warning':''}">${appIcon(i,'state-icon')}${statusMark(status)}</div>`}).join('')}</div><div class="ksb-row">${needsOptional?'<span class="ksb-mini">Choose unit</span>':a.ksbs.map(k=>{const count=homeCoverage?.coverage?.[k[0]]?.count||0;return `<span class="ksb-mini ${count>=(COURSE.nvqUnits?3:2)?'coverage-complete':count>0?'coverage-partial':'coverage-none'}" title="${count}/${COURSE.nvqUnits?3:2} distinct evidence types collected">${k[0]}</span>`}).join('')}</div></button>`}).join('')}</section>${monthlyPortfolioCard()}`);
+ document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{state.assignment=+b.dataset.open;state.view='assignment';render()});
+ document.getElementById('downloadEntirePortfolio').onclick=downloadEntirePortfolio;
+ const openMonthlyPortfolio=document.getElementById('openMonthlyPortfolio');if(openMonthlyPortfolio)openMonthlyPortfolio.onclick=openPortfolioSite;
+ const confirmMonthlyUploadButton=document.getElementById('confirmMonthlyUpload');if(confirmMonthlyUploadButton)confirmMonthlyUploadButton.onclick=confirmMonthlyPortfolioUpload;
+ const openWorkSearch=document.getElementById('openWorkSearch');if(openWorkSearch)openWorkSearch.onclick=showWorkSearchLauncher;
+
+}
+function bestScore(items,field='score'){const values=(items||[]).map(x=>Number(x?.[field])).filter(Number.isFinite);return values.length?Math.max(...values):null}
+function epaReadinessStats(){
+ const knowledge=bestScore(state.data[epaResultKey()]||[],'score');
+ const discussion=bestScore(state.data[epaDiscussionResultKey()]||[],'coverage');
+ const practical=bestScore(epaPracticalHistory().filter(x=>x?.assessor).map(x=>x.assessor),'percentage');
+ const values=[knowledge,discussion,practical],overall=Math.round(values.reduce((n,v)=>n+(v??0),0)/3);
+ const label=overall>=90?'EPA ready':overall>=70?'Nearly ready':overall>0?'Developing':'Not started';
+ const tone=overall>=90?'ready':overall>=70?'near':overall>0?'developing':'not-started';
+ return {knowledge,discussion,practical,overall,label,tone};
+}
+function epaReadinessHtml(){
+ if(COURSE.nvqUnits)return '';
+ const r=epaReadinessStats(),row=(label,value)=>`<div class="epa-readiness-row"><span>${label}</span><div class="epa-readiness-bar"><i style="width:${value??0}%"></i></div><strong>${value===null?'—':value+'%'}</strong></div>`;
+ return `<section class="epa-readiness-compact ${r.tone}"><div class="epa-readiness-head"><div><small>EPA readiness</small><strong>${r.label}</strong></div><b>${r.overall}%</b></div>${row('MCQ',r.knowledge)}${row('Discussion',r.discussion)}${row('Practical',r.practical)}<p>Uses the best recorded score in each EPA area. Unattempted areas count as 0%.</p></section>`;
+}
+function showCourseProgress(){
+ const p=courseProgressStats(),elapsed=p.red,ksbLabel=COURSE.nvqUnits?'Learning outcomes':'KSBs',otj=otjProgressStats(),epa=COURSE.nvqUnits?null:epaReadinessStats();
+ const timeRatio=elapsed===null?0:elapsed/100;
+ const expectedAssignments=elapsed===null?null:Math.min(p.total,Math.max(0,Math.round(p.total*timeRatio)));
+ const expectedKsbs=elapsed===null?null:Math.min(p.ksbTotal,Math.max(0,Math.round(p.ksbTotal*timeRatio)));
+ const tracker=(label,value,target,display,detail='',variant='')=>{
+  const ratio=target>0?value/target:(value>0?1:0),position=Math.max(0,Math.min(100,ratio*100));
+  const tone=target===null?'neutral':ratio>=1?'green':ratio>=.8?'amber':'red';
+  const cls=variant==='fixed-green'?'green fixed-green':variant==='timeline'?'green timeline':tone;
+  return `<div class="review-tracker ${cls}"><div class="review-tracker-head"><strong>${label}</strong><b>${display}</b></div><div class="review-gradient-track"><span class="review-target-marker" aria-hidden="true"></span><i style="left:${position}%" aria-hidden="true"></i></div>${detail?`<small>${detail}</small>`:''}</div>`;
+ };
+ const assignmentDetail=expectedAssignments===null?'Add course dates to calculate today’s target':`${expectedAssignments} expected by today · ${p.total} total`;
+ const ksbDetail=expectedKsbs===null?'Add course dates to calculate today’s target':`${expectedKsbs} expected by today · ${p.ksbTotal} total`;
+ const otjDifference=otj.total-otj.expected;
+ const otjDetail=`${otj.weeks.toFixed(1)} weeks × 8 hours · ${Math.abs(otjDifference).toFixed(1)} hrs ${otjDifference>=0?'ahead':'behind'}`;
+ const startDate=new Date(state.profile?.courseStartDate||'');
+ const endDate=new Date(state.profile?.plannedEndDate||'');
+ const now=new Date();
+ const weeksLeft=Number.isFinite(endDate.getTime())?Math.max(0,Math.ceil((endDate-now)/(7*24*60*60*1000))):null;
+ const timeDetail=elapsed===null?'Course dates not added':`${formatDateInput(state.profile?.courseStartDate)} to ${formatDateInput(state.profile?.plannedEndDate)}${weeksLeft===null?'':` · ${weeksLeft} weeks left`}`;
+ const scores=[
+  expectedAssignments===null?null:(expectedAssignments? p.submitted/expectedAssignments:1),
+  expectedKsbs===null?null:(expectedKsbs? p.ksbCompleted/expectedKsbs:1),
+  otj.expected?otj.total/otj.expected:1
+ ].filter(v=>v!==null);
+ const average=scores.length?scores.reduce((a,b)=>a+Math.min(1.2,b),0)/scores.length:0;
+ const reviewLabel=elapsed===null?'Course dates needed':average>=1?'On or ahead of target':average>=.8?'Close to target':'Behind target';
+ const reviewTone=elapsed===null?'neutral':average>=1?'green':average>=.8?'amber':'red';
+ app.insertAdjacentHTML('beforeend',`<div class="modal progress-modal-layer" id="progressModal"><div class="modal-card progress-modal progress-review-card" role="dialog" aria-modal="true" aria-labelledby="progressReviewTitle"><div class="progress-review-title"><div><small>LEARNER PROGRESS</small><h2 id="progressReviewTitle">${esc(state.profile?.fullName||'Learner')}</h2></div><button type="button" class="progress-close" id="closeProgress" aria-label="Close">×</button></div><div class="review-tracker-list">${tracker('Assignments',p.submitted,expectedAssignments,p.submitted+' / '+(expectedAssignments===null?'—':expectedAssignments),assignmentDetail)}${tracker(ksbLabel,p.ksbCompleted,expectedKsbs,p.ksbCompleted+' / '+(expectedKsbs===null?'—':expectedKsbs),ksbDetail)}${tracker('Off-the-job',otj.total,otj.expected,`${otj.total.toFixed(1)} / ${otj.expected.toFixed(1)} hrs`,otjDetail)}${tracker('Time elapsed',elapsed??0,100,elapsed===null?'—':elapsed+'%',timeDetail,'timeline')}${epa?tracker('EPA readiness',epa.overall,100,epa.overall+'%',`Collective best scores · MCQ ${epa.knowledge??0}% · Discussion ${epa.discussion??0}% · Practical ${epa.practical??0}%`):''}</div><div class="review-quick-status ${reviewTone}"><span>Review status</span><strong>${reviewLabel}</strong><small>${elapsed===null?'Set the learner’s course dates in Settings to activate time-based targets.':`Assignments, ${COURSE.nvqUnits?'learning outcomes':'KSBs'} and OTJ are compared only with where the learner should be today.`}</small></div><button class="btn progress-done" id="progressDone">Close</button></div></div>`);
+ const modal=document.getElementById('progressModal'),close=()=>modal?.remove();
+ document.getElementById('closeProgress').onclick=close;document.getElementById('progressDone').onclick=close;modal.onclick=e=>{if(e.target===modal)close()};
+}
+
+
+function renderOptionalUnitSelection(){
+ const choices=COURSE.optionalUnits||[];
+ app.innerHTML=shell(`<button class="back no-print" id="back">← Evidence Packs</button><div class="assignment-title"><div class="number">Evidence Pack 9 · Optional Unit</div><h2>Select your optional unit</h2><p class="muted">Choose the one optional unit you will complete. Your selection is saved on this device.</p></div><section class="card panel"><div class="panel-body"><div class="optional-unit-list">${choices.map(u=>`<label class="optional-unit-choice"><input type="radio" name="optionalUnit" value="${esc(u.unit)}"><span><strong>Unit ${esc(u.unit)}</strong><small>${esc(u.title)}</small></span></label>`).join('')}</div><div class="disclaimer"><strong>Important</strong><br>Once confirmed, this unit becomes Evidence Pack 9 and the other optional units are hidden. A tutor can reset the selection in Admin Mode before evidence is added.</div></div><div class="btn-row"><button class="btn" id="confirmOptional" disabled>Confirm optional unit</button></div></section>`);
+ document.getElementById('back').onclick=()=>{state.view='home';render()};
+ const confirm=document.getElementById('confirmOptional');
+ document.querySelectorAll('input[name="optionalUnit"]').forEach(r=>r.onchange=()=>{confirm.disabled=false});
+ confirm.onclick=async()=>{const chosen=document.querySelector('input[name="optionalUnit"]:checked');if(!chosen)return;const unit=choices.find(u=>String(u.unit)===chosen.value);if(!unit)return;if(!window.confirm(`Select Unit ${unit.unit} — ${unit.title}? This choice will be saved as Evidence Pack 9.`))return;state.data[optionalSelectionKey()]=String(unit.unit);await saveData();state.assignment=9;render();toast(`Unit ${unit.unit} selected`)};
+}
+
+function renderAssignment(){const a=assignment(state.assignment);if(a?.selectOptional){renderOptionalUnitSelection();return}const ksbProgress=!COURSE.nvqUnits?ksbCoverageSummary(a.n):null;const tiles=COURSE.nvqUnits?[['photos','camera','Photographic evidence','Photographs linked to selected learning outcomes'],['statement','statement','Learner statement','Written statement linked to selected learning outcomes'],['discussion','video','Video Walkthrough','Record each learning outcome separately on video'],['witness','witness','Witness testimony','Workplace testimony with optional photographs'],['practical','observation','Assessor observation','Observation and LO photographs'],['professionalDiscussion','microphone','Professional discussion','Record discussion evidence against learning outcomes']]:[['photos','camera','Photographic evidence','Six landscape photographs linked to selected KSBs'],['statement','statement','Learner statement','Knowledge and Behaviour evidence through a written statement'],['walkthrough','video','Video Walkthrough',`${walkthroughCount(a.n).done}/${walkthroughCount(a.n).total} KSB criteria recorded`],['witness','witness','Witness testimony','Workplace testimony with optional photographs'],['practical','hammer','Practical assessment','Tutor score sheet + 3 finished-product photos'],['professionalDiscussion','microphone','Professional discussion','Record discussion evidence against selected KSBs']];
+ const ready=assignmentComplete(a.n),practical=latestVersion(a.n,'practical'),witness=latestVersion(a.n,'witness'),status=state.data[packStatusKey(a.n)]||{},nvqProgress=COURSE.nvqUnits?nvqCoverageSummary(a.n):null;
+ const blockers=[];if(COURSE.nvqUnits){if(!ready)blockers.push(`Each Learning Outcome needs three different evidence types. Still required: ${nvqProgress.missing.join(', ')}`)}else{if(!ready)blockers.push(`Each KSB needs two different evidence types. Still required: ${ksbProgress.missing.join(', ')}`)};
+ const uploadText=status.uploaded?'Evidence pack submitted':status.downloaded?'Evidence pack downloaded — upload it to your portfolio':'Evidence pack ready to download';
+ const rpl=assignmentRPL(a.n);
+ app.innerHTML=shell(`<button class="back no-print" id="back">← ${COURSE.nvqUnits?'Evidence Packs':'Assignments'}</button><div class="assignment-title">${rpl?'<span class="submitted-ribbon rpl-ribbon page-ribbon">RPL</span>':status.uploaded?'<span class="submitted-ribbon page-ribbon">SUBMITTED</span>':''}<div class="number">${COURSE.nvqUnits?`Evidence Pack ${a.n} · Unit ${a.unit}${a.optional?' · Optional':''}`:`Assignment ${a.n}`}</div><h2>${esc(a.title)}</h2><div class="ksb-row">${a.ksbs.map(k=>{const count=COURSE.nvqUnits?(nvqProgress?.coverage?.[k[0]]?.count||0):(ksbProgress?.coverage?.[k[0]]?.count||0);return `<span class="ksb-mini ${count>=(COURSE.nvqUnits?3:2)?'coverage-complete':count>0?'coverage-partial':'coverage-none'}" title="${count}/${COURSE.nvqUnits?3:2} distinct evidence types collected">${k[0]} · ${esc(learnerPromptTitle(a.n,k[0],k[1]))}</span>`}).join('')}</div></div><section class="evidence-grid nvq-six-evidence">${tiles.map(([s,i,t,d])=>{const isWalkthrough=s==='walkthrough',sd=isWalkthrough?null:sectionData(a.n,s),latest=isWalkthrough?null:latestVersion(a.n,s),walkProgress=isWalkthrough?walkthroughCount(a.n):null;let label=rpl?'Completed through RPL':isWalkthrough?`${walkProgress.done}/${walkProgress.total} KSB criteria recorded`:sd.versions.length?`${sd.versions.length} submitted evidence item${sd.versions.length>1?'s':''}`:d;const stateName=rpl?'complete':isWalkthrough?walkthroughStatus(a.n):sectionStatus(a.n,s),cls=stateName==='complete'?'done':stateName==='incomplete'?'warning':'';if(!rpl&&latest&&!COURSE.nvqUnits&&s==='practical'){label=`${practicalResultText(a,latest)} · Evidence ${sd.versions.length}`}return `<button class="evidence-tile ${cls}" data-section="${s}">${s==='practical'?'<span class="submitted-ribbon assessor-ribbon tile-ribbon">ASSESSOR ONLY</span>':s==='professionalDiscussion'?'<span class="submitted-ribbon pd-assessor-ribbon tile-ribbon">ASSESSOR ONLY</span>':s==='witness'?'<span class="submitted-ribbon witness-ribbon tile-ribbon">WITNESS ONLY</span>':''}<div class="evidence-tile-heading"><div class="tile-icon evidence-icon-${s}">${appIcon(i)}</div><span class="evidence-capability">${evidenceCapability(s)}</span></div><h3>${t}</h3><p>${(!isWalkthrough&&sd.versions.length)||(isWalkthrough&&walkProgress.done)?'✓ ':''}${label}</p></button>`}).join('')}</section>${rpl?'<section class="card download-card complete rpl-monthly-note"><h3>Assignment completed through RPL</h3><p class="muted" style="margin-top:5px">This assignment is recorded as an RPL unit and will be identified separately in the next Monthly Portfolio Upload summary.</p></section>':''}`);
+ document.getElementById('back').onclick=()=>{state.view='home';render()};document.querySelectorAll('[data-section]').forEach(b=>b.onclick=()=>{const section=b.dataset.section;if(section==='walkthrough'){state.walkthroughCode=null;state.view='walkthrough';render();return}state.section=section;state.view='section';render()});
+}
+
+function outcomePhotoControl(code,d,readonly=false){const photo=d.outcomePhotos?.[code];return `<button type="button" class="lo-photo-control ${photo?'has-photo':''}" data-lo-photo="${code}" aria-label="${photo?'View or replace':'Add'} photo for ${code}" ${readonly?'data-readonly="true"':''}>${photo?`<img src="${photo.data}" alt="Evidence photograph for ${code}">`:`${appIcon('camera')}<span>Add photo</span>`}</button>`}
+function outcomeCards(a,mode='prompt',d={outcomePhotos:{}},readonly=false){return `<div class="outcome-list">${a.ksbs.map(([code,text])=>`<article class="outcome-card with-photo"><div class="outcome-card-copy"><div class="outcome-code">Learning Outcome ${esc(code.replace('LO',''))}</div><strong>${esc(text)}</strong><div class="criteria-numbers">Criteria: ${esc(a.criteria?.[code]||'')}</div></div>${outcomePhotoControl(code,d,readonly)}</article>`).join('')}</div>`}
+function statementSelectedKsbCodes(a,d){d.ksbEvidence=d.ksbEvidence||[];return a.ksbs.map(([code])=>code).filter(code=>d.ksbEvidence.includes(code))}
+function statementWordRequirement(a,d){return COURSE.nvqUnits?100:statementSelectedKsbCodes(a,d).filter(code=>/^[KB]/i.test(code)).length*30}
+function nvqStatementCards(a,d,readonly=false){d.ksbEvidence=d.ksbEvidence||[];return `<div class="outcome-list">${a.ksbs.map(([code,text])=>{const selected=d.ksbEvidence.includes(code);return `<article class="outcome-card statement-ksb-card ${selected?'selected':''}"><button type="button" class="statement-ksb-toggle" data-statement-ksb-toggle="${esc(code)}" aria-pressed="${selected?'true':'false'}" ${readonly?'disabled':''}><span class="tick-box">${selected?'✓':''}</span><span class="outcome-card-copy"><span class="outcome-code">Learning Outcome ${esc(code.replace('LO',''))} ${evidenceCoverageBadge(a.n,code)}</span><strong>${esc(text)}</strong><span class="criteria-numbers">Criteria: ${esc(a.criteria?.[code]||'')}</span><em>${selected?'Included in this statement':'Tap to include in this statement'}</em></span></button></article>`}).join('')}</div>`}
+function ksbStatementCards(a,d,readonly=false){d.ksbEvidence=d.ksbEvidence||[];const knowledgeAndBehaviours=a.ksbs.filter(([code])=>/^[KB]/i.test(code));return `<div class="outcome-list">${knowledgeAndBehaviours.map(([code,text])=>{const selected=d.ksbEvidence.includes(code);return `<article class="outcome-card statement-ksb-card ${selected?'selected':''}"><button type="button" class="statement-ksb-toggle" data-statement-ksb-toggle="${esc(code)}" aria-pressed="${selected?'true':'false'}" ${readonly?'disabled':''}><span class="tick-box">${selected?'✓':''}</span><span class="outcome-card-copy"><span class="outcome-code">${esc(code)} ${evidenceCoverageBadge(a.n,code)}</span><strong>${esc(learnerPromptTitle(a.n,code,text))}</strong><span class="criteria-numbers">${esc(text)}</span><em>${selected?'Included · 30 words required':'Tap to include in this statement'}</em></span></button></article>`}).join('')}</div>`}
+function nvqTickRows(a,d,readonly=false){return a.ksbs.map(([code,text])=>`<div class="outcome-tick ${+d.scores?.[code]===5?'achieved':''}"><button type="button" class="outcome-select" data-nvq-toggle="${code}" ${readonly?'disabled':''}><span class="tick-box">${+d.scores?.[code]===5?'✓':''}</span><span><small>Learning Outcome ${esc(code.replace('LO',''))} ${evidenceCoverageBadge(a.n,code)}</small><strong>${esc(text)}</strong><em>Criteria: ${esc(a.criteria?.[code]||'')}</em></span></button>${outcomePhotoControl(code,d,readonly)}</div>`).join('')}
+function ksbEvidenceTickRows(a,d,readonly=false){d.ksbEvidence=d.ksbEvidence||[];return a.ksbs.map(([code,text])=>{const selected=d.ksbEvidence.includes(code);return `<div class="outcome-tick ${selected?'achieved':''}"><button type="button" class="outcome-select" data-ksb-evidence-toggle="${esc(code)}" ${readonly?'disabled':''}><span class="tick-box">${selected?'✓':''}</span><span><small>${esc(code)} ${evidenceCoverageBadge(a.n,code)}</small><strong>${esc(learnerPromptTitle(a.n,code,text))}</strong><em>${esc(text)}</em></span></button></div>`}).join('')}
+function selectedNvqOutcomes(a,d){return a.ksbs.filter(([code])=>+d.scores?.[code]===5)}
+function shortOutcomeText(text,max=18){const words=String(text||'').replace(/\s+/g,' ').trim().split(' ');return words.length>max?words.slice(0,max).join(' ')+'…':words.join(' ')}
+const NVQ_OBSERVATION_DETAILS={
+ '102':{
+  LO1:'The learner complied with site rules and the relevant health, safety and welfare requirements, using the required PPE and following the agreed safe system of work throughout the activity.',
+  LO2:'The learner remained alert to changing conditions, identified hazards that were not adequately controlled and reported or acted on them in accordance with organisational procedures.',
+  LO3:'The learner followed the risk assessment and method statement, maintained suitable access and housekeeping, used work equipment correctly and protected both themselves and others from foreseeable harm.',
+  LO4:'The learner worked responsibly within the limits of their authority, coordinated safely with others and took appropriate action when circumstances affected the planned activity.',
+  LO5:'The learner complied with site security arrangements, controlled access to the work area and followed the approved procedures for tools, materials, information and personal belongings.'
+ },
+ '234':{
+  LO1:'The learner interpreted the drawings, specification and manufacturer information before confirming the cladding layout, support details, openings, movement provision and required finish.',
+  LO2:'The learner applied the relevant legislation, site procedures and technical guidance, including requirements affecting access equipment, manual handling, cutting, dust control and structural restraint.',
+  LO3:'The learner maintained a safe work area, used the appropriate PPE and RPE, controlled cutting operations and handled units and mortar without creating unnecessary risk to others.',
+  LO4:'The learner selected cladding units, mortar, ties, fixings, insulation and ancillary components of the correct type, quantity and condition for the specified system.',
+  LO5:'Materials and completed work were protected from contamination, impact and adverse weather, and the learner kept cavities, interfaces and surrounding finishes free from avoidable damage.',
+  LO6:'The activity was organised in a logical sequence and progressed within the allocated time without compromising safety, accuracy or quality.',
+  LO7:'The learner erected the cladding to the specified line, level, gauge, bond and tolerances, correctly positioning restraints, movement joints, openings and interfaces before carrying out regular quality checks.'
+ },
+ '235':{
+  LO1:'The learner interpreted the drawings, specifications and setting-out information before confirming dimensions, bond, openings, levels, structural details and the required sequence of work.',
+  LO2:'The learner followed the relevant legislation, site procedures and technical guidance for access, lifting, cutting, mortar use, dust control and the stability of the masonry during construction.',
+  LO3:'The learner maintained safe access and good housekeeping, used suitable PPE and RPE and organised materials and equipment so the activity could be completed without exposing others to avoidable risk.',
+  LO4:'The learner selected bricks or blocks, mortar and ancillary components of the specified type and quality, checking quantities and condition before and during the work.',
+  LO5:'Materials, adjacent surfaces and completed masonry were protected from impact, contamination and weather, with waste and surplus mortar controlled as the work progressed.',
+  LO6:'The learner planned the sequence effectively and completed the observed work within the allocated time while maintaining the required standard.',
+  LO7:'The masonry was erected to the required bond, gauge, line, level and plumb, with openings and components correctly positioned. The learner checked dimensions and alignment regularly and corrected minor deviations promptly.'
+ },
+ '303':{
+  LO1:'The learner reviewed the available drawings, specifications, programme information, site conditions and resource requirements to determine an appropriate occupational method of work.',
+  LO2:'Where information was incomplete or unclear, the learner identified the gap and obtained suitable clarification from the relevant source before committing to the work method.',
+  LO3:'The learner compared practical work methods and selected an approach that made effective use of labour, materials and equipment while meeting statutory, contractual, environmental and quality requirements.',
+  LO4:'The selected method was explained clearly to the relevant people, including the sequence, controls, responsibilities and any points requiring coordination or further confirmation.'
+ },
+ '300':{
+  LO1:'The learner identified the work activities, assessed the labour, materials, tools and access requirements and arranged the work in a practical sequence.',
+  LO2:'The learner recognised where required resources or information were unavailable and sought appropriate clarification or advice rather than proceeding on an unsupported assumption.',
+  LO3:'The learner evaluated site restrictions, interfaces, weather, programme demands and other external factors against the project requirements before confirming the plan.',
+  LO4:'Activities that affected one another were coordinated so that resources were used efficiently and disruption, delay and unnecessary handling were reduced.',
+  LO5:'The learner recognised changed circumstances, considered their effect on the programme and communicated a justified alteration to the appropriate decision maker.'
+ },
+ '313':{
+  LO1:'The learner interpreted the drawings, details and specification to establish the required geometry, bond, profiles, dimensions, features and finish for the architectural or decorative masonry.',
+  LO2:'The learner applied the relevant legislation, site procedures and technical guidance, including controls for cutting, handling, access, dust and the temporary stability of detailed work.',
+  LO3:'The work area was kept safe and orderly, with suitable PPE and RPE used and materials, templates and cutting equipment positioned to avoid unnecessary risk.',
+  LO4:'The learner selected matching masonry units, mortar, templates and ancillary materials of the correct quality and quantity, rejecting unsuitable items before use.',
+  LO5:'Exposed arrises, finished faces, adjacent work and prepared units were protected from damage, staining and adverse weather throughout the activity.',
+  LO6:'The learner sequenced the detailed work efficiently and achieved the planned output within the allocated time without lowering the standard of finish.',
+  LO7:'The feature was constructed to the required profile, bond, gauge, line, level and tolerances. Cuts, angles, projections and joint finishes were checked frequently and adjusted to maintain a consistent appearance.'
+ },
+ '502':{
+  LO1:'The learner communicated respectfully and reliably with colleagues and other trades, helping to maintain goodwill, trust and productive working relationships.',
+  LO2:'Relevant people were given clear and timely information about the work, its progress, risks, dependencies and any matters requiring action.',
+  LO3:'The learner offered appropriate help and technical advice, encouraged questions and checked that information had been understood rather than assumed.',
+  LO4:'Proposals and alternative suggestions were discussed constructively, with the learner listening to other viewpoints and clarifying the practical implications.',
+  LO5:'Any differences of opinion were handled calmly and professionally, focusing on the work requirement while preserving respect and cooperation.'
+ },
+ '701':{
+  LO1:'The learner interpreted the drawings, dimensions, specification and site information before establishing the required wall positions, openings, datum levels and reference points.',
+  LO2:'The learner followed the relevant legislation, site procedures and technical guidance for access, measuring equipment, manual handling and safe working around the setting-out area.',
+  LO3:'The learner maintained a clear and controlled work area, used suitable PPE and handled profiles, lines, levels and measuring equipment safely throughout the activity.',
+  LO4:'The learner selected appropriate profiles, pins, lines, tapes, levels and marking equipment, checking that each item was suitable, serviceable and sufficiently accurate for the task.',
+  LO5:'Existing surfaces, setting-out marks, equipment and the surrounding area were protected from avoidable damage or disturbance while the work was completed.',
+  LO6:'The setting-out sequence was planned effectively and completed within the allocated time, with checks built into the activity rather than left until the end.',
+  LO7:'The learner established and transferred datum points, set profiles and lines and checked dimensions, offsets, levels, squareness and diagonals against the contract information. Minor discrepancies were identified and corrected before masonry work commenced.'
+ },
+ '238':{
+  LO1:'The learner interpreted the drawings, specification and manufacturer guidance before confirming the thin-joint layout, unit sizes, openings, levels and sequence of construction.',
+  LO2:'The learner followed the relevant legislation, site rules and system guidance for access, lifting, cutting, dust control, adhesive use and temporary stability.',
+  LO3:'The work area was maintained safely, with suitable PPE and RPE used and cutting, mixing and handling operations controlled to protect the learner and others.',
+  LO4:'The learner selected compatible blocks, thin-joint mortar or adhesive, applicators, reinforcement and ancillary components in the required quantity and condition.',
+  LO5:'Units, prepared surfaces and completed work were protected from moisture, contamination, impact and weather, and adhesive was applied without excessive waste.',
+  LO6:'The system was erected in an efficient sequence and the observed work was completed within the allocated time.',
+  LO7:'The learner established a level base course and erected the thin-joint masonry to the required line, level, plumb, bond and joint thickness, checking dimensions and correcting deviations as work progressed.'
+ },
+ '690':{
+  LO1:'The learner interpreted the repair information and inspected the existing masonry to identify the defect, likely cause, extent of work and required finish before starting.',
+  LO2:'The learner followed the relevant legislation, site procedures and technical guidance for access, isolation, removal work, dust control, waste and the stability of retained masonry.',
+  LO3:'The repair area was made safe and controlled, with appropriate PPE and RPE used and loose or unstable material dealt with without exposing others to avoidable risk.',
+  LO4:'The learner selected replacement units, mortar and repair materials that were compatible in size, strength, colour and performance with the existing construction.',
+  LO5:'Sound masonry and adjacent finishes were protected during removal and reinstatement, with dust, debris and staining controlled throughout the activity.',
+  LO6:'The learner organised the repair efficiently and completed the observed work within the allocated time.',
+  LO7:'Defective material was removed carefully and the masonry reinstated to match the required bond, alignment, profile and joint finish. The learner checked the repair for stability, appearance and compliance with the specification.'
+ },
+ '828':{
+  LO1:'The learner interpreted the drawings, schedules and specialist details to confirm the element type, location, dimensions, support, interfaces and required finish.',
+  LO2:'The learner applied the relevant legislation, site procedures and manufacturer guidance for lifting, access, fixing, cutting, temporary support and structural safety.',
+  LO3:'The work area and lifting or installation operations were controlled safely, with suitable PPE used and clear communication maintained with everyone involved.',
+  LO4:'The learner selected the specified specialist units, supports, fixings, reinforcement, mortar and ancillary components, checking compatibility and condition before installation.',
+  LO5:'Specialist components, adjacent work and finished surfaces were protected from impact, distortion, contamination and weather during handling and installation.',
+  LO6:'The installation was planned and coordinated effectively and the observed activity was completed within the allocated time.',
+  LO7:'The specialist element was positioned, supported, fixed and finished in accordance with the contract information. The learner checked dimensions, line, level, bearing, alignment and interfaces before confirming completion.'
+ },
+ '837':{
+  LO1:'The learner interpreted the drainage drawings and specification to confirm the route, pipe sizes, levels, gradients, access points, connections and sequence of work.',
+  LO2:'The learner followed the relevant legislation, site procedures and technical guidance for excavation, underground services, manual handling, hygiene, bedding and testing.',
+  LO3:'The work area was kept safe and controlled, with excavations, access and materials managed appropriately and suitable PPE used throughout the activity.',
+  LO4:'The learner selected pipes, fittings, chambers, bedding and surround materials of the correct type, size, quantity and condition for the specified installation.',
+  LO5:'Pipes, fittings, existing services and surrounding surfaces were protected from damage and contamination, and open ends were kept clean during the work.',
+  LO6:'The installation was sequenced efficiently and the observed work was completed within the allocated time.',
+  LO7:'The learner prepared the formation, installed bedding and laid the drainage to the specified line and fall, making sound connections and carrying out checks for alignment, gradient, cleanliness and effective flow.'
+ }
+};
+
+function nvqTextHash(value){let h=2166136261;for(const ch of String(value||'')){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function nvqPick(options,seed,offset=0){return options[(nvqTextHash(seed)+offset)%options.length]}
+function nvqEvidenceVariation(sentence,learner,seed,perspective,index){
+ const core=String(sentence||'').trim().replace(/^The learner\s+/i,'');
+ const lower=core.charAt(0).toLowerCase()+core.slice(1);
+ const assessor=[
+  `${learner} ${core}`,
+  `During the activity, ${learner} ${lower}`,
+  `I observed ${learner} ${lower}`,
+  `As the work progressed, ${learner} ${lower}`
+ ];
+ const witness=[
+  `${learner} ${core}`,
+  `During the work, I saw ${learner} ${lower}`,
+  `Throughout the activity, ${learner} ${lower}`,
+  `From my direct observation, ${learner} ${lower}`
+ ];
+ return nvqPick(perspective==='witness'?witness:assessor,`${seed}|evidence|${index}`,index);
+}
+function nvqOutcomeReference(selected){
+ const nums=selected.map(([code])=>code.replace('LO',''));
+ if(nums.length===1)return `Learning Outcome ${nums[0]}`;
+ if(nums.length===2)return `Learning Outcomes ${nums[0]} and ${nums[1]}`;
+ return `Learning Outcomes ${nums.slice(0,-1).join(', ')} and ${nums.at(-1)}`;
+}
+function generateNvqNarrative(a,d,perspective='assessor'){
+ const selected=selectedNvqOutcomes(a,d);if(!selected.length)return'';
+ const learner=(state.profile?.fullName||'the learner').trim(),first=learner.split(/\s+/)[0]||'The learner';
+ const activity=(d.activity||'the planned workplace activity').trim();
+ const unit=`Unit ${a.unit} — ${a.title}`;
+ const revision=Number(d.narrativeRevision||0);
+ const seed=`${a.unit}|${selected.map(([c])=>c).join(',')}|${activity}|${learner}|${perspective}|${revision}`;
+ const detailMap=NVQ_OBSERVATION_DETAILS[String(a.unit)]||{};
+ const evidence=selected.map(([code])=>detailMap[code]).filter(Boolean);
+ const evidenceText=(evidence.length?evidence:[`${first} followed the relevant workplace procedures, selected suitable resources, maintained safe working practices and checked the work as the activity progressed.`])
+  .map((text,i)=>nvqEvidenceVariation(text,first,seed,perspective,i)).join(' ');
+ const outcomes=nvqOutcomeReference(selected);
+ const assessorOpenings=[
+  `I observed ${learner} carrying out ${activity} during normal workplace operations. The observation related to ${unit} and covered ${outcomes}. Before work commenced, ${first} considered the available information, the condition of the work area and the controls needed to complete the activity safely and effectively.`,
+  `During a planned workplace assessment, I observed ${learner} completing ${activity}. The assessment was undertaken against ${unit}, with evidence gathered for ${outcomes}. ${first} reviewed the task requirements before starting and organised the work area, resources and sequence to support safe and controlled progress.`,
+  `I directly observed ${learner} undertaking ${activity} in the workplace. This provided evidence for ${unit} and ${outcomes}. At the outset, ${first} confirmed what was required, considered the relevant workplace information and prepared to complete the task in a logical and responsible manner.`
+ ];
+ const witnessOpenings=[
+  `I witnessed ${learner} carrying out ${activity} as part of normal workplace operations. My testimony relates to ${unit} and the performance requirements within ${outcomes}. I personally saw ${first} prepare for the task, consider the available information and organise the work so it could proceed safely and efficiently.`,
+  `During the normal course of work, I observed ${learner} completing ${activity}. The work provided direct evidence relevant to ${unit} and ${outcomes}. Before starting, ${first} checked the task requirements and made suitable arrangements for the work area, resources and sequence.`,
+  `I personally observed ${learner} undertaking ${activity} in the workplace. This testimony covers ${unit} and ${outcomes}. ${first} established what was required before commencing and approached the work in an organised, responsible and safety-conscious manner.`
+ ];
+ const processParagraphs=[
+  `${first} maintained a methodical approach throughout. Communication with colleagues and other people affected by the work was clear and appropriate, and clarification was sought where required. Safe access and suitable housekeeping were maintained as the activity progressed. Tools, equipment and materials were handled responsibly, and the work area was controlled to reduce foreseeable risk and avoid unnecessary disruption to others.`,
+  `The activity was managed in a logical sequence, with ${first} maintaining awareness of other people, changing site conditions and the effect of the work on the surrounding area. Relevant information was communicated at appropriate stages, and any uncertainty was dealt with before it could affect safety or progress. Resources were used carefully and the work area remained orderly and accessible.`,
+  `${first} worked steadily and with appropriate independence, while remaining within the limits of their responsibility. Coordination with others supported the safe completion of the task, and workplace procedures were followed consistently. Materials and equipment were positioned sensibly, access routes were kept clear and waste or surplus material was controlled throughout.`
+ ];
+ const qualityParagraphs=[
+  `Checks were made at suitable stages rather than being left until completion. Where a minor discrepancy or changing condition was identified, ${first} responded promptly and made an appropriate adjustment before continuing. This demonstrated practical judgement, attention to detail and an understanding of how planning, sequence and ongoing control affect the final standard of work.`,
+  `${first} monitored progress throughout the activity and checked compliance at appropriate points. Minor issues were addressed as they arose, preventing them from affecting later work. The approach demonstrated sound judgement and a clear understanding of the relationship between safe working, accuracy, efficiency and the required workplace standard.`,
+  `The work was reviewed continuously as it progressed. ${first} did not rely solely on a final inspection, but used regular checks to confirm that the activity remained controlled and compliant. Necessary adjustments were made without delay, showing an appropriate level of care, decision-making and responsibility for the quality of the outcome.`
+ ];
+ const assessorClosings=[
+  `The activity was completed to an appropriate workplace standard and within the expected timescale without reducing safety or quality. Based on my direct observation and professional judgement, I am satisfied that ${learner} demonstrated competence in the areas assessed. The evidence obtained is valid, authentic, current and sufficient to support this assessment decision.`,
+  `${first} completed the observed activity in accordance with the relevant workplace requirements and maintained an acceptable standard of performance throughout. On the basis of the evidence personally observed, I am satisfied that competence was demonstrated against the assessed requirements. The evidence is valid, authentic, current and sufficient.`,
+  `Overall, the performance observed was consistent with the requirements of the unit and showed that ${learner} could apply the necessary knowledge and skills in workplace conditions. I am satisfied that the evidence supports achievement of the areas assessed and is valid, authentic, current and sufficient for the assessment decision.`
+ ];
+ const witnessClosings=[
+  `The activity was completed to an appropriate workplace standard, with suitable attention to safety, quality and the needs of others. This testimony is based entirely on what I personally observed. In my opinion, ${learner}'s performance was competent, current and representative of their normal workplace practice.`,
+  `${first} completed the work responsibly and to the standard expected in the workplace. I personally witnessed the actions described above and confirm that they are an accurate and current account of ${learner}'s performance during the activity.`,
+  `The work observed was carried out safely, efficiently and with appropriate consideration for quality and other people in the workplace. I confirm that this statement reflects my own direct observation and is a true representation of ${learner}'s workplace performance.`
+ ];
+ const opening=nvqPick(perspective==='witness'?witnessOpenings:assessorOpenings,seed,1);
+ const process=nvqPick(processParagraphs,seed,3);
+ const quality=nvqPick(qualityParagraphs,seed,5);
+ const closing=nvqPick(perspective==='witness'?witnessClosings:assessorClosings,seed,7);
+ return `${opening}\n\n${evidenceText}\n\n${process}\n\n${quality}\n\n${closing}`;
+}
+
+function scoreRows(a,d,readonly=false){d.ksbEvidence=d.ksbEvidence||[];d.scores=d.scores||{};const skills=skillCriteriaFor(a).map(skill=>{const selected=d.ksbEvidence.includes(skill.code);return `<div class="skill-assessment ${selected?'skill-selected':''}"><button type="button" class="skill-heading skill-evidence-toggle" data-ksb-evidence-toggle="${esc(skill.code)}" ${readonly?'disabled':''}><span class="tick-box">${selected?'✓':''}</span><span class="skill-heading-copy"><small>${esc(skill.code)} · Skill unit ${evidenceCoverageBadge(a.n,skill.code)}</small><strong>${esc(skill.summary)}</strong></span></button>${skill.criteria.map((criterion,i)=>{const key=`${skill.code}::${i+1}`;return `<div class="score-card criterion-row"><div class="criterion-text"><small>Practical mark ${i+1}</small>${esc(criterion)}</div><div class="score-buttons">${[1,2,3,4,5].map(n=>`<button type="button" class="score-button ${+d.scores[key]===n?'active':''}" data-score-code="${key}" data-score="${n}" ${readonly?'disabled':''}>${n}</button>`).join('')}</div></div>`}).join('')}</div>`}).join('');const behaviours=a.ksbs.filter(([code])=>/^B/i.test(code)).map(([code,text])=>{const selected=d.ksbEvidence.includes(code);return `<div class="skill-assessment ${selected?'skill-selected':''}"><button type="button" class="skill-heading skill-evidence-toggle" data-ksb-evidence-toggle="${esc(code)}" ${readonly?'disabled':''}><span class="tick-box">${selected?'✓':''}</span><span class="skill-heading-copy"><small>${esc(code)} · Behaviour unit ${evidenceCoverageBadge(a.n,code)}</small><strong>${esc(text)}</strong></span></button><div class="score-card criterion-row"><div class="criterion-text"><small>Practical behaviour mark</small>Rate how consistently this behaviour was demonstrated during the practical activity.</div><div class="score-buttons">${[1,2,3,4,5].map(n=>`<button type="button" class="score-button ${+d.scores[code]===n?'active':''}" data-score-code="${esc(code)}" data-score="${n}" ${readonly||!selected?'disabled':''}>${n}</button>`).join('')}</div></div></div>`}).join('');return skills+behaviours}
+function ksbTypeLabel(code){const c=String(code||'').toUpperCase();return c.startsWith('K')?'Knowledge':c.startsWith('S')?'Skill':c.startsWith('B')?'Behaviour':'KSB'}
+function ksbsScoreRows(a,d,readonly=false){
+ d.ksbEvidence=d.ksbEvidence||[];
+ d.scores=d.scores||{};
+ return a.ksbs.map(([code,summary])=>{const selected=d.ksbEvidence.includes(code);return `<div class="skill-assessment ${selected?'skill-selected':''}"><button type="button" class="skill-heading skill-evidence-toggle" data-ksb-evidence-toggle="${esc(code)}" aria-pressed="${selected?'true':'false'}" ${readonly?'disabled':''}><span class="tick-box" aria-hidden="true">${selected?'✓':''}</span><span class="skill-heading-copy"><small>${esc(code)} · ${ksbTypeLabel(code)} unit ${evidenceCoverageBadge(a.n,code)}</small><strong>${esc(summary)}</strong></span></button><div class="score-card criterion-row"><div class="criterion-text"><small>Workplace evidence score</small>Rate how consistently the learner demonstrated this KSB during the activity.</div><div class="score-buttons">${[1,2,3,4,5].map(n=>`<button type="button" class="score-button ${+d.scores[code]===n?'active':''}" data-score-code="${esc(code)}" data-score="${n}" ${readonly||!selected?'disabled':''}>${n}</button>`).join('')}</div></div></div>`}).join('')
+}
+function totalScore(a,d,practical=false){if(practical)return practicalResultText(a,d);const pct=percentageScore(a,d);return `${pct}% — ${gradeForPercentage(pct)}`}
+function scoreBadge(a,d){const pct=percentageScore(a,d),grade=gradeForPercentage(pct);return `<span class="status-pill ${pct>=70?'done':''}">${pct}% — ${grade}</span>`}
+function feedbackTitles(a,d,practical=false){
+ const rows=practical
+  ?skillCriteriaFor(a).flatMap(skill=>skill.criteria.map((_,i)=>({title:learnerPromptTitle(a.n,skill.code,skill.summary),score:+d.scores?.[`${skill.code}::${i+1}`]||0})))
+  :a.ksbs.map(([code,summary])=>({title:learnerPromptTitle(a.n,code,summary),score:+d.scores?.[code]||0}));
+ const unique=items=>[...new Set(items.map(x=>x.title).filter(Boolean))];
+ return {strengths:unique(rows.filter(x=>x.score>=4)),development:unique(rows.filter(x=>x.score>=1&&x.score<=3))};
+}
+function joinFeedbackTitles(items){if(!items.length)return'';if(items.length===1)return items[0];if(items.length===2)return `${items[0]} and ${items[1]}`;return `${items.slice(0,-1).join(', ')} and ${items.at(-1)}`}
+function assessmentTypeName(type,practical=false){if(practical)return'practical assessment';return String(type||'witness testimony').toLowerCase()}
+function generateFeedbackSections(a,d,practical=false){
+ const type=assessmentTypeName(d.type,practical),titles=feedbackTitles(a,d,practical),strengths=joinFeedbackTitles(titles.strengths),development=joinFeedbackTitles(titles.development);
+ let summary='';
+ if(strengths)summary=`The ${type} identified a good standard in ${strengths}. These areas were scored at four or five and demonstrated secure performance against the assessed requirements. The learner should continue applying the same level of care, consistency and professional judgement when completing similar workplace activities and future assessments.`;
+ else summary=`No assessed criteria received a score of four or five in this ${type}. The assessment has nevertheless established a clear starting point for development. The learner should use the recorded scores, assessor guidance and further supervised practice to build confidence and demonstrate a stronger standard during the next assessment attempt.`;
+ let areas='';
+ if(development)areas=`Further development is required in ${development}. These areas received scores between one and three and should be addressed through the related Targeted Revision activities. The learner should then practise the relevant knowledge or skills in the workplace before completing another ${practical?'Practical Assessment':'assessment'} to demonstrate measurable improvement.`;
+ else areas=`No assessed criteria received a score between one and three, so no specific development areas were identified from this ${type}. The learner should maintain the current standard, continue practising the assessed requirements and use Targeted Revision whenever a future assessment identifies a lower score or a new area requiring improvement.`;
+ return {summary,areas};
+}
+function additionalCommentsHeading(d,practical=false){if(practical)return"Practical Assessor's Additional Comments";return d.type==='Employer statement'?"Employer's Additional Comments":"Witness's Additional Comments"}
+function additionalCommentsPlaceholder(d,practical=false){if(practical)return'Record observations specific to this practical assessment, including good practice, progress since previous assessments or recommendations for future development.';if(d.type==='Employer statement')return"Record observations about the learner's workplace performance, including strengths, areas for development or recommendations for future progress.";return'Record workplace observations, examples of good performance or recommendations based on the work witnessed.'}
+function generatedFeedbackHTML(d,practical=false){return `<div class="field"><label>Assessment Summary</label><textarea class="generated-feedback-text" readonly placeholder="Complete the assessment scores to prepare the summary...">${esc(d.feedbackSummary||'')}</textarea></div><div class="field"><label>Areas for Development</label><textarea class="generated-feedback-text" readonly placeholder="Complete the assessment scores to prepare the summary...">${esc(d.feedbackDevelopment||'')}</textarea></div><div class="field"><label>${esc(additionalCommentsHeading(d,practical))}</label><textarea class="autosave" data-field="feedback" placeholder="${esc(additionalCommentsPlaceholder(d,practical))}">${esc(d.feedback||'')}</textarea></div><button type="button" class="btn secondary" id="generateFeedback">Update assessment comments</button>`}
+function signatureHTML(d,locked,requiredBy='Apprentice',allowSavedLearner=true){return `<div class="field"><label>${esc(requiredBy)} signature required</label>${d.signature?`<div class="saved-signature-wrap"><img class="sig-preview saved-signature-preview" src="${d.signature}" alt="Saved ${esc(requiredBy)} signature"><span class="saved-signature-label">Signature saved — hidden for privacy</span></div>`:locked?`<p class="muted">No ${esc(requiredBy.toLowerCase())} signature saved</p>`:`<div class="signature-entry locked" id="signatureEntry"><canvas class="signature-pad" id="signaturePad" aria-label="${esc(requiredBy)} signature box"></canvas><button type="button" class="signature-unlock" id="unlockSignature">Press here to add signature</button></div><div class="btn-row"><button type="button" class="btn secondary" id="clearSignature">Clear signature</button>${allowSavedLearner?'<button type="button" class="btn secondary" id="useProfileSignature">Use saved apprentice signature</button>':''}</div>`}<div class="date-line">Date: ${d.date||today()}</div></div>`}
+function lockedTop(version,section){const label=section==='witness'?'Create new testimony':section==='discussion'?'Create new walkthrough':section==='professionalDiscussion'?'Create new discussion':'Create new version';return `<div class="locked-banner"><span>🔒 Submitted version ${version}</span><button class="btn secondary retake" id="retake">${label}</button></div>`}
+
+function renderSection(){const a=assignment(state.assignment),s=state.section,sd=sectionData(a.n,s),d=sd.draft;const locked=d.submitted;let body='';
+ if(s==='practical')body=practicalPage(a,d,locked,sd);
+ if(s==='photos')body=photosPage(a,d,locked,sd);
+ if(s==='statement')body=statementPage(a,d,locked,sd);
+ if(s==='witness')body=witnessPage(a,d,locked,sd);
+ if(s==='discussion')body=professionalDiscussionPage(a,d,locked,sd);
+ if(s==='professionalDiscussion')body=nvqProfessionalDiscussionPage(a,d,locked,sd);
+ if(s==='supporting')body=supportingPage(a,d,locked,sd);
+ app.innerHTML=shell(`<button class="back no-print" id="back">← ${COURSE.nvqUnits?`Unit ${a.unit}`:`Assignment ${a.n}`}</button><div class="assignment-title"><div class="number">${COURSE.nvqUnits?`Unit ${a.unit}`:`Assignment ${a.n}`}</div><h2>${sectionTitle(s)}</h2><p class="muted">${esc(a.title)}</p></div>${body}`);
+ document.getElementById('back').onclick=()=>{state.view='assignment';render()};if(!locked)applyEvidenceReuseLocks(a,s,d);bindSection(a,s,sd,d,locked);
+}
+function sectionTitle(s){const titles={practical:[COURSE.nvqUnits?'observation':'hammer',COURSE.nvqUnits?'Assessor observation':'Practical assessment'],photos:['camera','Photographic Evidence'],statement:['statement','Learner statement'],discussion:['video','Video Walkthrough'],professionalDiscussion:['microphone','Professional Discussion'],witness:['witness','Witness testimony'],supporting:['supporting','Supporting evidence']};const [icon,label]=titles[s],cap=evidenceCapability(s);return `<span class="section-title-icon">${appIcon(icon)}</span>${cap?`<span class="section-title-capability">${cap}</span>`:''}<span class="section-title-label">${label}</span>`}
+function versionHistory(sd,s){if(!sd.versions.length)return'';const a=assignment(state.assignment);return `<section class="card panel versions"><h3>Saved attempts</h3>${sd.versions.slice().reverse().map((v,i)=>{const result=(!COURSE.nvqUnits&&(s==='practical'||(s==='supporting'&&v.tab!=='files')))?(()=>{if(s==='practical')return `<div class="muted">${practicalResultText(a,v)}</div>`;const pct=percentageScore(a,v);return `<div class="muted">${pct}% — ${gradeForPercentage(pct)}</div>`})():'';return `<div class="version-item"><div><strong>Attempt ${sd.versions.length-i}</strong><div class="muted">Submitted ${esc(v.date||'')}</div>${result}</div><button class="btn secondary" data-view-version="${sd.versions.length-1-i}">Open</button></div>`}).join('')}</section>`}
+function createPracticalSpecificationId(assignmentNumber,difficulty){const courseCode=String(COURSE.standard||COURSE.id||'COURSE').replace(/[^a-z0-9]/gi,'').toUpperCase().slice(0,10),date=new Date(),stamp=`${date.getFullYear()}${String(date.getMonth()+1).padStart(2,'0')}${String(date.getDate()).padStart(2,'0')}`,rand=Math.random().toString(36).slice(2,6).toUpperCase();return `${courseCode}-PA${assignmentNumber}-${String(difficulty||'custom').slice(0,1).toUpperCase()}-${stamp}-${rand}`}
+function practicalSpecificationSections(activity){const text=String(activity||'').trim(),heads=['Task description','Required dimensions','Suggested materials','Completion requirements'];const title=(text.split(/\n/)[0]||'Practical task').trim();const meta={title,difficulty:'Custom task',duration:'Set by assessor',description:'',dimensions:'Refer to task description',materials:'Select suitable materials for the task',requirements:''};const diff=text.match(/Difficulty:\s*([^\n]+)/i),duration=text.match(/Estimated duration:\s*([^\n]+)/i);if(diff)meta.difficulty=diff[1].trim();if(duration)meta.duration=duration[1].trim();for(let i=0;i<heads.length;i++){const h=heads[i],start=text.indexOf(h);if(start<0)continue;const contentStart=start+h.length;let end=text.length;for(let j=i+1;j<heads.length;j++){const pos=text.indexOf(heads[j],contentStart);if(pos>=0){end=pos;break}}const value=text.slice(contentStart,end).trim();if(i===0)meta.description=value;if(i===1)meta.dimensions=value;if(i===2)meta.materials=value;if(i===3)meta.requirements=value}if(!meta.description)meta.description=text;return meta}
+function showPracticalSpecificationSheet(a,d){const spec=practicalSpecificationSections(d.activity),issued=d.activityGeneratedAt?new Date(d.activityGeneratedAt).toLocaleDateString('en-GB'):new Date().toLocaleDateString('en-GB'),id=d.activitySpecId||createPracticalSpecificationId(a.n,d.activityTaskType||'custom');const bullet=v=>esc(v).replace(/\n/g,'<br>');const wrap=document.createElement('div');wrap.className='modal practical-spec-modal';wrap.id='practicalSpecificationModal';wrap.innerHTML=`<section class="practical-spec-sheet" role="dialog" aria-modal="true" aria-labelledby="practicalSpecTitle"><div class="practical-spec-toolbar no-print"><button class="btn secondary" id="closePracticalSpec">Close</button><button class="btn" id="downloadPracticalSpec">${appIcon('download','button-icon')} Download PDF</button></div><article class="practical-spec-document" id="practicalSpecDocument"><header><div><div class="practical-spec-brand">APPRENTICE+</div><div class="practical-spec-kicker">PRACTICAL TASK SPECIFICATION</div></div><div class="practical-spec-id"><span>Specification ID</span><strong>${esc(id)}</strong></div></header><div class="practical-spec-title"><span>Practical Assessment ${a.n}</span><h1 id="practicalSpecTitle">${esc(spec.title)}</h1><p>${esc(COURSE.name)} · ${esc(COURSE.standard||'')}</p></div><div class="practical-spec-meta"><div><span>Difficulty</span><strong>${esc(spec.difficulty)}</strong></div><div><span>Estimated duration</span><strong>${esc(spec.duration)}</strong></div><div><span>Date issued</span><strong>${esc(issued)}</strong></div><div><span>Learner</span><strong>${esc(state.profile?.fullName||'')}</strong></div></div><section><h2>Job brief</h2><p>${bullet(spec.description)}</p></section>${technicalDrawingInfo(a.n)?`<section class="practical-drawing-section"><h2>Technical drawing</h2><p class="drawing-warning">Use the issued written dimensions. Do not scale from the image.</p>${technicalDrawingCard(a.n)}</section>`:''}<section><h2>Dimensions and specification</h2><p>${bullet(spec.dimensions)}</p></section><section><h2>Suggested materials</h2><p>${bullet(spec.materials)}</p></section><section><h2>Completion requirements</h2><p>${bullet(spec.requirements||'Complete the task safely, accurately and to the issued specification. Check the finished work and correct defects before presenting it for assessment.')}</p></section><div class="practical-spec-grid"><section><h2>Health and safety</h2><ul><li>Use the required PPE and task controls.</li><li>Inspect tools and equipment before use.</li><li>Maintain safe access and good housekeeping.</li><li>Follow the relevant risk assessment and method.</li></ul></section><section><h2>Quality checks</h2><ul><li>Check dimensions and setting out.</li><li>Maintain alignment, level, plumb and tolerances as relevant.</li><li>Check materials, joints, fixings and finish.</li><li>Correct defects before completion.</li></ul></section></div><footer><span>Complete the issued practical task while the assessor observes the existing official KSB criteria.</span><strong>${esc(id)}</strong></footer></article></section>`;document.body.appendChild(wrap);bindTechnicalDrawingButtons(wrap);const close=()=>wrap.remove();wrap.querySelector('#closePracticalSpec').onclick=close;wrap.onclick=e=>{if(e.target===wrap)close()};wrap.querySelector('#downloadPracticalSpec').onclick=async()=>{try{toast('Creating specification PDF...');await generatePracticalSpecificationPDF({course:COURSE,assignment:a,profile:state.profile,data:d,specificationId:id});toast('Specification PDF downloaded')}catch(error){console.error(error);toast('Unable to create specification PDF')}}}
+function nvqObservationPage(a,d,locked,sd){
+ d.scores=d.scores||{};
+ d.outcomePhotos=d.outcomePhotos||{};
+ const selected=selectedNvqOutcomes(a,d);
+ const selectedCount=selected.length;
+ return `<div class="locked-wrap ${locked?'read-only':''}">${locked?lockedTop(sd.versions.length,'practical'):''}<section class="card panel assessor-only-panel"><span class="submitted-ribbon assessor-ribbon page-ribbon">ASSESSOR ONLY</span><div class="panel-body"><div class="field"><label>Assessor name</label><input class="input autosave" data-field="tutor" value="${esc(d.tutor||'')}"></div><div class="field"><label>Activity observed</label><textarea class="autosave" data-field="activity" placeholder="Describe the workplace activity directly observed.">${esc(d.activity||'')}</textarea></div><div class="field"><label>Learning outcomes observed</label><p class="help">Select each learning outcome demonstrated during this observation and add a clear supporting photograph for every selected outcome.</p><div class="outcome-list">${nvqTickRows(a,d,locked)}</div></div><div class="field"><label>Assessor observation</label><textarea class="autosave generated-feedback-text" data-field="feedback" placeholder="Select at least one learning outcome, then generate or edit the assessor observation.">${esc(d.feedback||'')}</textarea></div>${locked?'':`<button type="button" class="btn secondary" id="generateNvqNarrative">${d.feedback?'Regenerate':'Generate'} assessor observation</button>`}<p class="help">${selectedCount} learning outcome${selectedCount===1?'':'s'} selected. Every selected outcome requires a photograph before submission.</p>${signatureHTML(d,locked,'Assessor',false)}</div>${locked?'':`<div class="btn-row"><button class="btn" id="submitSection" ${!observationReady(a,d)?'disabled':''}>Submit and lock assessor observation</button></div>`}</section></div>${versionHistory(sd,'practical')}`;
+}
+
+function practicalPage(a,d,locked,sd){if(COURSE.nvqUnits)return nvqObservationPage(a,d,locked,sd);d.activity=a.title;d.activityTaskType='assignment';d.photos=d.photos||[];d.ksbEvidence=d.ksbEvidence||[];const slots=[0,1,2].map(i=>{const p=d.photos[i];return `<button type="button" class="practical-photo-slot ${p?'filled':''}" data-practical-slot="${i}" aria-label="${p?'Open practical photo '+(i+1):'Add practical photo '+(i+1)}">${p?`<img src="${p.data}" alt="Practical evidence photo ${i+1}"><span>Photo ${i+1}</span>`:`<span class="camera-mark">${appIcon('camera')}</span><span>Photo ${i+1}</span>`}</button>`}).join('');return `<div class="locked-wrap ${locked?'read-only':''}">${locked?lockedTop(sd.versions.length,'practical'):''}<section class="card panel assessor-only-panel"><span class="submitted-ribbon assessor-ribbon page-ribbon">ASSESSOR ONLY</span><div class="panel-body"><div class="field"><label>Tutor / assessor name</label><input class="input autosave" data-field="tutor" value="${esc(d.tutor)}"></div><div class="field practical-issued-drawing"><label>Practical assessment drawing</label><p class="help">Build the issued practical shown below. Tap the drawing for a full-screen view.</p>${technicalDrawingCard(a.n)}</div><div class="field"><label>Practical task photographs</label><p class="help">Add at least one clear photograph. Additional photos can be added where available.</p><div class="practical-photo-row">${slots}</div></div><div class="field"><label>Skill units and /5 scoring</label><p class="help">Practical assessments use Skill units only. Tick each Skill demonstrated, then award the relevant /5 scores below it. Only marks that are actually scored count towards Fail, Pass, Merit or Distinction. Unobserved criteria are excluded. You can submit evidence without assessing every Skill in the assignment.</p><div class="score-list">${scoreRows(a,d,locked)}</div></div>${generatedFeedbackHTML(d,true)}${signatureHTML(d,locked,'Tutor / assessor',false)}</div>${locked?'':`<div class="btn-row"><button class="btn" id="submitSection" ${!canSubmit(a,'practical',d)?'disabled':''}>Submit this evidence</button></div>`}</section></div>${versionHistory(sd,'practical')}`}
+function statementPage(a,d,locked,sd){d.ksbEvidence=d.ksbEvidence||[];if(!COURSE.nvqUnits)d.ksbEvidence=d.ksbEvidence.filter(code=>/^[KB]/i.test(code));const required=statementWordRequirement(a,d),selectedCount=statementSelectedKsbCodes(a,d).length;return `<div class="locked-wrap ${locked?'read-only':''}">${locked?lockedTop(sd.versions.length,'statement'):''}<section class="card panel"><div class="panel-body"><h3>${COURSE.nvqUnits?'Learning outcomes':'Knowledge and Behaviours attached to this assignment'}</h3><p class="help">${COURSE.nvqUnits?'Select each learning outcome genuinely covered by the written statement. Photographs are not required for learner statements.':'Learner statements can evidence Knowledge and Behaviour KSBs only. Select every relevant K or B criterion. The minimum increases by 30 words for each selected criterion. Photographs are not required.'}</p>${COURSE.nvqUnits?nvqStatementCards(a,d,locked):ksbStatementCards(a,d,locked)}<div class="field"><label>Your statement — minimum <span id="statementRequiredLabel">${required||30}</span> words</label><textarea class="autosave" id="statementText" data-field="text" placeholder="Explain what you did, how you did it, the checks you completed and what you learned...">${esc(d.text)}</textarea><div class="help"><span id="wordCount">${wordCount(d.text)}</span> / <span id="statementRequiredCount">${required||30}</span> words minimum. ${selectedCount} ${COURSE.nvqUnits?'learning outcome':'K/B criterion'}${selectedCount===1?'':'s'} selected.</div></div>${signatureHTML(d,locked,'Apprentice',true)}</div>${locked?'':`<div class="btn-row"><button class="btn" id="submitSection" ${!statementReady(a,d)?'disabled':''}>Submit and lock statement</button></div>`}</section></div>${versionHistory(sd,'statement')}`}
+
+function photosPage(a,d,locked,sd){
+ if(COURSE.nvqUnits){d.outcomePhotos=d.outcomePhotos||{};d.ksbEvidence=d.ksbEvidence||[];const selected=selectedKsbCodes(a,d);return `<div class="locked-wrap ${locked?'read-only':''}">${locked?lockedTop(sd.versions.length,'photos'):''}<section class="card panel"><div class="panel-body"><div class="field"><label>Learning outcomes evidenced</label><p class="help">Select each learning outcome shown by the photographs and add one clear landscape photograph for every selected outcome.</p><div class="outcome-list">${a.ksbs.map(([code,text])=>{const chosen=d.ksbEvidence.includes(code);return `<article class="outcome-card with-photo statement-ksb-card ${chosen?'selected':''}"><button type="button" class="statement-ksb-toggle" data-ksb-evidence-toggle="${esc(code)}" ${locked?'disabled':''}><span class="tick-box">${chosen?'✓':''}</span><span class="outcome-card-copy"><span class="outcome-code">${esc(code)} ${evidenceCoverageBadge(a.n,code)}</span><strong>${esc(text)}</strong><em>${chosen?'Included in photographic evidence':'Tap to include'}</em></span></button>${outcomePhotoControl(code,d,locked)}</article>`}).join('')}</div></div><div class="field"><label>Photographic evidence notes</label><textarea class="autosave" data-field="activity" placeholder="Briefly explain what the photographs show and where the work was completed.">${esc(d.activity||'')}</textarea></div>${signatureHTML(d,locked,'Apprentice',true)}</div>${locked?'':`<div class="btn-row"><button class="btn" id="submitSection" ${!canSubmit(a,'photos',d)?'disabled':''}>Submit and lock photographic evidence</button></div>`}</section></div>${versionHistory(sd,'photos')}`}
+ d.skillPhotos=d.skillPhotos||{};d.ksbEvidence=d.ksbEvidence||[];const skills=a.ksbs.filter(([code])=>String(code).toUpperCase().startsWith('S'));return `<div class="locked-wrap ${locked?'read-only':''}">${locked?lockedTop(sd.versions.length,'photos'):''}<section class="card panel"><div class="panel-body"><div class="field"><label>Skills evidenced</label><p class="help">Photographic Evidence is linked to Skill units only. Select a Skill and add three clear landscape photographs. A completed submission gives that Skill one evidence credit toward its 2/2 requirement.</p><div class="outcome-list">${skills.map(([code,text])=>{const chosen=d.ksbEvidence.includes(code),photos=(d.skillPhotos[code]||[]).filter(Boolean);return `<article class="outcome-card statement-ksb-card skill-photo-card ${chosen?'selected':''}"><button type="button" class="statement-ksb-toggle" data-ksb-evidence-toggle="${esc(code)}" ${locked?'disabled':''}><span class="tick-box">${chosen?'✓':''}</span><span class="outcome-card-copy"><span class="outcome-code">${esc(code)} ${evidenceCoverageBadge(a.n,code)}</span><strong>${esc(learnerPromptTitle(a.n,code,text))}</strong><span class="criteria-numbers">${esc(text)}</span><em>${chosen?`${photos.length}/3 photos added`:'Tap to include this Skill'}</em></span></button>${chosen?`<div class="practical-photo-row skill-photo-row">${[0,1,2].map(i=>{const ph=d.skillPhotos[code]?.[i];return `<button type="button" class="practical-photo-slot ${ph?'filled':''}" data-skill-photo-code="${esc(code)}" data-skill-photo-index="${i}" aria-label="${ph?'Open':'Add'} ${code} photo ${i+1}">${ph?`<img src="${ph.data}" alt="${esc(code)} photographic evidence ${i+1}"><span>Photo ${i+1}</span>`:`<span class="camera-mark">${appIcon('camera')}</span><span>Photo ${i+1}</span>`}</button>`}).join('')}</div>`:''}</article>`}).join('')}</div></div>${signatureHTML(d,locked,'Apprentice',true)}</div>${locked?'':`<div class="btn-row"><button class="btn" id="submitSection" ${!canSubmit(a,'photos',d)?'disabled':''}>Submit and lock photographic evidence</button></div>`}</section></div>${versionHistory(sd,'photos')}`
+}
+function professionalDiscussionAudioPage(a,d,locked,sd){
+ d.recordings=d.recordings||{};d.notes=d.notes||{};
+ const items=(COURSE.nvqUnits?a.ksbs:a.ksbs.filter(([code])=>/^[KB]/i.test(code)));
+ const completed=items.filter(([code])=>!!d.recordings[code]?.data).length;
+ const rows=items.map(([code,summary])=>{
+  const rec=d.recordings[code],note=d.notes[code]||'',title=learnerPromptTitle(a.n,code,summary);
+  return `<article class="walkthrough-mini-tile professional-discussion-mini ${rec?'complete':''}"><div class="walkthrough-mini-copy"><strong class="walkthrough-mini-code">${esc(code)} ${evidenceCoverageBadge(a.n,code)}</strong><h3>${esc(title)}</h3><p>${esc(summary)}</p>${rec?`<div class="walkthrough-mini-saved">✓ Audio saved${rec.date?` · ${esc(rec.date)}`:''}${rec.duration?` · ${esc(rec.duration)}`:''}</div><audio class="professional-discussion-audio" controls preload="metadata" src="${rec.data}"></audio>`:''}${!locked&&rec?`<button type="button" class="link-button professional-discussion-remove" data-delete-recording="${esc(code)}">Remove recording</button>`:''}</div>${locked?'':`<button type="button" class="walkthrough-video-button professional-discussion-record-button ${rec?'has-thumbnail':''}" data-record-pd-code="${esc(code)}" aria-label="${rec?'Replace':'Record'} audio for ${esc(code)}"><span class="voice-recorder-icon">${appIcon('microphone')}</span><span>${rec?'REPLACE':'RECORD AUDIO'}</span></button>`}</article>`
+ }).join('');
+ return `<div class="locked-wrap ${locked?'read-only':''}">${locked?lockedTop(sd.versions.length,'professionalDiscussion'):''}<section class="walkthrough-head professional-discussion-head"><div><div class="number">Professional Discussion</div><h2>${esc(a.title)}</h2><p>${completed} of ${items.length} ${COURSE.nvqUnits?'learning outcomes':'eligible KSBs'} recorded</p></div><span class="status-pill ${completed?'done':''}">${completed}/${items.length}</span></section><div class="walkthrough-progress"><span style="width:${items.length?(completed/items.length)*100:0}%"></span></div><section class="card panel assessor-only-panel professional-discussion-details"><span class="submitted-ribbon pd-assessor-ribbon page-ribbon">ASSESSOR ONLY</span><div class="panel-body"><div class="field"><label>Assessor / discussion lead</label><input class="input autosave" data-field="assessor" value="${esc(d.assessor||'')}"></div><div class="field"><label>Activity discussed</label><textarea class="autosave" data-field="activity" placeholder="Briefly describe the work or topic discussed.">${esc(d.activity||'')}</textarea></div></div></section><section class="walkthrough-tile-list professional-discussion-list">${rows}</section><section class="card panel walkthrough-save-panel ${locked?'complete':''}"><div><h3>${locked?'Professional discussion submitted':'Submit professional discussion'}</h3><p class="muted">Record a separate voice discussion for each relevant ${COURSE.nvqUnits?'learning outcome':'Knowledge or Behaviour criterion'}. Each evidence type can only contribute once to an individual criterion.</p></div>${locked?'':`<button class="btn" id="submitSection" ${!canSubmit(a,'professionalDiscussion',d)?'disabled':''}>Submit and lock professional discussion</button>`}</section>${signatureHTML(d,locked,'Assessor / discussion lead',false)}</div>${versionHistory(sd,'professionalDiscussion')}`
+}
+function nvqProfessionalDiscussionPage(a,d,locked,sd){return professionalDiscussionAudioPage(a,d,locked,sd)}
+function professionalDiscussionPage(a,d,locked,sd){return professionalDiscussionAudioPage(a,d,locked,sd)}
+
+function witnessPage(a,d,locked,sd){return `<div class="locked-wrap ${locked?'read-only':''}">${locked?lockedTop(sd.versions.length,'witness'):''}<section class="card panel"><div class="panel-body">${supportStatement(a,d,locked)}${signatureHTML(d,locked,'Witness / employer',false)}</div>${locked?'':`<div class="btn-row"><button class="btn" id="submitSection" ${!supportReady(a,d)?'disabled':''}>Submit and lock witness testimony</button></div>`}</section></div>${versionHistory(sd,'witness')}`}
+function supportingPage(a,d,locked,sd){if(COURSE.nvqUnits){d.tab='files';return `<div class="locked-wrap ${locked?'read-only':''}">${locked?lockedTop(sd.versions.length,'supporting'):''}<section class="card panel"><div class="panel-body">${supportFiles(d,locked)}</div>${locked?'':`<div class="btn-row"><button class="btn" id="submitSection" ${!supportReady(a,d)?'disabled':''}>Submit and lock supporting evidence</button></div>`}</section></div>${versionHistory(sd,'supporting')}`}const statementTab=d.tab!=='files';const ribbon=statementTab?(d.type==='Employer statement'?'EMPLOYER ONLY':'WITNESS ONLY'):'OPTIONAL EVIDENCE';const ribbonClass=statementTab?(d.type==='Employer statement'?'employer-ribbon':'witness-ribbon'):'optional-evidence-ribbon';return `<div class="locked-wrap ${locked?'read-only':''}">${locked?lockedTop(sd.versions.length,'supporting'):''}<section class="card panel assessor-only-panel"><span class="submitted-ribbon ${ribbonClass} page-ribbon">${ribbon}</span><div class="panel-body"><div class="tabs"><button class="tab ${statementTab?'active':''}" data-tab="statement">Witness / employer</button><button class="tab ${!statementTab?'active':''}" data-tab="files">Certificates / RAMS / other</button></div>${statementTab?supportStatement(a,d,locked):supportFiles(d,locked)}${statementTab?signatureHTML(d,locked,d.type==='Employer statement'?'Employer':'Witness',false):''}</div>${locked?'':`<div class="btn-row"><button class="btn" id="submitSection" ${!supportReady(a,d)?'disabled':''}>Submit this evidence</button></div>`}</section></div>${versionHistory(sd,'supporting')}` }
+function supportStatement(a,d,locked){d.ksbEvidence=d.ksbEvidence||[];return `<div class="field"><label>Statement type</label><select class="autosave" data-field="type"><option ${d.type==='Witness testimony'?'selected':''}>Witness testimony</option><option ${d.type==='Employer statement'?'selected':''}>Employer statement</option></select></div><div class="field"><label>${d.type==='Employer statement'?'Employer':'Witness'} name</label><input class="input autosave" data-field="personName" value="${esc(d.personName)}"></div><div class="field"><label>Job role</label><input class="input autosave" data-field="role" value="${esc(d.role)}"></div><div class="field"><label>Organisation</label><input class="input autosave" data-field="organisation" value="${esc(d.organisation)}"></div><div class="field"><label>Activity observed</label><textarea class="autosave" data-field="activity">${esc(d.activity)}</textarea></div><div class="field"><label>KSBs observed and /5 scoring <span class="optional-label">Optional</span></label><p class="help">Select and score only the Knowledge, Skills or Behaviours that were genuinely observed. No KSB selection is required to save or submit this statement.</p><div class="score-list">${ksbsScoreRows(COURSE.nvqUnits?a:{...a,ksbs:a.ksbs.filter(([code])=>/^[SB]/i.test(code))},d,locked)}</div></div>${generatedFeedbackHTML(d,false)}`}
+
+function supportFiles(d,locked){return `<div class="upload-box"><h3>Additional evidence</h3><p class="muted"><strong>Photos:</strong> Certificates, RAMS, drawings, delivery notes and other documents.<br><strong>Videos:</strong> Discussions, demonstrations, behaviours, toolbox talks and manufacturer training.</p>${locked?'':`<div class="btn-row" style="justify-content:center"><label class="btn icon-btn">${appIcon('camera','button-icon')}Camera<input class="hide" id="supportCameraInput" type="file" accept="image/*" capture="environment"></label><label class="btn secondary icon-btn">${appIcon('video','button-icon')}Camcorder<input class="hide" id="supportVideoInput" type="file" accept="video/*"></label><label class="btn secondary icon-btn">${appIcon('gallery','button-icon')}Gallery<input class="hide" id="supportGalleryInput" type="file" accept="image/*,video/*" multiple></label></div>`}</div><div class="file-list">${d.files.map((f,i)=>supportFileCard(f,i,locked)).join('')}</div>`}
+function supportFileCard(f,i,locked){const isImage=(f.type||'').startsWith('image/'),isVideo=(f.type||'').startsWith('video/'),displayName=(f.evidenceName||'').trim();let preview='';if(isImage&&f.data)preview=`<img src="${f.data}" alt="${esc(displayName||f.name)}" style="width:100%;max-height:220px;object-fit:contain;border-radius:12px;margin-bottom:10px">`;if(isVideo&&f.data)preview=`<video controls playsinline webkit-playsinline preload="metadata" poster="${f.thumbnail||''}" style="width:100%;max-height:240px;border-radius:12px;margin-bottom:10px"><source src="${f.data}" type="${esc(f.type)}"></video>`;return `<div class="file-card" style="display:block">${preview}${locked?`<div><strong>${esc(displayName||f.name)}</strong><div class="muted">Original file: ${esc(f.name)}</div></div>`:`<div class="field" style="margin-bottom:10px"><label>Evidence name (required)</label><input class="input support-file-name" data-file-index="${i}" value="${esc(f.evidenceName||'')}" placeholder="For example: Site induction certificate"></div><div class="muted" style="margin-bottom:10px">Original file: ${esc(f.name)}</div>`}<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span class="file-type-label">${appIcon(isImage?'gallery':isVideo?'video':'file','button-icon')}${isImage?'Image':isVideo?'Video':'File'}</span>${locked&&isVideo?`<button class="btn secondary" data-download-file="${i}">Open / save video</button>`:''}${locked?'':`<button class="btn danger" data-remove-file="${i}">Remove</button>`}</div></div>`}
+
+function bindSection(a,s,sd,d,locked){
+ bindTechnicalDrawingButtons(document);
+ document.querySelectorAll('.autosave').forEach(el=>el.oninput=async()=>{d[el.dataset.field]=el.value;await commit(a.n,s,sd);if(s==='statement')updateStatement(a,d);if(s==='supporting'&&el.dataset.field==='type')return renderSection();updateSectionSubmit(a,s,d)});
+ document.querySelectorAll('[data-score-code]').forEach(b=>b.onclick=async()=>{
+  const code=b.dataset.scoreCode,score=+b.dataset.score,row=b.closest('.score-buttons');
+  d.scores=d.scores||{};d.scores[code]=score;
+  row?.querySelectorAll('[data-score-code]').forEach(button=>{
+   const active=button===b;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));
+  });
+  b.blur();
+  updateSectionSubmit(a,s,d);
+  await commit(a.n,s,sd);
+ });
+ document.querySelectorAll('[data-nvq-toggle]').forEach(b=>b.onclick=async()=>{const code=b.dataset.nvqToggle;d.scores=d.scores||{};d.scores[code]=+d.scores[code]===5?0:5;d.feedback=generateNvqNarrative(a,d,s==='practical'?'assessor':'witness');await commit(a.n,s,sd);renderSection()});
+ document.querySelectorAll('[data-ksb-evidence-toggle]').forEach(b=>b.onclick=async()=>{
+  const code=b.dataset.ksbEvidenceToggle,card=b.closest('.skill-assessment');
+  d.ksbEvidence=d.ksbEvidence||[];const selected=!d.ksbEvidence.includes(code);
+  d.ksbEvidence=selected?[...d.ksbEvidence,code]:d.ksbEvidence.filter(x=>x!==code);
+  card?.classList.toggle('skill-selected',selected);b.setAttribute('aria-pressed',String(selected));
+  const tick=b.querySelector('.tick-box');if(tick)tick.textContent=selected?'✓':'';
+  if(/^B/i.test(code))card?.querySelectorAll('[data-score-code]').forEach(button=>button.disabled=!selected);
+  b.blur();updateSectionSubmit(a,s,d);await commit(a.n,s,sd);
+ });
+ document.querySelectorAll('[data-statement-ksb-toggle]').forEach(b=>b.onclick=async()=>{const code=b.dataset.statementKsbToggle;d.ksbEvidence=d.ksbEvidence||[];d.ksbEvidence=d.ksbEvidence.includes(code)?d.ksbEvidence.filter(x=>x!==code):[...d.ksbEvidence,code];await commit(a.n,s,sd);renderSection()});
+ document.querySelectorAll('[data-lo-photo]').forEach(b=>b.onclick=()=>showOutcomePhotoModal(a.n,s,sd,d,b.dataset.loPhoto,locked));
+ document.querySelectorAll('[data-record-code]').forEach(b=>b.onclick=()=>recordDiscussionOutcome(a.n,s,sd,d,b.dataset.recordCode));
+ document.querySelectorAll('[data-record-pd-code]').forEach(b=>b.onclick=()=>recordProfessionalDiscussionOutcome(a.n,s,sd,d,b.dataset.recordPdCode));
+ document.querySelectorAll('[data-delete-recording]').forEach(b=>b.onclick=async()=>{delete d.recordings[b.dataset.deleteRecording];await commit(a.n,s,sd);renderSection();toast('Recording deleted')});
+ const ng=document.getElementById('generateNvqNarrative');if(ng)ng.onclick=async()=>{d.narrativeRevision=Number(d.narrativeRevision||0)+1;d.feedback=generateNvqNarrative(a,d,s==='practical'?'assessor':'witness');if(!d.feedback)return toast('Select at least one learning outcome');await commit(a.n,s,sd);renderSection()};
+ const gf=document.getElementById('generateFeedback');if(gf)gf.onclick=async()=>{
+  const generated=generateFeedbackSections(a,d,s==='practical');d.feedbackSummary=generated.summary;d.feedbackDevelopment=generated.areas;
+  const fields=document.querySelectorAll('.generated-feedback-text');if(fields[0])fields[0].value=d.feedbackSummary||'';if(fields[1])fields[1].value=d.feedbackDevelopment||'';
+  gf.blur();await commit(a.n,s,sd);toast('Assessment comments updated');
+ };
+ document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=async()=>{d.tab=b.dataset.tab;await commit(a.n,s,sd);renderSection()});
+ if(!locked)setupSignature(a.n,s,sd,d);
+ const cam=document.getElementById('cameraInput'),gal=document.getElementById('galleryInput');if(cam)cam.onchange=e=>addPhotos(e.target.files,a.n,s,sd,d);if(gal)gal.onchange=e=>addPhotos(e.target.files,a.n,s,sd,d);
+ document.querySelectorAll('[data-practical-slot]').forEach(b=>b.onclick=()=>showPracticalPhotoModal(a.n,s,sd,d,+b.dataset.practicalSlot,locked));
+ document.querySelectorAll('[data-skill-photo-code]').forEach(b=>b.onclick=()=>showSkillPhotoModal(a.n,s,sd,d,b.dataset.skillPhotoCode,+b.dataset.skillPhotoIndex,locked));
+ document.querySelectorAll('[data-remove-photo]').forEach(b=>b.onclick=async()=>{d.photos.splice(+b.dataset.removePhoto,1);await commit(a.n,s,sd);renderSection()});
+ const supportCam=document.getElementById('supportCameraInput'),supportVid=document.getElementById('supportVideoInput'),supportGal=document.getElementById('supportGalleryInput');
+ if(supportCam)supportCam.onchange=e=>addSupportingFiles(e.target.files,a.n,s,sd,d,'image');
+ if(supportVid)supportVid.onchange=e=>addSupportingFiles(e.target.files,a.n,s,sd,d,'video');
+ if(supportGal)supportGal.onchange=e=>addSupportingFiles(e.target.files,a.n,s,sd,d,'media');
+ document.querySelectorAll('.support-file-name').forEach(el=>el.oninput=async()=>{const f=d.files[+el.dataset.fileIndex];if(!f)return;f.evidenceName=el.value;await commit(a.n,s,sd);updateSectionSubmit(a,s,d)});
+ document.querySelectorAll('[data-download-file]').forEach(b=>b.onclick=()=>downloadStoredFile(d.files[+b.dataset.downloadFile]));
+ document.querySelectorAll('[data-remove-file]').forEach(b=>b.onclick=async()=>{d.files.splice(+b.dataset.removeFile,1);await commit(a.n,s,sd);renderSection()});
+ const sub=document.getElementById('submitSection');if(sub)sub.onclick=()=>submitSection(a,s,sd,d);
+ const retake=document.getElementById('retake');if(retake)retake.onclick=async()=>{analyticsEvent('evidence_retake_started',{assignment_number:a.n,evidence_type:s,course_id:COURSE.id});sd.draft=blankSection(s);await commit(a.n,s,sd);renderSection();toast(s==='witness'?'New blank witness testimony created':s==='discussion'?'New blank video walkthrough created':s==='professionalDiscussion'?'New blank professional discussion created':'New blank version created')};
+ document.querySelectorAll('[data-view-version]').forEach(b=>b.onclick=async()=>{sd.draft=structuredClone(sd.versions[+b.dataset.viewVersion]);await commit(a.n,s,sd);renderSection()});
+}
+async function commit(n,s,sd){state.data[key(n,s)]=sd;await saveData()}
+function setupSignature(n,s,sd,d){const c=document.getElementById('signaturePad');if(!c)return;const ctx=c.getContext('2d'),entry=document.getElementById('signatureEntry'),unlock=document.getElementById('unlockSignature');let draw=false,enabled=false;function resize(){const ratio=devicePixelRatio||1,cw=c.clientWidth,ch=c.clientHeight;c.width=cw*ratio;c.height=ch*ratio;ctx.scale(ratio,ratio);ctx.lineWidth=2.3;ctx.lineCap='round';ctx.strokeStyle='#0b2b23'}resize();
+ const enable=()=>{enabled=true;entry?.classList.remove('locked');unlock?.remove();c.focus();toast('Signature box unlocked')};if(unlock)unlock.onclick=enable;
+ const pos=e=>{const r=c.getBoundingClientRect(),p=e.touches?e.touches[0]:e;return{x:p.clientX-r.left,y:p.clientY-r.top}};const start=e=>{if(!enabled)return;draw=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault()};const move=e=>{if(!enabled||!draw)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();e.preventDefault()};const end=async()=>{if(!draw)return;draw=false;d.signature=c.toDataURL('image/png');await commit(n,s,sd);const a=assignment(n);updateSectionSubmit(a,s,d)};c.addEventListener('pointerdown',start);c.addEventListener('pointermove',move);window.addEventListener('pointerup',end);
+ const clr=document.getElementById('clearSignature');if(clr)clr.onclick=async()=>{enable();ctx.clearRect(0,0,c.width,c.height);d.signature='';await commit(n,s,sd);const a=assignment(n);updateSectionSubmit(a,s,d)};const use=document.getElementById('useProfileSignature');if(use)use.onclick=async()=>{if(!state.profile.signature)return toast('No saved learner signature');d.signature=state.profile.signature;await commit(n,s,sd);renderSection()};}
+function professionalDiscussionPrompts(code,description){
+ const type=String(code||'').trim().toUpperCase().charAt(0);
+ if(type==='K')return [
+  'Ask the learner to explain this knowledge in their own words.',
+  'Ask for a real workplace example where this knowledge was applied.',
+  'Ask what regulations, guidance, checks or risks must be considered.',
+  'Ask what could happen if this knowledge is not followed correctly.'
+ ];
+ if(type==='B')return [
+  'Ask the learner to describe how they demonstrate this behaviour at work.',
+  'Ask for a specific example involving colleagues, customers or site conditions.',
+  'Ask how this behaviour affected safety, quality, teamwork or productivity.',
+  'Ask what they learned and how they would improve next time.'
+ ];
+ return [
+  'Ask the learner to explain what they did and why.',
+  'Ask for a specific example from the activity.',
+  'Ask what checks, decisions and standards were involved.',
+  'Ask what they learned and what they would do differently next time.'
+ ];
+}
+async function recordProfessionalDiscussionOutcome(n,s,sd,d,code){
+ if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined')return toast('Audio recording is not supported on this device');
+ const a=assignment(n),criterion=(a?.ksbs||[]).find(([itemCode])=>String(itemCode)===String(code)),description=criterion?.[1]||'No criterion description is available.',prompts=professionalDiscussionPrompts(code,description),criterionType=/^K/i.test(code)?'Knowledge':/^B/i.test(code)?'Behaviour':'Learning outcome';
+ let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}catch{return toast('Microphone permission is required')};
+ const options=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t=>MediaRecorder.isTypeSupported?.(t))||'',recorder=new MediaRecorder(stream,options?{mimeType:options}:undefined),chunks=[],started=Date.now();
+ app.insertAdjacentHTML('beforeend',`<div class="modal" id="recordingModal"><div class="modal-card recording-modal professional-discussion-recording-modal"><div class="pd-recording-heading"><span>${esc(criterionType)} · ${esc(code)}</span><h2>Professional Discussion</h2></div><section class="pd-recording-criterion"><strong>${esc(code)} description</strong><p>${esc(description)}</p></section><section class="pd-assessor-prompts"><strong>Assessor prompts</strong><ul>${prompts.map(prompt=>`<li>${esc(prompt)}</li>`).join('')}</ul></section><div class="recording-status-row"><div class="recording-pulse"></div><p class="muted">Recording in progress. Use the prompts as guidance and ask suitable follow-up questions.</p></div><button class="btn danger" id="stopRecording">Stop recording</button><button class="btn secondary" id="cancelRecording">Cancel</button></div></div>`);
+ let cancelled=false;document.getElementById('cancelRecording').onclick=()=>{cancelled=true;recorder.stop()};document.getElementById('stopRecording').onclick=()=>recorder.stop();recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());document.getElementById('recordingModal')?.remove();if(cancelled)return;const type=String(recorder.mimeType||options||'audio/webm').split(';')[0],blob=new Blob(chunks,{type}),data=await blobToDataUrl(blob),seconds=Math.max(1,Math.round((Date.now()-started)/1000));d.recordings=d.recordings||{};d.recordings[code]={data,type:blob.type,date:today(),duration:formatDuration(seconds)};await commit(n,s,sd);renderSection();toast(`${code} discussion autosaved`)};recorder.start(1000)
+}
+async function recordDiscussionOutcome(n,s,sd,d,code){
+ if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined')return toast('Video recording is not supported in this browser');
+ let stream;try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:true})}catch{return toast('Camera and microphone permission were not granted')}
+ const chunks=[],started=Date.now(),mime=preferredWalkthroughMime();let recorder;try{recorder=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:900000,audioBitsPerSecond:64000}:{videoBitsPerSecond:900000,audioBitsPerSecond:64000})}catch{stream.getTracks().forEach(t=>t.stop());return toast('Unable to start the video recorder')}
+ app.insertAdjacentHTML('beforeend',`<div class="modal" id="recordingModal"><div class="modal-card recording-modal"><h2>Video Walkthrough · ${esc(code)}</h2><video id="discussionVideoPreview" autoplay muted playsinline webkit-playsinline style="width:100%;max-height:55vh;border-radius:14px;background:#000"></video><div class="recording-pulse"></div><p class="muted">Hold the phone in landscape, explain or demonstrate this learning outcome, then press Stop recording.</p><button class="btn danger" id="stopRecording">Stop recording</button><button class="btn secondary" id="cancelRecording">Cancel</button></div></div>`);
+ const modal=document.getElementById('recordingModal'),preview=document.getElementById('discussionVideoPreview');preview.srcObject=stream;let cancelled=false;document.getElementById('cancelRecording').onclick=()=>{cancelled=true;recorder.stop()};document.getElementById('stopRecording').onclick=()=>recorder.stop();recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onerror=e=>{console.error('LO walkthrough recording error',e);toast('The video could not be recorded on this device')};recorder.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());preview.srcObject=null;modal?.remove();if(cancelled)return;const recordedType=String(recorder.mimeType||mime||'video/webm').split(';')[0].trim()||'video/webm',blob=new Blob(chunks,{type:recordedType}),data=await blobToDataUrl(blob),seconds=Math.max(1,Math.round((Date.now()-started)/1000));d.recordings=d.recordings||{};d.recordings[code]={data,type:blob.type,date:today(),duration:formatDuration(seconds)};await commit(n,s,sd);analyticsEvent('professional_discussion_recording_saved',{assignment_number:n,criterion_type:String(code||'').charAt(0),duration_seconds:seconds,course_id:COURSE.id});renderSection();toast(`${code} video autosaved`)};recorder.start(1000);
+}
+function blobToDataUrl(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob)})}
+function formatDuration(seconds){const m=Math.floor(seconds/60),s=seconds%60;return `${m}:${String(s).padStart(2,'0')}`}
+function showOutcomePhotoModal(n,s,sd,d,code,locked){d.outcomePhotos=d.outcomePhotos||{};const existing=d.outcomePhotos[code];app.insertAdjacentHTML('beforeend',`<div class="modal" id="outcomePhotoModal"><div class="modal-card"><h2>${existing?`${code} evidence photograph`:`Add photograph for ${code}`}</h2>${existing?`<img class="photo-preview" src="${existing.data}" alt="Evidence photograph for ${code}">`:'<p class="muted">Take a clear photograph that directly supports this learning outcome.</p>'}<div class="btn-row">${locked?'<button class="btn" id="closeOutcomePhoto">Close</button>':`<label class="btn icon-btn">${appIcon('camera','button-icon')}Camera<input class="hide" id="outcomeCameraInput" type="file" accept="image/*" capture="environment"></label><label class="btn secondary icon-btn">${appIcon('gallery','button-icon')}Gallery<input class="hide" id="outcomeGalleryInput" type="file" accept="image/*"></label>${existing?'<button class="btn danger" id="removeOutcomePhoto">Delete</button>':''}<button class="btn secondary" id="closeOutcomePhoto">Cancel</button>`}</div></div></div>`);const modal=document.getElementById('outcomePhotoModal');document.getElementById('closeOutcomePhoto').onclick=()=>modal.remove();if(locked)return;const add=async files=>{const f=[...files][0];if(!f||!f.type.startsWith('image/'))return;const data=await compressLandscapeImage(f);d.outcomePhotos[code]={name:f.name,data};await commit(n,s,sd);modal.remove();renderSection();toast(`${code} photograph autosaved`)};document.getElementById('outcomeCameraInput').onchange=e=>add(e.target.files);document.getElementById('outcomeGalleryInput').onchange=e=>add(e.target.files);const remove=document.getElementById('removeOutcomePhoto');if(remove)remove.onclick=async()=>{delete d.outcomePhotos[code];await commit(n,s,sd);modal.remove();renderSection();toast(`${code} photograph removed`)}}
+async function addPhotos(files,n,s,sd,d){d.photos=d.photos||[];const remaining=Math.max(0,6-d.photos.length);let added=0;for(const f of [...files].slice(0,remaining)){if(!f.type.startsWith('image/'))continue;const data=await compressLandscapeImage(f);d.photos.push({name:f.name,data});added++}await commit(n,s,sd);if(added)analyticsEvent('photographic_evidence_photos_added',{assignment_number:n,photo_count:added,course_id:COURSE.id});renderSection();toast(added?`${added} landscape photo${added===1?'':'s'} autosaved`:'Six photos are already added')}
+function compressLandscapeImage(file){return new Promise((res,rej)=>{const r=new FileReader;r.onload=()=>{const img=new Image();img.onload=()=>{const ratio=16/9,srcRatio=img.width/img.height;let sx=0,sy=0,sw=img.width,sh=img.height;if(srcRatio>ratio){sw=img.height*ratio;sx=(img.width-sw)/2}else{sh=img.width/ratio;sy=(img.height-sh)/2}const width=Math.min(1400,Math.round(sw)),height=Math.round(width/ratio),c=document.createElement('canvas');c.width=width;c.height=height;c.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,width,height);res(c.toDataURL('image/jpeg',.8))};img.onerror=rej;img.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
+function showSkillPhotoModal(n,s,sd,d,code,index,locked){d.skillPhotos=d.skillPhotos||{};d.skillPhotos[code]=d.skillPhotos[code]||[];const existing=d.skillPhotos[code][index];app.insertAdjacentHTML('beforeend',`<div class="modal" id="skillPhotoModal"><div class="modal-card"><h2>${existing?`${code} · Photo ${index+1}`:`Add ${code} photo ${index+1}`}</h2>${existing?`<img class="photo-preview" src="${existing.data}" alt="${esc(code)} photographic evidence ${index+1}">`:'<p class="muted">Add a clear landscape photograph that directly demonstrates this Skill.</p>'}<div class="btn-row">${locked?'<button class="btn" id="closeSkillPhoto">Close</button>':`<label class="btn icon-btn">${appIcon('camera','button-icon')}Camera<input class="hide" id="skillCameraInput" type="file" accept="image/*" capture="environment"></label><label class="btn secondary icon-btn">${appIcon('gallery','button-icon')}Gallery<input class="hide" id="skillGalleryInput" type="file" accept="image/*"></label>${existing?'<button class="btn danger" id="removeSkillPhoto">Remove</button>':''}<button class="btn secondary" id="closeSkillPhoto">Cancel</button>`}</div></div></div>`);const modal=document.getElementById('skillPhotoModal');document.getElementById('closeSkillPhoto').onclick=()=>modal.remove();if(locked)return;const add=async files=>{const f=[...files][0];if(!f||!f.type.startsWith('image/'))return;const data=await compressLandscapeImage(f);d.skillPhotos[code][index]={name:f.name,data};await commit(n,s,sd);modal.remove();renderSection();toast(`${code} photo ${index+1} autosaved`)};document.getElementById('skillCameraInput').onchange=e=>add(e.target.files);document.getElementById('skillGalleryInput').onchange=e=>add(e.target.files);const remove=document.getElementById('removeSkillPhoto');if(remove)remove.onclick=async()=>{d.skillPhotos[code].splice(index,1,undefined);await commit(n,s,sd);modal.remove();renderSection();toast(`${code} photo removed`)}}
+function showPracticalPhotoModal(n,s,sd,d,index,locked){const existing=d.photos?.[index];app.insertAdjacentHTML('beforeend',`<div class="modal" id="practicalPhotoModal"><div class="modal-card"><h2>${existing?'Practical Evidence Photo':'Add Practical Evidence'}</h2>${existing?`<img class="photo-preview" src="${existing.data}" alt="Practical evidence photo ${index+1}">`:'<p class="muted">Add 3 landscape photos of the finished product and important details: an overall view, a key detail and a quality check.</p>'}<div class="btn-row">${locked?'<button class="btn" id="closePracticalPhoto">Close</button>':`<label class="btn icon-btn">${appIcon('camera','button-icon')}Camera<input class="hide" id="practicalCameraInput" type="file" accept="image/*" capture="environment"></label><label class="btn secondary icon-btn">${appIcon('gallery','button-icon')}Gallery<input class="hide" id="practicalGalleryInput" type="file" accept="image/*"></label>${existing?'<button class="btn danger" id="removePracticalPhoto">Remove</button>':''}<button class="btn secondary" id="closePracticalPhoto">Cancel</button>`}</div></div></div>`);const modal=document.getElementById('practicalPhotoModal');document.getElementById('closePracticalPhoto').onclick=()=>modal.remove();if(locked)return;const add=async files=>{const f=[...files][0];if(!f||!f.type.startsWith('image/'))return;const data=await compressLandscapeImage(f);d.photos=d.photos||[];d.photos[index]={name:f.name,data};await commit(n,s,sd);modal.remove();renderSection();toast('Practical photo autosaved')};document.getElementById('practicalCameraInput').onchange=e=>add(e.target.files);document.getElementById('practicalGalleryInput').onchange=e=>add(e.target.files);const remove=document.getElementById('removePracticalPhoto');if(remove)remove.onclick=async()=>{d.photos.splice(index,1);await commit(n,s,sd);modal.remove();renderSection();toast('Practical photo removed')}}
+async function addSupportingFiles(files,n,s,sd,d,mode='media'){let added=0;for(const f of [...files]){const isImage=f.type.startsWith('image/'),isVideo=f.type.startsWith('video/');if(mode==='image'&&!isImage)continue;if(mode==='video'&&!isVideo)continue;if(!isImage&&!isVideo)continue;try{const data=isImage?await compressLandscapeImage(f):await fileToData(f),thumbnail=isVideo?await createVideoThumbnail(data):'';d.files.push({name:f.name||`${isVideo?'video':'image'}-${Date.now()}`,evidenceName:'',type:f.type||`${isVideo?'video':'image'}/*`,size:f.size,data,thumbnail});added++}catch(e){console.error('Supporting media could not be added',e)}}await commit(n,s,sd);if(added)analyticsEvent('supporting_evidence_files_added',{assignment_number:n,file_count:added,media_mode:mode,course_id:COURSE.id});renderSection();toast(added?`${added} supporting file${added===1?'':'s'} autosaved`:'No supported files selected')}
+function fileToData(f){return new Promise((res,rej)=>{const r=new FileReader;r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f)})}
+function createVideoThumbnail(src){return new Promise(resolve=>{const v=document.createElement('video');v.muted=true;v.playsInline=true;v.preload='metadata';const done=()=>{try{const c=document.createElement('canvas'),max=720,scale=Math.min(1,max/Math.max(v.videoWidth||1,v.videoHeight||1));c.width=Math.max(1,Math.round((v.videoWidth||640)*scale));c.height=Math.max(1,Math.round((v.videoHeight||360)*scale));c.getContext('2d').drawImage(v,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.72))}catch{resolve('')}finally{v.removeAttribute('src');v.load()}};v.onloadeddata=()=>{try{v.currentTime=Math.min(.25,Math.max(0,(v.duration||1)/10))}catch{done()}};v.onseeked=done;v.onerror=()=>resolve('');v.src=src})}
+function downloadStoredFile(f){if(!f?.data)return toast('Video file unavailable');const a=document.createElement('a');a.href=f.data;a.download=evidenceDownloadName(f);document.body.appendChild(a);a.click();a.remove()}
+function evidenceDownloadName(f){const original=String(f?.name||''),dot=original.lastIndexOf('.'),ext=dot>0?original.slice(dot):'',title=String(f?.evidenceName||'Supporting evidence').trim().replace(/[\\/:*?"<>|]/g,'-').replace(/^\.+/,'').replace(/\s+/g,' ').slice(0,120)||'Supporting evidence';return title+ext}
+function wordCount(t){return t.trim()?t.trim().split(/\s+/).length:0}
+function coverage(a,text){const words=text.toLowerCase();const common=new Set(['and','the','using','use','work','working','to','of','a','an','in','with','from']);const out={};a.ksbs.forEach(([c,s])=>{const keys=s.toLowerCase().split(/[^a-z0-9]+/).filter(w=>w.length>3&&!common.has(w));out[c]=keys.some(w=>words.includes(w))});return out}
+function hasOutcomePhotos(codes,d){return codes.every(([code])=>!!d.outcomePhotos?.[code]?.data)}
+function statementReady(a,d){const selected=statementSelectedKsbCodes(a,d).filter(code=>COURSE.nvqUnits||/^[KB]/i.test(code));if(COURSE.nvqUnits)return selected.length>0&&wordCount(d.text)>=100&&!!d.signature;return selected.length>0&&wordCount(d.text)>=selected.length*30&&!!d.signature}
+function updateStatement(a,d){const wc=document.getElementById('wordCount');if(wc)wc.textContent=wordCount(d.text);const required=statementWordRequirement(a,d)||30;const rc=document.getElementById('statementRequiredCount');if(rc)rc.textContent=required;const rl=document.getElementById('statementRequiredLabel');if(rl)rl.textContent=required;const b=document.getElementById('submitSection');if(b)b.disabled=!statementReady(a,d)}
+function supportReady(a,d){if(d.tab==='files'||d.type==='Supporting evidence')return d.files.length>0&&d.files.every(f=>(f.evidenceName||'').trim())&&(COURSE.nvqUnits||selectedKsbCodes(a,d).length>0);if(COURSE.nvqUnits){const selected=selectedNvqOutcomes(a,d);return !!(d.personName&&d.activity&&d.feedback?.trim()&&d.signature&&selected.length)}return !!(d.personName&&d.role&&d.organisation&&d.activity&&d.signature)}
+function updateSubmit(a,d){const b=document.getElementById('submitSection');if(b)b.disabled=!supportReady(a,d)}
+function updateSectionSubmit(a,s,d){const b=document.getElementById('submitSection');if(b)b.disabled=!canSubmit(a,s,d)}
+function observationReady(a,d){const selected=selectedNvqOutcomes(a,d);return !!(d.tutor&&d.activity&&d.feedback?.trim()&&d.signature&&selected.length>=1&&hasOutcomePhotos(selected,d))}
+function canSubmit(a,s,d){if(COURSE.nvqUnits&&s==='practical')return observationReady(a,d);if(s==='practical')return !!(d.tutor&&d.activity&&d.signature&&(d.photos||[]).length>=1&&selectedPracticalSkillCodes(a,d).length>0);if(s==='photos'){if(COURSE.nvqUnits){const selected=selectedKsbCodes(a,d);return selected.length>0&&selected.every(code=>!!d.outcomePhotos?.[code]?.data)&&!!d.signature}const selected=selectedKsbCodes(a,d).filter(code=>String(code).toUpperCase().startsWith('S'));return selected.length>0&&selected.every(code=>(d.skillPhotos?.[code]||[]).filter(Boolean).length===3)&&!!d.signature;}if(s==='statement')return statementReady(a,d);if(s==='discussion'||s==='professionalDiscussion')return !!(d.assessor&&d.activity&&d.signature&&Object.keys(d.recordings||{}).length);return supportReady(a,d)}
+async function submitSection(a,s,sd,d){if(!canSubmit(a,s,d)){if(COURSE.nvqUnits&&s==='practical')return toast('Complete the assessor details, signature and at least one selected Learning Outcome with a photograph');return toast('Complete all required fields first')}d.submitted=true;d.date=today();const frozen=structuredClone(d);sd.versions.push(frozen);sd.draft=frozen;await commit(a.n,s,sd);const pack=state.data[packStatusKey(a.n)];if(pack?.uploaded){state.data[packStatusKey(a.n)]={...pack,downloaded:false,uploaded:false,changedAt:new Date().toISOString()};await saveData()}renderSection();const assessed=!COURSE.nvqUnits&&(s==='practical'||(s==='supporting'&&d.tab!=='files'));
+ const eventName=EVIDENCE_EVENT_NAMES[s]||'evidence_submitted';
+ analyticsEvent(eventName,{assignment_number:a.n,course_id:COURSE.id,evidence_type:s,version_number:sd.versions.length,criterion_count:Array.isArray(d.ksbEvidence)?d.ksbEvidence.length:0,photo_count:Array.isArray(d.photos)?d.photos.filter(Boolean).length:0});
+ toast(assessed?`Attempt submitted: ${totalScore(a,d,s==='practical')}`:'Submitted and locked')}
+
+function appIsInstalled(){return window.matchMedia?.('(display-mode: standalone)').matches||window.navigator.standalone===true}
+function installDeviceType(){const ua=navigator.userAgent||'';if(/iphone|ipad|ipod/i.test(ua))return 'ios';if(/android/i.test(ua))return 'android';return 'other'}
+async function showInstallAppScreen(){
+ if(appIsInstalled())return;
+ const previous=await getStore('installPromptShown');
+ if(previous)return;
+ await putStore('installPromptShown',{shownAt:new Date().toISOString(),version:APP_VERSION});
+ const device=installDeviceType();
+ const iosSteps=`<div class="install-steps"><div><strong>1</strong><span>Tap the <b>Share</b> button in Safari.</span></div><div><strong>2</strong><span>Scroll down and choose <b>Add to Home Screen</b>.</span></div><div><strong>3</strong><span>Tap <b>Add</b> to install Apprentice+.</span></div></div>`;
+ const androidSteps=`<div class="install-steps"><div><strong>1</strong><span>Tap <b>Install Apprentice+</b> below.</span></div><div><strong>2</strong><span>Confirm <b>Install</b> when your browser asks.</span></div><div><strong>3</strong><span>Open Apprentice+ from your home screen.</span></div></div>`;
+ const fallbackSteps=`<div class="install-steps"><div><strong>1</strong><span>Open your browser menu.</span></div><div><strong>2</strong><span>Choose <b>Install app</b> or <b>Add to Home Screen</b>.</span></div><div><strong>3</strong><span>Confirm the installation.</span></div></div>`;
+ app.insertAdjacentHTML('beforeend',`<div class="modal install-app-modal" id="installAppModal"><div class="modal-card install-app-card"><div class="install-app-logo"><img src="icon-192.png" alt="Apprentice+ app icon"></div><div class="number">SETUP COMPLETE</div><h2>Install Apprentice+</h2><p class="muted">Add the app to this phone for quicker access, full-screen use and a more reliable evidence workflow.</p>${device==='ios'?iosSteps:device==='android'?androidSteps:fallbackSteps}<div class="install-benefits"><span>✓ Opens like an app</span><span>✓ Easy home-screen access</span><span>✓ Evidence remains on this device</span></div><div class="btn-row">${device==='ios'?'<button class="btn" id="installDone">I have installed it</button>':`<button class="btn" id="installNow">Install Apprentice+</button>`}<button class="btn secondary" id="installLater">Not now</button></div>${device==='ios'?'<p class="help install-ios-note">On iPhone or iPad, installation must be completed through Safari’s Share menu.</p>':''}</div></div>`);
+ const modal=document.getElementById('installAppModal');
+ document.getElementById('installLater').onclick=()=>modal.remove();
+ const done=document.getElementById('installDone');if(done)done.onclick=()=>modal.remove();
+ const install=document.getElementById('installNow');if(install)install.onclick=async()=>{
+  if(deferredInstallPrompt){deferredInstallPrompt.prompt();const choice=await deferredInstallPrompt.userChoice.catch(()=>null);if(choice?.outcome==='accepted')modal.remove();deferredInstallPrompt=null;return;}
+  toast(device==='android'?'Open your browser menu and choose Install app or Add to Home screen':'Use your browser menu to install Apprentice+');
+ };
+}
+
+function showOnboarding(editMode=false){
+ const selectedCourse=COURSES[ACTIVE_COURSE_ID]||COURSES['site-carpentry-v1-4'];
+ const title=editMode?'Learner details':'Welcome to Apprentice+';
+ const extendedFields=editMode?`<div class="field"><label>Course</label><select class="input" id="obCourse">${Object.values(COURSES).map(c=>`<option value="${c.id}" ${c.id===selectedCourse.id?'selected':''}>${c.name} ${c.version} (${c.standard})</option>`).join('')}</select></div><div class="field"><label>Employer <span class="optional-label">Optional</span></label><input class="input" id="obEmployer" value="${esc(state.profile?.employer||'')}"></div><div class="field"><label>Mentor / assessor <span class="optional-label">Optional</span></label><input class="input" id="obMentor" value="${esc(state.profile?.mentor||'')}"></div><div class="field"><label>Portfolio website address <span class="optional-label">Optional</span></label><input class="input" id="obPortfolioUrl" type="url" inputmode="url" placeholder="https://..." value="${esc(state.profile?.portfolioUrl||'')}"><p class="help">Used by the Open Portfolio button. Nothing is uploaded automatically.</p></div><div class="date-grid"><div class="field"><label>Course start date <span class="optional-label">Optional</span></label><input class="input" id="obStartDate" type="date" value="${esc(state.profile?.courseStartDate||'')}"></div><div class="field"><label>Planned end date <span class="optional-label">Optional</span></label><input class="input" id="obEndDate" type="date" value="${esc(state.profile?.plannedEndDate||'')}"></div></div>`:'';
+ app.insertAdjacentHTML('beforeend',`<div class="modal" id="onboard"><div class="modal-card"><h2>${title}</h2><p class="muted">${editMode?'Update the learner, course, employer and portfolio details used across the app.':'Enter your name, accept the agreement and add your signature. The remaining details can be added later from Learner Details.'}</p>${editMode?extendedFields:''}<div class="field"><label>Full name</label><input class="input" id="obName" value="${esc(state.profile?.fullName||'')}"></div><div class="field"><label>Learner signature</label><div class="signature-entry locked" id="obSignatureEntry"><canvas class="signature-pad" id="obSig" aria-label="Learner signature box"></canvas><button type="button" class="signature-unlock" id="obUnlockSignature">Press here to add signature</button></div><button class="btn secondary" id="obClear" type="button">Clear</button></div><div class="disclaimer"><strong>Local storage notice</strong><br>All evidence is saved locally on this device and browser. Nothing is saved online or uploaded automatically. Clearing browser data or changing devices may remove evidence. Download completed packs and upload them to your official portfolio.</div><label class="checkbox"><input type="checkbox" id="obAccept" ${editMode?'checked':''}> <span>I understand and accept the local storage notice.</span></label><div class="btn-row"><button class="btn" id="obSave">${editMode?'Save changes':'Save and continue'}</button>${editMode?'<button class="btn secondary" id="obCancel">Cancel</button>':''}</div></div></div>`);
+ setupOnboardSig(editMode);
+ if(editMode)document.getElementById('obCancel').onclick=()=>document.getElementById('onboard').remove();
+}
+function setupOnboardSig(editMode=false){
+ const c=document.getElementById('obSig'),ctx=c.getContext('2d'),entry=document.getElementById('obSignatureEntry'),unlock=document.getElementById('obUnlockSignature');let drawing=false,enabled=false,sig=state.profile?.signature||'';const ratio=devicePixelRatio||1;c.width=c.clientWidth*ratio;c.height=c.clientHeight*ratio;ctx.scale(ratio,ratio);ctx.lineWidth=2.3;ctx.lineCap='round';
+ if(sig){const img=new Image();img.onload=()=>ctx.drawImage(img,0,0,c.clientWidth,c.clientHeight);img.src=sig}
+ const enable=()=>{enabled=true;entry?.classList.remove('locked');unlock?.remove();c.focus()};if(unlock)unlock.onclick=enable;
+ const p=e=>{const r=c.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};c.onpointerdown=e=>{if(!enabled)return;drawing=true;const q=p(e);ctx.beginPath();ctx.moveTo(q.x,q.y);e.preventDefault()};c.onpointermove=e=>{if(!enabled||!drawing)return;const q=p(e);ctx.lineTo(q.x,q.y);ctx.stroke();e.preventDefault()};window.addEventListener('pointerup',()=>{if(drawing){drawing=false;sig=c.toDataURL()}});document.getElementById('obClear').onclick=()=>{enable();ctx.clearRect(0,0,c.width,c.height);sig=''};document.getElementById('obSave').onclick=async()=>{
+  const fullName=document.getElementById('obName').value.trim(),ok=document.getElementById('obAccept').checked;
+  if(!fullName||!sig||!ok)return toast('Add the learner name, signature and accept the agreement');
+  let courseId=ACTIVE_COURSE_ID,employer=state.profile?.employer||'',mentor=state.profile?.mentor||'',portfolioUrl=state.profile?.portfolioUrl||'',courseStartDate=state.profile?.courseStartDate||'',plannedEndDate=state.profile?.plannedEndDate||'';
+  if(editMode){
+   courseId=document.getElementById('obCourse').value;employer=document.getElementById('obEmployer').value.trim();mentor=document.getElementById('obMentor').value.trim();portfolioUrl=document.getElementById('obPortfolioUrl').value.trim();courseStartDate=document.getElementById('obStartDate').value;plannedEndDate=document.getElementById('obEndDate').value;
+   if(!COURSES[courseId])return toast('Select a valid course');
+   if(portfolioUrl&&!/^https?:\/\//i.test(portfolioUrl))return toast('Enter a valid portfolio website address beginning with http:// or https://');
+   if(courseStartDate&&plannedEndDate&&new Date(`${plannedEndDate}T00:00:00`)<=new Date(`${courseStartDate}T00:00:00`))return toast('Planned end date must be after the start date');
+  }
+  ACTIVE_COURSE_ID=courseId;COURSE=COURSES[courseId];state.assignment=null;state.section=null;state.view='home';state.profile={...state.profile,fullName,employer,mentor,portfolioUrl,courseStartDate,plannedEndDate,signature:sig};await putStore('activeCourse',courseId);await saveProfile();document.getElementById('onboard').remove();render();toast(editMode?'Learner details updated':'Profile saved locally');if(!editMode)setTimeout(()=>showInstallAppScreen(),250)
+ };
+}
+
+const BRANDING_KEY='collegeBranding:v1';
+function brandingPayload(b){return {v:1,name:b.name||'',campus:b.campus||'',address:b.address||'',telephone:b.telephone||'',email:b.email||'',website:b.website||'',logo:b.logo||''}}
+function encodeBrandingPayload(b){return btoa(unescape(encodeURIComponent(JSON.stringify(brandingPayload(b)))))}
+function decodeBrandingPayload(s){return JSON.parse(decodeURIComponent(escape(atob(s))))}
+async function prepareBrandLogo(file){const src=await fileToData(file);const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src});const c=document.createElement('canvas');const max=96,scale=Math.min(1,max/Math.max(img.width,img.height));c.width=Math.max(1,Math.round(img.width*scale));c.height=Math.max(1,Math.round(img.height*scale));const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);let q=.72,data=c.toDataURL('image/webp',q);while(data.length>1850&&q>.25){q-=.1;data=c.toDataURL('image/webp',q)}return data}
+function currentBrandingFromForm(){return {name:document.getElementById('brandName')?.value.trim()||'',campus:document.getElementById('brandCampus')?.value.trim()||'',address:document.getElementById('brandAddress')?.value.trim()||'',telephone:document.getElementById('brandTelephone')?.value.trim()||'',email:document.getElementById('brandEmail')?.value.trim()||'',website:document.getElementById('brandWebsite')?.value.trim()||'',logo:state.branding?.logo||''}}
+function brandingAdminPanel(){const b=state.branding||{};return `<section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon">${appIcon('college')}</div><div><h3>College branding</h3><p>Used throughout the app, learner QR setup and portfolio PDFs.</p></div></div><div class="admin-section-body"><div class="admin-form-grid"><div class="field"><label>College name</label><input class="input" id="brandName" value="${esc(b.name||'')}"></div><div class="field"><label>Campus <span class="optional-label">Optional</span></label><input class="input" id="brandCampus" value="${esc(b.campus||'')}"></div><div class="field admin-grid-full"><label>Training centre address</label><textarea class="input" id="brandAddress" rows="3">${esc(b.address||'')}</textarea></div><div class="field"><label>Telephone</label><input class="input" id="brandTelephone" value="${esc(b.telephone||'')}"></div><div class="field"><label>Email</label><input class="input" id="brandEmail" type="email" value="${esc(b.email||'')}"></div><div class="field admin-grid-full"><label>Website</label><input class="input" id="brandWebsite" type="url" value="${esc(b.website||'')}"></div></div><label class="file-drop college-logo-upload admin-logo-upload"><input id="brandLogoInput" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"><span>${b.logo?`<img src="${b.logo}" alt="College logo preview">`:appIcon('camera')}</span><div><strong>${b.logo?'Replace college logo':'Upload college logo'}</strong><small>PNG, JPG, WebP or SVG · automatically resized</small></div></label><div class="admin-action-grid"><button class="btn admin-primary" id="saveBranding">Save branding</button><button class="btn admin-soft" id="generateBrandQR" ${b.name&&b.logo?'':'disabled'}>${appIcon('qr','button-icon')} Generate learner QR</button>${b.name&&b.logo?'<button class="btn admin-soft" id="downloadBrandSheet">'+appIcon('download','button-icon')+' Download setup sheet</button>':''}<button class="btn admin-danger" id="removeBranding" ${b.name||b.logo?'':'disabled'}>Remove branding</button></div><div id="brandQrArea" class="brand-qr-area"></div></div></section>`}
+function showBrandQR(downloadSheet=false){const b=currentBrandingFromForm();if(!b.name||!b.logo)return toast('Add the college name and logo first');const payload=encodeBrandingPayload(b),base=(location.href.split('#')[0].split('?')[0]),url=`${base}#college=${encodeURIComponent(payload)}`;if(url.length>2900)return toast('The logo is too detailed for the QR code. Upload a simpler or smaller logo.');const area=document.getElementById('brandQrArea');if(area){const qr=ApprenticeQR.toCanvas(url,320);area.innerHTML=`<div class="brand-qr-card"><img src="${b.logo}" alt="${esc(b.name)} logo"><h3>${esc(b.name)}</h3><div class="qr-holder"></div><p>Scan once to install this college branding in Apprentice+.</p></div>`;area.querySelector('.qr-holder').appendChild(qr)}if(downloadSheet){const qr=ApprenticeQR.toDataURL(url,640),w=window.open('','_blank');w.document.write(`<title>${esc(b.name)} Apprentice+ Setup</title><style>body{font-family:Arial;text-align:center;padding:48px;color:#082f25}img.logo{max-width:260px;max-height:120px}.qr{width:420px;max-width:80vw}h1{font-size:34px}p{font-size:20px;line-height:1.5}@media print{button{display:none}}</style><img class="logo" src="${b.logo}"><h1>${esc(b.name)}</h1><h2>Apprentice+ College Setup</h2><img class="qr" src="${qr}"><p>1. Open this QR code with your phone camera.<br>2. Open Apprentice+ when prompted.<br>3. Confirm the college branding installation.</p><p>${esc(b.website||b.email||'')}</p><button onclick="print()">Print or save as PDF</button>`);w.document.close()}}
+async function importBrandingFromHash(){const m=location.hash.match(/^#college=(.+)$/);if(!m)return;try{const b=decodeBrandingPayload(decodeURIComponent(m[1]));if(!b.name||!b.logo)throw new Error('Invalid branding');if(confirm(`Install ${b.name} branding on this device?`)){state.branding=b;await putStore(BRANDING_KEY,b);history.replaceState(null,'',location.pathname+location.search);toast(`${b.name} branding installed`);render()}}catch(e){console.error(e);toast('Unable to install college branding')}}
+
+let developerVersionTapCount=0,developerVersionTapTimer=null;document.addEventListener('click',event=>{if(!event.target?.closest?.('#developerVersionTrigger'))return;developerVersionTapCount++;clearTimeout(developerVersionTapTimer);developerVersionTapTimer=setTimeout(()=>developerVersionTapCount=0,2200);if(developerVersionTapCount>=7){developerVersionTapCount=0;clearTimeout(developerVersionTapTimer);showHiddenDeveloperTools();toast('Developer Mode unlocked')}});
+
+function showDeveloper(){
+ state.dev=false;
+ putStore('dev',false);
+ app.insertAdjacentHTML('beforeend',`<div class="modal admin-modal" id="devModal"><div class="modal-card admin-modal-card"><div class="admin-modal-head"><div><span class="admin-kicker">Apprentice+ controls</span><h2>Admin Mode</h2></div><button class="admin-close" id="closeDev" aria-label="Close Admin Mode">×</button></div><div class="admin-unlock"><div class="admin-lock-icon">${appIcon('lock')}</div><p class="muted">Enter the four-digit admin code to manage course settings, branding and evidence controls.</p><div class="field"><label>Admin code</label><input class="input" id="devCode" inputmode="numeric" type="password" maxlength="4" autocomplete="one-time-code"></div><button class="btn admin-primary" id="unlockDev">Unlock Admin Mode</button></div></div></div>`);
+ const modal=document.getElementById('devModal');
+ const closeAndLock=async()=>{state.dev=false;await putStore('dev',false);modal?.remove()};
+ document.getElementById('closeDev').onclick=closeAndLock;
+ modal.onclick=e=>{if(e.target===modal)closeAndLock()};
+ document.addEventListener('keydown',function adminEscape(e){if(e.key!=='Escape'||!document.getElementById('devModal'))return;document.removeEventListener('keydown',adminEscape);closeAndLock()});
+ const code=document.getElementById('devCode'),unlock=document.getElementById('unlockDev');
+ const attemptUnlock=()=>{if(code.value!=='1984')return toast('Incorrect code');state.dev=true;modal.querySelector('.admin-modal-card').innerHTML=`<div class="admin-modal-head"><div><span class="admin-kicker">Apprentice+ controls</span><h2>Admin Mode</h2></div><button class="admin-close" id="closeDev" aria-label="Close Admin Mode">×</button></div>${developerPanel()}`;document.getElementById('closeDev').onclick=closeAndLock;bindDeveloper()};
+ unlock.onclick=attemptUnlock;
+ code.onkeydown=e=>{if(e.key==='Enter')attemptUnlock()};
+ code.focus();
+}
+
+const DRAWING_PROMPT_DRAFT_KEY='apprenticeWorkshopSheetDraftV1';
+const WORKSHOP_BRICK_LENGTHS=Array.from({length:20},(_,i)=>{const n=i+1,mm=n*215+Math.max(0,n-1)*10;return `${n} brick${n===1?'':'s'} (${mm} mm)`});
+const WORKSHOP_COURSES=Array.from({length:20},(_,i)=>{const n=i+1;return `${n} course${n===1?'':'s'} (${n*75} mm)`});
+const WORKSHOP_RETURNS=['None',...Array.from({length:10},(_,i)=>{const n=i+1,mm=n*215+Math.max(0,n-1)*10;return `${n} brick${n===1?'':'s'} (${mm} mm)`})];
+function workshopOptionList(items,value=''){return items.map(x=>`<option value="${esc(x)}" ${x===value?'selected':''}>${esc(x)}</option>`).join('')}
+function drawingDataList(id,items=[]){return `<datalist id="${esc(id)}">${items.map(item=>`<option value="${esc(item)}"></option>`).join('')}</datalist>`}
+function workshopAssignmentOptions(selected=1){const c=COURSES['bricklayer-st0095-v1-2'];return (c?.assignments||[]).map(a=>`<option value="${a.n}" ${a.n===Number(selected)?'selected':''}>Assignment ${a.n} — ${esc(a.title)}</option>`).join('')}
+function workshopEstimate(d){const num=v=>Number(String(v||'').match(/\d+/)?.[0]||0),len=num(d.length),courses=num(d.height),ret=d.return==='None'?0:num(d.return);const main=Math.max(0,len*courses),returnQty=Math.max(0,ret*courses);const shared=ret?courses:0;const quantity=Math.max(0,Math.round(main+returnQty-shared));const hours=quantity/25;const allowance=(ret?0.25:0)+(String(d.features||'').trim()?0.25:0)+(String(d.fixings||'').trim()?0.15:0);const recommended=Math.ceil((hours+allowance)*2)/2;return {quantity,hours,recommended}}
+function formatWorkshopHours(v){if(!v)return '—';return Number.isInteger(v)?`${v} hour${v===1?'':'s'}`:`${v.toFixed(1)} hours`}
+function workshopSheetFormHTML(draft={}){const course=COURSES['bricklayer-st0095-v1-2'],a=(course?.assignments||[]).find(x=>x.n===Number(draft.assignmentNumber))||course?.assignments?.[0],estimate=workshopEstimate(draft);return `<div class="drawing-builder-page workshop-builder-page"><div class="drawing-builder-intro"><span class="admin-kicker">Developer workshop sheet tool</span><h2>Create college task sheet</h2><p>Build one clear Bricklaying workshop-sheet prompt based on the simple college format: views first, then specification, task details and instructions.</p></div><div class="drawing-builder-form"><div class="drawing-field-grid"><div class="field"><label>Course</label><input class="input" value="Bricklayer" readonly></div><div class="field"><label>Assignment</label><select class="input" id="drawingAssignment">${workshopAssignmentOptions(a?.n||1)}</select></div><div class="field field-span"><label>Task title</label><input class="input drawing-input" id="drawingTask" data-field="task" value="${esc(draft.task||a?.title||'')}" placeholder="Editable task title"></div></div><div class="drawing-field-grid"><div class="field"><label>Wall type</label><input class="input drawing-input" data-field="wallType" list="workshop-wall-types" value="${esc(draft.wallType||'Panel wall')}" placeholder="Select or type">${drawingDataList('workshop-wall-types',['Panel wall','Straight wall','Wall with right-hand return','Wall with left-hand return','Cavity wall','Solid wall','Pier','Wall with opening','Decorative wall','Custom'])}</div><div class="field"><label>Bond</label><input class="input drawing-input" data-field="bond" list="workshop-bonds" value="${esc(draft.bond||'Stretcher bond')}" placeholder="Select or type">${drawingDataList('workshop-bonds',['Stretcher bond','English bond','Flemish bond','English garden wall bond','Flemish garden wall bond','Stack bond','Custom'])}</div><div class="field"><label>Brick / block type</label><input class="input drawing-input" data-field="material" list="workshop-materials" value="${esc(draft.material||'Metric facing brick 215 × 102.5 × 65 mm')}" placeholder="Select or type">${drawingDataList('workshop-materials',['Metric facing brick 215 × 102.5 × 65 mm','Engineering brick 215 × 102.5 × 65 mm','100 mm concrete block','140 mm concrete block','Aircrete block','Custom'])}</div><div class="field"><label>Wall thickness</label><input class="input drawing-input" data-field="thickness" list="workshop-thicknesses" value="${esc(draft.thickness||'102.5 mm (half-brick)')}" placeholder="Select or type">${drawingDataList('workshop-thicknesses',['102.5 mm (half-brick)','215 mm (one-brick)','100 mm blockwork','140 mm blockwork','Cavity wall — custom overall thickness','Custom'])}</div><div class="field"><label>Length</label><select class="input drawing-input" data-field="length">${workshopOptionList(WORKSHOP_BRICK_LENGTHS,draft.length||WORKSHOP_BRICK_LENGTHS[7])}</select></div><div class="field"><label>Height</label><select class="input drawing-input" data-field="height">${workshopOptionList(WORKSHOP_COURSES,draft.height||WORKSHOP_COURSES[8])}</select></div><div class="field"><label>Return / depth</label><select class="input drawing-input" data-field="return">${workshopOptionList(WORKSHOP_RETURNS,draft.return||'None')}</select></div><div class="field"><label>Joint finish</label><input class="input drawing-input" data-field="finish" list="workshop-finishes" value="${esc(draft.finish||'Bucket handle')}" placeholder="Select or type">${drawingDataList('workshop-finishes',['Bucket handle','Flush','Weather struck','Recessed','Struck','Custom'])}</div><div class="field field-span"><label>Features</label><input class="input drawing-input" data-field="features" value="${esc(draft.features||'')}" placeholder="Opening, pier, DPC, lintel, corbel, radius, etc."></div><div class="field field-span"><label>Fixings and components</label><input class="input drawing-input" data-field="fixings" value="${esc(draft.fixings||'')}" placeholder="Wall ties, frame ties, insulation, cavity tray, straps, etc."></div></div><div class="drawing-field-grid"><div class="field"><label>Views required</label><select class="input drawing-input" data-field="views"><option ${draft.views==='Front elevation, side elevation and plan view'?'selected':''}>Front elevation, side elevation and plan view</option><option ${draft.views==='Front elevation and plan view'?'selected':''}>Front elevation and plan view</option><option ${draft.views==='Front elevation only'?'selected':''}>Front elevation only</option><option ${draft.views==='Front elevation, plan view and section'?'selected':''}>Front elevation, plan view and section</option></select></div><div class="field"><label>Recommended time</label><input class="input drawing-input" id="drawingTime" data-field="time" value="${esc(draft.time||formatWorkshopHours(estimate.recommended))}" placeholder="Editable"></div><div class="field field-span"><label>Specification</label><textarea class="input drawing-input" data-field="specification" rows="4" placeholder="Materials, wall ties, DPC, insulation, joint finish and any exact requirements">${esc(draft.specification||'')}</textarea></div><div class="field field-span"><label>Task details</label><textarea class="input drawing-input" data-field="details" rows="4" placeholder="Explain the purpose of the task and any unusual setting-out requirement">${esc(draft.details||'')}</textarea></div><div class="field field-span"><label>Task instructions</label><textarea class="input drawing-input" data-field="instructions" rows="5" placeholder="One instruction per line">${esc(draft.instructions||'1) Set out the work to the dimensions shown.\n2) Build plumb, level and to gauge.\n3) Complete the selected joint finish.\n4) Clean down and present for assessment.')}</textarea></div><div class="field field-span"><label>Additional notes</label><textarea class="input drawing-input" data-field="notes" rows="3">${esc(draft.notes||'')}</textarea></div></div><div class="brick-time-calculation"><div><span>Estimated brick quantity</span><strong id="drawingBrickQuantity">${estimate.quantity}</strong></div><div><span>Build rate</span><strong>25 bricks per hour</strong></div><div><span>Recommended time</span><strong id="drawingRecommendedTime">${formatWorkshopHours(estimate.recommended)}</strong></div></div><div class="drawing-builder-summary"><div><span>Suggested filename</span><strong id="drawingFilename">BWKAS${a?.n||1}.png</strong></div><div><span>Criteria loaded</span><strong id="drawingCriteriaCount">${a?.ksbs?.length||0}</strong></div></div><details class="drawing-prompt-preview"><summary>Preview full prompt</summary><textarea class="input" id="drawingPromptText" rows="20" readonly></textarea></details><div class="drawing-builder-actions"><button class="btn admin-primary" id="copyDrawingPrompt">Copy prompt</button><button class="btn admin-soft" id="saveDrawingDraft">Save draft</button><button class="btn admin-soft" id="clearDrawingForm">Clear form</button><button class="btn admin-soft" id="closeDrawingBuilder">Close</button></div></div></div>`}
+function collectDrawingDraft(){const draft={courseId:'bricklayer-st0095-v1-2',assignmentNumber:Number(document.getElementById('drawingAssignment')?.value||1)};document.querySelectorAll('#drawingBuilderModal [data-field]').forEach(el=>draft[el.dataset.field]=el.value);return draft}
+function workshopPromptText(draft=collectDrawingDraft()){const course=COURSES['bricklayer-st0095-v1-2'],a=course?.assignments?.find(x=>x.n===draft.assignmentNumber),criteria=(a?.ksbs||[]).map(([code,text])=>`${code} — ${text}`).join('\n'),estimate=workshopEstimate(draft),file=`BWKAS${draft.assignmentNumber}.png`;return `I would like you to build an image of a clear UK college bricklaying workshop task sheet for an apprenticeship practical assessment.
+
+Use the same simple educational layout as a college workshop handout, not a complex architect's drawing and not a 3D render.
+
+Create one portrait A4 page with:
+• white background and black technical linework
+• a simple border and clear boxed headings
+• only the requested orthographic views
+• accurate UK dimension lines and labels
+• simple, verified brick/block outlines or UK material hatching
+• no perspective, no shadows and no decorative effects
+• a top assignment information strip
+• Specification, Task Details and Task Instructions boxes beneath the drawings
+• a small Apprentice+ title block and filename
+
+Accuracy rules:
+• Reproduce every supplied module and millimetre dimension exactly.
+• Never invent a foundation, opening, return, layer, fixing, material, bond or quantity.
+• Keep front elevations flat and orthographic.
+• Show returns only in plan or side elevation unless specifically requested elsewhere.
+• If a bond cannot be shown accurately, use UK brickwork hatching and label the bond instead.
+• Use only the views needed to communicate the task clearly.
+• Relevant knowledge criteria are answered separately; listed skills and behaviours are demonstrated during the practical build.
+
+Trade:
+Bricklayer
+
+Assignment:
+Assignment ${draft.assignmentNumber} — ${a?.title||''}
+
+Filename:
+${file}
+
+Task:
+${draft.task||a?.title||''}
+
+Wall type:
+${draft.wallType||''}
+
+Bond:
+${draft.bond||''}
+
+Material:
+${draft.material||''}
+
+Wall thickness:
+${draft.thickness||''}
+
+Brickwork modules:
+Length: ${draft.length||''}
+Height: ${draft.height||''}
+Return / depth: ${draft.return||'None'}
+
+Joint finish:
+${draft.finish||''}
+
+Features:
+${draft.features||'None'}
+
+Fixings and components:
+${draft.fixings||'None'}
+
+Views required:
+${draft.views||'Front elevation and plan view'}
+
+Estimated brick quantity:
+${estimate.quantity} brick equivalents
+
+Time allowed:
+${draft.time||formatWorkshopHours(estimate.recommended)}
+
+Specification:
+${draft.specification||'Construct the task using the materials and dimensions shown. Keep all work plumb, level, square and to gauge.'}
+
+Task details:
+${draft.details||'Complete the practical task shown on the workshop sheet and present the finished work for assessment.'}
+
+Task instructions:
+${draft.instructions||''}
+
+KSBs / LOs covered:
+${criteria}
+
+Additional notes:
+${draft.notes||'None'}
+
+Final instruction:
+Create one clean portrait A4 college workshop task sheet. Keep the drawings large and easy to read. Do not add unrelated schedules, legends, symbols or architectural information.`}
+function updateDrawingPromptPreview(){const d=collectDrawingDraft(),e=workshopEstimate(d),a=COURSES['bricklayer-st0095-v1-2']?.assignments?.find(x=>x.n===d.assignmentNumber);const q=document.getElementById('drawingBrickQuantity'),r=document.getElementById('drawingRecommendedTime'),time=document.getElementById('drawingTime');if(q)q.textContent=String(e.quantity);if(r)r.textContent=formatWorkshopHours(e.recommended);if(time&&!time.dataset.manual)time.value=formatWorkshopHours(e.recommended);const t=document.getElementById('drawingPromptText');if(t)t.value=workshopPromptText(d);const f=document.getElementById('drawingFilename'),c=document.getElementById('drawingCriteriaCount');if(f)f.textContent=`BWKAS${d.assignmentNumber}.png`;if(c)c.textContent=String(a?.ksbs?.length||0)}
+function showDrawingPromptBuilder(){document.getElementById('drawingBuilderModal')?.remove();let draft={};try{draft=JSON.parse(localStorage.getItem(DRAWING_PROMPT_DRAFT_KEY)||'{}')}catch{};app.insertAdjacentHTML('beforeend',`<div class="modal drawing-builder-modal" id="drawingBuilderModal"><div class="modal-card drawing-builder-card">${workshopSheetFormHTML(draft)}</div></div>`);const modal=document.getElementById('drawingBuilderModal'),assignment=document.getElementById('drawingAssignment');const bind=()=>document.querySelectorAll('#drawingBuilderModal input,#drawingBuilderModal textarea,#drawingBuilderModal select').forEach(el=>{if(el.dataset.bound)return;el.dataset.bound='1';const changed=()=>{if(el.id==='drawingTime')el.dataset.manual='1';updateDrawingPromptPreview()};el.addEventListener('input',changed);el.addEventListener('change',changed)});assignment.addEventListener('change',()=>{const d=collectDrawingDraft(),a=COURSES['bricklayer-st0095-v1-2']?.assignments?.find(x=>x.n===d.assignmentNumber);document.getElementById('drawingTask').value=a?.title||'';updateDrawingPromptPreview()});bind();updateDrawingPromptPreview();document.getElementById('copyDrawingPrompt').onclick=async()=>{const text=workshopPromptText();try{await navigator.clipboard.writeText(text)}catch{const ta=document.getElementById('drawingPromptText');ta.value=text;ta.select();document.execCommand('copy')}toast('Workshop-sheet prompt copied')};document.getElementById('saveDrawingDraft').onclick=()=>{localStorage.setItem(DRAWING_PROMPT_DRAFT_KEY,JSON.stringify(collectDrawingDraft()));toast('Workshop-sheet draft saved')};document.getElementById('clearDrawingForm').onclick=()=>{if(!confirm('Clear the current workshop-sheet form and saved draft?'))return;localStorage.removeItem(DRAWING_PROMPT_DRAFT_KEY);modal.remove();showDrawingPromptBuilder()};document.getElementById('closeDrawingBuilder').onclick=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)modal.remove()}}
+
+function analyticsAdminPanel(){
+ const d=window.ApprenticeAnalytics?.diagnostics?.()||{},u=window.ApprenticeAnalytics?.getUsageSummary?.()||{today:{},sevenDays:{},topTools:[],topScreens:[],recent:[]};
+ const t=u.today||{},w=u.sevenDays||{};const status=d.firebaseReady?'Connected':(d.online?'Unavailable':'Offline');const tone=d.firebaseReady?'good':(d.online?'warn':'muted');
+ const duration=seconds=>{seconds=Number(seconds||0);const h=Math.floor(seconds/3600),m=Math.floor((seconds%3600)/60);return h?`${h}h ${m}m`:`${m} min`};
+ const pretty=value=>String(value||'Unknown').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+ const list=(items,empty)=>items?.length?items.map((x,i)=>`<div class="owner-ranking"><span><b>${i+1}</b>${esc(pretty(x.name))}</span><strong>${Number(x.count||0)}</strong></div>`).join(''):`<p class="muted">${empty}</p>`;
+ return `<section class="admin-section analytics-admin-section owner-analytics-section"><div class="admin-section-head"><div class="admin-section-icon">${appIcon('chart')}</div><div><h3>Usage on this device</h3><p>A practical seven-day summary from this installation. Overall learner totals remain in Firebase.</p></div></div><div class="admin-section-body"><div class="owner-period-title">Today</div><div class="analytics-status-grid owner-summary-grid"><div><span>Sessions</span><strong>${Number(t.sessions||0)}</strong></div><div><span>Time used</span><strong>${duration(t.seconds)}</strong></div><div><span>Tests completed</span><strong>${Number(t.testsCompleted||0)}</strong></div><div><span>Documents exported</span><strong>${Number(t.exports||0)}</strong></div></div><div class="owner-period-title">Last 7 days</div><div class="analytics-status-grid owner-summary-grid"><div><span>Sessions</span><strong>${Number(w.sessions||0)}</strong></div><div><span>Time used</span><strong>${duration(w.seconds)}</strong></div><div><span>Tests started</span><strong>${Number(w.testsStarted||0)}</strong></div><div><span>Tests completed</span><strong>${Number(w.testsCompleted||0)}</strong></div><div><span>Evidence saved</span><strong>${Number(w.evidence||0)}</strong></div><div><span>Documents exported</span><strong>${Number(w.exports||0)}</strong></div></div><div class="owner-analytics-columns"><div class="owner-analytics-card"><h4>Most-used Toolbox apps</h4>${list(u.topTools,'Toolbox use will appear here after this update records activity.')}</div><div class="owner-analytics-card"><h4>Most-visited screens</h4>${list(u.topScreens,'Screen use will appear here after this update records activity.')}</div></div><div class="owner-analytics-card"><h4>Recent useful activity</h4>${u.recent?.length?u.recent.map(x=>`<div class="owner-recent-row"><span>${esc(x.text)}</span><small>${esc(new Date(x.at).toLocaleString('en-GB',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))}</small></div>`).join(''):'<p class="muted">Meaningful activity will appear here as the app is used.</p>'}</div><details class="analytics-privacy"><summary>Connection and privacy</summary><div class="analytics-status-grid compact"><div><span>Firebase</span><strong class="analytics-${tone}">${status}</strong></div><div><span>Waiting to send</span><strong>${Number(d.queueSize||0)}</strong></div><div><span>App build</span><strong>${APP_VERSION}</strong></div><div><span>Last send</span><strong>${d.lastSuccessfulSend?esc(new Date(d.lastSuccessfulSend).toLocaleString('en-GB')):'Not yet'}</strong></div></div><p>Firebase combines anonymous activity from every installation. This screen only summarises the current device.</p><p><strong>Never collected:</strong> names, emails, answers, evidence text, photos, videos, audio, signatures, employer or college details, files or precise location.</p></details><div class="admin-action-grid two"><button class="btn admin-primary" id="sendAnalyticsTest">Check connection</button><button class="btn admin-soft" id="flushAnalyticsQueue">Send waiting events</button><button class="btn admin-soft" id="refreshAnalyticsStatus">Refresh summary</button><button class="btn admin-danger" id="clearUsageSummary">Clear device summary</button></div></div></section>`;
+}
+function hiddenDeveloperPanel(){
+ return `<div class="admin-dashboard developer-tools-dashboard"><div class="admin-course-summary developer-summary"><div><span>Secret developer area</span><strong>Apprentice+ Developer Mode</strong><small>Build technical-drawing prompts and review anonymous usage from this device.</small></div><span class="admin-status">${APP_VERSION}</span></div><section class="admin-section drawing-builder-launch"><div class="admin-section-head"><div class="admin-section-icon">${appIcon('course')}</div><div><h3>Create college task sheet</h3><p>Build one clear Bricklaying workshop-sheet prompt using the simple college layout.</p></div></div><div class="admin-section-body"><button class="btn admin-primary" id="openDrawingBuilder">Create college task sheet</button></div></section>${analyticsAdminPanel()}<section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon">${appIcon('settings')}</div><div><h3>Developer access</h3><p>This hidden screen closes when you leave it and remains separate from Admin Mode.</p></div></div><div class="admin-section-body"><button class="btn admin-primary" id="closeDeveloperToolsBottom">Close Developer Mode</button></div></section></div>`;
+}
+function showHiddenDeveloperTools(){
+ document.getElementById('developerToolsModal')?.remove();
+ app.insertAdjacentHTML('beforeend',`<div class="modal admin-modal developer-tools-modal" id="developerToolsModal"><div class="modal-card admin-modal-card"><div class="admin-modal-head"><div><span class="admin-kicker">Hidden diagnostics</span><h2>Developer Mode</h2></div><button class="admin-close" id="closeDeveloperTools" aria-label="Close Developer Mode">×</button></div>${hiddenDeveloperPanel()}</div></div>`);
+ const modal=document.getElementById('developerToolsModal');
+ const close=()=>modal?.remove();
+ document.getElementById('closeDeveloperTools').onclick=close;
+ document.getElementById('closeDeveloperToolsBottom').onclick=close;
+ modal.onclick=e=>{if(e.target===modal)close()};
+ document.addEventListener('keydown',function developerEscape(e){if(e.key!=='Escape'||!document.getElementById('developerToolsModal'))return;document.removeEventListener('keydown',developerEscape);close()});
+ bindHiddenDeveloperTools();
+}
+function bindHiddenDeveloperTools(){
+ const drawingButton=document.getElementById('openDrawingBuilder');
+ if(drawingButton){
+  drawingButton.onclick=event=>{
+   event.preventDefault();
+   event.stopPropagation();
+   const developerModal=document.getElementById('developerToolsModal');
+   try{
+    showDrawingPromptBuilder();
+    developerModal?.remove();
+   }catch(error){
+    console.error('Unable to open workshop sheet builder',error);
+    toast('Unable to open the drawing builder');
+   }
+  };
+ }
+ const refresh=()=>{const modal=document.getElementById('developerToolsModal');if(!modal)return;modal.querySelector('.admin-modal-card').innerHTML=`<div class="admin-modal-head"><div><span class="admin-kicker">Hidden diagnostics</span><h2>Developer Mode</h2></div><button class="admin-close" id="closeDeveloperTools" aria-label="Close Developer Mode">×</button></div>${hiddenDeveloperPanel()}`;document.getElementById('closeDeveloperTools').onclick=()=>modal.remove();document.getElementById('closeDeveloperToolsBottom').onclick=()=>modal.remove();bindHiddenDeveloperTools()};
+ document.getElementById('sendAnalyticsTest')?.addEventListener('click',()=>{window.ApprenticeAnalytics?.test?.();window.ApprenticeAnalytics?.flush?.();toast('Anonymous analytics test sent');setTimeout(refresh,250)});
+ document.getElementById('flushAnalyticsQueue')?.addEventListener('click',()=>{const sent=window.ApprenticeAnalytics?.flush?.()||0;toast(sent?`${sent} queued event${sent===1?'':'s'} sent`:'No queued events to send');setTimeout(refresh,250)});
+ document.getElementById('refreshAnalyticsStatus')?.addEventListener('click',refresh);
+ document.getElementById('clearAnalyticsQueue')?.addEventListener('click',()=>{if(!confirm('Clear locally queued anonymous analytics events?'))return;window.ApprenticeAnalytics?.clearQueue?.();toast('Analytics queue cleared');refresh()});
+ document.getElementById('clearUsageSummary')?.addEventListener('click',()=>{if(!confirm('Clear the anonymous usage summary stored on this device?'))return;window.ApprenticeAnalytics?.clearUsageSummary?.();toast('Device usage summary cleared');refresh()});
+ document.getElementById('analyticsEnabled')?.addEventListener('change',e=>{window.ApprenticeAnalytics?.setEnabled?.(e.target.checked);toast(e.target.checked?'Anonymous analytics enabled':'Anonymous analytics disabled');refresh()});
+ document.getElementById('analyticsSimulateOffline')?.addEventListener('change',e=>{window.ApprenticeAnalytics?.simulateOffline?.(e.target.checked);toast(e.target.checked?'Offline queue test enabled':'Offline queue test disabled');refresh()});
+}
+function developerPanel(){const rplItems=courseAssignments().filter(a=>assignmentRPL(a.n));return `<div class="admin-dashboard"><div class="admin-course-summary"><div><span>Active course</span><strong>${COURSE.name}</strong><small>${COURSE.standard} · Version ${COURSE.version} · Level ${COURSE.level}</small></div><span class="admin-status">Active</span></div><section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon">${appIcon('course')}</div><div><h3>Course management</h3><p>Switch courses or update the learner profile.</p></div></div><div class="admin-section-body"><div class="field"><label>Selected course</label><select class="input" id="courseSelect">${Object.values(COURSES).map(c=>`<option value="${c.id}" ${c.id===COURSE.id?'selected':''}>${c.name} ${c.version} (${c.standard})</option>`).join('')}</select></div><div class="admin-action-grid two"><button class="btn admin-primary" id="applyCourse">Open selected course</button><button class="btn admin-soft" id="editProfile">Edit learner details</button></div></div></section>${brandingAdminPanel()}<section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon warning">${appIcon('award')}</div><div><h3>Recognition of Prior Learning</h3><p>Mark an assignment as completed through verified prior learning.</p></div></div><div class="admin-section-body"><div class="admin-note">RPL assignments receive a red ribbon and count as a full completion in both progress rings.</div><div class="field"><label>Assignment</label><select class="input" id="rplAssignment">${courseAssignments().map(a=>`<option value="${a.n}" ${assignmentRPL(a.n)?'disabled':''}>Assignment ${a.n} — ${esc(a.title)}${assignmentRPL(a.n)?' (RPL)':''}</option>`).join('')}</select></div><button class="btn admin-danger" id="markRpl">Mark assignment as RPL</button>${rplItems.length?`<div class="rpl-list admin-rpl-list">${rplItems.map(a=>`<div class="rpl-item"><span><strong>Assignment ${a.n}</strong><br>${esc(a.title)}</span><button class="btn admin-soft remove-rpl" data-rpl-remove="${a.n}">Remove RPL</button></div>`).join('')}</div>`:''}</div></section>${selectedOptionalUnit()?`<section class="admin-section"><div class="admin-section-head"><div class="admin-section-icon">${appIcon('settings')}</div><div><h3>Optional unit</h3><p>Evidence Pack 9 is Unit ${esc(selectedOptionalUnit().unit)} — ${esc(selectedOptionalUnit().title)}.</p></div></div><div class="admin-section-body"><button class="btn admin-soft" id="resetOptionalUnit">Reset optional unit selection</button></div></section>`:''}<section class="admin-section admin-danger-zone"><div class="admin-section-head"><div class="admin-section-icon danger">${appIcon('warning')}</div><div><h3>Data and security</h3><p>Lock Admin Mode or reset the current course evidence.</p></div></div><div class="admin-section-body"><div class="admin-action-grid two"><button class="btn admin-soft" id="lockDev">Lock Admin Mode</button><button class="btn admin-danger" id="resetEvidence">Reset course evidence</button></div></div></section></div>`}
+
+function bindDeveloper(){
+const logoInput=document.getElementById('brandLogoInput');if(logoInput)logoInput.onchange=async()=>{const f=logoInput.files?.[0];if(!f)return;try{const logo=await prepareBrandLogo(f);state.branding={...(state.branding||{}),logo};await putStore(BRANDING_KEY,state.branding);document.getElementById('devModal').remove();showDeveloper();toast('College logo added')}catch(e){console.error(e);toast('Unable to prepare that logo')}};const saveBrand=document.getElementById('saveBranding');if(saveBrand)saveBrand.onclick=async()=>{const b=currentBrandingFromForm();if(!b.name||!b.logo)return toast('Add the college name and logo');state.branding=b;await putStore(BRANDING_KEY,b);render();document.getElementById('devModal')?.remove();showDeveloper();toast('College branding saved')};document.getElementById('generateBrandQR')?.addEventListener('click',()=>showBrandQR(false));document.getElementById('downloadBrandSheet')?.addEventListener('click',()=>showBrandQR(true));document.getElementById('removeBranding')?.addEventListener('click',async()=>{if(!confirm('Remove the college branding from this device?'))return;state.branding=null;await putStore(BRANDING_KEY,null);document.getElementById('devModal').remove();render();toast('College branding removed')});
+
+ document.getElementById('markRpl').onclick=async()=>{const n=Number(document.getElementById('rplAssignment').value);const a=assignment(n);if(!a)return;if(!confirm(`Mark Assignment ${n} — ${a.title} as completed through RPL?`))return;state.data[packStatusKey(n)]={...(state.data[packStatusKey(n)]||{}),rpl:true,rplAt:new Date().toISOString(),uploaded:false,downloaded:false};await saveData();document.getElementById('devModal').remove();render();toast(`Assignment ${n} completed through RPL`)};
+ document.querySelectorAll('[data-rpl-remove]').forEach(btn=>btn.onclick=async()=>{const n=Number(btn.dataset.rplRemove),a=assignment(n);if(!confirm(`Remove RPL completion from Assignment ${n} — ${a?.title||''}?`))return;const status={...(state.data[packStatusKey(n)]||{})};delete status.rpl;delete status.rplAt;state.data[packStatusKey(n)]=status;await saveData();document.getElementById('devModal').remove();render();toast(`RPL removed from Assignment ${n}`)});
+ const resetOptional=document.getElementById('resetOptionalUnit');if(resetOptional)resetOptional.onclick=async()=>{const hasEvidence=evidenceSections().some(section=>sectionHasEvidence(9,section));if(hasEvidence)return toast('Remove Evidence Pack 9 evidence before changing the optional unit');if(!window.confirm('Reset the optional unit selection?'))return;delete state.data[optionalSelectionKey()];await saveData();document.getElementById('devModal').remove();state.view='home';render();toast('Optional unit selection reset')};
+ document.getElementById('applyCourse').onclick=async()=>{const id=document.getElementById('courseSelect').value;if(!COURSES[id])return;ACTIVE_COURSE_ID=id;COURSE=COURSES[id];state.assignment=null;state.section=null;state.view='home';await putStore('activeCourse',id);document.getElementById('devModal').remove();render();toast(`${COURSE.name} opened`)};
+ document.getElementById('editProfile').onclick=()=>{document.getElementById('devModal').remove();showOnboarding(true)};
+ document.getElementById('resetEvidence').onclick=async()=>{if(!confirm(`Delete locally saved evidence for ${COURSE.name} only? Other courses will be preserved. This cannot be undone.`))return;const prefix=`${COURSE.id}:`;Object.keys(state.data).filter(k=>k.startsWith(prefix)).forEach(k=>delete state.data[k]);await saveData();document.getElementById('devModal').remove();render();toast(`${COURSE.name} evidence reset`)};
+ document.getElementById('lockDev').onclick=async()=>{state.dev=false;await putStore('dev',false);document.getElementById('devModal')?.remove();toast('Admin Mode locked')}
+}
+function downloadJSON(obj,name){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));a.download=name;a.click();URL.revokeObjectURL(a.href)}
+
+async function collectWalkthroughEvidence(n,a){
+ const meta=walkthroughMeta(n),items=[];
+ for(const [code,summary] of walkthroughKnowledge(a)){
+  const item=meta[code];if(!item?.blobKey)continue;
+  try{
+   const stored=await getStore(item.blobKey),blob=storedWalkthroughBlob(stored,item);if(!blob)continue;
+   const data=await blobToDataUrl(blob),thumbnail=await createVideoThumbnail(data);
+   items.push({code,summary,name:item.name||`${code}-walkthrough.webm`,type:item.type||blob.type||'video/webm',size:item.size||blob.size,date:item.date||'',data,thumbnail});
+  }catch(error){console.warn(`Unable to add ${code} walkthrough video to evidence package`,error)}
+ }
+ return items;
+}
+const MONTHLY_PORTFOLIO_KEY=()=>`${COURSE.id}:monthlyPortfolioUpload`;
+const PORTFOLIO_SECTIONS=['practical','photos','statement','discussion','professionalDiscussion','witness','supporting'];
+function monthlyPortfolioState(){return state.data[MONTHLY_PORTFOLIO_KEY()]||{}}
+function currentMetKsbCodes(){
+ const met=[];
+ courseAssignments().filter(a=>!a.selectOptional).forEach(a=>(a.ksbs||[]).forEach(([code,summary])=>{
+  const key=COURSE.nvqUnits?`${a.unit||a.n}:${code}`:code,required=COURSE.nvqUnits?3:2;
+  if((assignmentRPL(a.n)||evidenceCoverageCount(a.n,code)>=required)&&!met.some(x=>x.key===key))met.push({key,code,summary,assignment:a.n,title:a.title});
+ }));
+ return met;
+}
+function portfolioEvidenceSnapshot(){
+ const assignments={};
+ courseAssignments().filter(a=>!a.selectOptional).forEach(a=>{
+  const sections={};PORTFOLIO_SECTIONS.forEach(section=>sections[section]=sectionData(a.n,section).versions.length);
+  sections.walkthrough=(walkthroughMeta(a.n)&&Object.values(walkthroughMeta(a.n)).filter(x=>x?.blobKey).length)||0;
+  assignments[a.n]={title:a.title,sections};
+ });
+ const stats=completedKsbStats();
+ const rplUnits=courseAssignments().filter(a=>!a.selectOptional&&assignmentRPL(a.n)).map(a=>({assignment:a.n,unit:a.unit||null,title:a.title,rplAt:state.data[packStatusKey(a.n)]?.rplAt||null}));
+ return {capturedAt:new Date().toISOString(),assignments,metKsbs:currentMetKsbCodes(),rplUnits,progress:stats.percentage,completedKsbs:stats.completed,totalKsbs:stats.total};
+}
+function portfolioDelta(){
+ const status=monthlyPortfolioState(),before=status.snapshot||{assignments:{},metKsbs:[],rplUnits:[],progress:0,completedKsbs:0};
+ const current=portfolioEvidenceSnapshot(),oldMet=new Set((before.metKsbs||[]).map(x=>x.key)),newKsbs=current.metKsbs.filter(x=>!oldMet.has(x.key)),oldRpl=new Set((before.rplUnits||[]).map(x=>String(x.assignment))),newRplUnits=(current.rplUnits||[]).filter(x=>!oldRpl.has(String(x.assignment)));
+ const newEvidence=[];
+ for(const [n,a] of Object.entries(current.assignments))for(const [section,count] of Object.entries(a.sections||{})){
+  const previous=Number(before.assignments?.[n]?.sections?.[section]||0),added=Math.max(0,Number(count)-previous);
+  if(added)newEvidence.push({assignment:Number(n),title:a.title,section,previous,count,added,newAttempts:Array.from({length:added},(_,i)=>previous+i+1)});
+ }
+ return {status,before,current,newKsbs,newRplUnits,newEvidence,progressGain:Math.max(0,current.progress-Number(before.progress||0)),ksbGain:Math.max(0,current.completedKsbs-Number(before.completedKsbs||0))};
+}
+function friendlyEvidenceSection(section){return ({practical:'Practical assessment',photos:'Photographic evidence',statement:'Learner statement',discussion:'Video walkthrough',walkthrough:'Video walkthrough',professionalDiscussion:'Professional discussion',witness:'Witness testimony',supporting:'Supporting evidence'})[section]||section}
+function monthlyPortfolioCard(){
+ const d=portfolioDelta(),last=d.status.uploadedAt?new Date(d.status.uploadedAt).toLocaleString('en-GB'):'Not uploaded yet',downloaded=!!d.status.downloadedAt&&!!d.status.pendingSnapshot;
+ return `<section class="card panel entire-portfolio-card monthly-portfolio-card"><div><div class="number">Monthly portfolio upload</div><h3>Upload this month's new evidence</h3><p class="muted">The ZIP is organised into one folder per assignment and starts with update-summary PDFs showing what has changed since the previous confirmed upload.</p><div class="monthly-portfolio-stats"><div><span>Last uploaded</span><strong>${esc(last)}</strong></div><div><span>Additional KSBs met</span><strong>+${d.ksbGain}</strong></div><div><span>Progress gained</span><strong>+${d.progressGain}%</strong></div><div><span>New evidence items</span><strong>${d.newEvidence.reduce((n,x)=>n+x.added,0)}</strong></div><div><span>New RPL units</span><strong>${d.newRplUnits.length}</strong></div></div></div><div class="btn-row"><button class="btn" id="downloadEntirePortfolio">${d.status.uploadedAt?'Download Monthly Update':'Download First Portfolio Upload'}</button>${downloaded?'<button class="btn secondary" id="openMonthlyPortfolio">Open Online Portfolio</button><button class="btn" id="confirmMonthlyUpload">Evidence Uploaded Online</button>':''}</div></section>`;
+}
+function wrapPdfText(ctx,text,maxWidth,font){ctx.font=font;const words=String(text||'').split(/\s+/),lines=[];let line='';for(const word of words){const test=line?`${line} ${word}`:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);return lines}
+function createMonthlySummaryPdf(delta,ksbOnly=false){
+ const W=1240,H=1754,M=84,pages=[];let c,x,y;
+ const page=()=>{c=document.createElement('canvas');c.width=W;c.height=H;x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle='#0f766e';x.fillRect(0,0,W,20);x.fillStyle='#0f2328';x.font='800 44px Arial';x.fillText(ksbOnly?'New KSBs Met Since Last Upload':'Monthly Portfolio Update Summary',M,92);x.fillStyle='#5d6d67';x.font='18px Arial';x.fillText(`${state.profile?.fullName||'Learner'} · ${COURSE.name} · ${new Date().toLocaleDateString('en-GB')}`,M,132);x.fillStyle='#dff5e7';x.fillRect(M,165,W-2*M,4);y=210;pages.push(c)};page();
+ const heading=t=>{if(y>H-180)page();x.fillStyle='#0f2328';x.font='800 25px Arial';x.fillText(t,M,y);y+=38};
+ const line=(t,bold=false)=>{const lines=wrapPdfText(x,t,W-2*M,bold?'700 18px Arial':'18px Arial');for(const l of lines){if(y>H-100)page();x.fillStyle=bold?'#0f2328':'#344a42';x.font=bold?'700 18px Arial':'18px Arial';x.fillText(l,M,y);y+=27}y+=5};
+ heading('Upload comparison');line(`Previous confirmed upload: ${delta.status.uploadedAt?new Date(delta.status.uploadedAt).toLocaleString('en-GB'):'First portfolio upload'}`);line(`New KSBs met: ${delta.newKsbs.length}`);line(`Course progress gained: ${delta.progressGain}%`);line(`New evidence items: ${delta.newEvidence.reduce((n,e)=>n+e.added,0)}`);line(`New RPL units: ${delta.newRplUnits.length}`);
+ heading('New KSBs met');if(delta.newKsbs.length)delta.newKsbs.forEach(k=>line(`${k.code} — ${k.summary} (Assignment ${k.assignment}: ${k.title})`));else line('No additional KSBs have become fully met since the previous confirmed upload.');heading('Recognition of Prior Learning (RPL)');if(delta.newRplUnits.length)delta.newRplUnits.forEach(r=>line(`RPL unit — ${r.unit?`Unit ${r.unit} · `:''}Assignment ${r.assignment}: ${r.title}${r.rplAt?` (awarded ${new Date(r.rplAt).toLocaleDateString('en-GB')})`:''}`));else line('No new RPL units have been awarded since the previous confirmed upload.');
+ if(!ksbOnly){heading('New evidence and ZIP locations');if(delta.newEvidence.length)delta.newEvidence.forEach(e=>line(`Assignment ${e.assignment}: ${e.title} / ${friendlyEvidenceSection(e.section)} — ${e.added} new item${e.added===1?'':'s'} (attempt${e.added===1?'':'s'} ${e.newAttempts.join(', ')})`));else line('No new saved evidence was detected. The portfolio still contains the latest saved evidence in each assignment folder.');heading('ZIP structure');line('00 - Monthly Portfolio Update Summary.pdf');line('01 - New KSBs Met Since Last Upload.pdf');line('Assignment 01 - [Assignment name] / evidence PDF and attached media');line('Assignment 02 - [Assignment name] / evidence PDF and attached media');line('New video and voice-recording filenames begin with NEW EVIDENCE - so they remain clearly identifiable outside the PDF.');}
+ pages.forEach((canvas,i)=>{const cx=canvas.getContext('2d');cx.fillStyle='#0f766e';cx.fillRect(0,H-58,W,58);cx.fillStyle='#fff';cx.font='600 15px Arial';cx.fillText(`Apprentice+ ${APP_VERSION}`,M,H-23);cx.textAlign='right';cx.fillText(`Page ${i+1} of ${pages.length}`,W-M,H-23)});
+ return makeImagePDF(pages.map(canvas=>dataUrlBytes(canvas.toDataURL('image/jpeg',.92))),W,H);
+}
+function newEvidenceMapForAssignment(delta,n){const map={};delta.newEvidence.filter(e=>e.assignment===n).forEach(e=>map[e.section]=e.newAttempts);return map}
+async function downloadEntirePortfolio(){
+ const assignments=courseAssignments().filter(a=>a&&!a.selectOptional&&(assignmentHasSavedPortfolioEvidence(a.n)||assignmentRPL(a.n)));
+ if(!assignments.length)return toast('No saved assignment evidence or RPL units are available to download');
+ if(!window.generateEvidencePackPDF||!window.makeZipBlob)return toast('Portfolio generator unavailable');
+ const delta=portfolioDelta(),button=document.getElementById('downloadEntirePortfolio');if(button){button.disabled=true;button.textContent='Preparing monthly upload...'}
+ try{
+  toast(`Preparing ${assignments.length} assignment folder${assignments.length===1?'':'s'}...`);
+  const allEntries=[{name:'00 - Monthly Portfolio Update Summary.pdf',data:createMonthlySummaryPdf(delta,false)},{name:'01 - New KSBs Met Since Last Upload.pdf',data:createMonthlySummaryPdf(delta,true)}];
+  for(let index=0;index<assignments.length;index++){
+   const a=assignments[index],sections={};
+   PORTFOLIO_SECTIONS.forEach(section=>sections[section]=sectionData(a.n,section).versions.map(version=>structuredClone(version)));
+   sections.walkthrough=walkthroughSaved(a.n)?await collectWalkthroughEvidence(a.n,a):[];
+   const result=await generateEvidencePackPDF({course:COURSE,assignment:a,profile:state.profile,sections,branding:state.branding,returnPackage:true,newEvidence:newEvidenceMapForAssignment(delta,a.n)});
+   const folder=`Assignment ${String(a.n).padStart(2,'0')} - ${safeZipName(a.title||'Evidence')}`;
+   for(const entry of result.entries||[])allEntries.push({name:`${folder}/${entry.name}`,data:entry.data});
+   toast(`Prepared assignment ${index+1} of ${assignments.length}`);
+  }
+  const learner=safeZipName(state.profile?.fullName||'Learner'),course=safeZipName(COURSE.name||'Course'),date=new Date().toISOString().slice(0,10);
+  await downloadBlob(makeZipBlob(allEntries),'application/zip',`${learner}-${course}-Monthly-Portfolio-${date}.zip`);
+  state.data[MONTHLY_PORTFOLIO_KEY()]={...delta.status,downloadedAt:new Date().toISOString(),pendingSnapshot:delta.current,pendingNewKsbs:delta.newKsbs.map(x=>x.key),pendingNewRplUnits:delta.newRplUnits.map(x=>x.assignment),pendingProgressGain:delta.progressGain};
+  await saveData();analyticsEvent('monthly_portfolio_exported',{course_id:COURSE.id,assignment_count:assignments.length,file_count:allEntries.length,new_ksbs:delta.newKsbs.length,new_rpl_units:delta.newRplUnits.length,progress_gain:delta.progressGain});
+  render();toast('Monthly portfolio downloaded — use Open Online Portfolio, then confirm Evidence Uploaded Online');
+ }catch(error){console.error('Monthly portfolio download failed',error);toast(`Unable to download monthly portfolio${error?.message?`: ${error.message}`:''}`)}finally{if(button){button.disabled=false;button.textContent='Download Monthly Update'}}
+}
+async function confirmMonthlyPortfolioUpload(){
+ const status=monthlyPortfolioState();if(!status.downloadedAt||!status.pendingSnapshot)return toast('Download the latest monthly portfolio first');
+ if(!confirm('Confirm that the downloaded monthly portfolio ZIP has been uploaded to the learner’s online portfolio.'))return;
+ const uploadedAt=new Date().toISOString();
+ state.data[MONTHLY_PORTFOLIO_KEY()]={snapshot:status.pendingSnapshot,downloadedAt:status.downloadedAt,uploadedAt};
+ Object.keys(status.pendingSnapshot.assignments||{}).forEach(n=>{const key=packStatusKey(Number(n)),current=state.data[key]||{};state.data[key]={...current,uploaded:true,downloaded:true,uploadedAt,monthlyUpload:true}});
+ await saveData();analyticsEvent('monthly_portfolio_upload_confirmed',{course_id:COURSE.id,rpl_units:(status.pendingSnapshot.rplUnits||[]).length});render();toast('Monthly evidence upload confirmed');
+}
+
+async function downloadPack(n){
+ const a=assignment(n);if(!window.generateEvidencePackPDF)return toast('PDF generator unavailable');
+ const sections={};
+ // Include every saved evidence section, including older/optional sections that may still contain learner evidence.
+ ['practical','photos','statement','discussion','professionalDiscussion','witness','supporting'].forEach(s=>sections[s]=sectionData(n,s).versions.map(v=>structuredClone(v)));
+ sections.walkthrough=await collectWalkthroughEvidence(n,a);
+ try{
+  toast('Creating complete evidence package...');
+  const result=await generateEvidencePackPDF({course:COURSE,assignment:a,profile:state.profile,sections,branding:state.branding});
+  state.data[packStatusKey(n)]={downloaded:true,uploaded:false,downloadedAt:new Date().toISOString()};
+  analyticsEvent('evidence_package_exported',{assignment_number:n,course_id:COURSE.id});
+  await saveData();render();toast('Evidence package download started — check your Downloads folder');
+ }catch(e){console.error('Evidence package download failed',e);toast(`Unable to download evidence package${e?.message?`: ${e.message}`:''}`)}
+}
+
+function normalisePortfolioUrl(url){const value=String(url||'').trim();return /^https?:\/\//i.test(value)?value:''}
+function openPortfolioSite(){const url=normalisePortfolioUrl(state.profile?.portfolioUrl);if(!url)return toast('Add a valid portfolio website address in Learner Details');window.open(url,'_blank','noopener,noreferrer')}
+async function confirmPackUpload(n){const status=state.data[packStatusKey(n)]||{};if(!status.downloaded)return toast('Download the latest evidence package first');if(!confirm('Confirm that you uploaded the latest evidence PDF and any required media files to your portfolio.'))return;state.data[packStatusKey(n)]={...status,uploaded:true,uploadedAt:new Date().toISOString()};await saveData();analyticsEvent('evidence_package_upload_confirmed',{assignment_number:n,course_id:COURSE.id});render();toast('Assignment marked as submitted')}
+
+
+const LANDSCAPE_CAMERA_REMINDER_KEY='apprenticePlusLandscapeCameraReminderHidden';
+let landscapeCameraBypass=null;
+function isCameraImageInput(input){
+ return input instanceof HTMLInputElement&&input.type==='file'&&input.hasAttribute('capture')&&String(input.accept||'').toLowerCase().includes('image');
+}
+function closeLandscapeCameraDialog(){document.getElementById('landscapeCameraDialog')?.remove()}
+function showLandscapeCameraReminder(input){
+ closeLandscapeCameraDialog();
+ app.insertAdjacentHTML('beforeend',`<div class="camera-orientation-screen" id="landscapeCameraDialog" role="dialog" aria-modal="true" aria-labelledby="landscapeCameraTitle"><div class="camera-orientation-card"><div class="camera-phone-guide" aria-hidden="true"><span class="phone-upright">▯</span><span class="camera-guide-cross">×</span><span class="phone-sideways">▭</span><span class="camera-guide-tick">✓</span></div><h2 id="landscapeCameraTitle">Landscape Photo Reminder</h2><p>Turn your phone sideways before opening the camera.</p><p class="camera-orientation-help">Landscape photographs provide larger evidence images, clearer assessor visibility and better PDF portfolio pages.</p><label class="camera-reminder-choice"><input type="checkbox" id="hideLandscapeReminder"> <span>Don't show this message again</span></label><div class="camera-orientation-actions"><button class="btn secondary" id="cancelLandscapeCamera">Cancel</button><button class="btn" id="openLandscapeCamera">I'm Ready – Open Camera</button></div></div></div>`);
+ const dialog=document.getElementById('landscapeCameraDialog');
+ document.getElementById('cancelLandscapeCamera').onclick=()=>dialog.remove();
+ document.getElementById('openLandscapeCamera').onclick=()=>{
+  if(document.getElementById('hideLandscapeReminder')?.checked)localStorage.setItem(LANDSCAPE_CAMERA_REMINDER_KEY,'1');
+  dialog.remove();landscapeCameraBypass=input;input.click();
+ };
+}
+function imageFileDimensions(file){return new Promise((resolve,reject)=>{const url=URL.createObjectURL(file),img=new Image();img.onload=()=>{const result={width:img.naturalWidth||img.width,height:img.naturalHeight||img.height};URL.revokeObjectURL(url);resolve(result)};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Unable to read image dimensions'))};img.src=url})}
+async function filesAreLandscape(files){for(const file of [...files]){if(!file.type.startsWith('image/'))continue;const size=await imageFileDimensions(file);if(size.width<=size.height)return false}return true}
+function deliverFilesToCameraInput(input,files){
+ try{const transfer=new DataTransfer();[...files].forEach(file=>transfer.items.add(file));input.files=transfer.files}catch(error){console.warn('Unable to transfer selected gallery files',error)}
+ input._landscapeValidated=true;input.dispatchEvent(new Event('change',{bubbles:true}));
+}
+function showPortraitPhotoRejected(input){
+ closeLandscapeCameraDialog();
+ app.insertAdjacentHTML('beforeend',`<div class="camera-orientation-screen" id="landscapeCameraDialog" role="dialog" aria-modal="true" aria-labelledby="portraitRejectedTitle"><div class="camera-orientation-card"><div class="portrait-rejected-icon" aria-hidden="true">↻</div><h2 id="portraitRejectedTitle">Portrait Photo Detected</h2><p>This photo was taken in portrait and has not been saved.</p><p class="camera-orientation-help">Retake it with your phone turned sideways, or choose an existing photograph from your gallery.</p><div class="camera-orientation-actions stacked"><button class="btn" id="retakeLandscapePhoto">Retake Photo</button><button class="btn secondary" id="chooseLandscapeGallery">Choose From Gallery</button><button class="link-button" id="cancelRejectedPhoto">Cancel</button></div></div></div>`);
+ const dialog=document.getElementById('landscapeCameraDialog');
+ document.getElementById('cancelRejectedPhoto').onclick=()=>dialog.remove();
+ document.getElementById('retakeLandscapePhoto').onclick=()=>{dialog.remove();landscapeCameraBypass=input;input.value='';input.click()};
+ document.getElementById('chooseLandscapeGallery').onclick=()=>{
+  const gallery=document.createElement('input');gallery.type='file';gallery.accept=input.accept||'image/*';gallery.multiple=input.multiple;gallery.className='hide';document.body.appendChild(gallery);
+  gallery.onchange=()=>{const files=gallery.files;if(files?.length){dialog.remove();deliverFilesToCameraInput(input,files)}gallery.remove()};gallery.click();
+ };
+}
+document.addEventListener('click',event=>{
+ const input=event.target;
+ if(!isCameraImageInput(input))return;
+ if(landscapeCameraBypass===input){landscapeCameraBypass=null;return}
+ if(localStorage.getItem(LANDSCAPE_CAMERA_REMINDER_KEY)==='1')return;
+ event.preventDefault();event.stopImmediatePropagation();showLandscapeCameraReminder(input);
+},true);
+document.addEventListener('change',async event=>{
+ const input=event.target;if(!isCameraImageInput(input)||input._landscapeValidated){if(input?._landscapeValidated)delete input._landscapeValidated;return}
+ const files=input.files;if(!files?.length)return;
+ event.stopImmediatePropagation();
+ try{
+  if(await filesAreLandscape(files)){input._landscapeValidated=true;input.dispatchEvent(new Event('change',{bubbles:true}))}
+  else{input.value='';showPortraitPhotoRejected(input)}
+ }catch(error){console.error('Photo orientation check failed',error);input.value='';toast('Unable to check that photo. Please try again.')}
+},true);
+
+
+
+/* V1.9 concise page guidance and first-run tour */
+const HELP_TOUR_KEY='apprenticeplus.helpTour.v1.5.36.complete';
+function helpCourseRule(){return COURSE.nvqUnits?'Each Learning Outcome needs three different forms of evidence. Any available evidence types can be combined.':'Each Knowledge, Skill and Behaviour needs two different forms of evidence. Any available evidence types can be combined.'}
+function currentHelp(){
+ const v=state.view,s=state.section;
+ const common={
+  home:{title:COURSE.nvqUnits?'Evidence Packs':'Assignments',html:'',steps:[
+   {selector:'.course-card',title:'Your course',html:`<p>This card shows your course name, standard, version, level and total number of ${COURSE.nvqUnits?'evidence packs':'assignments'}.</p>`},
+   {selector:'#openWorkSearch',title:'Find today’s work',html:'<p>Tap the green magnifying glass to search for a task, tool, material or process. Enter what you are working on, press Search, then open the closest matching assignment to gather evidence.</p>'},
+   {selector:'#courseProgressBtn',title:'Course progress ring',html:'<p>Tap the ring to open the full learner progress summary. For NVQ courses, repeated Learning Outcome numbers are counted separately within every mandatory unit and the selected optional unit.</p>'},
+   {selector:'.assignment-card',focusIndex:0,title:COURSE.nvqUnits?'Open an evidence pack':'Open an assignment',html:`<p>Tap a card to open it. Each card shows its title, current status, saved evidence and criterion coverage.</p>`},
+   {selector:'.assignment-card .icons',focusIndex:0,title:'Evidence icons',html:'<p>The six icons show the evidence types available. A tick means that evidence has been saved; an amber warning means it has been started but is not complete.</p>'},
+   {selector:'.assignment-card .ksb-row',focusIndex:0,title:COURSE.nvqUnits?'Learning Outcome coverage':'KSB coverage',html:`<p>Grey means no evidence, amber means some evidence and green means enough different evidence types have been collected.</p><p><strong>${helpCourseRule()}</strong></p>`},
+   {selector:'.assignment-card .status-pill',focusIndex:0,title:'Assignment status',html:'<p><strong>In progress</strong> means work is still needed. <strong>Evidence ready</strong> means the evidence requirements are met. <strong>Submitted</strong> means the latest package was confirmed as uploaded.</p>'},
+   {selector:'.entire-portfolio-card',title:'Download Entire Portfolio',html:'<p>Use this button to download every saved evidence item across the course. Blank and unsaved sections are excluded.</p>'},
+   {selector:'.learner-help-wrap',title:'Learner name and page help',html:'<p>Your learner name is displayed here for reference only; pressing it does not open another screen. Edit profile details in Settings.</p><p>Tap the green <strong>i</strong> button for instructions about the current page, and tap the course progress ring for the full progress summary.</p>'}
+  ]},
+  assignment:{title:COURSE.nvqUnits?'Complete this Evidence Pack':'Complete this Assignment',html:'',steps:[
+   {selector:'.assignment-title',title:COURSE.nvqUnits?'Evidence pack details':'Assignment details',html:`<p>This area shows the assignment title and every ${COURSE.nvqUnits?'Learning Outcome':'Knowledge, Skill and Behaviour'} included in it.</p>`},
+   {selector:'.assignment-title .ksb-row',title:COURSE.nvqUnits?'Learning Outcome progress':'KSB progress',html:`<p>Each criterion changes from grey to amber and then green as different evidence types are saved.</p><p><strong>${helpCourseRule()}</strong></p>`},
+   {selector:'[data-section="photos"]',title:'Photographic Evidence',html:'<p>Add clear landscape photographs and link each one to the criteria it proves.</p>'},
+   {selector:'[data-section="statement"]',title:'Learner Statement',html:'<p>Select the relevant Knowledge and Behaviour criteria and write the statement. Photographs are not required for learner statements.</p>'},
+   {selector:'[data-section="walkthrough"], [data-section="discussion"]',title:'Video Walkthrough',html:'<p>Record a separate explanation for the relevant criteria. Explain what you did, how you worked safely and how you checked quality.</p>'},
+   {selector:'[data-section="witness"]',title:'Witness Testimony',html:'<p>A workplace supervisor or experienced colleague selects the criteria and records what they personally observed.</p>'},
+   {selector:'[data-section="practical"]',title:COURSE.nvqUnits?'Assessor Observation':'Practical Assessment',html:`<p>${COURSE.nvqUnits?'The assessor records observed practical work, selects achieved Learning Outcomes and signs the evidence.':'This is completed in college. The assessor marks the score sheet, adds finished-product photographs and records Pass, Merit or Distinction.'}</p>`},
+   {selector:'[data-section="professionalDiscussion"]',title:'Professional Discussion',html:'<p>The assessor records discussion evidence against the selected criteria and submits it as a separate evidence type.</p>'},
+   {selector:'.monthly-portfolio-card',title:'Monthly portfolio upload',html:'<p>Download one organised monthly portfolio ZIP from the Course screen. Upload it to the learner’s online portfolio, then confirm <strong>Evidence Uploaded Online</strong>.</p>'}
+  ]},
+  academy:{title:'Academy',html:`<p>The Academy contains five learning areas. Use the Back and Next buttons below to see each tile highlighted and learn exactly what it does.</p>`,steps:[
+   {selector:'#openKnowledgeSlides',title:'Knowledge Slides',html:'<p>Tap <strong>Knowledge Slides</strong> to study short teaching packs before attempting tests.</p><ol><li>Choose a trade, English or maths subject.</li><li>Read all 15 slides in order.</li><li>Your position is saved automatically.</li><li>Complete the final slide to record the pack as finished.</li></ol>'},
+   {selector:'#openLibrary',title:'Trade Courses',html:'<p>Tap <strong>Trade Courses</strong> for course-specific learning and assessment practice.</p><ol><li>Select a course or topic.</li><li>Read the learning content.</li><li>Complete every question in the test.</li><li>Submit to save the score and feedback.</li></ol>'},
+   {selector:'#openEpaMock',title:'EPA Academy',html:'<p>Tap <strong>EPA Academy</strong> to prepare for End-Point Assessment.</p><ol><li>Use Knowledge Practice for mock questions.</li><li>Use Professional Discussion to practise structured recorded answers.</li><li>Use EPA Practical to plan tools, materials and PPE and complete a timed activity.</li><li>Open Scores &amp; Results to review every saved attempt and report.</li></ol>'},
+   {selector:'#openFunctionalSkills',title:'Functional Skills',html:'<p>Tap <strong>Functional Skills</strong> for English and maths revision and tests.</p><ol><li>Choose English or maths.</li><li>Select Level 1 or Level 2.</li><li>Answer every question and submit the test.</li><li>Review incorrect answers and repeat where needed.</li></ol>'},
+   {selector:'#openCertificates',title:'Certificates',html:'<p>Tap <strong>Certificates</strong> to view achievements earned in the Academy.</p><ol><li>Open a saved certificate to check its details.</li><li>Download or print it where those controls are shown.</li><li>Certificates appear after the required course or assessment result has been achieved.</li></ol>'}
+  ]},
+  resources:{title:'Toolbox',html:'',steps:[
+   {selector:'#openMeasureMate',title:'MeasureMate',html:'<p>Open construction calculators for conversions, area, volume, Pythagoras, stairs, roof pitch and falls. Choose the correct tab, enter measurements using consistent units and check the result before using it on a job.</p>'},
+   {selector:'#openMaterialMate',title:'MaterialMate',html:'<p>Estimate bricks, blocks, mortar, timber, paint, plaster and tiles. Enter the job dimensions, choose a wastage allowance and review the estimated quantity before ordering.</p>'},
+   {selector:'#openNotepad',title:'NoteMate',html:'<p>Create searchable workplace or college notes. Add writing, photographs, videos, voice recordings or gallery files, then save the note for later use.</p>'},
+   {selector:'#openDrawingMate',title:'DrawingMate',html:'<p>Use drawing symbols, hatching, scale and setting-out tools. Select the correct section and check every dimension before applying the result to practical work.</p>'},
+   {selector:'#openProjectMate',title:'ProjectMate',html:'<p>Create or open customer-style projects. Follow the brief, plan materials and labour, check wastage, add a project photograph and save the completed plan.</p>'},
+   {selector:'#openOTJMate',title:'OTJMate',html:'<p>Record off-the-job learning, copy complete entries for Aptem and export compact PDF logs containing multiple entries per page. Previously exported entries stay marked to prevent duplicates.</p>'},
+   {selector:'#openRemindMate',title:'RemindMate',html:'<p>Save review targets and other deadlines, see what is overdue or due today and mark reminders complete when the action has been finished.</p>'},
+   {selector:'#openSettings',title:'Settings',html:'<p>Open General, Notifications and Learning Support settings. Edit the learner profile here; the learner name on the Home screen is display-only.</p>'}
+  ]},
+  notepad:{title:'NoteMate',html:'',steps:[
+   {selector:'#addNote,.notepad-add',title:'Create a note',html:'<p>Tap the add control to start a new workplace or college note.</p>'},
+   {selector:'.note-editor,.notepad-form',title:'Add the note details',html:'<p>Enter a clear title and the written information you want to keep.</p>'},
+   {selector:'.note-media-actions,.media-buttons',title:'Attach evidence and media',html:'<p>Add photographs, video, a voice recording or gallery files. The icons shown on the saved note identify which media it contains.</p>'},
+   {selector:'#saveNote,.save-note',title:'Save the note',html:'<p>Save the note so it remains available on this device.</p>'},
+   {selector:'.note-search,.search-button',title:'Find saved notes',html:'<p>Use search to find a note by its title or content. Open a saved note to review, edit or delete it.</p>'}
+  ]},
+  measuremate:{title:'MeasureMate',html:'',steps:[
+   {selector:'.tool-tabs',title:'Choose a calculator',html:'<p>Select Convert, Area &amp; volume, Pythagoras, Stairs or Roof &amp; falls.</p>'},
+   {selector:'.calc-panel',focusIndex:0,title:'Enter the measurements',html:'<p>Enter the requested values and make sure the units match the job information.</p>'},
+   {selector:'.calc-action',focusIndex:0,title:'Calculate',html:'<p>Tap the calculation button after entering the required values.</p>'},
+   {selector:'.calc-result,#calcOut',title:'Check the result',html:'<p>Review the result and the supporting calculation. Treat it as a setting-out aid and confirm it against drawings or specifications.</p>'}
+  ]},
+  materialmate:{title:'MaterialMate',html:'',steps:[
+   {selector:'.tool-tabs,.material-tabs',title:'Choose the material',html:'<p>Select the material calculator that matches the work being planned.</p>'},
+   {selector:'.calc-panel,.material-card',focusIndex:0,title:'Enter job dimensions',html:'<p>Enter the measured length, width, height, area or other values requested by the calculator.</p>'},
+   {selector:'.wastage-control,.wastage,input[type="range"]',title:'Set wastage',html:'<p>Choose a suitable wastage allowance for cuts, damage and site conditions.</p>'},
+   {selector:'.calc-result,#calcOut',title:'Review the estimate',html:'<p>Check the estimated quantity before using it for ordering. Actual requirements can vary with product size, bond, coverage and site conditions.</p>'}
+  ]},
+  projectmate:{title:'ProjectMate',html:'',steps:[
+   {selector:'.project-card,.project-list,#newProject',title:'Open or create a project',html:'<p>Select a saved project or create a new customer-style job.</p>'},
+   {selector:'.project-brief,.customer-brief',title:'Read the customer brief',html:'<p>Review the task, dimensions, finish, acceptance requirements and any restrictions before planning the work.</p>'},
+   {selector:'.materials-section,.labour-section',title:'Plan materials and labour',html:'<p>Enter the materials, quantities, rates and labour needed to complete the project.</p>'},
+   {selector:'.wastage-check',title:'Check wastage',html:'<p>Use the arrows and check indicator to confirm that the required wastage allowance has been included.</p>'},
+   {selector:'.project-photo,.camera-button',title:'Add the project photograph',html:'<p>Add a clear project photograph where requested.</p>'},
+   {selector:'.save-project,.btn',title:'Save the project',html:'<p>Save the plan. Completed projects turn green and remain available in the project list.</p>'}
+  ]},
+  walkthrough:{title:'Video Walkthrough',html:`<p>Record video evidence against the relevant KSB criteria.</p><ol><li>Tap <strong>Add Video</strong> beside a criterion.</li><li>Record in landscape and explain what you did, how you did it, safety controls and quality checks.</li><li>Review and save the video.</li><li>Repeat only for the criteria this walkthrough covers.</li><li>Press <strong>Save Walkthrough</strong>. Use View, Replace or Remove to manage saved clips.</li></ol>`},
+  section:{title:'Evidence',html:`<p>Complete the fields and evidence shown on this page, select the criteria covered and add any required photographs or recording.</p><ol><li>Work through every visible field.</li><li>Save or submit using the button at the bottom.</li><li><strong>Submit and lock</strong> freezes that attempt as evidence.</li><li>After submission, use <strong>Start new attempt</strong> where available to create another separate piece of evidence.</li><li>Return to the assignment to check criterion coverage.</li></ol><p><strong>${helpCourseRule()}</strong></p>`}
+ };
+ if(v==='settings'){
+  const active=state.settingsTab||'general';
+  const settingsHelp={
+   general:{title:'Settings · General',html:'',steps:[
+    {selector:'.settings-tabs',title:'Settings sections',html:'<p>Use these tabs to move between General, Notifications, Learning Support and the password-protected Admin Mode.</p>'},
+    {selector:'.settings-card',focusIndex:0,title:'App appearance',html:'<p>Choose the appearance used by Apprentice+. The change applies immediately and is saved on this device.</p>'},
+    {selector:'.settings-card',focusIndex:1,title:'App colour',html:'<p>Select the accent colour used for buttons, highlights and progress indicators throughout the app.</p>'},
+    {selector:'#backResources',title:'Return to Toolbox',html:'<p>Use the back button to return to the Toolbox. Your settings remain saved.</p>'}
+   ]},
+   notifications:{title:'Settings · Notifications',html:'',steps:[
+    {selector:'.settings-tabs',title:'Settings sections',html:'<p>Use the tabs to change another group of app settings, including Admin Mode.</p>'},
+    {selector:'[data-help-setting="settingNotificationsEnabled"]',title:'Allow notifications',html:'<p>This is the main notification switch. Turning it off disables all Apprentice+ notification categories on this device.</p>'},
+    {selector:'[data-help-setting="settingUpdates"]',title:'App updates',html:'<p>Choose whether the Notification Centre shows new Apprentice+ version and update information.</p>'},
+    {selector:'[data-help-setting="settingEpa"]',title:'EPA reminders',html:'<p>Choose whether EPA preparation and readiness reminders are shown.</p>'},
+    {selector:'[data-help-setting="settingAssignments"]',title:'Assignment reminders',html:'<p>Choose whether reminders about incomplete assignments and evidence are shown.</p>'},
+    {selector:'[data-help-setting="settingOtj"]',title:'OTJMate notifications',html:'<p>Control reminders about OTJ targets, saved entries and PDF exports.</p>'},{selector:'[data-help-setting="settingReminders"]',title:'RemindMate notifications',html:'<p>Control due and overdue reminders created in RemindMate.</p>'},{selector:'[data-help-setting="settingProjects"]',title:'ProjectMate notifications',html:'<p>Control reminders for saved project dates and deadlines.</p>'},{selector:'[data-help-setting="settingCertificates"]',title:'Certificate reminders',html:'<p>Choose whether notifications are shown when a certificate or achievement is available.</p>'}
+   ]},
+   'learning-support':{title:'Settings · Learning Support',html:'',steps:[
+    {selector:'.settings-tabs',title:'Learning Support settings',html:'<p>These options change how Apprentice+ looks or behaves. Every choice is saved on this device and can be switched off again at any time.</p>'},
+    {selector:'[data-help-setting="supportDyslexicFont"]',title:'Dyslexia-friendly text',html:'<p>Uses a clearer typeface and more distinct letter shapes throughout the app.</p>'},
+    {selector:'[data-help-setting="supportLargeText"]',title:'Larger text',html:'<p>Increases text size across Apprentice+ to make content easier to read.</p>'},
+    {selector:'[data-help-setting="supportHighContrast"]',title:'High contrast',html:'<p>Strengthens the difference between text, backgrounds and controls.</p>'},
+    {selector:'[data-help-setting="supportReduceMotion"]',title:'Reduce motion',html:'<p>Removes most animations and moving transitions.</p>'},
+    {selector:'[data-help-setting="supportReadingGuide"]',title:'Reading guide',html:'<p>Adds a movable horizontal reading window. Use the eye control for background blur and the move handle to position the guide.</p>'},
+    {selector:'[data-help-setting="supportTintOverlay"]',title:'Dyslexia tint overlay',html:'<p>Places a glass-like colour tint over every page of Apprentice+. Turn it on, choose a colour and adjust the tint strength below.</p>'},
+    {selector:'#tintOverlayOptions',title:'Overlay colour',html:'<p>Open the colour choices and select Yellow, Blue, Mint, Peach, Rose or Grey. The selected tint applies immediately.</p>'},
+    {selector:'#tintOverlayOptions',title:'Tint strength',html:'<p>Move the slider to make the full-app glass tint lighter or stronger.</p>'},
+    {selector:'[data-help-setting="supportReadAloud"]',title:'Text-to-speech',html:'<p>Shows a speaker button on built-in information tiles. Tap a speaker to read only that tile aloud.</p>'},
+    {selector:'[data-help-setting="supportVoiceInput"]',title:'Voice-to-text',html:'<p>Shows microphone controls beside supported text fields so speech can be converted into writing.</p>'},
+    {selector:'[data-help-setting="supportSimplifiedLayout"]',title:'Simplified layout',html:'<p>Reduces visual clutter and gives more emphasis to the main task and controls.</p>'},
+    {selector:'#resetLearningSupport',title:'Reset Learning Support',html:'<p>Use this button to return all Learning Support options to their default settings.</p>'}
+   ]}
+  };
+  return settingsHelp[active]||settingsHelp.general;
+ }
+ if(v==='section'&&s){
+  const names={photos:'Photographic Evidence',statement:'Learner Statement',discussion:'Video Walkthrough',witness:'Witness Testimony',practical:COURSE.nvqUnits?'Assessor Observation':'Practical Assessment',professionalDiscussion:'Professional Discussion',supporting:'Supporting Evidence'};
+  const sectionSteps={
+   photos:COURSE.nvqUnits?[
+    {selector:'.outcome-list',title:'Select the outcomes evidenced',html:'<p>Select only the Learning Outcomes that the photographs genuinely demonstrate.</p>'},
+    {selector:'.outcome-photo-control,.practical-photo-slot',title:'Add the photographs',html:'<p>Add one clear landscape photograph for every selected Learning Outcome. An outcome only counts when its photograph has been added.</p>'},
+    {selector:'textarea[data-field="activity"]',title:'Add photographic evidence notes',html:'<p>Briefly explain what the photographs show and where the work was completed.</p>'},
+    {selector:'.signature-pad,.signature',title:'Learner signature',html:'<p>The learner signs the completed evidence before it can be submitted.</p>'},
+    {selector:'#submitSection',title:'Submit and lock',html:'<p>Submit the completed photographic evidence. The saved attempt is locked and counts as one evidence type against each evidenced Learning Outcome.</p>'}
+   ]:[
+    {selector:'.outcome-list',title:'Select the Skill evidenced',html:'<p>Photographic Evidence can be linked to Skill KSBs only. Select only a Skill that the photographs genuinely demonstrate.</p>'},
+    {selector:'.skill-photo-row,.practical-photo-slot',title:'Add three photographs',html:'<p>Add three clear landscape photographs for every selected Skill. All three photographs are required before that Skill can be submitted.</p>'},
+    {selector:'.signature-pad,.signature',title:'Learner signature',html:'<p>The learner signs the completed photographic evidence.</p>'},
+    {selector:'#submitSection',title:'Submit and lock',html:'<p>Submit the evidence when every selected Skill has three photographs and the signature is complete. The submission gives each selected Skill one evidence credit.</p>'}
+   ],
+   statement:COURSE.nvqUnits?[
+    {selector:'.outcome-list,.statement-ksb-card',title:'Choose the outcomes covered',html:'<p>Select at least one Learning Outcome that is genuinely covered by the learner statement.</p>'},
+        {selector:'#statementText',title:'Write the learner statement',html:'<p>Explain what was done, how it was completed, the checks made and what was learned. Meet the word requirement shown on the page.</p>'},
+    {selector:'.signature-pad,.signature',title:'Learner signature',html:'<p>The learner signs the statement before submission.</p>'},
+    {selector:'#submitSection',title:'Submit and lock',html:'<p>Submit the completed written statement. It counts as one evidence type against each selected Learning Outcome.</p>'}
+   ]:[
+    {selector:'.statement-ksb-card,.outcome-list',title:'Select Knowledge and Behaviours',html:'<p>Tick every Knowledge or Behaviour criterion genuinely covered by the statement. Skills are not available in learner statements. The minimum increases by 30 words for each selected criterion.</p>'},
+        {selector:'#statementText',title:'Write the learner statement',html:'<p>Explain what you did, how you did it, the safety and quality checks completed and what you learned. Reach the minimum word count shown.</p>'},
+    {selector:'.signature-pad,.signature',title:'Learner signature',html:'<p>The learner signs the statement before submission.</p>'},
+    {selector:'#submitSection',title:'Submit and lock',html:'<p>Submit the completed statement. It counts as one evidence type against every selected KSB.</p>'}
+   ],
+   witness:COURSE.nvqUnits?[
+    {selector:'input[data-field="personName"],input[data-field="role"],input[data-field="organisation"]',title:'Witness details',html:'<p>The witness enters their name, job role and organisation so the testimony can be authenticated.</p>'},
+    {selector:'textarea[data-field="activity"]',title:'Activity observed',html:'<p>Describe the workplace activity the witness personally observed.</p>'},
+    {selector:'.score-list,.outcome-list',title:'Select achieved outcomes',html:'<p>Select only the Learning Outcomes the witness genuinely observed. Add the required outcome photographs where shown.</p>'},
+    {selector:'.generated-feedback-text,textarea[data-field="feedback"]',title:'Witness account',html:'<p>Record a clear first-hand account of what the learner did and how the selected outcomes were demonstrated.</p>'},
+    {selector:'.signature-pad,.signature',title:'Witness signature',html:'<p>The witness signs the testimony, then submits and locks it as a separate evidence item.</p>'}
+   ]:[
+    {selector:'input[data-field="personName"],input[data-field="role"],input[data-field="organisation"]',title:'Witness details',html:'<p>The witness enters their name, job role and organisation. This must be the person who directly observed the work.</p>'},
+    {selector:'textarea[data-field="activity"]',title:'Activity observed',html:'<p>Describe the exact workplace activity personally witnessed.</p>'},
+    {selector:'.score-list',title:'Observed Skills and Behaviours',html:'<p>Select and score only the Skills or Behaviours genuinely observed. KSB selection is optional, so do not tick anything that was not evidenced.</p>'},
+    {selector:'.generated-feedback-text,textarea[data-field="feedback"]',title:'Witness testimony',html:'<p>Use the assessment summary and comments to describe what the learner actually did, the standard achieved and any development points.</p>'},
+    {selector:'.signature-pad,.signature',title:'Witness signature',html:'<p>The witness signs the testimony, then submits and locks the evidence.</p>'}
+   ],
+   practical:COURSE.nvqUnits?[
+    {selector:'input[data-field="tutor"],textarea[data-field="activity"]',title:'Assessor and activity details',html:'<p>The assessor records their name and describes the practical activity observed.</p>'},
+    {selector:'.score-list,.outcome-list',title:'Select observed outcomes',html:'<p>Select only the Learning Outcomes directly observed during the assessment.</p>'},
+    {selector:'.outcome-photo-control,.practical-photo-row',title:'Add observation photographs',html:'<p>Add the required clear landscape photograph for every selected Learning Outcome.</p>'},
+    {selector:'.generated-feedback-text,textarea[data-field="feedback"]',title:'Observation record',html:'<p>Complete the assessor observation account, including the work seen, the standard achieved and any areas for development.</p>'},
+    {selector:'.signature-pad,.signature',title:'Assessor signature',html:'<p>The assessor signs, then submits and locks the observation as an assessor-only evidence item.</p>'}
+   ]:[
+    {selector:'input[data-field="tutor"]',title:'Assessor details',html:'<p>The tutor or assessor enters their name before marking the practical assessment.</p>'},
+    {selector:'.technical-drawing-preview',title:'Practical assessment drawing',html:'<p>The issued technical drawing is displayed on the assessment page. Tap it for full-screen viewing, pinch zoom, printing or an A4 PDF.</p>'},
+    {selector:'.practical-photo-row',title:'Finished-work photographs',html:'<p>Add at least one clear photograph of the completed practical work. Additional photographs can also be added.</p>'},
+    {selector:'.score-list',title:'Score demonstrated Skills',html:'<p>Select only Skills actually demonstrated, then award the relevant score out of five. Unobserved Skills must remain unselected and are excluded from the result.</p>'},
+    {selector:'.generated-feedback-text,textarea[data-field="feedback"]',title:'Assessment feedback',html:'<p>Update the assessment comments and record the result, strengths and areas for development.</p>'},
+    {selector:'.signature-pad,.signature',title:'Assessor signature and submit',html:'<p>The assessor signs and submits the completed practical assessment.</p>'}
+   ],
+   professionalDiscussion:[
+    {selector:'.professional-discussion-details',title:'Discussion details',html:'<p>The assessor or discussion lead enters their name and briefly describes the work or topic discussed.</p>'},
+    {selector:'.professional-discussion-list',title:COURSE.nvqUnits?'Choose relevant outcomes':'Choose relevant Knowledge and Behaviours',html:`<p>Record only the ${COURSE.nvqUnits?'Learning Outcomes':'Knowledge or Behaviour KSBs'} genuinely evidenced during the discussion. Unevidenced items should be left without a recording.</p>`},
+    {selector:'.professional-discussion-record-button',title:'Record separate audio',html:`<p>Tap <strong>Record Audio</strong> beside each relevant ${COURSE.nvqUnits?'outcome':'KSB'} and save a clear assessor-led discussion response.</p>`},
+    {selector:'.professional-discussion-audio,.walkthrough-mini-saved',title:'Review saved evidence',html:'<p>Play back each saved recording. Replace or remove it before submission when it does not clearly evidence the selected criterion.</p>'},
+    {selector:'.signature-pad,.signature',title:'Assessor signature',html:'<p>The assessor or discussion lead signs the completed discussion.</p>'},
+    {selector:'#submitSection',title:'Submit and lock',html:'<p>Submit the discussion when the details, signature and at least one relevant recording are complete. Only criteria with saved audio appear as evidenced.</p>'}
+   ],
+   discussion:[
+    {selector:'.walkthrough-tile-list,.video-criterion',title:'Choose what the video evidences',html:'<p>Record video only against the Learning Outcomes genuinely demonstrated in the walkthrough.</p>'},
+    {selector:'.video-add,.camera-button,.walkthrough-video-button',title:'Record in landscape',html:'<p>Record a separate landscape video explaining the work, safety controls, method and quality checks for that outcome.</p>'},
+    {selector:'.video-preview,.saved-video,.walkthrough-mini-saved',title:'Review each video',html:'<p>Review the saved clip and replace or remove it when needed.</p>'},
+    {selector:'#submitSection,.save-walkthrough',title:'Submit the walkthrough',html:'<p>Submit and lock the completed video walkthrough. Only outcomes with a saved video count as evidence.</p>'}
+   ],
+   supporting:[
+    {selector:'.media-buttons,.upload-box',title:'Add supporting files',html:'<p>Add relevant certificates, RAMS, drawings, delivery notes, photographs or videos.</p>'},
+    {selector:'.support-file-name,.file-list',title:'Name every item',html:'<p>Give each uploaded item a clear evidence name so it can be identified in the portfolio.</p>'},
+    {selector:'#submitSection',title:'Submit the evidence',html:'<p>Submit only files that genuinely support the assignment criteria.</p>'}
+   ]
+  };
+  return {title:names[s]||'Evidence',html:'',steps:sectionSteps[s]||common.section.steps};
+ }
+ const extraViews={
+  tools:{title:'Tools',html:'',steps:[{selector:'.tool-tile,.tools-grid button',focusIndex:0,title:'Choose a tool',html:'<p>Tap the tool needed for the current task.</p>'},{selector:'.calculator-inputs,input',title:'Enter job information',html:'<p>Enter the measurements or details requested by the selected tool.</p>'},{selector:'.calculator-result,.result,.calc-result',title:'Check the result',html:'<p>Review the result and confirm it against the job drawings, specification or manufacturer information.</p>'}]},
+  drawingmate:{title:'DrawingMate',html:'',steps:[{selector:'.tool-tabs,.drawing-tabs',title:'Choose a drawing section',html:'<p>Select symbols, hatching, scale or the setting-out tool required.</p>'},{selector:'.drawing-tool,.calculator-card',focusIndex:0,title:'Use the selected tool',html:'<p>Enter the requested dimensions or choose the required construction symbol or hatch pattern.</p>'},{selector:'.drawing-result,.calc-result,.result',title:'Check before use',html:'<p>Review the displayed guide or result and confirm all dimensions before applying it to practical work.</p>'}]},
+  'learning-support':{title:'Learning Support',html:'',steps:[{selector:'.support-tile,.accessibility-option',focusIndex:0,title:'Choose support',html:'<p>Select the reading, writing, planning, focus, hearing or memory support needed.</p>'},{selector:'.support-tabs',title:'Move between support sections',html:'<p>Use the tabs to return Home or open Reading, Writing, Planner and Settings.</p>'},{selector:'[data-a11y-setting]',focusIndex:0,title:'Adjust accessibility',html:'<p>Switch options on or adjust their controls. Changes apply immediately and are stored on this device.</p>'}]},
+  'trade-courses':{title:'Trade Courses',html:'<p>Select a course tile, read the learning content and start the test. Complete every question and submit to save the result and create a certificate where the pass requirement is met.</p>'},
+  library:{title:'Trade Courses',html:'<p>Select a course tile, work through its content and complete the test. Saved results remain available in Academy.</p>'},
+  'trade-test':{title:'Trade Course Test',html:'<p>Read each question, select one answer and move through the full test. Submit at the end to save the score. Review incorrect answers from the result page.</p>'},
+  'trade-result':{title:'Trade Course Result',html:'<p>Review the score, grade and question feedback. Use the available button to retry or return to the course list. A certificate is saved when the required standard is achieved.</p>'},
+  'functional-skills':{title:'Functional Skills',html:'<p>Choose English or maths and the required level. Start the test, answer every question and submit it to save the result.</p>'},
+  'functional-test':{title:'Functional Skills Test',html:'<p>Read each question carefully, select or enter the answer and continue until all questions are complete. Submit the test to save the result.</p>'},
+  'functional-result':{title:'Functional Skills Result',html:'<p>Review the total score and answer feedback. Retry the assessment where needed or return to Functional Skills to choose another activity.</p>'},
+  'academy-knowledge':{title:'Knowledge Practice',html:'<p>Select a topic or assignment, answer the questions and submit the completed attempt. Use the feedback to review incorrect answers and repeat the activity where needed.</p>'},
+  'knowledge-slides':{title:'Knowledge Revision',html:'<p>Move through the revision slides in order. Use Next and Back to review the content, then start the linked knowledge test when ready.</p>'},
+  lesson:{title:'Academy Lesson',html:'<p>Read each section in order and use the navigation controls to continue. Complete the questions or activity shown before leaving the lesson.</p>'},
+  certificates:{title:'Certificates',html:'<p>Tap a saved certificate to open it. Review the learner, course, score and award date, then use the download control to save a copy.</p>'},
+  epa:{title:'EPA Academy',html:'<p>Select Knowledge Practice, Professional Discussion, EPA Practical or Scores & Results. Complete an activity to create a saved attempt and return here to choose the next area.</p>'},
+  'epa-results':{title:'EPA Scores & Results',html:'<p>Use the filters or search to find previous attempts. Tap an attempt to open its score, feedback and report. The best result is highlighted where available.</p>'},
+  'epa-test':{title:'EPA Knowledge Practice',html:'<p>Answer every multiple-choice question, then submit the attempt. The result page shows the score, grade and answer feedback.</p>'},
+  'epa-result':{title:'EPA Knowledge Result',html:'<p>Review the score and each answer. Use the retry control to start a new attempt or return to EPA Academy.</p>'},
+  'epa-discussion':{title:'Professional Discussion Practice',html:'<p>Open each prompt, record or enter your response and save it. Complete the discussion to create a result that can be reviewed from Scores & Results.</p>'},
+  'epa-discussion-result':{title:'Professional Discussion Result',html:'<p>Review the completed responses, score and feedback. Use the available control to begin a new practice attempt or return to EPA Academy.</p>'},
+  'epa-practical':{title:'EPA Practical',html:'<p>Read the generated task, select the tools, materials and PPE, then complete the timed practical. The assessor enters the marking scores and final result. Submit the completed attempt to save it in Scores & Results.</p>'},
+  'knowledge-test':{title:'Assignment Knowledge Test',html:'<p>Answer every question for this assignment and submit the test. Review the result before returning to the assignment.</p>'},
+  'knowledge-result':{title:'Assignment Knowledge Result',html:'<p>Review the score and answer feedback. Retry where needed or return to the assignment.</p>'}
+ };return common[v]||extraViews[v]||{title:'How to use this page',html:'<p>Complete the fields and controls shown, save or submit at the bottom, then use Back to return to the previous page.</p>'};
+}
+function closePageHelp(){
+ const modal=document.getElementById('pageHelpModal');
+ if(!modal)return;
+ modal.classList.add('closing');
+ document.body.classList.remove('page-help-open');
+ setTimeout(()=>modal.remove(),180);
+}
+function buildPageHelpPhone(selector='',focusIndex=0){
+ const source=app.cloneNode(true);
+ source.querySelectorAll('script,style,.page-help-modal,.help-tour-overlay').forEach(x=>x.remove());
+ if(state.view==='settings'){source.querySelectorAll('#tintOverlayOptions').forEach(el=>{el.hidden=false;el.removeAttribute('hidden');el.setAttribute('aria-hidden','false');el.classList.remove('disabled');el.classList.add('enabled')})}
+ if(selector){const targets=[...source.querySelectorAll(selector)];let target=targets[Math.min(Math.max(0,focusIndex||0),Math.max(0,targets.length-1))];if(target){const settingRow=target.closest?.('.settings-switch-row,[data-help-tile],.settings-card');if(state.view==='settings'&&settingRow)target=settingRow;target.classList.add('page-help-phone-focus')}}
+ source.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+ source.querySelectorAll('button,input,select,textarea,a').forEach(el=>{el.tabIndex=-1;el.setAttribute('aria-hidden','true')});
+ return source.innerHTML;
+}
+function scrollPageHelpPhoneToFocus(instant=false){
+ const screen=document.querySelector('#pageHelpModal .page-help-phone-screen');
+ const scale=document.getElementById('pageHelpPhoneScale');
+ const target=scale?.querySelector('.page-help-phone-focus');
+ if(!screen||!scale||!target)return;
+ requestAnimationFrame(()=>{
+  // Keep the phone frame fixed. Only move the page vertically inside the screen.
+  const computed=getComputedStyle(scale);
+  const transform=computed.transform;
+  let zoom=1;
+  if(transform&&transform!=='none'){
+   const match=transform.match(/^matrix\(([^)]+)\)$/);
+   if(match){const values=match[1].split(',').map(Number);zoom=Math.abs(values[0])||1}
+  }
+  const offsetWithinScale=el=>{
+   let top=0,node=el;
+   while(node&&node!==scale){top+=node.offsetTop||0;node=node.offsetParent}
+   return top;
+  };
+  const visibleHeight=screen.clientHeight/zoom;
+  const contentHeight=Math.max(scale.scrollHeight,scale.offsetHeight,780);
+  const targetTop=offsetWithinScale(target);
+  const targetHeight=target.offsetHeight||0;
+  const maximumScroll=Math.max(0,contentHeight-visibleHeight);
+  const desired=Math.min(maximumScroll,Math.max(0,targetTop-(visibleHeight-targetHeight)/2));
+  const screenPixels=desired*zoom;
+  scale.style.setProperty('transition',instant?'none':'transform .32s cubic-bezier(.2,.75,.25,1)','important');
+  // The enlarged guide phone uses an !important scale rule, so the scrolling
+  // transform must also be applied with !important or the marker moves while
+  // the cloned page remains fixed at the top.
+  scale.style.setProperty('transform',`translate3d(0, ${-screenPixels}px, 0) scale(${zoom})`,'important');
+  screen.scrollTop=0;
+  screen.scrollLeft=0;
+ });
+}
+function pageHelpSelectors(){
+ const map={
+  home:['.progress-summary','.assignment-card,.evidence-pack-card','.evidence-icons','.submitted-badge,.status-badge','.learner-help-wrap'],
+  assignment:['.assignment-header,.evidence-pack-header','.evidence-tile,.assignment-action-card','.criteria-grid,.ksb-grid','.download-pack,.download-evidence-package','.confirm-upload'],
+  resources:['.resource-tile,.toolbox-tile','.resource-tile,.toolbox-tile','.resource-tile,.toolbox-tile','.resource-tile,.toolbox-tile'],
+  notepad:['#addNote,.notepad-add','.note-editor,.notepad-form','.note-media-actions,.media-buttons','#saveNote,.save-note','.note-search,.search-button'],
+  measuremate:['.calculator-card,.measure-tool','.calculator-inputs,input','.calculator-result,.result'],
+  materialmate:['.material-card,.calculator-card','.calculator-inputs,input','.wastage-control,.wastage','.calculator-result,.result'],
+  projectmate:['.project-card,.project-list','.project-brief,.customer-brief','.materials-section,.labour-section','.wastage-check','.save-project,.btn'],
+  walkthrough:['.video-criterion,.walkthrough-item','.video-add,.camera-button','.video-preview,.saved-video','.save-walkthrough,.btn'],
+  section:['.evidence-form,.section-card','.criteria-grid,.ksb-grid','.media-buttons,.photo-grid','.signature-pad,.signature','.submit-lock,.btn'],
+  tools:['.tool-tile,.tools-grid button'],drawingmate:['.drawing-tool,.calculator-card'],
+  'learning-support':['.support-tile,.accessibility-option'],
+  'trade-courses':['.trade-course-card,.academy-card'],library:['.trade-course-card,.academy-card'],
+  'trade-test':['.question-card','.answer-option','.test-navigation','.submit-test,.btn'],
+  'trade-result':['.result-summary','.answer-review','.retry-test,.btn'],
+  'functional-skills':['.functional-card,.academy-card'],
+  'functional-test':['.question-card','.answer-option','.test-navigation','.submit-test,.btn'],
+  'functional-result':['.result-summary','.answer-review','.retry-test,.btn'],
+  'academy-knowledge':['.knowledge-topic,.academy-card','.question-card','.submit-test,.btn'],
+  'knowledge-slides':['.knowledge-slide','.slide-navigation','.knowledge-complete,.btn'],
+  lesson:['.lesson-card,.lesson-content','.lesson-navigation,.btn'],
+  certificates:['.certificate-card','.certificate-download,.btn'],
+  epa:['.epa-tile,.academy-square-tile','.epa-tile,.academy-square-tile','.epa-tile,.academy-square-tile','.epa-tile,.academy-square-tile'],
+  'epa-results':['.epa-result-card,.attempt-card','.filter-bar,.search-bar'],
+  'epa-test':['.question-card','.answer-option','.submit-test,.btn'],
+  'epa-result':['.result-summary','.answer-review','.retry-test,.btn'],
+  'epa-discussion':['.discussion-prompt','.recording-controls','.complete-discussion,.btn'],
+  'epa-discussion-result':['.result-summary','.response-review','.retry-discussion,.btn'],
+  'epa-practical':['.practical-task','.selection-grid,.tools-materials-ppe','.timer','.assessor-marking','.submit-practical,.btn'],
+  'knowledge-test':['.question-card','.answer-option','.submit-test,.btn'],
+  'knowledge-result':['.result-summary','.answer-review','.retry-test,.btn']
+ };
+ return map[state.view]||['main section','.btn'];
+}
+function compactPageHelpSteps(h){
+ if(Array.isArray(h.steps)&&h.steps.length)return h.steps.map(step=>({selector:step.selector||'',focusIndex:step.focusIndex||0,title:step.title,html:step.html}));
+ const holder=document.createElement('div');holder.innerHTML=h.html||'';
+ const selectors=pageHelpSelectors();
+ const slides=[];const selectorUses={};
+ const withFocus=(selector)=>{const key=selector||'';const focusIndex=selectorUses[key]||0;selectorUses[key]=focusIndex+1;return {selector:key,focusIndex};};
+ const intro=[...holder.children].find(el=>el.tagName==='P'&&el.textContent.trim());
+ if(intro)slides.push({...withFocus(selectors[0]||''),title:h.title,html:`<p>${intro.innerHTML}</p>`});
+ const items=[...holder.querySelectorAll('li')];
+ items.forEach((li,index)=>{
+  const strong=li.querySelector('strong');
+  const title=strong?strong.textContent.replace(/:$/,''):items.length>1?`${h.title} · ${index+1}`:h.title;
+  slides.push({...withFocus(selectors[Math.min(index+1,selectors.length-1)]||selectors[0]||''),title,html:`<p>${li.innerHTML}</p>`});
+ });
+ const remaining=[...holder.children].filter(el=>el.tagName==='P'&&el!==intro&&!el.closest('li'));
+ remaining.forEach((el,index)=>slides.push({...withFocus(selectors[Math.min(slides.length,selectors.length-1)]||''),title:slides.length?`${h.title} · Finish`:h.title,html:`<p>${el.innerHTML}</p>`}));
+ if(!slides.length){
+  const text=holder.textContent.trim()||'Use the controls shown on this page, then save or submit your work.';
+  const sentences=text.match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[text];
+  sentences.forEach((sentence,index)=>slides.push({...withFocus(selectors[Math.min(index,selectors.length-1)]||''),title:index?`${h.title} · ${index+1}`:h.title,html:`<p>${sentence.trim()}</p>`}));
+ }
+ return slides;
+}
+function openPageHelp(){
+ closePageHelp();
+ const h=currentHelp(),steps=compactPageHelpSteps(h);
+ let helpStep=0;
+ const active=steps[0];
+ const phone=buildPageHelpPhone(active.selector||'',active.focusIndex||0);
+ const stepControls=`<div class="page-help-step-controls"><button type="button" class="btn secondary" id="pageHelpPrevious" disabled>Back</button><span id="pageHelpStepCount">1 of ${steps.length}</span><button type="button" class="btn" id="pageHelpNext">${steps.length===1?'Finish':'Next'}</button></div>`;
+ document.body.insertAdjacentHTML('beforeend',`<div class="page-help-modal" id="pageHelpModal" role="presentation"><div class="page-help-sheet" role="dialog" aria-modal="true" aria-labelledby="pageHelpTitle"><button type="button" class="page-help-close" data-close-page-help aria-label="Close help">×</button><div class="page-help-body"><div class="page-help-phone" aria-label="Preview of this Apprentice Plus page"><div class="page-help-phone-speaker"></div><div class="page-help-phone-screen"><div class="page-help-phone-scale" id="pageHelpPhoneScale">${phone}</div></div><div class="page-help-phone-home"></div></div><div class="page-help-instructions"><div class="page-help-symbol">i</div><h2 id="pageHelpTitle">${esc(active.title||h.title)}</h2><div class="page-help-content" id="pageHelpContent">${active.html||h.html}</div>${stepControls}</div></div><div class="page-help-footer"><button type="button" class="link-button" id="pageHelpReplay">Replay quick tour</button><button type="button" class="btn" data-close-page-help>Close</button></div><div class="page-help-drag" aria-hidden="true"></div></div></div>`);
+ document.body.classList.add('page-help-open');
+ const modal=document.getElementById('pageHelpModal'),sheet=modal.querySelector('.page-help-sheet');
+ scrollPageHelpPhoneToFocus(true);
+ if(steps){
+  const renderHelpStep=()=>{const step=steps[helpStep];document.getElementById('pageHelpTitle').textContent=step.title;document.getElementById('pageHelpContent').innerHTML=step.html;document.getElementById('pageHelpPhoneScale').innerHTML=buildPageHelpPhone(step.selector,step.focusIndex||0);document.getElementById('pageHelpStepCount').textContent=`${helpStep+1} of ${steps.length}`;const prev=document.getElementById('pageHelpPrevious'),next=document.getElementById('pageHelpNext');prev.disabled=helpStep===0;next.textContent=helpStep===steps.length-1?'Finish':'Next';scrollPageHelpPhoneToFocus(false)};
+  document.getElementById('pageHelpPrevious').onclick=()=>{if(helpStep>0){helpStep--;renderHelpStep()}};
+  document.getElementById('pageHelpNext').onclick=()=>{if(helpStep<steps.length-1){helpStep++;renderHelpStep()}else closePageHelp()};
+ }
+ modal.addEventListener('click',e=>{if(e.target===modal||e.target.closest('[data-close-page-help]')){e.preventDefault();e.stopPropagation();closePageHelp()}});
+ document.getElementById('pageHelpReplay').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();closePageHelp();localStorage.removeItem(HELP_TOUR_KEY);setTimeout(startHelpTour,220)});
+ let startY=0,currentY=0,dragging=false;
+ sheet.addEventListener('touchstart',e=>{if(sheet.scrollTop>0)return;startY=e.touches[0].clientY;currentY=startY;dragging=true},{passive:true});
+ sheet.addEventListener('touchmove',e=>{if(!dragging)return;currentY=e.touches[0].clientY;const dy=Math.max(0,currentY-startY);sheet.style.transform=`translateY(${Math.min(dy,160)}px)`},{passive:true});
+ sheet.addEventListener('touchend',()=>{if(!dragging)return;dragging=false;const dy=currentY-startY;sheet.style.transform='';if(dy>90)closePageHelp()},{passive:true});
+ setTimeout(()=>modal.querySelector('.page-help-close')?.focus(),20);
+}
+function attachPageHelp(){const courseProgressBtn=document.getElementById('courseProgressBtn');if(courseProgressBtn){courseProgressBtn.onclick=showCourseProgress;courseProgressBtn.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();showCourseProgress()}}}maybeStartHelpTour()}
+const HELP_TOUR_STEPS=[
+ {view:'home',selector:'#courseProgressBtn',title:'Your progress ring',text:'Tap the progress ring to open the learner summary. It compares assignments, Learning Outcomes or KSBs and OTJ against where you should be today, and also shows time elapsed and EPA readiness.'},
+ {view:'home',selector:'.learner-help-wrap',title:'Learner name and help',text:'Your learner name is display-only. Edit it in Settings. Tap the green i button for instructions about whichever page is open.'},
+ {view:'home',selector:'.assignment-card',title:COURSE.nvqUnits?'Open an evidence pack':'Open an assignment',text:'Tap a card to open it. Grey means not started, amber means in progress and green means the evidence requirement has been met.'},
+ {view:'assignment',selector:'.evidence-grid, [data-section]',title:'Add your evidence',text:COURSE.nvqUnits?'Use the six evidence tiles. Each Learning Outcome needs three different evidence types.':'Use the six evidence tiles. Each KSB needs two different evidence types.'},
+ {view:'academy',selector:'.academy-grid, .academy-home-grid, [data-academy]',title:'Use the Academy',text:'Open Knowledge Slides, Trade Courses, EPA Academy, Functional Skills or Certificates. EPA Academy contains Knowledge Practice, Professional Discussion, EPA Practical and Scores & Results.'},
+ {view:'resources',selector:'.phone-app-grid',title:'Use the Toolbox',text:'The Toolbox now contains MeasureMate, MaterialMate, NoteMate, DrawingMate, ProjectMate, OTJMate, RemindMate and Settings.'},
+ {view:'resources',selector:'#openOTJMate',title:'Record off-the-job learning',text:'OTJMate records learning hours and creates upload-ready PDF logs without exporting the same entry twice.'},
+ {view:'resources',selector:'#openRemindMate',title:'Keep targets visible',text:'RemindMate stores review targets and deadlines, groups them by urgency and lets you mark completed actions.'}
+];
+let helpTourIndex=0,helpTourRunning=false,helpTourOriginalView=null,helpTourStartTimer=null;
+function maybeStartHelpTour(){if(helpTourRunning||helpTourStartTimer||!state.profile||localStorage.getItem(HELP_TOUR_KEY)==='1'||state.view!=='home')return;helpTourStartTimer=setTimeout(()=>{helpTourStartTimer=null;startHelpTour()},500)}
+function renderTourView(step){
+ state.view=step.view;
+ state.section=null;
+ if(step.view==='assignment')state.assignment=state.assignment||1;
+ render();
+ window.scrollTo(0,0);
+}
+function buildTourPhone(step){
+ const source=app.cloneNode(true);
+ source.querySelectorAll('script,style,.page-help-modal,.help-tour-overlay').forEach(x=>x.remove());
+ if(state.view==='settings'){source.querySelectorAll('#tintOverlayOptions').forEach(el=>{el.hidden=false;el.removeAttribute('hidden');el.setAttribute('aria-hidden','false');el.classList.remove('disabled');el.classList.add('enabled')})}
+ const target=source.querySelector(step.selector);
+ if(target){target.classList.add('tour-phone-focus');target.scrollIntoView?.({block:'center'})}
+ source.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+ source.querySelectorAll('button,input,select,textarea,a').forEach(el=>{el.tabIndex=-1;el.setAttribute('aria-hidden','true')});
+ return source.innerHTML;
+}
+function startHelpTour(){
+ if(helpTourStartTimer){clearTimeout(helpTourStartTimer);helpTourStartTimer=null}
+ if(!state.profile||helpTourRunning)return;
+ closePageHelp();
+ helpTourRunning=true;helpTourIndex=0;helpTourOriginalView={view:state.view,assignment:state.assignment,section:state.section};
+ document.body.classList.add('help-tour-open');
+ showHelpTourStep();
+}
+function finishHelpTour(completed=true){
+ helpTourRunning=false;
+ if(helpTourStartTimer){clearTimeout(helpTourStartTimer);helpTourStartTimer=null}
+ localStorage.setItem(HELP_TOUR_KEY,'1');
+ document.getElementById('helpTourOverlay')?.remove();
+ document.body.classList.remove('help-tour-open');
+ state.view='home';state.assignment=null;state.section=null;render();window.scrollTo(0,0);
+}
+function showHelpTourStep(){
+ document.getElementById('helpTourOverlay')?.remove();
+ const step=HELP_TOUR_STEPS[helpTourIndex];
+ if(!step)return finishHelpTour();
+ renderTourView(step);
+ const phone=buildTourPhone(step);
+ document.body.insertAdjacentHTML('beforeend',`<div class="help-tour-overlay" id="helpTourOverlay" role="dialog" aria-modal="true" aria-labelledby="helpTourTitle"><div class="help-tour-layout"><div class="tour-phone" aria-label="Preview of the Apprentice Plus screen"><div class="tour-phone-speaker"></div><div class="tour-phone-screen"><div class="tour-phone-scale">${phone}</div></div><div class="tour-phone-home"></div></div><div class="help-tour-card"><div class="help-tour-top"><div class="help-tour-count">Step ${helpTourIndex+1} of ${HELP_TOUR_STEPS.length}</div><button type="button" class="help-tour-x" id="helpTourClose" aria-label="Close tour">×</button></div><h2 id="helpTourTitle">${esc(step.title)}</h2><p>${esc(step.text)}</p><div class="help-tour-dots">${HELP_TOUR_STEPS.map((_,i)=>`<span class="${i===helpTourIndex?'active':''}"></span>`).join('')}</div><div class="help-tour-actions"><button type="button" class="link-button" id="helpTourSkip">Skip tour</button><div class="help-tour-nav">${helpTourIndex?'<button type="button" class="btn secondary" id="helpTourPrevious">Back</button>':''}<button type="button" class="btn" id="helpTourNext">${helpTourIndex===HELP_TOUR_STEPS.length-1?'Finish':'Next'}</button></div></div></div></div></div>`);
+ const overlay=document.getElementById('helpTourOverlay');
+ overlay.querySelector('#helpTourClose').onclick=()=>finishHelpTour(false);
+ overlay.querySelector('#helpTourSkip').onclick=()=>finishHelpTour(true);
+ const prev=overlay.querySelector('#helpTourPrevious');if(prev)prev.onclick=()=>{helpTourIndex--;showHelpTourStep()};
+ overlay.querySelector('#helpTourNext').onclick=()=>{helpTourIndex++;if(helpTourIndex>=HELP_TOUR_STEPS.length)finishHelpTour(true);else showHelpTourStep()};
+}
+window.replayApprenticeTour=()=>{localStorage.removeItem(HELP_TOUR_KEY);startHelpTour()};
+
+async function removeOlderUpdateSafetyBackups(keepKey){
+ if(!db)return;
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction('store','readwrite'),store=tx.objectStore('store'),request=store.openCursor();
+  request.onsuccess=()=>{const cursor=request.result;if(!cursor)return;const key=String(cursor.key||'');if(key.startsWith('updateSafetyBackup:')&&key!==keepKey)cursor.delete();cursor.continue()};
+  request.onerror=()=>reject(request.error);
+  tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Backup cleanup was aborted'));
+ });
+}
+async function createUpdateSafetyBackup(){
+ const key=`updateSafetyBackup:${APP_VERSION}`;
+ try{if(await getStore(key))return true}catch(error){console.warn('Unable to check update backup',error)}
+ // Keep only one safety backup. Previous versions duplicated the full learner data on every update,
+ // which could exhaust IndexedDB quota and incorrectly replace the app with a storage error screen.
+ try{await removeOlderUpdateSafetyBackups(key)}catch(error){console.warn('Old update backups could not be removed',error)}
+ try{
+  await putStore(key,{app:'Apprentice+',appVersion:APP_VERSION,created:new Date().toISOString(),activeCourse:ACTIVE_COURSE_ID,profile:structuredClone(state.profile),data:structuredClone(state.data)});
+  return true;
+ }catch(error){
+  console.warn('Update safety backup skipped because device storage is full or unavailable',error);
+  return false;
+ }
+}
+let pendingAppUpdate=null;
+let updateReloading=false;
+const DEFAULT_UPDATE_INFO={version:'A new version',features:['Performance improvements and minor fixes.']};
+function normaliseUpdateInfo(info){
+ const features=Array.isArray(info?.features)?info.features.filter(Boolean).map(String).slice(0,8):[];
+ return {version:String(info?.version||DEFAULT_UPDATE_INFO.version),features:features.length?features:DEFAULT_UPDATE_INFO.features};
+}
+function syncUpdateBadge(){
+ const badge=document.getElementById('updateNotificationButton');
+ if(badge)badge.hidden=true;
+}
+function requestWaitingWorkerInfo(worker){
+ if(!worker)return;
+ try{worker.postMessage({type:'GET_UPDATE_INFO'})}catch(error){console.warn('Unable to request update details',error)}
+}
+function markUpdateReady(worker,info){
+ if(!worker)return;
+ pendingAppUpdate={worker,info:normaliseUpdateInfo(info)};
+ window.apprenticePlusPendingUpdateInfo=pendingAppUpdate.info;
+ window.dispatchEvent(new CustomEvent('apprenticeplus:update-ready',{detail:pendingAppUpdate.info}));
+ syncUpdateBadge();
+}
+function closeUpdateReadyModal(){document.getElementById('updateReadyModal')?.remove()}
+window.openUpdateReadyModal=function openUpdateReadyModal(){
+ if(!pendingAppUpdate)return;
+ closeUpdateReadyModal();
+ const info=pendingAppUpdate.info;
+ const features=info.features.map(item=>`<li>${esc(item)}</li>`).join('');
+ document.body.insertAdjacentHTML('beforeend',`<div class="modal update-ready-modal" id="updateReadyModal"><section class="update-ready-card" role="dialog" aria-modal="true" aria-labelledby="updateReadyTitle"><button type="button" class="update-ready-close" id="closeUpdateReady" aria-label="Close">×</button><div class="update-ready-icon">↑</div><p class="update-ready-kicker">APPRENTICE+ ${esc(info.version)}</p><h2 id="updateReadyTitle">A new update is ready</h2><p class="update-ready-copy">Install the latest version now. Your saved learner work and evidence will stay on this device.</p><div class="update-ready-features"><strong>What’s included</strong><ul>${features}</ul></div><button type="button" class="btn update-ready-action" id="installReadyUpdate">Let’s go</button><p class="update-ready-small">The app will refresh once to finish installing the update.</p></section></div>`);
+ const modal=document.getElementById('updateReadyModal');
+ modal.querySelector('#closeUpdateReady').onclick=closeUpdateReadyModal;
+ modal.onclick=e=>{if(e.target===modal)closeUpdateReadyModal()};
+ modal.querySelector('#installReadyUpdate').onclick=async()=>{
+  const button=modal.querySelector('#installReadyUpdate');
+  button.disabled=true;button.textContent='Updating…';
+  try{await createUpdateSafetyBackup()}catch(error){console.warn('Update backup could not be created',error)}
+  try{pendingAppUpdate.worker.postMessage({type:'SKIP_WAITING'})}catch(error){button.disabled=false;button.textContent='Let’s go';toast('Unable to start the update. Please try again.')}
+ };
+}
+async function registerAutoUpdater(){
+ if(!('serviceWorker'in navigator))return;
+ navigator.serviceWorker.addEventListener('message',event=>{
+  if(event.data?.type==='UPDATE_INFO'&&pendingAppUpdate?.worker){markUpdateReady(pendingAppUpdate.worker,event.data.info)}
+ });
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{
+  if(updateReloading)return;
+  updateReloading=true;
+  window.location.reload();
+ });
+ const registration=await navigator.serviceWorker.register('./service-worker.js',{updateViaCache:'none'});
+ const inspectWaiting=()=>{if(registration.waiting){markUpdateReady(registration.waiting,DEFAULT_UPDATE_INFO);requestWaitingWorkerInfo(registration.waiting)}};
+ inspectWaiting();
+ registration.addEventListener('updatefound',()=>{
+  const worker=registration.installing;if(!worker)return;
+  worker.addEventListener('statechange',()=>{
+   if(worker.state==='installed'&&navigator.serviceWorker.controller){markUpdateReady(worker,DEFAULT_UPDATE_INFO);requestWaitingWorkerInfo(worker)}
+  });
+ });
+ let lastUpdateCheckAt=0;
+ const checkForUpdate=()=>{
+  const now=Date.now();
+  inspectWaiting();
+  if(now-lastUpdateCheckAt<30000)return;
+  lastUpdateCheckAt=now;
+  registration.update().catch(()=>{});
+ };
+ checkForUpdate();
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkForUpdate()});
+ window.addEventListener('focus',checkForUpdate);
+ window.setInterval(checkForUpdate,60*60*1000);
+}
+
+const updateBadgeObserver=new MutationObserver(()=>syncUpdateBadge());
+updateBadgeObserver.observe(app,{childList:true,subtree:true});
+document.addEventListener('click',e=>{const badge=e.target.closest('#updateNotificationButton');if(!badge)return;e.preventDefault();e.stopPropagation();openUpdateReadyModal()});
+document.addEventListener('click',e=>{const help=e.target.closest('#pageHelpButton');if(!help)return;e.preventDefault();e.stopPropagation();openPageHelp()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(document.getElementById('pageHelpModal'))closePageHelp();else if(helpTourRunning)finishHelpTour(false)});
+window.addEventListener('popstate',()=>{if(document.getElementById('pageHelpModal'))closePageHelp();else if(helpTourRunning)finishHelpTour(false)});
+let primaryNavigationLocked=false;
+function activatePrimaryNavigation(target){
+ if(primaryNavigationLocked)return;
+ primaryNavigationLocked=true;
+ cleanupTransientUi();
+ if(target==='academy'){state.view='academy';state.assignment=null;state.section=null}
+ else if(target==='resources'){state.view='resources';state.assignment=null;state.section=null;state.editingNoteId=null}
+ else{state.view='home';state.assignment=null;state.section=null}
+ try{render()}catch(error){
+  console.error(`Unable to open ${target}`,error);
+  app.innerHTML=shell(`<section class="card panel"><h2>This page could not open</h2><p class="muted">Apprentice+ kept your saved work. Tap another navigation button and try this page again.</p><button type="button" class="btn" id="retryCurrentPage">Try again</button></section>`);
+  document.getElementById('retryCurrentPage')?.addEventListener('click',()=>{primaryNavigationLocked=false;activatePrimaryNavigation(target)});
+ }
+ requestAnimationFrame(()=>{
+  try{syncReadAloudControl();syncReadingGuide()}catch(error){console.warn(error)}
+  window.scrollTo({top:0,left:0,behavior:'instant'});
+  primaryNavigationLocked=false;
+ });
+ window.setTimeout(()=>{primaryNavigationLocked=false},500);
+}
+function visibleBlockingModal(){
+ return [...document.querySelectorAll('.modal,.learning-support-modal,.page-help-modal,.help-tour-overlay')].some(node=>{
+  if(node.hidden||node.getAttribute('aria-hidden')==='true')return false;
+  const style=getComputedStyle(node);return style.display!=='none'&&style.visibility!=='hidden'&&style.pointerEvents!=='none';
+ });
+}
+function navButtonFromPoint(x,y){
+ const buttons=[...document.querySelectorAll('.bottom-nav-item[data-nav]')];
+ return buttons.find(button=>{const r=button.getBoundingClientRect();return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom})||null;
+}
+function handlePrimaryNavigationEvent(e){
+ let nav=e.target?.closest?.('[data-nav]');
+ if(!nav&&Number.isFinite(e.clientX)&&Number.isFinite(e.clientY)&&!visibleBlockingModal())nav=navButtonFromPoint(e.clientX,e.clientY);
+ if(!nav)return;
+ e.preventDefault();e.stopPropagation();
+ activatePrimaryNavigation(nav.dataset.nav);
+}
+// Capture-phase handlers keep the bottom navigation responsive even if a stale child
+// listener, accessibility control or invisible overlay attempts to consume the tap.
+document.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse')handlePrimaryNavigationEvent(e)},{capture:true,passive:false});
+document.addEventListener('click',handlePrimaryNavigationEvent,{capture:true,passive:false});
+function restoreAppAfterResume(){
+ if(document.visibilityState==='hidden')return;
+ document.documentElement.style.pointerEvents='';document.body.style.pointerEvents='';app.style.pointerEvents='';
+ document.querySelectorAll('.bottom-nav-item').forEach(button=>{button.disabled=false;button.removeAttribute('aria-disabled')});
+ // Remove only stale, hidden backdrops that can intercept the first tap after resume.
+ document.querySelectorAll('.modal[aria-hidden="true"],.modal.hidden,.help-tour-overlay[aria-hidden="true"],#learningSupportInfoModal[aria-hidden="true"]').forEach(node=>node.remove());if(!document.getElementById('learningSupportInfoModal'))document.body.classList.remove('learning-support-modal-open');
+ primaryNavigationLocked=false;
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')requestAnimationFrame(restoreAppAfterResume)});
+window.addEventListener('pageshow',()=>requestAnimationFrame(restoreAppAfterResume));
+window.addEventListener('focus',()=>requestAnimationFrame(restoreAppAfterResume));
+
+(async()=>{
+ try{db=await openDB();await load()}
+ catch(error){console.error('Unable to load learner data',error);app.innerHTML=shell(`<section class="card panel"><h2>Unable to open learner data</h2><p class="muted">Reload the app. Your saved work has not been deleted.</p></section>`);return}
+ try{await createUpdateSafetyBackup()}catch(error){console.warn('Update backup was skipped',error)}
+ try{await registerAutoUpdater()}catch(error){console.warn('Automatic updates are temporarily unavailable',error)}
+ try{syncReminderNotifications()}catch(error){console.warn('Reminder notifications could not be refreshed',error)}
+})()
+
+
+// v1.3.9 Targeted Revision Engine
+const TR_STORAGE_KEY='apprenticeplus.targetedRevision';
+function getTargetedRevisions(){try{return JSON.parse(localStorage.getItem(TR_STORAGE_KEY)||'[]')}catch(e){return[]}}
+function saveTargetedRevisions(items){localStorage.setItem(TR_STORAGE_KEY,JSON.stringify(items))}
+function updateTargetedRevision({title,assignment,source,score}){
+ if(score>3)return;
+ const priority=score===1?'Critical':score===2?'High':'Medium';
+ const items=getTargetedRevisions();
+ const i=items.findIndex(r=>r.title===title&&r.assignment===assignment);
+ const now=new Date().toISOString();
+ if(i>=0){
+   items[i]={...items[i],source,latestScore:score,priority,status:'Reopened',updated:now};
+ }else{
+   items.push({title,assignment,source,latestScore:score,priority,status:'Not Started',created:now});
+ }
+ saveTargetedRevisions(items);
+}
+
+
+/* EPA_INTERVIEW_FRAMEWORK_V140 */
+const EPA_INTERVIEW_FRAMEWORK=`You are an experienced End-Point Assessor for construction apprenticeships.`;
+const EPA_MCQ_FRAMEWORK=THEORY_MCQ_FRAMEWORK_V140;
+
+// V1.5.10 reading guide layout and floating control positioning.
+applyAppSettings();
+
+
+/* V1.5.41 — mobile keyboard and fixed navigation coordination */
+(function installKeyboardViewportCoordinator(){
+  if(window.__apKeyboardViewportCoordinator)return;
+  window.__apKeyboardViewportCoordinator=true;
+  const root=document.documentElement;
+  let baseline=Math.max(window.innerHeight,window.visualViewport?.height||0);
+  const update=()=>{
+    const viewportHeight=window.visualViewport?.height||window.innerHeight;
+    const focused=document.activeElement;
+    const editable=!!focused&&(/^(INPUT|TEXTAREA|SELECT)$/.test(focused.tagName)||focused.isContentEditable);
+    if(!editable&&viewportHeight>baseline-60)baseline=Math.max(baseline,viewportHeight);
+    const keyboardOpen=editable&&(baseline-viewportHeight>120);
+    root.classList.toggle('keyboard-open',keyboardOpen);
+    root.style.setProperty('--keyboard-height',`${Math.max(0,baseline-viewportHeight)}px`);
+    if(keyboardOpen&&focused?.scrollIntoView)requestAnimationFrame(()=>focused.scrollIntoView({block:'center',inline:'nearest',behavior:'smooth'}));
+  };
+  window.visualViewport?.addEventListener('resize',update,{passive:true});
+  window.visualViewport?.addEventListener('scroll',update,{passive:true});
+  window.addEventListener('resize',update,{passive:true});
+  document.addEventListener('focusin',()=>setTimeout(update,80));
+  document.addEventListener('focusout',()=>setTimeout(update,180));
+  update();
 })();
