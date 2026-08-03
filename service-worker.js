@@ -1,4 +1,4 @@
-const CACHE='apprentice-plus-v1.0-reviewmate-live-targets';
+const CACHE='apprentice-plus-v1.0-reviewmate-weekly-targets-profile';
 const CURRENT_VERSION='V1.0';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={

@@ -6,6 +6,11 @@
       "date": "2026-08-03",
       "title": "ReviewMate Progress Reviews and Live Targets",
       "features": [
+        "First-time learner setup now displays every learner profile field immediately and requires the learner to actively choose a course before continuing.",
+        "No course is preselected on a new installation, preventing learners from accidentally starting with the wrong assignments or criteria.",
+        "ReviewMate targets are now scheduled in order: Target 1 is due after one week, Target 2 after two weeks, through to Target 5 after five weeks.",
+        "Every weekly ReviewMate reminder includes all incomplete targets, while completed targets are automatically excluded from the following week.",
+        "Outstanding targets keep repeating until the next 8, 10 or 12-week review is saved; the previous reminder set is then retired and preserved in dated review history as reset.",
         "Added ReviewMate as a new Productivity miniapp in the Toolbox.",
         "ReviewMate reads live assignment, KSB or Learning Outcome, OTJ, Academy, EPA, evidence-balance and portfolio-upload data.",
         "Every saved review contains exactly five automatically prioritised targets, with incomplete KSBs or Learning Outcomes considered before broader progress actions.",
