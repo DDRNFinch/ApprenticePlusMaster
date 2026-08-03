@@ -1,4 +1,4 @@
-const CACHE='apprentice-plus-v1.0-landscape-video-recorder';
+const CACHE='apprentice-plus-v1.0-compact-navigation';
 const CURRENT_VERSION='V1.0';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={

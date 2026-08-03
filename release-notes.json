@@ -4,8 +4,12 @@
     {
       "version": "V1.0",
       "date": "2026-08-03",
-      "title": "Landscape Full-screen Video Recorder",
+      "title": "Compact Navigation and Full-screen Video Recorder",
       "features": [
+        "The main navigation is now approximately half its previous height while keeping its labels at the same readable size.",
+        "Every phone and tablet screen now reserves the compact navigation footprint, so final controls and page content stop above the bar instead of being covered by it.",
+        "The navigation and other floating app controls are completely removed while the video recorder is open, leaving the record button unobstructed in portrait and landscape.",
+        "The Course title tile OTJMate shortcut is now fixed to its bottom-left corner and uses the same teal gradient as the OTJMate Toolbox tile.",
         "All in-app video capture now uses a full-screen phone-camera layout that responds cleanly when the phone is turned to landscape.",
         "Recorder controls are compact overlays instead of a large panel, with the record button centred in portrait and moved to the right edge in landscape.",
         "Video Walkthrough questions and criterion wording now sit in a small top prompt drawer that can be expanded or collapsed without covering most of the camera.",
