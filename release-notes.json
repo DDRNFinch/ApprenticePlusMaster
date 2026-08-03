@@ -1,6 +1,39 @@
 {
-  "latest": "V1.6.34",
+  "latest": "V1.6.36",
   "releases": [
+    {
+      "version": "V1.6.36",
+      "date": "2026-08-03",
+      "title": "Monthly Learner Progress Page",
+      "features": [
+        "Added a full visual Learner Progress page as page 2 of 01 - Monthly Summary.pdf.",
+        "The page reproduces the app progress ring with completed KSB or Learning Outcome, collected evidence and time-elapsed rings.",
+        "Assignments, KSBs or Learning Outcomes, Off-the-job, Time elapsed and EPA readiness use the same live calculations as the in-app progress panel.",
+        "Added the same red, amber and green progress scales, today markers, supporting details and Review status shown in the app.",
+        "The progress values are captured when the monthly ZIP is generated, so the PDF reflects the learner’s current position."
+      ],
+      "items": [
+        "The V1.6.35 Academy Activity PDF and monthly snapshot logic remain included.",
+        "NVQ courses omit EPA readiness in the same way as the live app."
+      ]
+    },
+    {
+      "version": "V1.6.35",
+      "date": "2026-08-03",
+      "title": "Monthly Academy Activity Report",
+      "features": [
+        "Added 02 - Academy Activity.pdf to every monthly upload ZIP.",
+        "The PDF lists Academy tests taken during the monthly period with their score, percentage and grade.",
+        "Trade Course, Functional Skills, assignment knowledge, EPA Knowledge, Professional Discussion and EPA Practical attempts are included.",
+        "Completed Knowledge Slide packs are listed separately with their completion date.",
+        "Academy activity is saved in the confirmed monthly snapshot so later uploads include only newly completed activity.",
+        "The Monthly Upload card now shows new Academy test and Knowledge Slide totals."
+      ],
+      "items": [
+        "The first monthly upload includes all Academy activity already saved on the device.",
+        "No existing evidence, OTJMate, RPL or assignment-folder logic was removed."
+      ]
+    },
     {
       "version": "V1.6.34",
       "date": "2026-08-03",
