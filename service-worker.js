@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.4-reminder-trigger-fix';
-const CURRENT_VERSION='V1.4';
+const CACHE='apprentice-plus-v1.5-toolbox-tour-complete';
+const CURRENT_VERSION='V1.5';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,

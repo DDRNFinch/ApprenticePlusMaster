@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.4';
+const APP_VERSION='V1.5';
 const PORTFOLIO_UPLOAD_LIMIT_BYTES=1_000_000_000;
 const PORTFOLIO_SAFE_TARGET_BYTES=900_000_000;
 const APP_VIDEO_BITS_PER_SECOND=1_400_000;
@@ -6166,15 +6166,18 @@ function currentHelp(){
    {selector:'#openCertificates',title:'Certificates',html:'<p>Tap <strong>Certificates</strong> to view achievements earned in the Academy.</p><ol><li>Open a saved certificate to check its details.</li><li>Download or print it where those controls are shown.</li><li>Certificates appear after the required course or assessment result has been achieved.</li></ol>'}
   ]},
   resources:{title:'Toolbox',html:'',steps:[
-   {selector:'#openMeasureMate',title:'MeasureMate',html:'<p>Open construction calculators for conversions, area, volume, Pythagoras, stairs, roof pitch and falls. Choose the correct tab, enter measurements using consistent units and check the result before using it on a job.</p>'},
-   {selector:'#openMaterialMate',title:'MaterialMate',html:'<p>Estimate bricks, blocks, mortar, timber, paint, plaster and tiles. Enter the job dimensions, choose a wastage allowance and review the estimated quantity before ordering.</p>'},
-   {selector:'#openNotepad',title:'NoteMate',html:'<p>Create searchable workplace or college notes. Add writing, photographs, videos, voice recordings or gallery files, then save the note for later use.</p>'},
-   {selector:'#openDrawingMate',title:'DrawingMate',html:'<p>Use drawing symbols, hatching, scale and setting-out tools. Select the correct section and check every dimension before applying the result to practical work.</p>'},
-   {selector:'#openProjectMate',title:'ProjectMate',html:'<p>Create or open customer-style projects. Follow the brief, plan materials and labour, check wastage, add a project photograph and save the completed plan.</p>'},
-   {selector:'#openOTJMate',title:learningHoursMateName(),html:`<p>Record ${learningHoursLongLabel().toLowerCase()}, copy complete entries for Aptem and export compact PDF logs containing multiple entries per page. Previously exported entries stay marked to prevent duplicates.</p>`},
-   {selector:'#openReviewMate',title:'ReviewMate',html:'<p>Use Live targets for five linked actions and weekly reminders, or open ReviewMate+ to conduct the complete review meeting, collect learner and employer signatures and create the signed A4 PDF.</p>'},
-   {selector:'#openRemindMate',title:'RemindMate',html:'<p>Save review targets and other deadlines, see what is overdue or due today and mark reminders complete when the action has been finished.</p>'},
-   {selector:'#openSettings',title:'Settings',html:'<p>Open General, Notifications and Learning Support settings. Edit the learner profile here; the learner name on the Home screen is display-only.</p>'}
+   {selector:'#openMeasureMate',title:'1. MeasureMate',html:'<p>Use construction calculators for conversions, area, volume, Pythagoras, stairs, roof pitch and falls. Enter measurements using consistent units and check the result before using it on a job.</p>'},
+   {selector:'#openMaterialMate',title:'2. MaterialMate',html:'<p>Estimate bricks, blocks, mortar, timber, paint, plaster and tiles. Enter the job dimensions, set wastage and check the estimate before ordering.</p>'},
+   {selector:'#openDrawingMate',title:'3. DrawingMate',html:'<p>Use drawing symbols, material hatching, scale rulers and setting-out tools. Select the correct tool and confirm dimensions against the drawing or specification.</p>'},
+   {selector:'#openCADMate',title:'4. CADMate',html:'<p>Create metric construction drawings for brickwork and blockwork, including bonds, dimensions, returns and drawing information. Other trade drawing workspaces are shown as they become available.</p>'},
+   {selector:'#openSkillsCard',title:'5. Skills Card',html:'<p>See practical skills demonstrated across Practical Assessments and ProjectMate. Each skill shows how often it has been completed and the learner’s highest saved grade.</p>'},
+   {selector:'#openNotepad',title:'6. NoteMate',html:'<p>Create searchable workplace or college notes. Add writing, photographs, videos, voice recordings or gallery files and save them for later use.</p>'},
+   {selector:'#openOTJMate',title:`7. ${learningHoursMateName()}`,html:`<p>Record ${learningHoursLongLabel().toLowerCase()}, copy complete entries for the online portfolio and export compact PDF logs. Exported entries remain marked to prevent accidental duplication.</p>`},
+   {selector:'#openProjectMate',title:'8. ProjectMate',html:'<p>Generate, create and complete customer-style projects. Follow the brief, plan materials and labour, check wastage, add project evidence and save the completed work.</p>'},
+   {selector:'#openReviewMate',title:'9. ReviewMate',html:'<p>Use Live Targets for linked actions and reminders, or use ReviewMate+ to conduct a complete progress review, collect signatures and create the signed A4 review PDF.</p>'},
+   {selector:'#openRemindMate',title:'10. RemindMate',html:'<p>Save targets and deadlines, see what is overdue or due today and mark actions complete. Repeating reminders can automatically create their next due date.</p>'},
+   {selector:'#openFeedbackMate',title:'11. FeedbackMate',html:'<p>Send an idea, improvement suggestion or issue report about Apprentice+. Complete the form and use the online submission link when internet access is available.</p>'},
+   {selector:'#openSettings',title:'12. Settings',html:'<p>Manage General, Notifications, Learning Support and Admin settings. Edit the learner profile, portfolio link and app preferences here.</p>'}
   ]},
   notepad:{title:'NoteMate',html:'',steps:[
    {selector:'#addNote,.notepad-add',title:'Create a note',html:'<p>Tap the add control to start a new workplace or college note.</p>'},
