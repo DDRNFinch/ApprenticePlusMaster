@@ -3789,17 +3789,3 @@ body[data-a11y-background="dark"] .reviewmate-main-tabs,body[data-a11y-backgroun
 
 /* V1.3 monthly upload reminders */
 .monthly-upload-warning{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 16px;padding:16px;border:1px solid #d59b28;border-radius:18px;background:#fff8e8;color:#3e3218}.monthly-upload-warning.upload{border-color:#16815f;background:#eaf8f1}.monthly-upload-warning>div:first-child{display:grid;gap:4px}.monthly-upload-warning strong{font-size:1rem}.monthly-upload-warning span,.monthly-upload-warning small{display:block}.monthly-upload-warning small{opacity:.72}.monthly-upload-warning-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.monthly-upload-reminder-modal .modal-card{max-width:480px}.monthly-upload-reminder-modal .btn-row{display:flex;gap:10px;flex-wrap:wrap}@media(max-width:620px){.monthly-upload-warning{align-items:stretch;flex-direction:column}.monthly-upload-warning-actions{justify-content:stretch}.monthly-upload-warning-actions .btn{flex:1 1 140px}}
-
-
-/* V1.6 — persistent monthly online-upload alert */
-.monthly-upload-status-alert{position:fixed;left:max(18px,env(safe-area-inset-left));bottom:calc(var(--bottom-nav-safe,96px) + 10px);z-index:10060;width:48px;height:48px;border:3px solid #fff;border-radius:50%;display:grid;place-items:center;background:#d71920;color:#fff;box-shadow:0 8px 22px rgba(119,9,14,.36);font:900 30px/1 Arial,sans-serif;cursor:pointer;animation:monthly-upload-alert-pulse 2s ease-in-out infinite}
-.monthly-upload-status-alert span{transform:translateY(-1px)}
-.monthly-upload-status-alert:focus-visible{outline:4px solid rgba(215,25,32,.25);outline-offset:3px}
-@keyframes monthly-upload-alert-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-.monthly-upload-status-modal .modal-card{position:relative;max-width:480px;text-align:center}
-.monthly-upload-status-symbol{width:64px;height:64px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;background:#d71920;color:#fff;font:900 42px/1 Arial,sans-serif}
-.monthly-upload-status-modal p{line-height:1.55}
-.monthly-upload-status-modal small{display:block;margin-top:14px;color:var(--muted);line-height:1.45}
-.monthly-upload-status-modal .btn-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
-@media(max-width:620px){.monthly-upload-status-alert{left:14px;width:46px;height:46px}.monthly-upload-status-modal .btn-row .btn{flex:1 1 150px}}
-html.desktop-mode .monthly-upload-status-alert{left:calc(50% - 360px);bottom:24px}
