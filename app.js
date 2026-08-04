@@ -245,7 +245,7 @@ function learnerPromptTitle(assignmentNumber,code,fallback){
  return LEARNER_PROMPTS[COURSE.id]?.[assignmentNumber]?.[code]||fallback;
 }
 
-const APP_VERSION='V1.3';
+const APP_VERSION='V1.4';
 const PORTFOLIO_UPLOAD_LIMIT_BYTES=1_000_000_000;
 const PORTFOLIO_SAFE_TARGET_BYTES=900_000_000;
 const APP_VIDEO_BITS_PER_SECOND=1_400_000;
@@ -6045,8 +6045,8 @@ async function downloadEntirePortfolio(){
   packageEntries.push({name:'ApprenticePlus-Coursework-Restore.aplus',data:await createCourseworkRestoreFile()});
   const packageBlob=makeZipBlob(packageEntries);if(packageBlob.size>PORTFOLIO_UPLOAD_LIMIT_BYTES)throw new Error(`The ZIP is ${formatMediaSize(packageBlob.size)} and exceeds Aptem’s 1 GB limit. Remove or replace the largest original video files, then export again.`);if(packageBlob.size>PORTFOLIO_SAFE_TARGET_BYTES&&!confirm(`This ZIP is ${formatMediaSize(packageBlob.size)}, above the 900 MB safety target. It is still below 1 GB, but leaves very little upload headroom. Download it anyway?`))return;
   const learner=safeZipName(state.profile?.fullName||'Learner').slice(0,24),date=new Date().toISOString().slice(0,10),download=await downloadBlob(packageBlob,'application/zip',`${learner}-Monthly-${date}.zip`);
-  state.data[MONTHLY_PORTFOLIO_KEY()]={...delta.status,downloadedAt:new Date().toISOString(),downloadedSize:download.size,pendingSnapshot:delta.current,pendingNewKsbs:delta.newKsbs.map(x=>x.key),pendingNewRplUnits:delta.newRplUnits.map(x=>x.assignment),pendingNewRplCriteria:delta.newRplCriteria.map(x=>x.criterionKey),pendingProgressGain:delta.progressGain,pendingOtjEntryIds:delta.newOtjEntries.map(e=>e.id),pendingAcademyTestKeys:delta.newAcademyTests.map(e=>e.key),pendingKnowledgeSlideKeys:delta.newKnowledgeSlides.map(e=>e.key),reminderStage:'open',reminderSnoozedUntil:0,reminderNextAt:Date.now()+MONTHLY_REMINDER_MINUTE,portfolioOpenedAt:null};
-  await saveData();analyticsEvent('monthly_portfolio_exported',{course_id:COURSE.id,assignment_count:assignments.length,file_count:packageEntries.length,zip_size_bytes:download.size,new_ksbs:delta.newKsbs.length,new_rpl_units:delta.newRplUnits.length,new_rpl_criteria:delta.newRplCriteria.length,progress_gain:delta.progressGain,new_otj_entries:delta.newOtjEntries.length,academy_tests:delta.newAcademyTests.length,knowledge_slides:delta.newKnowledgeSlides.length,otj_hours:delta.otjHours});render();toast(`Monthly upload downloaded · ${formatMediaSize(download.size)}`);
+  state.data[MONTHLY_PORTFOLIO_KEY()]={...delta.status,downloadedAt:new Date().toISOString(),downloadedSize:download.size,pendingSnapshot:delta.current,pendingNewKsbs:delta.newKsbs.map(x=>x.key),pendingNewRplUnits:delta.newRplUnits.map(x=>x.assignment),pendingNewRplCriteria:delta.newRplCriteria.map(x=>x.criterionKey),pendingProgressGain:delta.progressGain,pendingOtjEntryIds:delta.newOtjEntries.map(e=>e.id),pendingAcademyTestKeys:delta.newAcademyTests.map(e=>e.key),pendingKnowledgeSlideKeys:delta.newKnowledgeSlides.map(e=>e.key),reminderStage:'open',reminderSnoozedUntil:0,reminderNextAt:Date.now(),portfolioOpenedAt:null};
+  await saveData();render();setTimeout(()=>showMonthlyPortfolioReminder(true),250);analyticsEvent('monthly_portfolio_exported',{course_id:COURSE.id,assignment_count:assignments.length,file_count:packageEntries.length,zip_size_bytes:download.size,new_ksbs:delta.newKsbs.length,new_rpl_units:delta.newRplUnits.length,new_rpl_criteria:delta.newRplCriteria.length,progress_gain:delta.progressGain,new_otj_entries:delta.newOtjEntries.length,academy_tests:delta.newAcademyTests.length,knowledge_slides:delta.newKnowledgeSlides.length,otj_hours:delta.otjHours});toast(`Monthly upload downloaded · ${formatMediaSize(download.size)}`);
  }catch(error){console.error('Monthly portfolio download failed',error);toast(`Unable to download monthly portfolio${error?.message?`: ${error.message}`:''}`)}finally{if(button){button.disabled=false;button.textContent='Download complete portfolio'}}
 }
 async function confirmMonthlyPortfolioUpload(){
@@ -6705,6 +6705,7 @@ function restoreAppAfterResume(){
  document.querySelectorAll('.modal[aria-hidden="true"],.modal.hidden,.help-tour-overlay[aria-hidden="true"],#learningSupportInfoModal[aria-hidden="true"]').forEach(node=>node.remove());if(!document.getElementById('learningSupportInfoModal'))document.body.classList.remove('learning-support-modal-open');
  primaryNavigationLocked=false;
  refreshAppNotifications();
+ if(monthlyReminderPending())setTimeout(()=>showMonthlyPortfolioReminder(false),150);
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')requestAnimationFrame(restoreAppAfterResume)});
 window.addEventListener('pageshow',()=>requestAnimationFrame(restoreAppAfterResume));
@@ -6716,7 +6717,7 @@ window.addEventListener('focus',()=>requestAnimationFrame(restoreAppAfterResume)
  try{await createUpdateSafetyBackup()}catch(error){console.warn('Update backup was skipped',error)}
  try{await registerAutoUpdater()}catch(error){console.warn('Automatic updates are temporarily unavailable',error)}
  try{refreshAppNotifications();window.setInterval(refreshAppNotifications,60000)}catch(error){console.warn('Reminder notifications could not be refreshed',error)}
- try{window.setInterval(checkMonthlyPortfolioReminder,60000);setTimeout(checkMonthlyPortfolioReminder,1200)}catch(error){console.warn('Monthly portfolio reminders could not be started',error)}
+ try{window.setInterval(checkMonthlyPortfolioReminder,60000);setTimeout(()=>showMonthlyPortfolioReminder(false),500)}catch(error){console.warn('Monthly portfolio reminders could not be started',error)}
 })()
 
 
