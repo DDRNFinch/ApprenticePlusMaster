@@ -1,6 +1,22 @@
 {
-  "latest": "V1.2",
+  "latest": "V1.3",
   "releases": [
+    {
+      "version": "V1.3",
+      "date": "2026-08-04",
+      "title": "Monthly Upload Reminders",
+      "features": [
+        "Monthly upload reminders only begin after a complete course portfolio ZIP has downloaded successfully.",
+        "The first reminder prompts the learner to open their saved online portfolio link.",
+        "After opening the portfolio, the reminder changes to Uploaded online? with a Yes, all done confirmation.",
+        "Both reminder stages include Give me an hour for offline work or continued evidence capture.",
+        "Unsnoozed reminders are checked every minute and remain visible on the Course screen until completion.",
+        "Confirming the upload clears the reminder and establishes the next NEW-evidence baseline."
+      ],
+      "items": [
+        "The reminder state is saved on the device, so closing and reopening Apprentice+ does not remove an outstanding upload requirement."
+      ]
+    },
     {
       "version": "V1.2",
       "date": "2026-08-04",
@@ -1226,7 +1242,7 @@
       ]
     }
   },
-  "latestVersion": "V1.0",
+  "latestVersion": "V1.3",
   "releaseDetails": {
     "V1.5.50": {
       "version": "V1.5.50",
@@ -1341,6 +1357,22 @@
         "Recorded media is checked for a valid container, non-zero size and recording duration before being saved.",
         "Audio and video evidence displays its detected format beside the built-in playback controls.",
         "Monthly assignment folders preserve the correct recording extension for Windows and browser playback."
+      ]
+    },
+    "V1.3": {
+      "version": "V1.3",
+      "date": "2026-08-04",
+      "title": "Monthly Upload Reminders",
+      "features": [
+        "Monthly upload reminders only begin after a complete course portfolio ZIP has downloaded successfully.",
+        "The first reminder prompts the learner to open their saved online portfolio link.",
+        "After opening the portfolio, the reminder changes to Uploaded online? with a Yes, all done confirmation.",
+        "Both reminder stages include Give me an hour for offline work or continued evidence capture.",
+        "Unsnoozed reminders are checked every minute and remain visible on the Course screen until completion.",
+        "Confirming the upload clears the reminder and establishes the next NEW-evidence baseline."
+      ],
+      "items": [
+        "The reminder state is saved on the device, so closing and reopening Apprentice+ does not remove an outstanding upload requirement."
       ]
     }
   }

@@ -1,5 +1,5 @@
-const CACHE='apprentice-plus-v1.2-complete-monthly-portfolio';
-const CURRENT_VERSION='V1.1';
+const CACHE='apprentice-plus-v1.3-monthly-upload-reminders';
+const CURRENT_VERSION='V1.3';
 const RELEASE_NOTES_URL='./release-notes.json';
 const FALLBACK_UPDATE_INFO={
  version:CURRENT_VERSION,
